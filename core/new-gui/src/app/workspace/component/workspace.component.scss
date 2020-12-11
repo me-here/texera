@@ -4,25 +4,10 @@
     background: #fff;
     color: #fff;
   }
-  .container_column{
+  .header_container{
     width: 100%;
     height: #{$header-height};
-    display: grid;
-    grid-template-columns: 4% 92% 4%;
     position: relative;
-
-    &>div{
-      height: #{$header-height};
-    }
-  }
-  .column1{
-    grid-column: 1/2;
-  }
-  .column2{
-    grid-column: 2/3;
-  }
-  .column3{
-    grid-column: 3/4;
   }
 
   nz-sider {

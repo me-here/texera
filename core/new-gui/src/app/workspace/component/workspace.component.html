@@ -1,23 +1,14 @@
 <nz-layout>
   <nz-header>
-    <div class="container_column">
-    <div class="column1">
-    <i class="trigger" nz-icon [nzType]="isLeftCollapsed ? 'menu-unfold' : 'menu-fold'"
-    (click)="isLeftCollapsed = !isLeftCollapsed; onSideCollapse()"></i>
-    </div>
-    <div class="column2">
+    <div class="header_container">
     <texera-navigation></texera-navigation>
-    </div>
-    <div class="column3">
-    <i class="trigger" nz-icon [nzType]="isRightCollapsed ? 'menu-fold' : 'menu-unfold'"
-    (click)="isRightCollapsed = !isRightCollapsed; onSideCollapse()"></i>
-    </div>
     </div>
   </nz-header>
   <nz-layout>
     <nz-sider
+      [nzTheme] = "'light'"
       nzCollapsible [nzCollapsedWidth]="0"
-      [(nzCollapsed)]="isLeftCollapsed" [nzTrigger]="null"
+      [(nzCollapsed)]="isLeftCollapsed"
       (nzCollapsedChange)="onSideCollapse()"
       [nzWidth]="operator_panel_width"
       nz-resizable
@@ -54,8 +45,10 @@
       </div>
     </nz-content>
     <nz-sider
+      [nzTheme] = "'light'"
+      [nzReverseArrow] = "true"
       nzCollapsible [nzCollapsedWidth]="0"
-      [(nzCollapsed)]="isRightCollapsed" [nzTrigger]="null"
+      [(nzCollapsed)]="isRightCollapsed"
       (nzCollapsedChange)="onSideCollapse()"
       [nzWidth]="property_panel_width"
       nz-resizable
