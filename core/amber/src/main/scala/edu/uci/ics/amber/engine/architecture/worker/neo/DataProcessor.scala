@@ -5,6 +5,7 @@ import java.util.concurrent.Executors
 import akka.actor.ActorRef
 import edu.uci.ics.amber.engine.architecture.breakpoint.localbreakpoint.ExceptionBreakpoint
 import edu.uci.ics.amber.engine.architecture.worker.BreakpointSupport
+import edu.uci.ics.amber.engine.architecture.worker.neo.PauseManager.PauseLevel
 import edu.uci.ics.amber.engine.common.amberexception.BreakpointException
 import edu.uci.ics.amber.engine.common.ambermessage.ControlMessage.LocalBreakpointTriggered
 import edu.uci.ics.amber.engine.common.ambermessage.WorkerMessage.ExecutionCompleted
@@ -86,7 +87,7 @@ class DataProcessor( // dependencies:
         tupleOutput.transferTuple(outputTuple, outputTupleCount)
       } catch {
         case bp: BreakpointException =>
-          pauseManager.pause()
+          pauseManager.pause(PauseLevel.System)
           self ! LocalBreakpointTriggered // TODO: apply FIFO & exactly-once protocol here
         case e: Exception =>
           handleOperatorException(e, isInput = false)
@@ -139,7 +140,7 @@ class DataProcessor( // dependencies:
   }
 
   private[this] def handleOperatorException(e: Exception, isInput: Boolean): Unit = {
-    pauseManager.pause()
+    pauseManager.pause(PauseLevel.System)
     assignExceptionBreakpoint(currentInputTuple.left.getOrElse(null), e, isInput)
     self ! LocalBreakpointTriggered // TODO: apply FIFO & exactly-once protocol here
   }

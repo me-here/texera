@@ -4,6 +4,7 @@ import akka.actor.Props
 import edu.uci.ics.amber.engine.architecture.breakpoint.FaultedTuple
 import edu.uci.ics.amber.engine.architecture.receivesemantics.FIFOAccessPort
 import edu.uci.ics.amber.engine.architecture.worker.neo.PauseManager
+import edu.uci.ics.amber.engine.architecture.worker.neo.PauseManager.PauseLevel
 import edu.uci.ics.amber.engine.common.amberexception.AmberException
 import edu.uci.ics.amber.engine.common.ambermessage.ControlMessage.{QueryState, _}
 import edu.uci.ics.amber.engine.common.ambermessage.WorkerMessage._
@@ -55,7 +56,7 @@ class Processor(var operator: IOperatorExecutor, val tag: WorkerTag) extends Wor
 
   override def onResuming(): Unit = {
     super.onResuming()
-    pauseManager.resume()
+    pauseManager.resume(PauseLevel.User)
   }
 
   override def onSkipTuple(faultedTuple: FaultedTuple): Unit = {
@@ -167,7 +168,7 @@ class Processor(var operator: IOperatorExecutor, val tag: WorkerTag) extends Wor
 
   override def onPausing(): Unit = {
     super.onPausing()
-    pauseManager.pause()
+    pauseManager.pause(PauseLevel.User)
     // if dp thread is blocking on waiting for input tuples:
     if (workerInternalQueue.blockingDeque.isEmpty && tupleInput.isCurrentBatchExhausted) {
       // insert dummy batch to unblock dp thread
