@@ -30,6 +30,7 @@ public class WordCloudOpPartialExec implements OperatorExecutor {
     private final String textColumn;
     private Analyzer luceneAnalyzer;
     private List<String> textList;
+    public static final int BATCH_SIZE = 100; // for incremental computation
 
     private static final Schema resultSchema = Schema.newBuilder().add(
             new Attribute("word", AttributeType.STRING),
@@ -91,14 +92,26 @@ public class WordCloudOpPartialExec implements OperatorExecutor {
     public Iterator<Tuple> processTexeraTuple(Either<Tuple, InputExhausted> tuple, int input) {
         if(tuple.isLeft()) {
             textList.add(tuple.left().get().getField(textColumn));
-            return JavaConverters.asScalaIterator(Iterators.emptyIterator());
-        }
-        else {
-            try {
-                return(JavaConverters.asScalaIterator(calculateWordCount(textList, getLuceneAnalyzer()).iterator()));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            if (textList.size() >= BATCH_SIZE) {
+                return computeResultIteratorForOneBatch();
             }
+            else {
+                return JavaConverters.asScalaIterator(Iterators.emptyIterator());
+            }
+        }
+        else { // input exhausted
+            return computeResultIteratorForOneBatch();
+        }
+    }
+
+    public Iterator<Tuple> computeResultIteratorForOneBatch() {
+        try {
+            Iterator<Tuple> resultIterator = JavaConverters.asScalaIterator(
+                    calculateWordCount(textList, getLuceneAnalyzer()).iterator());
+            textList.clear();
+            return resultIterator;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }
