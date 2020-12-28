@@ -226,7 +226,7 @@ class Principal(val metadata: OpExecConfig) extends Actor with ActorLogging with
         PrincipalStatistics(
           PrincipalState.Ready,
           aggregateWorkerInputRowCount(),
-          aggregateWorkerOutputRowCount()
+          aggregateWorkerOutputRowCount(),
         )
       )
     case StashOutput =>

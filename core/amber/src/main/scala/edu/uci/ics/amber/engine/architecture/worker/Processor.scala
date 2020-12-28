@@ -194,6 +194,13 @@ class Processor(var operator: IOperatorExecutor, val tag: WorkerTag) extends Wor
     outputCount
   }
 
+  override def getOutputResults(): Option[List[ITuple]] = {
+    operator match {
+      case sink: ITupleSinkOperatorExecutor => Option.apply(sink.getResultTuples().toList)
+      case _                                => Option.empty
+    }
+  }
+
   final def activateWhenReceiveDataMessages: Receive = {
     case EndSending(_) | DataMessage(_, _) | RequireAck(_: EndSending) | RequireAck(
           _: DataMessage
