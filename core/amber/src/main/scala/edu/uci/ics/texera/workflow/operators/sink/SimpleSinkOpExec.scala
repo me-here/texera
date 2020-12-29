@@ -32,13 +32,14 @@ class SimpleSinkOpExec extends ITupleSinkOperatorExecutor {
         }
         Iterator()
       case Right(_) =>
+        results.foreach(r => println(r))
         Iterator()
     }
   }
 
   private def updateResult(tuple: Tuple): Unit = {
     var multiplicity = tuple.getField[Integer]("__multiplicity__")
-    val tupleOriginal = Tuple.newBuilder().remove("__multiplicity__").build()
+    val tupleOriginal = Tuple.newBuilder().add(tuple).remove("__multiplicity__").build()
     while (multiplicity != 0) {
       if (multiplicity > 0) {
         results += tupleOriginal

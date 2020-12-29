@@ -34,7 +34,7 @@ public class WordCloudOpFinalExec implements OperatorExecutor {
 
     private int counter = 0;
 
-    private static final int BATCH_SIZE = 100;
+    private static final int BATCH_SIZE = 1000;
 
     @Override
     public void open() {
