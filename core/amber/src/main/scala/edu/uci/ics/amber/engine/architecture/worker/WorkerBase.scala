@@ -98,6 +98,8 @@ abstract class WorkerBase extends WorkflowActor {
 
   def getOutputRowCount(): Long
 
+  def getOutputResults(): Option[List[ITuple]]
+
   def onReset(value: Any, recoveryInformation: Seq[(Long, Long)]): Unit = {
 //    Thread.sleep(1000)
     receivedRecoveryInformation.clear()
@@ -226,7 +228,7 @@ abstract class WorkerBase extends WorkflowActor {
       sender ! ReportState(WorkerState.Uninitialized)
     case QueryStatistics =>
       sender ! ReportStatistics(
-        WorkerStatistics(WorkerState.Uninitialized, getInputRowCount(), getOutputRowCount())
+        WorkerStatistics(WorkerState.Uninitialized, getInputRowCount(), getOutputRowCount(), getOutputResults())
       )
     case _ => stash()
   }
@@ -249,7 +251,7 @@ abstract class WorkerBase extends WorkflowActor {
       case QueryState => sender ! ReportState(WorkerState.Ready)
       case QueryStatistics =>
         sender ! ReportStatistics(
-          WorkerStatistics(WorkerState.Ready, getInputRowCount(), getOutputRowCount())
+          WorkerStatistics(WorkerState.Ready, getInputRowCount(), getOutputRowCount(), getOutputResults())
         )
     } orElse discardOthers
 
@@ -275,7 +277,7 @@ abstract class WorkerBase extends WorkflowActor {
       case QueryState => sender ! ReportState(WorkerState.Paused)
       case QueryStatistics =>
         sender ! ReportStatistics(
-          WorkerStatistics(WorkerState.Paused, getInputRowCount(), getOutputRowCount())
+          WorkerStatistics(WorkerState.Paused, getInputRowCount(), getOutputRowCount(), getOutputResults())
         )
     } orElse discardOthers
 
@@ -317,7 +319,7 @@ abstract class WorkerBase extends WorkflowActor {
       case QueryState => sender ! ReportState(WorkerState.Paused)
       case QueryStatistics =>
         sender ! ReportStatistics(
-          WorkerStatistics(WorkerState.Paused, getInputRowCount(), getOutputRowCount())
+          WorkerStatistics(WorkerState.Paused, getInputRowCount(), getOutputRowCount(), getOutputResults())
         )
       case QueryBreakpoint(id) =>
         val toReport = dataProcessor.breakpoints.find(_.id == id)
@@ -364,7 +366,7 @@ abstract class WorkerBase extends WorkflowActor {
       case QueryState => sender ! ReportState(WorkerState.Running)
       case QueryStatistics =>
         sender ! ReportStatistics(
-          WorkerStatistics(WorkerState.Running, getInputRowCount(), getOutputRowCount())
+          WorkerStatistics(WorkerState.Running, getInputRowCount(), getOutputRowCount(), getOutputResults())
         )
       case CollectSinkResults =>
         sender ! WorkerMessage.ReportOutputResult(this.getResultTuples().toList)
@@ -399,7 +401,8 @@ abstract class WorkerBase extends WorkflowActor {
           WorkerStatistics(
             WorkerState.LocalBreakpointTriggered,
             getInputRowCount(),
-            getOutputRowCount()
+            getOutputRowCount(),
+            getOutputResults()
           )
         )
       case DataMessage(_, _) | EndSending(_) => stash()
@@ -415,7 +418,7 @@ abstract class WorkerBase extends WorkflowActor {
       case QueryState => sender ! ReportState(WorkerState.Completed)
       case QueryStatistics =>
         sender ! ReportStatistics(
-          WorkerStatistics(WorkerState.Completed, getInputRowCount(), getOutputRowCount())
+          WorkerStatistics(WorkerState.Completed, getInputRowCount(), getOutputRowCount(), getOutputResults())
         )
       case QueryTriggeredBreakpoints => //skip this
       case ExecutionCompleted        => //skip this as well

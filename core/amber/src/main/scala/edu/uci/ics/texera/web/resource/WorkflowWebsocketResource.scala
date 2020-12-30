@@ -168,7 +168,8 @@ class WorkflowWebsocketResource {
           val sinkStatistics = PrincipalStatistics(
             inputStatistics.operatorState,
             inputStatistics.aggregatedOutputRowCount,
-            inputStatistics.aggregatedOutputRowCount
+            inputStatistics.aggregatedOutputRowCount,
+            updateMutable(sinkID).aggregatedOutputResults
           )
           updateMutable(sinkID) = sinkStatistics
         }
@@ -198,7 +199,7 @@ class WorkflowWebsocketResource {
     )
 
     val controllerActorRef = TexeraWebApplication.actorSystem.actorOf(
-      Controller.props(workflowTag, workflow, false, eventListener, 100)
+      Controller.props(workflowTag, workflow, false, eventListener, 2000)
     )
     controllerActorRef ! AckedControllerInitialization
     texeraWorkflowCompiler.initializeBreakpoint(controllerActorRef)

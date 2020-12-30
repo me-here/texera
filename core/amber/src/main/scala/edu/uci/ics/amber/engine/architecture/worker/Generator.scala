@@ -1,15 +1,16 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
-import akka.actor.{ActorLogging, Props, Stash}
+import akka.actor.{Stash, ActorLogging, Props}
 import edu.uci.ics.amber.engine.architecture.breakpoint.FaultedTuple
 import edu.uci.ics.amber.engine.architecture.worker.neo.PauseManager
 import edu.uci.ics.amber.engine.common.ambermessage.ControlMessage._
 import edu.uci.ics.amber.engine.common.ambermessage.WorkerMessage._
-import edu.uci.ics.amber.engine.common.ambertag.{LayerTag, WorkerTag}
+import edu.uci.ics.amber.engine.common.ambertag.{WorkerTag, LayerTag}
+import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.{
-  ElidableStatement,
+  ISourceOperatorExecutor,
   IOperatorExecutor,
-  ISourceOperatorExecutor
+  ElidableStatement
 }
 import edu.uci.ics.amber.engine.faulttolerance.recovery.RecoveryPacket
 
@@ -83,6 +84,10 @@ class Generator(var operator: IOperatorExecutor, val tag: WorkerTag)
   override def getOutputRowCount(): Long = {
     val (_, outputCount) = dataProcessor.collectStatistics()
     outputCount
+  }
+
+  override def getOutputResults(): Option[List[ITuple]] = {
+    Option.empty
   }
 
   override def onModifyTuple(faultedTuple: FaultedTuple): Unit = {
