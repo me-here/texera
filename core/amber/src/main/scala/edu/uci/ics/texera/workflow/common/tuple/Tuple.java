@@ -46,19 +46,16 @@ public class Tuple implements ITuple, Serializable {
         this.fields = new ArrayList<>(fields);
     }
 
-    @Override
     @JsonIgnore
     public int length() {
         return fields.size();
     }
 
-    @Override
     @JsonIgnore
     public Object get(int i) {
         return fields.get(i);
     }
 
-    @Override
     @JsonIgnore
     public Object[] toArray() {
         Object[] array = new Object[0];

@@ -25,23 +25,20 @@ import scala.concurrent.ExecutionContext
 
 class PieChartOpExecConfig(
     tag: OperatorIdentifier,
-    val numWorkers: Int,
-    val nameColumn: String,
-    val dataColumn: String,
-    val pruneRatio: Double
+    val opDesc: PieChartOpDesc
 ) extends OpExecConfig(tag) {
 
   override lazy val topology: Topology = {
     val partialLayer = new ProcessorWorkerLayer(
       LayerTag(tag, "localPieChartProcessor"),
-      _ => new PieChartOpPartialExec(nameColumn, dataColumn),
-      numWorkers,
+      _ => new PieChartOpPartialExec(opDesc.nameColumn, opDesc.dataColumn),
+      Constants.defaultNumWorkers,
       UseAll(),
       RoundRobinDeployment()
     )
     val finalLayer = new ProcessorWorkerLayer(
       LayerTag(tag, "globalPieChartProcessor"),
-      _ => new PieChartOpFinalExec(pruneRatio),
+      _ => new PieChartOpFinalExec(opDesc),
       1,
       FollowPrevious(),
       RoundRobinDeployment()

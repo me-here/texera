@@ -36,7 +36,7 @@ class HashBasedMaterializer(
     tuple match {
       case Left(t) =>
         val index = (hashFunc(t) % numBuckets + numBuckets) % numBuckets
-        writer(index).write(t.mkString("|"))
+//        writer(index).write(t.mkString("|"))
         Iterator()
       case Right(_) =>
         for (i <- 0 until numBuckets) {

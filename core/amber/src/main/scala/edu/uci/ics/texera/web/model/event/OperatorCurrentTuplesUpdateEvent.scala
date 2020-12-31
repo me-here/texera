@@ -1,6 +1,7 @@
 package edu.uci.ics.texera.web.model.event
 
 import edu.uci.ics.amber.engine.common.ambermessage.PrincipalMessage.ReportCurrentProcessingTuple
+import edu.uci.ics.texera.workflow.common.tuple.Tuple
 
 object OperatorCurrentTuplesUpdateEvent {
   def apply(report: ReportCurrentProcessingTuple): OperatorCurrentTuplesUpdateEvent = {
@@ -11,7 +12,7 @@ object OperatorCurrentTuplesUpdateEvent {
         if (p._1 == null) {
           WorkerTuples(workerName, List.empty)
         } else {
-          WorkerTuples(workerName, p._1.toArray().map(v => v.toString).toList)
+          WorkerTuples(workerName, p._1.asInstanceOf[Tuple].toArray().map(v => v.toString).toList)
         }
       })
       .filter(tuples => tuples.tuple != null && tuples.tuple.nonEmpty)

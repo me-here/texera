@@ -19,14 +19,17 @@ import java.util.List;
  * @author Mingji Han, Xiaozhen Liu
  */
 public class PieChartOpFinalExec implements OperatorExecutor {
+
+    private final PieChartOpDesc opDesc;
     private final Double pruneRatio;
     private List<Tuple> tempList;
     private List<Tuple> resultList;
     private double sum = 0.0;
     private Schema resultSchema = null;
 
-    public PieChartOpFinalExec(Double pruneRatio) {
-        this.pruneRatio = pruneRatio;
+    public PieChartOpFinalExec(PieChartOpDesc opDesc) {
+        this.opDesc = opDesc;
+        this.pruneRatio = opDesc.pruneRatio;
     }
 
     @Override
@@ -48,7 +51,7 @@ public class PieChartOpFinalExec implements OperatorExecutor {
     @Override
     public scala.collection.Iterator<Tuple> processTexeraTuple(Either<Tuple, InputExhausted> tuple, int input) {
         if (tuple.isLeft()) {
-            sum += tuple.left().get().getDouble(1);
+            sum += tuple.left().get().getField(opDesc.dataColumn, Double.class);
             tempList.add(tuple.left().get());
             if (resultSchema == null) resultSchema = tuple.left().get().getSchema();
             return JavaConverters.asScalaIterator(Iterators.emptyIterator());
@@ -56,8 +59,8 @@ public class PieChartOpFinalExec implements OperatorExecutor {
         else {
             // sort all tuples in descending order
             tempList.sort((left, right) -> {
-                double leftValue = left.getDouble(1);
-                double rightValue = right.getDouble(1);
+                double leftValue = left.getField(opDesc.dataColumn, Double.class);
+                double rightValue = right.getField(opDesc.dataColumn, Double.class);
                 return Double.compare(rightValue, leftValue);
             });
 
@@ -65,7 +68,7 @@ public class PieChartOpFinalExec implements OperatorExecutor {
             // stop adding tuples, add new row called "Other" instead.
             double total = 0.0;
             for (Tuple t: tempList) {
-                total += t.getDouble(1);
+                total += t.getField(opDesc.dataColumn, Double.class);
                 resultList.add(t);
                 if (total / sum > pruneRatio) {
                     Double otherDataField = sum - total;

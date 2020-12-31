@@ -23,10 +23,11 @@ public class WordCloudOpFinalExec implements OperatorExecutor {
     private final int MAX_FONT_SIZE = 200;
     private final int MIN_FONT_SIZE = 50;
     private HashMap<String, Integer> termFreqMap;
-    private static final Schema resultSchema = Schema.newBuilder().add(
-            new Attribute("word", AttributeType.STRING),
-            new Attribute("size", AttributeType.INTEGER)
-    ).build();
+
+    public static final Attribute wordAttr = new Attribute("word", AttributeType.STRING);
+    public static final Attribute sizeAttr = new Attribute("size", AttributeType.INTEGER);
+
+    public static final Schema resultSchema = Schema.newBuilder().add(wordAttr, sizeAttr).build();
 
     @Override
     public void open() {
@@ -46,8 +47,8 @@ public class WordCloudOpFinalExec implements OperatorExecutor {
     @Override
     public Iterator<Tuple> processTexeraTuple(Either<Tuple, InputExhausted> tuple, int input) {
        if(tuple.isLeft()) {
-           String term = tuple.left().get().getString(0);
-           int frequency = tuple.left().get().getInt(1);
+           String term = tuple.left().get().getField(WordCloudOpPartialExec.wordAttr.getName());
+           int frequency = tuple.left().get().getField(WordCloudOpPartialExec.freqAttr.getName());
            termFreqMap.put(term, termFreqMap.get(term)==null ? frequency : termFreqMap.get(term) + frequency);
            return JavaConverters.asScalaIterator(Iterators.emptyIterator());
        }

@@ -31,10 +31,10 @@ public class WordCloudOpPartialExec implements OperatorExecutor {
     private Analyzer luceneAnalyzer;
     private List<String> textList;
 
-    private static final Schema resultSchema = Schema.newBuilder().add(
-            new Attribute("word", AttributeType.STRING),
-            new Attribute("size", AttributeType.INTEGER)
-    ).build();
+    public static final Attribute wordAttr = new Attribute("word", AttributeType.STRING);
+    public static final Attribute freqAttr = new Attribute("freq", AttributeType.INTEGER);
+
+    public static final Schema resultSchema = Schema.newBuilder().add(wordAttr, freqAttr).build();
 
     public WordCloudOpPartialExec(String textColumn) {
         this.textColumn = textColumn;

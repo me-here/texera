@@ -2,10 +2,11 @@ package edu.uci.ics.texera.web.model.common
 
 import edu.uci.ics.amber.engine.architecture.breakpoint.FaultedTuple
 import edu.uci.ics.amber.engine.common.tuple.amber.AmberTuple
+import edu.uci.ics.texera.workflow.common.tuple.Tuple
 
 object FaultedTupleFrontend {
   def apply(faultedTuple: FaultedTuple): FaultedTupleFrontend = {
-    val tuple = faultedTuple.tuple
+    val tuple = faultedTuple.tuple.asInstanceOf[Tuple]
     val tupleList =
       if (tuple != null) {
         tuple.toArray().filter(v => v != null).map(v => v.toString).toList

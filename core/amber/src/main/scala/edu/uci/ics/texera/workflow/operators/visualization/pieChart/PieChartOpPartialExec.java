@@ -60,8 +60,8 @@ public class PieChartOpPartialExec implements OperatorExecutor {
         }
         else {
             result.sort((left, right) -> {
-                double leftValue = left.getDouble(1);
-                double rightValue = right.getDouble(1);
+                double leftValue = left.getField(nameColumn);
+                double rightValue = right.getField(nameColumn);
                 return Double.compare(rightValue, leftValue);
             });
             return JavaConverters.asScalaIterator(result.iterator());

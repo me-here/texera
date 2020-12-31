@@ -27,7 +27,7 @@ class OutputMaterializer(val outputPath: String, val remoteHDFS: String = null)
   ): scala.Iterator[ITuple] = {
     tuple match {
       case Left(t) =>
-        writer.write(t.mkString("|"))
+//        writer.write(t.mkString("|"))
         Iterator()
       case Right(_) =>
         writer.close()
