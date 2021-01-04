@@ -6,6 +6,7 @@
 
 import { Breakpoint, BreakpointTriggerInfo, BreakpointRequest } from './workflow-common.interface';
 import { OperatorCurrentTuples } from './workflow-websocket.interface';
+import { ChartType } from './visualization.interface';
 
 export interface LogicalLink extends Readonly<{
   origin: string,
@@ -42,7 +43,7 @@ export interface LogicalPlan extends Readonly<{
 export interface ResultObject extends Readonly<{
   operatorID: string,
   table: ReadonlyArray<object | string[]>,
-  chartType: string | undefined
+  chartType: ChartType | undefined
 }> {
 
 }
@@ -88,7 +89,8 @@ export enum OperatorState {
 export interface OperatorStatistics extends Readonly<{
   operatorState: OperatorState,
   aggregatedInputRowCount: number,
-  aggregatedOutputRowCount: number
+  aggregatedOutputRowCount: number,
+  aggregatedOutputResults?: ResultObject
 }> {}
 
 export interface WorkflowStatusUpdate extends Readonly<{

@@ -140,6 +140,21 @@ class Principal(val metadata: OpExecConfig) extends Actor with ActorLogging with
       .sum
   }
 
+  // the output count is the sum of the output counts of the last-layer actors
+  private def aggregateWorkerOutputResults(): Option[List[ITuple]] = {
+    val allEmpty = workerStatisticsMap
+      .filter(e => workerLayers.last.layer.contains(e._1))
+      .forall(e => e._2.outputResults.isEmpty)
+    if (allEmpty) {
+      Option.empty
+    } else {
+      Option.apply(workerStatisticsMap
+        .filter(e => workerLayers.last.layer.contains(e._1))
+        .map(e => e._2.outputResults)
+        .filter(r => r.isDefined).flatMap(r => r.get).toList)
+    }
+  }
+
   private def setWorkerState(worker: ActorRef, state: WorkerState.Value): Boolean = {
     assert(workerStateMap.contains(worker))
     //only set when state changes.
@@ -227,6 +242,7 @@ class Principal(val metadata: OpExecConfig) extends Actor with ActorLogging with
           PrincipalState.Ready,
           aggregateWorkerInputRowCount(),
           aggregateWorkerOutputRowCount(),
+          aggregateWorkerOutputResults()
         )
       )
     case StashOutput =>
@@ -343,7 +359,8 @@ class Principal(val metadata: OpExecConfig) extends Actor with ActorLogging with
         PrincipalStatistics(
           PrincipalState.Running,
           aggregateWorkerInputRowCount(),
-          aggregateWorkerOutputRowCount()
+          aggregateWorkerOutputRowCount(),
+          aggregateWorkerOutputResults()
         )
       )
     case Pause =>
@@ -450,7 +467,8 @@ class Principal(val metadata: OpExecConfig) extends Actor with ActorLogging with
         PrincipalStatistics(
           PrincipalState.Pausing,
           aggregateWorkerInputRowCount(),
-          aggregateWorkerOutputRowCount()
+          aggregateWorkerOutputRowCount(),
+          aggregateWorkerOutputResults()
         )
       )
     case QueryState => sender ! ReportState(PrincipalState.Pausing)
@@ -508,7 +526,8 @@ class Principal(val metadata: OpExecConfig) extends Actor with ActorLogging with
         PrincipalStatistics(
           PrincipalState.CollectingBreakpoints,
           aggregateWorkerInputRowCount(),
-          aggregateWorkerOutputRowCount()
+          aggregateWorkerOutputRowCount(),
+          aggregateWorkerOutputResults()
         )
       )
     case ReportedTriggeredBreakpoints(bps) =>
@@ -591,7 +610,8 @@ class Principal(val metadata: OpExecConfig) extends Actor with ActorLogging with
         PrincipalStatistics(
           PrincipalState.Resuming,
           aggregateWorkerInputRowCount(),
-          aggregateWorkerOutputRowCount()
+          aggregateWorkerOutputRowCount(),
+          aggregateWorkerOutputResults()
         )
       )
     case QueryState => sender ! ReportState(PrincipalState.Resuming)
@@ -643,7 +663,8 @@ class Principal(val metadata: OpExecConfig) extends Actor with ActorLogging with
         PrincipalStatistics(
           PrincipalState.Paused,
           aggregateWorkerInputRowCount(),
-          aggregateWorkerOutputRowCount()
+          aggregateWorkerOutputRowCount(),
+          aggregateWorkerOutputResults()
         )
       )
     case msg =>
@@ -683,7 +704,8 @@ class Principal(val metadata: OpExecConfig) extends Actor with ActorLogging with
         PrincipalStatistics(
           PrincipalState.Completed,
           aggregateWorkerInputRowCount(),
-          aggregateWorkerOutputRowCount()
+          aggregateWorkerOutputRowCount(),
+          aggregateWorkerOutputResults()
         )
       )
     case CollectSinkResults =>
@@ -731,7 +753,7 @@ class Principal(val metadata: OpExecConfig) extends Actor with ActorLogging with
       workerStatisticsMap = mutable.AnyRefMap(
         workerLayers
           .flatMap(x => x.layer)
-          .map((_, WorkerStatistics(WorkerState.Uninitialized, 0, 0)))
+          .map((_, WorkerStatistics(WorkerState.Uninitialized, 0, 0, Option.empty)))
           .toMap
           .toSeq: _*
       )
@@ -756,7 +778,8 @@ class Principal(val metadata: OpExecConfig) extends Actor with ActorLogging with
         PrincipalStatistics(
           PrincipalState.Uninitialized,
           aggregateWorkerInputRowCount(),
-          aggregateWorkerOutputRowCount()
+          aggregateWorkerOutputRowCount(),
+          aggregateWorkerOutputResults()
         )
       )
     case msg =>
@@ -796,7 +819,8 @@ class Principal(val metadata: OpExecConfig) extends Actor with ActorLogging with
         PrincipalStatistics(
           PrincipalState.Initializing,
           aggregateWorkerInputRowCount(),
-          aggregateWorkerOutputRowCount()
+          aggregateWorkerOutputRowCount(),
+          aggregateWorkerOutputResults()
         )
       )
     case msg =>

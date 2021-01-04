@@ -8,8 +8,11 @@ import { WorkflowActionService } from '../workflow-graph/model/workflow-action.s
 
 const Engine_URL = 'ws://localhost:7070/api/websocket';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class WorkflowStatusService {
+
   // status is responsible for passing websocket responses to other components
   private status = new Subject<Record<string, OperatorStatistics>>();
 
@@ -25,6 +28,7 @@ export class WorkflowStatusService {
       if (event.type !== 'WorkflowStatusUpdateEvent') {
         return;
       }
+      console.log(event);
       this.status.next(event.operatorStatistics);
     });
     this.executeWorkflowService.getExecutionStateStream().subscribe(event => {

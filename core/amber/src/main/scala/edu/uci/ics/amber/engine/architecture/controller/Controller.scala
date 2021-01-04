@@ -369,7 +369,7 @@ class Controller(
     // do nothing, not initialized yet
     case PrincipalMessage.ReportStatistics(statistics) =>
       principalStatisticsMap.update(sender, statistics)
-      triggerStatusUpdateEvent();
+//      triggerStatusUpdateEvent();
     case AckedControllerInitialization =>
       val nodes = availableNodes
       log.info("start initialization --------cluster have " + nodes.length + " nodes---------")

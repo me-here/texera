@@ -25,6 +25,7 @@ public class WordCloudOpFinalExec implements OperatorExecutor {
 
     private List<Tuple> prevWordCloudTuples = new ArrayList<>();
     private HashMap<String, Integer> termFreqMap = new HashMap<>();
+    public static final int topNWords = 100;
 
     public static final Attribute multiplicityAttr = new Attribute("__multiplicity__", AttributeType.INTEGER);
     private static final Schema resultSchema = Schema.newBuilder().add(

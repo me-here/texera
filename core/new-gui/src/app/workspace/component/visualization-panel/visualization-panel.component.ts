@@ -18,13 +18,13 @@ import { assertType } from '../../../common/util/assert';
   styleUrls: ['./visualization-panel.component.scss']
 })
 export class VisualizationPanelComponent {
-  @Input() data: Object[];
-  @Input() chartType: ChartType | null;
 
+  @Input() data: Object[];
+  @Input() chartType: ChartType | undefined;
+  @Input() operatorID: string | undefined;
 
   constructor(private modal: NzModalService) {
     this.data = [];
-    this.chartType = null;
   }
 
   onClickVisualize(): void {
@@ -37,7 +37,8 @@ export class VisualizationPanelComponent {
         data: {
           table: this.data,
           chartType: this.chartType,
-        }
+        },
+        operatorID: this.operatorID
       }
     });
 

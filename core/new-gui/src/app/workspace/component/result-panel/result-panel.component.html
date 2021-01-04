@@ -38,8 +38,8 @@
     </div>
   </div>
 
-  <div [hidden]="!chartType">
-    <texera-visualization-panel [data]="currentResult" [chartType]="chartType"></texera-visualization-panel>
+  <div>
+    <texera-visualization-panel [operatorID]="resultPanelOperatorID" [data]="currentResult" [chartType]="chartType"></texera-visualization-panel>
   </div>
 
 </div>

@@ -57,6 +57,9 @@ export class ResultPanelComponent {
   public breakpointTriggerInfo: BreakpointTriggerInfo | undefined;
   public breakpointAction: boolean = false;
 
+  // the highlighted operator ID for display result table / visualization / breakpoint
+  public resultPanelOperatorID: string | undefined;
+
   constructor(
     private executeWorkflowService: ExecuteWorkflowService,
     private modalService: NzModalService,
@@ -84,7 +87,7 @@ export class ResultPanelComponent {
       if (event.current.state === ExecutionState.Failed) {
         this.resultPanelToggleService.openResultPanel();
       }
-      if (event.current.state === ExecutionState.Completed) {
+      if (event.current.state === ExecutionState.Completed || event.current.state === ExecutionState.Running) {
         const sinkOperators = this.workflowActionService.getTexeraGraph().getAllOperators()
           .filter(op => op.operatorType.toLowerCase().includes('sink'));
         if (sinkOperators.length > 0) {
@@ -107,12 +110,13 @@ export class ResultPanelComponent {
 
     const executionState = this.executeWorkflowService.getExecutionState();
     const highlightedOperators = this.workflowActionService.getJointGraphWrapper().getCurrentHighlightedOperatorIDs();
+    this.resultPanelOperatorID = highlightedOperators.length === 1 ? highlightedOperators[0] : undefined;
 
     if (executionState.state === ExecutionState.Failed) {
       this.errorMessages = this.executeWorkflowService.getErrorMessages();
     } else if (executionState.state === ExecutionState.BreakpointTriggered) {
       const breakpointTriggerInfo = this.executeWorkflowService.getBreakpointTriggerInfo();
-      if (highlightedOperators.length === 1 && highlightedOperators[0] === breakpointTriggerInfo?.operatorID) {
+      if (this.resultPanelOperatorID && this.resultPanelOperatorID === breakpointTriggerInfo?.operatorID) {
         this.breakpointTriggerInfo = breakpointTriggerInfo;
         this.breakpointAction = true;
         this.setupResultTable(breakpointTriggerInfo.report.map(r => r.faultedTuple.tuple).filter(t => t !== undefined));
@@ -128,16 +132,16 @@ export class ResultPanelComponent {
         this.errorMessages = errorsMessages;
       }
     } else if (executionState.state === ExecutionState.Completed) {
-      if (highlightedOperators.length === 1) {
-        const result = executionState.resultMap.get(highlightedOperators[0]);
+      if (this.resultPanelOperatorID) {
+        const result = executionState.resultMap.get(this.resultPanelOperatorID);
         if (result) {
           this.chartType = result.chartType;
           this.setupResultTable(result.table);
         }
       }
     } else if (executionState.state === ExecutionState.Paused) {
-      if (highlightedOperators.length === 1) {
-        const result = executionState.currentTuples[(highlightedOperators[0])]?.tuples;
+      if (this.resultPanelOperatorID) {
+        const result = executionState.currentTuples[this.resultPanelOperatorID]?.tuples;
         if (result) {
           const resultTable: string[][] = [];
           result.forEach(workerTuple => {

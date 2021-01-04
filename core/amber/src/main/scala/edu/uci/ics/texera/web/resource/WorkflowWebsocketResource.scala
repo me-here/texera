@@ -154,26 +154,26 @@ class WorkflowWebsocketResource {
         WorkflowWebsocketResource.sessionJobs.remove(session.getId)
       },
       workflowStatusUpdateListener = statusUpdate => {
-        val updateMutable = mutable.HashMap(statusUpdate.operatorStatistics.toSeq: _*)
-        val sinkID = texeraWorkflowCompiler.workflowInfo.operators
-          .find(p => p.isInstanceOf[SimpleSinkOpDesc])
-          .get
-          .operatorID
-        val sinkInputID = texeraWorkflowCompiler.workflowInfo.links
-          .find(link => link.destination == sinkID)
-          .get
-          .origin
-        if (updateMutable.contains(sinkInputID)) {
-          val inputStatistics = updateMutable(sinkInputID)
-          val sinkStatistics = PrincipalStatistics(
-            inputStatistics.operatorState,
-            inputStatistics.aggregatedOutputRowCount,
-            inputStatistics.aggregatedOutputRowCount,
-            updateMutable(sinkID).aggregatedOutputResults
-          )
-          updateMutable(sinkID) = sinkStatistics
-        }
-        send(session, WorkflowStatusUpdateEvent(updateMutable.toMap))
+//        val updateMutable = mutable.HashMap(statusUpdate.operatorStatistics.toSeq: _*)
+//        val sinkID = texeraWorkflowCompiler.workflowInfo.operators
+//          .find(p => p.isInstanceOf[SimpleSinkOpDesc])
+//          .get
+//          .operatorID
+//        val sinkInputID = texeraWorkflowCompiler.workflowInfo.links
+//          .find(link => link.destination == sinkID)
+//          .get
+//          .origin
+//        if (updateMutable.contains(sinkInputID)) {
+//          val inputStatistics = updateMutable(sinkInputID)
+//          val sinkStatistics = PrincipalStatistics(
+//            inputStatistics.operatorState,
+//            inputStatistics.aggregatedOutputRowCount,
+//            inputStatistics.aggregatedOutputRowCount,
+//            updateMutable(sinkID).aggregatedOutputResults
+//          )
+//          updateMutable(sinkID) = sinkStatistics
+//        }
+        send(session, WorkflowStatusUpdateEvent.apply(statusUpdate.operatorStatistics, texeraWorkflowCompiler))
       },
       modifyLogicCompletedListener = _ => {
         send(session, ModifyLogicCompletedEvent())
@@ -199,7 +199,7 @@ class WorkflowWebsocketResource {
     )
 
     val controllerActorRef = TexeraWebApplication.actorSystem.actorOf(
-      Controller.props(workflowTag, workflow, false, eventListener, 2000)
+      Controller.props(workflowTag, workflow, false, eventListener, 1000)
     )
     controllerActorRef ! AckedControllerInitialization
     texeraWorkflowCompiler.initializeBreakpoint(controllerActorRef)

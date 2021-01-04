@@ -190,8 +190,12 @@ class Processor(var operator: IOperatorExecutor, val tag: WorkerTag) extends Wor
   }
 
   override def getOutputRowCount(): Long = {
-    val (_, outputCount) = dataProcessor.collectStatistics()
-    outputCount
+    if (operator.isInstanceOf[ITupleSinkOperatorExecutor]) {
+      getInputRowCount()
+    } else {
+      val (_, outputCount) = dataProcessor.collectStatistics()
+      outputCount
+    }
   }
 
   override def getOutputResults(): Option[List[ITuple]] = {
