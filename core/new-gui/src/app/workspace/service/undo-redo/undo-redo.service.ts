@@ -8,7 +8,9 @@ import { Observable, Subject } from 'rxjs';
 2. See if there's a way to only store a previous version of an operator's properties
 after a certain period of time so we don't undo one character at a time */
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class UndoRedoService {
 
   // lets us know whether to listen to the JointJS observables, most of the time we don't
@@ -75,7 +77,7 @@ export class UndoRedoService {
       this.undoStack.push(command);
       this.setListenJointCommand(true);
       this.canRedoStream.next(this.canRedo());
-      console.log("service can redo", this.canRedo());
+      console.log('service can redo', this.canRedo());
     }
   }
 

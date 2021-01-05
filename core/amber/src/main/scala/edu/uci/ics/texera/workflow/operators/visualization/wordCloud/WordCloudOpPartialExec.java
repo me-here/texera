@@ -31,6 +31,9 @@ public class WordCloudOpPartialExec implements OperatorExecutor {
     private Analyzer luceneAnalyzer;
     private List<String> textList;
     public static final int BATCH_SIZE = 100; // for incremental computation
+    public static final int UPDATE_INTERVAL_MS = 500;
+
+    private long lastUpdated = 0;
 
     private static final Schema resultSchema = Schema.newBuilder().add(
             new Attribute("word", AttributeType.STRING),
@@ -92,7 +95,11 @@ public class WordCloudOpPartialExec implements OperatorExecutor {
     public Iterator<Tuple> processTexeraTuple(Either<Tuple, InputExhausted> tuple, int input) {
         if(tuple.isLeft()) {
             textList.add(tuple.left().get().getField(textColumn));
-            if (textList.size() >= BATCH_SIZE) {
+            boolean condition;
+            condition = textList.size() >= BATCH_SIZE;
+            condition = System.currentTimeMillis() - lastUpdated > UPDATE_INTERVAL_MS;
+            if (condition) {
+                lastUpdated = System.currentTimeMillis();
                 return computeResultIteratorForOneBatch();
             }
             else {
@@ -100,6 +107,7 @@ public class WordCloudOpPartialExec implements OperatorExecutor {
             }
         }
         else { // input exhausted
+            lastUpdated = System.currentTimeMillis();
             return computeResultIteratorForOneBatch();
         }
     }

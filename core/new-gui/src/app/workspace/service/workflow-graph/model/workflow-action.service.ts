@@ -54,7 +54,9 @@ type GroupInfo = {
  */
 
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class WorkflowActionService {
 
   private readonly texeraGraph: WorkflowGraph;

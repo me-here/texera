@@ -1,7 +1,8 @@
 package edu.uci.ics.texera.workflow.common
 
-import java.nio.file.{Files, Path, Paths}
+import com.fasterxml.jackson.annotation.JsonInclude.Include
 
+import java.nio.file.{Files, Path, Paths}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
@@ -9,7 +10,10 @@ object Utils {
 
   val AMBER_HOME_FOLDER_NAME = "amber";
 
-  final val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
+  final val objectMapper = new ObjectMapper()
+    .registerModule(DefaultScalaModule)
+    .setSerializationInclusion(Include.NON_NULL)
+    .setSerializationInclusion(Include.NON_ABSENT)
 
   /**
     * Gets the real path of the amber home directory by:

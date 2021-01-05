@@ -11,6 +11,7 @@ class LimitOpExec(val limit: Int) extends OperatorExecutor {
       tuple: Either[Tuple, InputExhausted],
       input: Int
   ): Iterator[Tuple] = {
+    Thread.sleep(100)
     tuple match {
       case Left(t) =>
         if (count < limit) {

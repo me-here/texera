@@ -48,7 +48,9 @@ export const EXECUTION_TIMEOUT = 3000;
  * @author Zuozhi Wang
  * @author Henry Chen
  */
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class ExecuteWorkflowService {
 
   private currentState: ExecutionStateInfo = { state: ExecutionState.Uninitialized };

@@ -23,7 +23,9 @@ export type Validation = { isValid: true } | ValidationError;
  *
  * @author Angela Wang
  */
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class ValidationWorkflowService {
 
   public static readonly VALIDATION_OPERATOR_INPUT_MESSAGE = 'inputs';

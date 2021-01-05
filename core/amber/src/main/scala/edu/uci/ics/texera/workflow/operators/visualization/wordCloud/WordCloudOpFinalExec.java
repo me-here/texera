@@ -12,6 +12,7 @@ import scala.collection.JavaConverters;
 import scala.util.Either;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Merge word count maps into a single map (termFreqMap), calculate the size of each token based on its count, and
@@ -25,17 +26,20 @@ public class WordCloudOpFinalExec implements OperatorExecutor {
 
     private List<Tuple> prevWordCloudTuples = new ArrayList<>();
     private HashMap<String, Integer> termFreqMap = new HashMap<>();
-    public static final int topNWords = 100;
+    public static final int topNWords = 50;
 
     public static final Attribute multiplicityAttr = new Attribute("__multiplicity__", AttributeType.INTEGER);
     private static final Schema resultSchema = Schema.newBuilder().add(
             new Attribute("word", AttributeType.STRING),
-            new Attribute("size", AttributeType.INTEGER)
+            new Attribute("count", AttributeType.INTEGER)
     ).build();
 
     private int counter = 0;
 
-    private static final int BATCH_SIZE = 1000;
+    public static final int BATCH_SIZE = 200;
+    public static final int UPDATE_INTERVAL_MS = 500;
+
+    private long lastUpdated = 0;
 
     @Override
     public void open() {
@@ -56,22 +60,27 @@ public class WordCloudOpFinalExec implements OperatorExecutor {
         double minValue = Double.MAX_VALUE;
         double maxValue = Double.MIN_VALUE;
 
-        for (Map.Entry<String, Integer> e : termFreqMap.entrySet()) {
+        List<Map.Entry<String, Integer>> topNWordFreqs = termFreqMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(topNWords).collect(Collectors.toList());
+
+        for (Map.Entry<String, Integer> e : topNWordFreqs) {
             int frequency = e.getValue();
             minValue = Math.min(minValue, frequency);
             maxValue = Math.max(maxValue, frequency);
         }
+
+
         // normalize the font size for wordcloud js
         // https://github.com/timdream/wordcloud2.js/issues/53
         List<Tuple> termFreqTuples = new ArrayList<>();
-        for (Map.Entry<String, Integer> e : termFreqMap.entrySet()) {
+        for (Map.Entry<String, Integer> e : topNWordFreqs) {
+//            double freqToMin = e.getValue() - minValue;
+//            double intervalMax = maxValue - minValue;
+
             termFreqTuples.add(Tuple.newBuilder().add(
                     resultSchema,
-                    Arrays.asList(
-                            e.getKey(),
-                            (int) ((e.getValue() - minValue) / (maxValue - minValue) *
-                                    (this.MAX_FONT_SIZE - this.MIN_FONT_SIZE) + this.MIN_FONT_SIZE)
-                    )
+                    Arrays.asList(e.getKey(), e.getValue())
             ).build());
         }
         return termFreqTuples;
@@ -102,11 +111,16 @@ public class WordCloudOpFinalExec implements OperatorExecutor {
            termFreqMap.put(term, termFreqMap.get(term)==null ? frequency : termFreqMap.get(term) + frequency);
 
            counter++;
-           if (counter == BATCH_SIZE) {
+           boolean condition;
+           condition = counter == BATCH_SIZE;
+           condition = System.currentTimeMillis() - lastUpdated > UPDATE_INTERVAL_MS;
+           if (condition) {
+               counter = 0;
+               lastUpdated = System.currentTimeMillis();
+
                List<Tuple> normalizedWordCloudTuples = normalizeWordCloudTuples();
                List<Tuple> results = calculateResults(normalizedWordCloudTuples);
                prevWordCloudTuples = normalizedWordCloudTuples;
-               counter = 0;
                return JavaConverters.asScalaIterator(results.iterator());
            } else {
                return JavaConverters.asScalaIterator(Iterators.emptyIterator());
@@ -118,6 +132,7 @@ public class WordCloudOpFinalExec implements OperatorExecutor {
                 List<Tuple> results = calculateResults(normalizedWordCloudTuples);
                 prevWordCloudTuples = normalizedWordCloudTuples;
                 counter = 0;
+                lastUpdated = System.currentTimeMillis();
                 return JavaConverters.asScalaIterator(results.iterator());
             } else {
                 return JavaConverters.asScalaIterator(Iterators.emptyIterator());

@@ -1,11 +1,12 @@
 import { Component, Input, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import * as c3 from 'c3';
 import { PrimitiveArray } from 'c3';
-import { ChartType, WordCloudTuple, DialogData } from '../../types/visualization.interface';
+import { ChartType, WordCloudTuple } from '../../types/visualization.interface';
 import * as d3 from 'd3';
 import * as cloud from 'd3-cloud';
 import { WorkflowStatusService } from '../../service/workflow-status/workflow-status.service';
 import { Subscription } from 'rxjs';
+import { ResultObject } from '../../types/execute-workflow.interface';
 
 
 /**
@@ -25,16 +26,18 @@ export class VisualizationPanelContentComponent implements OnInit, AfterViewInit
   public static readonly CHART_ID = '#texera-result-chart-content';
   public static readonly WORD_CLOUD_ID = 'texera-word-cloud';
   public static readonly WIDTH = 1000;
-  public static readonly HEIGHT = 800;
+  public static readonly HEIGHT = 700;
 
-  @Input()
-  public data: DialogData | undefined;
   @Input()
   public operatorID: string | undefined;
 
+  private chartType: string | undefined;
   private columns: string[] = [];
+  private data: object[] = [];
 
   private subscription: Subscription | undefined;
+
+  private wordCloudElement: d3.Selection<SVGGElement, unknown, HTMLElement, any> | undefined;
 
   constructor(
     private workflowStatusService: WorkflowStatusService
@@ -42,17 +45,65 @@ export class VisualizationPanelContentComponent implements OnInit, AfterViewInit
   }
 
   ngOnInit() {
-    if (! this.data) {
-      return;
-    }
-    this.columns = Object.keys(this.data.table[0]).filter(x => x !== '_id');
   }
 
   ngAfterViewInit() {
-    if (! this.data) {
+    if (!this.operatorID) {
       return;
     }
-    switch (this.data.chartType) {
+
+    const currentResult: ResultObject | undefined = this.workflowStatusService.getCurrentResult()[this.operatorID];
+    if (!currentResult || !currentResult.chartType) {
+      return;
+    }
+    this.chartType = currentResult.chartType;
+    this.data = currentResult.table as object[];
+    this.columns = Object.keys(currentResult.table).filter(x => x !== '_id');
+
+    if (this.chartType === ChartType.WORD_CLOUD) {
+      this.wordCloudElement =
+        d3.select(`#${VisualizationPanelContentComponent.WORD_CLOUD_ID}`)
+              .append('svg')
+      .attr('width', VisualizationPanelContentComponent.WIDTH)
+      .attr('height', VisualizationPanelContentComponent.HEIGHT)
+      .append('g')
+      .attr('transform',
+        'translate(' + VisualizationPanelContentComponent.WIDTH / 2 + ',' + VisualizationPanelContentComponent.HEIGHT / 2 + ')')
+        ;
+
+    }
+
+    this.drawChart();
+
+    this.subscription = this.workflowStatusService.getResultUpdateStream().auditTime(2000).subscribe(update => {
+      if (!this.operatorID) {
+        return;
+      }
+      const resultUpdate: ResultObject | undefined = this.workflowStatusService.getCurrentResult()[this.operatorID];
+      if (!resultUpdate || !resultUpdate.chartType) {
+        return;
+      }
+      this.chartType = resultUpdate.chartType;
+      this.data = resultUpdate.table as object[];
+      this.columns = Object.keys(resultUpdate.table).filter(x => x !== '_id');
+
+      console.log('word cloud: drawing');
+      this.drawChart();
+    });
+
+  }
+
+  ngOnDestroy() {
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
+  }
+
+  drawChart() {
+    if (!this.chartType) {
+      return;
+    }
+    switch (this.chartType) {
       // correspond to WordCloudSink.java
       case ChartType.WORD_CLOUD: this.onClickGenerateWordCloud(); break;
       // correspond to TexeraBarChart.java
@@ -65,95 +116,74 @@ export class VisualizationPanelContentComponent implements OnInit, AfterViewInit
       case ChartType.LINE:
       case ChartType.SPLINE: this.onClickGenerateChart(); break;
     }
-
-    this.subscription = this.workflowStatusService.getStatusUpdateStream().subscribe(update => {
-      if (! this.operatorID) {
-        return;
-      }
-      const operatorUpdate = update[this.operatorID];
-      if (! operatorUpdate || ! operatorUpdate.aggregatedOutputResults) {
-        return;
-      }
-      const table = operatorUpdate.aggregatedOutputResults.table;
-      const chartType = operatorUpdate.aggregatedOutputResults.chartType;
-      if (! chartType) {
-        return;
-      }
-      this.data = {
-        table:  table as any,
-        chartType:  chartType
-      };
-      this.onClickGenerateChart();
-    });
-
-  }
-
-  ngOnDestroy() {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
   }
 
   onClickGenerateWordCloud() {
-    if (! this.data) {
+    if (!this.data) {
       return;
     }
-    const dataToDisplay: object[] = [];
-    const wordCloudTuples = this.data.table as ReadonlyArray<WordCloudTuple>;
 
-    for (const tuple of wordCloudTuples) {
-      dataToDisplay.push([tuple.word, tuple.size]);
-    }
-
-    const wordCloudElement =
-    d3.select(`#${VisualizationPanelContentComponent.WORD_CLOUD_ID}`)
-      .append('svg')
-      .attr('width', VisualizationPanelContentComponent.WIDTH)
-      .attr('height', VisualizationPanelContentComponent.HEIGHT)
-      .append('g')
-        .attr('transform', 'translate(' + 500 / 2 + ',' + 500 / 2 + ')');
+    const wordCloudTuples = this.data as ReadonlyArray<WordCloudTuple>;
 
     const drawWordCloud = (words: cloud.Word[]) => {
+      if (!this.wordCloudElement) {
+        return;
+      }
 
-      const wordCloudData = wordCloudElement.selectAll('g text').data(words);
+      const d3Fill = d3.scaleOrdinal(d3.schemeCategory10);
+
+      const wordCloudData = this.wordCloudElement.selectAll<d3.BaseType, cloud.Word>('g text').data(words, d => d.text ?? '');
 
       wordCloudData.enter()
         .append('text')
         .style('font-size', (d) => d.size ?? 0 + 'px')
-        .style('font-family', 'Impact')
+        .style('fill', d => d3Fill(d.text ?? ''))
+        .attr('font-family', 'Impact')
         .attr('text-anchor', 'middle')
         .attr('transform', (d) => 'translate(' + [d.x, d.y] + ')rotate(' + d.rotate + ')')
-        .text((d: any) => d.text);
+        // this text() call must be at the end or it won't work
+        .text(d => d.text ?? '')
+        ;
 
       // Entering and existing words
       wordCloudData.transition()
         .duration(600)
+        .attr('font-family', 'Impact')
         .style('font-size', d => d.size + 'px')
-        .attr('transform', (d) => 'translate(' + [d.x, d.y] + ')rotate(' + d.rotate + ')')
+        .attr('transform', d => 'translate(' + [d.x, d.y] + ')rotate(' + d.rotate + ')')
         .style('fill-opacity', 1);
 
-    // Exiting words
-    wordCloudData.exit()
+      // Exiting words
+      wordCloudData.exit()
         .transition()
-            .duration(100)
-            .style('fill-opacity', 1e-6)
-            .attr('font-size', 1)
-            .remove();
+        .duration(200)
+        .attr('font-family', 'Impact')
+        .style('fill-opacity', 1e-6)
+        .attr('font-size', 1)
+        .remove();
     };
 
-    console.log(wordCloudTuples);
+    const minCount = Math.min(...wordCloudTuples.map(t => t.count));
+    const maxCount = Math.max(...wordCloudTuples.map(t => t.count));
+
+    const minFontSize = 50;
+    const maxFontSize = 150;
+
+    const d3Scale = d3.scaleLinear();
+    // const d3Scale = d3.scaleSqrt();
+    // const d3Scale = d3.scaleLog();
+
+    d3Scale.domain([minCount, maxCount]).range([minFontSize, maxFontSize]);
+
     const layout = cloud()
       .size([VisualizationPanelContentComponent.WIDTH, VisualizationPanelContentComponent.HEIGHT])
-      .words(wordCloudTuples.map(t => ({text: t.word, size: t.size})))
-      // .words([
-      //   'Hello', 'world', 'normally', 'you', 'want', 'more', 'words',
-      //   'than', 'this'].map(function(d) {
-      //   return {text: d, size: 10 + Math.random() * 90, test: 'haha'};
-      // }))
+      .words(wordCloudTuples.map(t => ({ text: t.word, size: d3Scale(t.count) })))
+      .text(d => d.text ?? '')
       .padding(5)
       .rotate(() => 0)
       .font('Impact')
       .fontSize(d => d.size ?? 0)
+      .random(() => 1)
       .on('end', drawWordCloud);
 
     layout.start();
@@ -161,7 +191,7 @@ export class VisualizationPanelContentComponent implements OnInit, AfterViewInit
   }
 
   onClickGenerateChart() {
-    if (! this.data) {
+    if (!this.data) {
       return;
     }
 
@@ -173,7 +203,7 @@ export class VisualizationPanelContentComponent implements OnInit, AfterViewInit
 
     const columnCount = this.columns.length;
 
-    for (const row of this.data.table) {
+    for (const row of this.data) {
       const items: [string, ...PrimitiveArray] = [Object.values(row)[0]];
       for (let i = 1; i < columnCount; i++) {
         items.push(Number((Object.values(row)[i])));
@@ -188,7 +218,7 @@ export class VisualizationPanelContentComponent implements OnInit, AfterViewInit
       },
       data: {
         columns: dataToDisplay,
-        type: this.data.chartType as c3.ChartType
+        type: this.chartType as c3.ChartType
       },
       axis: {
         x: {
