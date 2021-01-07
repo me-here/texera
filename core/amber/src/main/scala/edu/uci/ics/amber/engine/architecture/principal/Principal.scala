@@ -90,11 +90,15 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 object Principal {
-  def props(metadata: OpExecConfig): Props = Props(new Principal(metadata))
+  def props(metadata: OpExecConfig, parentSenderActorRef: ActorRef): Props =
+    Props(new Principal(metadata, parentSenderActorRef))
 }
 
-class Principal(val metadata: OpExecConfig)
-    extends WorkflowActor(WorkerActorVirtualIdentity(metadata.tag.getGlobalIdentity)) {
+class Principal(val metadata: OpExecConfig, val parentSenderActorRef: ActorRef)
+    extends WorkflowActor(
+      WorkerActorVirtualIdentity(metadata.tag.getGlobalIdentity),
+      parentSenderActorRef
+    ) {
   implicit val ec: ExecutionContext = context.dispatcher
   implicit val timeout: Timeout = 5.seconds
   implicit val logAdapter: LoggingAdapter = log
@@ -211,7 +215,7 @@ class Principal(val metadata: OpExecConfig)
   }
 
   final def ready: Receive = {
-    routeActorRefRelatedMessages orElse [Any, Unit] {
+    disallowActorRefRelatedMessages orElse [Any, Unit] {
       case RecoveryPacket(amberTag, seq1, seq2) =>
         receivedRecoveryInformation(amberTag) = (seq1, seq2)
       case Start =>
@@ -420,7 +424,7 @@ class Principal(val metadata: OpExecConfig)
 //    Set(WorkerState.Completed, WorkerState.Paused, WorkerState.LocalBreakpointTriggered)
 
   final def pausing: Receive = {
-    routeActorRefRelatedMessages orElse [Any, Unit] {
+    disallowActorRefRelatedMessages orElse [Any, Unit] {
       case RecoveryPacket(amberTag, seq1, seq2) =>
         receivedRecoveryInformation(amberTag) = (seq1, seq2)
       case EnforceStateCheck =>
@@ -486,7 +490,7 @@ class Principal(val metadata: OpExecConfig)
   }
 
   final def collectingBreakpoints: Receive = {
-    routeActorRefRelatedMessages orElse [Any, Unit] {
+    disallowActorRefRelatedMessages orElse [Any, Unit] {
       case RecoveryPacket(amberTag, seq1, seq2) =>
         receivedRecoveryInformation(amberTag) = (seq1, seq2)
       case EnforceStateCheck =>
@@ -575,7 +579,7 @@ class Principal(val metadata: OpExecConfig)
 //    Set(WorkerState.Running, WorkerState.Ready, WorkerState.Completed)
 
   final def resuming: Receive = {
-    routeActorRefRelatedMessages orElse [Any, Unit] {
+    disallowActorRefRelatedMessages orElse [Any, Unit] {
       case RecoveryPacket(amberTag, seq1, seq2) =>
         receivedRecoveryInformation(amberTag) = (seq1, seq2)
       case EnforceStateCheck =>
@@ -627,7 +631,7 @@ class Principal(val metadata: OpExecConfig)
   }
 
   final def paused: Receive = {
-    routeActorRefRelatedMessages orElse [Any, Unit] {
+    disallowActorRefRelatedMessages orElse [Any, Unit] {
       case KillAndRecover =>
         workerLayers.foreach { x =>
           x.layer(0) ! Reset(x.getFirstMetadata, Seq(receivedRecoveryInformation(x.tagForFirst)))
@@ -678,7 +682,7 @@ class Principal(val metadata: OpExecConfig)
   }
 
   final def completed: Receive = {
-    routeActorRefRelatedMessages orElse [Any, Unit] {
+    disallowActorRefRelatedMessages orElse [Any, Unit] {
       case KillAndRecover =>
         workerLayers.foreach { x =>
           if (receivedRecoveryInformation.contains(x.tagForFirst)) {
@@ -733,7 +737,7 @@ class Principal(val metadata: OpExecConfig)
   }
 
   final override def receive: Receive = {
-    routeActorRefRelatedMessages orElse [Any, Unit] {
+    disallowActorRefRelatedMessages orElse [Any, Unit] {
       case AckedPrincipalInitialization(prev: Array[(OpExecConfig, ActorLayer)]) =>
       //      workerLayers = metadata.topology.layers
       //      workerEdges = metadata.topology.links

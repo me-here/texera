@@ -1,6 +1,6 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
-import akka.actor.{Actor, ActorLogging, Stash}
+import akka.actor.{Actor, ActorLogging, ActorRef, Stash}
 import akka.event.LoggingAdapter
 import akka.util.Timeout
 import com.softwaremill.macwire.wire
@@ -8,9 +8,9 @@ import edu.uci.ics.amber.engine.architecture.breakpoint.FaultedTuple
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.messaginglayer.ControlInputPort.WorkflowControlMessage
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkSenderActor.{
+  GetActorRef,
   NetworkAck,
   NetworkMessage,
-  QueryActorRef,
   RegisterActorRef
 }
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{
@@ -37,7 +37,8 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-abstract class WorkerBase(identifier: ActorVirtualIdentity) extends WorkflowActor(identifier) {
+abstract class WorkerBase(identifier: ActorVirtualIdentity, parentSenderActorRef: ActorRef)
+    extends WorkflowActor(identifier, parentSenderActorRef) {
   implicit val ec: ExecutionContext = context.dispatcher
   implicit val timeout: Timeout = 5.seconds
   implicit val logAdapter: LoggingAdapter = log
@@ -275,7 +276,7 @@ abstract class WorkerBase(identifier: ActorVirtualIdentity) extends WorkflowActo
   }
 
   override def receive: Receive = {
-    routeActorRefRelatedMessages orElse
+    disallowActorRefRelatedMessages orElse
       processNewControlMessages orElse [Any, Unit] {
       case AckedWorkerInitialization(recoveryInformation) =>
         onInitialization(recoveryInformation)
@@ -294,7 +295,7 @@ abstract class WorkerBase(identifier: ActorVirtualIdentity) extends WorkflowActo
 
   def ready: Receive =
     allowStashOrReleaseOutput orElse
-      routeActorRefRelatedMessages orElse
+      disallowActorRefRelatedMessages orElse
       processNewControlMessages orElse
       allowUpdateOutputLinking orElse //update linking
       allowModifyBreakpoints orElse //modify break points
@@ -318,7 +319,7 @@ abstract class WorkerBase(identifier: ActorVirtualIdentity) extends WorkflowActo
 
   def pausedBeforeStart: Receive =
     allowReset orElse allowStashOrReleaseOutput orElse
-      routeActorRefRelatedMessages orElse
+      disallowActorRefRelatedMessages orElse
       processNewControlMessages orElse
       allowUpdateOutputLinking orElse
       allowModifyBreakpoints orElse
@@ -348,7 +349,7 @@ abstract class WorkerBase(identifier: ActorVirtualIdentity) extends WorkflowActo
     allowReset orElse
       allowStashOrReleaseOutput orElse
       processNewControlMessages orElse
-      routeActorRefRelatedMessages orElse
+      disallowActorRefRelatedMessages orElse
       allowUpdateOutputLinking orElse
       allowModifyBreakpoints orElse
       disallowQueryTriggeredBreakpoints orElse [Any, Unit] {
@@ -439,7 +440,7 @@ abstract class WorkerBase(identifier: ActorVirtualIdentity) extends WorkflowActo
   def breakpointTriggered: Receive =
     allowStashOrReleaseOutput orElse
       processNewControlMessages orElse
-      routeActorRefRelatedMessages orElse
+      disallowActorRefRelatedMessages orElse
       allowUpdateOutputLinking orElse
       allowQueryBreakpoint orElse
       allowQueryTriggeredBreakpoints orElse [Any, Unit] {
@@ -476,7 +477,7 @@ abstract class WorkerBase(identifier: ActorVirtualIdentity) extends WorkflowActo
 
   def completed: Receive =
     allowReset orElse allowStashOrReleaseOutput orElse
-      routeActorRefRelatedMessages orElse
+      disallowActorRefRelatedMessages orElse
       disallowUpdateOutputLinking orElse
       processNewControlMessages orElse
       allowModifyBreakpoints orElse

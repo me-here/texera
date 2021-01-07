@@ -1,6 +1,6 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
-import akka.actor.Props
+import akka.actor.{ActorRef, Props}
 import edu.uci.ics.amber.engine.architecture.breakpoint.FaultedTuple
 import edu.uci.ics.amber.engine.architecture.messaginglayer.DataInputPort.WorkflowDataMessage
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkSenderActor.{
@@ -32,12 +32,15 @@ import scala.annotation.elidable._
 import scala.collection.mutable
 
 object Processor {
-  def props(processor: IOperatorExecutor, tag: WorkerTag): Props =
-    Props(new Processor(processor, tag))
+  def props(processor: IOperatorExecutor, tag: WorkerTag, parentSenderActorRef: ActorRef): Props =
+    Props(new Processor(processor, tag, parentSenderActorRef))
 }
 
-class Processor(var operator: IOperatorExecutor, val tag: WorkerTag)
-    extends WorkerBase(WorkerActorVirtualIdentity(tag.getGlobalIdentity)) {
+class Processor(
+    var operator: IOperatorExecutor,
+    val tag: WorkerTag,
+    val parentSenderActorRef: ActorRef
+) extends WorkerBase(WorkerActorVirtualIdentity(tag.getGlobalIdentity), parentSenderActorRef) {
   var savedModifyLogic: mutable.Queue[(Long, Long, OpExecConfig)] =
     new mutable.Queue[(Long, Long, OpExecConfig)]()
 

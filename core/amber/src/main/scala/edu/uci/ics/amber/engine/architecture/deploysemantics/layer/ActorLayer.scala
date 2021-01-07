@@ -27,7 +27,11 @@ abstract class ActorLayer(
 
   def isBuilt: Boolean = layer != null
 
-  def build(prev: Array[(OpExecConfig, ActorLayer)], all: Array[Address])(implicit
+  def build(
+      prev: Array[(OpExecConfig, ActorLayer)],
+      all: Array[Address],
+      parentSenderActorRef: ActorRef
+  )(implicit
       context: ActorContext
   ): Unit
 

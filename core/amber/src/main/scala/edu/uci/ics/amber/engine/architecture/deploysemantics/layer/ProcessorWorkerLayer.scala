@@ -34,7 +34,11 @@ class ProcessorWorkerLayer(
     res
   }
 
-  def build(prev: Array[(OpExecConfig, ActorLayer)], all: Array[Address])(implicit
+  def build(
+      prev: Array[(OpExecConfig, ActorLayer)],
+      all: Array[Address],
+      parentSenderActorRef: ActorRef
+  )(implicit
       context: ActorContext
   ): Unit = {
     deployStrategy.initialize(deploymentFilter.filter(prev, all, context.self.path.address))
@@ -49,8 +53,11 @@ class ProcessorWorkerLayer(
         tagForFirst = workerTag
         deployForFirst = d
       }
-      layer(i) =
-        context.actorOf(Processor.props(m, workerTag).withDeploy(Deploy(scope = RemoteScope(d))))
+      layer(i) = context.actorOf(
+        Processor
+          .props(m, workerTag, parentSenderActorRef)
+          .withDeploy(Deploy(scope = RemoteScope(d)))
+      )
       identifiers(i) = WorkerActorVirtualIdentity(workerTag.getGlobalIdentity)
     }
   }

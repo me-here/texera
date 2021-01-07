@@ -1,6 +1,6 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
-import akka.actor.{ActorLogging, Props, Stash}
+import akka.actor.{ActorLogging, ActorRef, Props, Stash}
 import edu.uci.ics.amber.engine.architecture.breakpoint.FaultedTuple
 import edu.uci.ics.amber.engine.architecture.worker.neo.PauseManager
 import edu.uci.ics.amber.engine.architecture.worker.neo.WorkerInternalQueue.{
@@ -26,12 +26,19 @@ import scala.annotation.elidable
 import scala.annotation.elidable.INFO
 
 object Generator {
-  def props(producer: ISourceOperatorExecutor, tag: WorkerTag): Props =
-    Props(new Generator(producer, tag))
+  def props(
+      producer: ISourceOperatorExecutor,
+      tag: WorkerTag,
+      parentSenderActorRef: ActorRef
+  ): Props =
+    Props(new Generator(producer, tag, parentSenderActorRef))
 }
 
-class Generator(var operator: IOperatorExecutor, val tag: WorkerTag)
-    extends WorkerBase(WorkerActorVirtualIdentity(tag.getGlobalIdentity))
+class Generator(
+    var operator: IOperatorExecutor,
+    val tag: WorkerTag,
+    val parentSenderActorRef: ActorRef
+) extends WorkerBase(WorkerActorVirtualIdentity(tag.getGlobalIdentity), parentSenderActorRef)
     with ActorLogging
     with Stash {
 

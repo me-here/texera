@@ -34,7 +34,11 @@ class GeneratorWorkerLayer(
     res
   }
 
-  def build(prev: Array[(OpExecConfig, ActorLayer)], all: Array[Address])(implicit
+  def build(
+      prev: Array[(OpExecConfig, ActorLayer)],
+      all: Array[Address],
+      parentSenderActorRef: ActorRef
+  )(implicit
       context: ActorContext
   ): Unit = {
     deployStrategy.initialize(deploymentFilter.filter(prev, all, context.self.path.address))
@@ -51,8 +55,11 @@ class GeneratorWorkerLayer(
           tagForFirst = workerTag
           deployForFirst = d
         }
-        layer(i) =
-          context.actorOf(Generator.props(m, workerTag).withDeploy(Deploy(scope = RemoteScope(d))))
+        layer(i) = context.actorOf(
+          Generator
+            .props(m, workerTag, parentSenderActorRef)
+            .withDeploy(Deploy(scope = RemoteScope(d)))
+        )
         identifiers(i) = WorkerActorVirtualIdentity(workerTag.getGlobalIdentity)
         idx += 1
       } catch {
