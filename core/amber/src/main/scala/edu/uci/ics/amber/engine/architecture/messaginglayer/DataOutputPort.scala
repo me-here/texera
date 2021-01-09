@@ -4,8 +4,8 @@ import java.util.concurrent.atomic.AtomicLong
 
 import akka.actor.ActorRef
 import edu.uci.ics.amber.engine.architecture.messaginglayer.DataInputPort.WorkflowDataMessage
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkSenderActor.{
-  NetworkSenderActorRef,
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  NetworkCommunicationActorRef,
   SendRequest
 }
 import edu.uci.ics.amber.engine.common.ambermessage.neo.DataPayload
@@ -17,7 +17,7 @@ import scala.collection.mutable
   * The internal logic can send data messages to other actor without knowing
   * where the actor is and without determining the sequence number.
   */
-class DataOutputPort(selfID: ActorVirtualIdentity, networkSenderActor: NetworkSenderActorRef) {
+class DataOutputPort(selfID: ActorVirtualIdentity, networkSenderActor: NetworkCommunicationActorRef) {
 
   private val idToSequenceNums = new mutable.AnyRefMap[ActorVirtualIdentity, AtomicLong]()
 

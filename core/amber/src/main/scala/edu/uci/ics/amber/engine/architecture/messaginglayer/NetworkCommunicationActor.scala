@@ -2,7 +2,7 @@ package edu.uci.ics.amber.engine.architecture.messaginglayer
 
 import akka.actor.{Actor, ActorRef, Props, Stash}
 import com.typesafe.scalalogging.LazyLogging
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkSenderActor.{
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
   GetActorRef,
   MessageBecomesDeadLetter,
   NetworkAck,
@@ -20,14 +20,14 @@ import edu.uci.ics.amber.error.WorkflowRuntimeError
 import scala.collection.mutable
 import scala.concurrent.duration._
 
-object NetworkSenderActor {
+object NetworkCommunicationActor {
 
   /** to distinguish between main actor self ref and
     * network sender actor
     * TODO: remove this after using Akka Typed APIs
     * @param ref
     */
-  case class NetworkSenderActorRef(ref: ActorRef) {
+  case class NetworkCommunicationActorRef(ref: ActorRef) {
     def !(message: Any)(implicit sender: ActorRef = Actor.noSender): Unit = {
       ref ! message
     }
@@ -57,14 +57,14 @@ object NetworkSenderActor {
   final case class MessageBecomesDeadLetter(message: NetworkMessage)
 
   def props(parentSender: ActorRef): Props =
-    Props(new NetworkSenderActor(parentSender))
+    Props(new NetworkCommunicationActor(parentSender))
 }
 
 /** This actor handles the transformation from identifier to actorRef
   * and also sends message to other actors. This is the most outer part of
   * the messaging layer.
   */
-class NetworkSenderActor(parentSender: ActorRef) extends Actor with LazyLogging {
+class NetworkCommunicationActor(parentSender: ActorRef) extends Actor with LazyLogging {
 
   val idToActorRefs = new mutable.HashMap[ActorVirtualIdentity, ActorRef]()
   val idToCongestionControls = new mutable.HashMap[ActorVirtualIdentity, CongestionControl]()

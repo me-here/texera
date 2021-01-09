@@ -2,15 +2,15 @@ package edu.uci.ics.amber.engine.architecture.common
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Stash}
 import com.softwaremill.macwire.wire
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkSenderActor.{
-  NetworkSenderActorRef,
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  NetworkCommunicationActorRef,
   GetActorRef,
   RegisterActorRef
 }
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{
   ControlInputPort,
   ControlOutputPort,
-  NetworkSenderActor
+  NetworkCommunicationActor
 }
 import edu.uci.ics.amber.engine.common.amberexception.WorkflowRuntimeException
 import edu.uci.ics.amber.engine.common.ambertag.neo.VirtualIdentity.ActorVirtualIdentity
@@ -21,8 +21,8 @@ abstract class WorkflowActor(identifier: ActorVirtualIdentity, parentSenderActor
     with ActorLogging
     with Stash {
 
-  val networkSenderActor: NetworkSenderActorRef = NetworkSenderActorRef(
-    context.actorOf(NetworkSenderActor.props(parentSenderActorRef))
+  val networkSenderActor: NetworkCommunicationActorRef = NetworkCommunicationActorRef(
+    context.actorOf(NetworkCommunicationActor.props(parentSenderActorRef))
   )
   lazy val controlInputPort: ControlInputPort = wire[ControlInputPort]
   lazy val controlOutputPort: ControlOutputPort = wire[ControlOutputPort]

@@ -111,8 +111,8 @@ import edu.uci.ics.amber.engine.common.ambermessage.WorkerMessage.{
   Reset
 }
 import edu.uci.ics.amber.error.WorkflowRuntimeError
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkSenderActor
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkSenderActor.RegisterActorRef
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.RegisterActorRef
 import edu.uci.ics.amber.engine.common.ambertag.neo.VirtualIdentity
 
 import collection.JavaConverters._
