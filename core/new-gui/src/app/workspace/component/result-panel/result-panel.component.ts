@@ -3,18 +3,13 @@ import { ExecuteWorkflowService } from './../../service/execute-workflow/execute
 import { Observable } from 'rxjs/Observable';
 
 import { NzModalRef, NzModalService } from 'ng-zorro-antd/modal';
-import { ExecutionResult, SuccessExecutionResult, ExecutionState, ExecutionStateInfo } from './../../types/execute-workflow.interface';
+import { ExecutionState } from './../../types/execute-workflow.interface';
 import { TableColumn, IndexableObject } from './../../types/result-table.interface';
 import { ResultPanelToggleService } from './../../service/result-panel-toggle/result-panel-toggle.service';
 import deepMap from 'deep-map';
-import { isEqual, repeat, range } from 'lodash';
-import { ResultObject } from '../../types/execute-workflow.interface';
+import { isEqual } from 'lodash';
 import { WorkflowActionService } from '../../service/workflow-graph/model/workflow-action.service';
 import { BreakpointTriggerInfo } from '../../types/workflow-common.interface';
-import { OperatorMetadata } from '../../types/operator-schema.interface';
-import { OperatorMetadataService } from '../../service/operator-metadata/operator-metadata.service';
-import { DynamicSchemaService } from '../../service/dynamic-schema/dynamic-schema.service';
-import { environment } from 'src/environments/environment';
 import { assertType } from 'src/app/common/util/assert';
 
 /**
@@ -163,6 +158,7 @@ export class ResultPanelComponent {
     this.currentDisplayColumns = undefined;
     this.currentResult = [];
 
+    this.resultPanelOperatorID = undefined;
     this.chartType = undefined;
     this.breakpointTriggerInfo = undefined;
     this.breakpointAction = false;
