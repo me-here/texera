@@ -9,8 +9,6 @@ import edu.uci.ics.texera.workflow.common.tuple.schema.Schema;
 import org.apache.curator.shaded.com.google.common.collect.Iterators;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.core.SimpleAnalyzer;
-import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import scala.collection.Iterator;

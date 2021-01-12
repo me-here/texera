@@ -9,6 +9,7 @@ import edu.uci.ics.texera.workflow.operators.visualization.VisualizationOperator
 
 import scala.collection.mutable
 
+<<<<<<< HEAD
 object OperatorResult {
   def apply(operatorID: String, table: List[ITuple], workflowCompiler: WorkflowCompiler): OperatorResult = {
     val tableKv = table.map(tuple => tuple.asInstanceOf[Tuple].asKeyValuePairJson())
@@ -23,12 +24,19 @@ object OperatorResult {
       case _                               => null
     }
 
-    OperatorResult(operatorID, tableKv, chartType)
+//    OperatorResult(operatorID, tableKv, chartType)
   }
 }
-case class OperatorResult(operatorID: String, table: List[ObjectNode], chartType: String)
+
+case class OperatorResult(
+    operatorID: String,
+    table: List[ObjectNode],
+    chartType: String,
+    totalRowCount: Int
+)
 
 object WorkflowCompletedEvent {
+  val defaultPageSize = 10
 
   // transform results in amber tuple format to the format accepted by frontend
   def apply(
@@ -37,7 +45,32 @@ object WorkflowCompletedEvent {
   ): WorkflowCompletedEvent = {
     val resultList = new mutable.MutableList[OperatorResult]
     workflowCompleted.result.foreach(pair => {
-      resultList += OperatorResult.apply(operatorID = pair._1, pair._2, workflowCompiler)
+//<<<<<<< HEAD
+//      resultList += OperatorResult.apply(operatorID = pair._1, pair._2, workflowCompiler)
+//=======
+//      val operatorID = pair._1
+//
+//      // add chartType to result
+//      val precedentOpID =
+//        workflowCompiler.workflowInfo.links.find(link => link.destination == operatorID).get.origin
+//      val precedentOp =
+//        workflowCompiler.workflowInfo.operators.find(op => op.operatorID == precedentOpID).get
+//      val chartType = precedentOp match {
+//        case operator: VisualizationOperator => operator.chartType()
+//        case _                               => null
+//      }
+//
+//      val table = precedentOp match {
+//        case _: VisualizationOperator =>
+//          pair._2.map(tuple => tuple.asInstanceOf[Tuple].asKeyValuePairJson())
+//        case _ =>
+//          pair._2
+//            .slice(0, defaultPageSize)
+//            .map(tuple => tuple.asInstanceOf[Tuple].asKeyValuePairJson())
+//      }
+//
+//      resultList += OperatorResult(operatorID, table, chartType, pair._2.length)
+//>>>>>>> 10dfc4dc95ac9362f3591f1d4e6dcee59b33de28
     })
     WorkflowCompletedEvent(resultList.toList)
   }

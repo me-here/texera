@@ -43,7 +43,8 @@ export interface LogicalPlan extends Readonly<{
 export interface ResultObject extends Readonly<{
   operatorID: string,
   table: ReadonlyArray<object | string[]>,
-  chartType: ChartType | undefined
+  chartType: ChartType | undefined,
+  totalRowCount: number
 }> {
 
 }
