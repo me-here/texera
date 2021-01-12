@@ -108,12 +108,12 @@ class WorkflowWorker(identifier: ActorVirtualIdentity, operator: IOperatorExecut
     outputCount
   }
 
-  def getResultTuples(): mutable.MutableList[ITuple] = {
+  def getResultTuples(): Option[List[ITuple]] = {
     this.operator match {
       case processor: ITupleSinkOperatorExecutor =>
-        mutable.MutableList(processor.getResultTuples(): _*)
+        Option.apply(processor.getResultTuples().toList)
       case _ =>
-        mutable.MutableList()
+        Option.empty
     }
   }
 
@@ -213,8 +213,9 @@ class WorkflowWorker(identifier: ActorVirtualIdentity, operator: IOperatorExecut
     case QueryState =>
       reportState()
     case QueryStatistics =>
+      val stat = WorkerStatistics(getOldWorkerState, getInputRowCount(), getOutputRowCount(), getResultTuples())
       sender ! ReportStatistics(
-        WorkerStatistics(getOldWorkerState, getInputRowCount(), getOutputRowCount())
+        stat
       )
     case QueryTriggeredBreakpoints =>
       val toReport = dataProcessor.breakpoints.filter(_.isTriggered)
@@ -238,7 +239,7 @@ class WorkflowWorker(identifier: ActorVirtualIdentity, operator: IOperatorExecut
         context.parent ! ReportState(WorkerState.LocalBreakpointTriggered)
       }
     case CollectSinkResults =>
-      sender ! WorkerMessage.ReportOutputResult(this.getResultTuples().toList)
+      sender ! WorkerMessage.ReportOutputResult(this.getResultTuples().getOrElse(List.empty))
     case AssignBreakpoint(bp) =>
       sender ! Ack
       dataProcessor.registerBreakpoint(bp)

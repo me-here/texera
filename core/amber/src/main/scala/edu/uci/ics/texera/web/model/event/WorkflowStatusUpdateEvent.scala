@@ -3,6 +3,7 @@ package edu.uci.ics.texera.web.model.event
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
 import edu.uci.ics.amber.engine.architecture.principal.PrincipalState.PrincipalState
 import edu.uci.ics.amber.engine.architecture.principal.{PrincipalStateType, PrincipalStatistics}
+import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler
 
 object OperatorStatistics {
@@ -16,7 +17,14 @@ object OperatorStatistics {
       principalStatistics.aggregatedInputRowCount,
       principalStatistics.aggregatedOutputRowCount,
       principalStatistics.aggregatedOutputResults
-        .map(r => OperatorResult.apply(operatorID, r, workflowCompiler))
+        .map(r =>
+          OperatorResult.apply(
+            operatorID,
+            r.map(t => t.asInstanceOf[Tuple].asKeyValuePairJson()),
+            OperatorResult.getChartType(operatorID, workflowCompiler),
+            r.size
+          )
+        )
     )
   }
 }
@@ -33,9 +41,7 @@ object WorkflowStatusUpdateEvent {
       workflowCompiler: WorkflowCompiler
   ): WorkflowStatusUpdateEvent = {
     WorkflowStatusUpdateEvent(
-      principalStatistics.map(e =>
-        (e._1, OperatorStatistics.apply(e._1, e._2, workflowCompiler))
-      )
+      principalStatistics.map(e => (e._1, OperatorStatistics.apply(e._1, e._2, workflowCompiler)))
     )
   }
 }
