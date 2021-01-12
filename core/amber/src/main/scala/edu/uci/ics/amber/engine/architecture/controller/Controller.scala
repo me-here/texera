@@ -332,18 +332,33 @@ class Controller(
       .sum
   }
 
+  // the output count is the sum of the output counts of the last-layer actors
+  private def aggregateWorkerOutputResults(opIdentifier: OperatorIdentifier): Option[List[ITuple]] = {
+    val allEmpty = operatorToWorkerStatisticsMap(opIdentifier)
+      .filter(e => operatorToWorkerLayers(opIdentifier).last.layer.contains(e._1))
+      .forall(e => e._2.outputResults.isEmpty)
+    if (allEmpty) {
+      Option.empty
+    } else {
+      Option.apply(operatorToWorkerStatisticsMap(opIdentifier)
+        .filter(e => operatorToWorkerLayers(opIdentifier).last.layer.contains(e._1))
+        .map(e => e._2.outputResults)
+        .filter(r => r.isDefined).flatMap(r => r.get).toList)
+    }
+  }
+
   def triggerStatusUpdateEvent(): Unit = {
     if (
       this.eventListener.workflowStatusUpdateListener != null
       && this.operatorToWorkerStatisticsMap.nonEmpty
     ) {
-      var workflowStatus = new mutable.HashMap[String, PrincipalStatistics]()
+      val workflowStatus = new mutable.HashMap[String, PrincipalStatistics]()
       operatorStateMap.keys.foreach(opIdentifier => {
-
         workflowStatus(opIdentifier.operator) = PrincipalStatistics(
           operatorStateMap(opIdentifier),
           aggregateWorkerInputRowCount(opIdentifier),
-          aggregateWorkerOutputRowCount(opIdentifier)
+          aggregateWorkerOutputRowCount(opIdentifier),
+          aggregateWorkerOutputResults(opIdentifier),
         )
       })
       this.eventListener.workflowStatusUpdateListener
@@ -442,7 +457,7 @@ class Controller(
     operatorToWorkerStatisticsMap(startOp) = mutable.AnyRefMap(
       operatorToWorkerLayers(startOp)
         .flatMap(x => x.layer)
-        .map((_, WorkerStatistics(WorkerState.Uninitialized, 0, 0)))
+        .map((_, WorkerStatistics(WorkerState.Uninitialized, 0, 0, Option.empty)))
         .toMap
         .toSeq: _*
     )
