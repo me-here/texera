@@ -166,9 +166,10 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
         })
     })
 
+    // TODO: temporary solution for operators with multiple inputs: we union the schema for all the inputs
     inputSchemaMap
       .filter(e => !(e._2.exists(s => s.isEmpty) || e._2.isEmpty))
-      .map(e => (e._1, e._2.head.get))
+      .map(e => (e._1, new Schema(e._2.flatten.flatten(s => s.getAttributesScala).distinct: _*)))
       .toMap
   }
 
