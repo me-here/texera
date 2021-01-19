@@ -111,7 +111,7 @@ import edu.uci.ics.amber.error.WorkflowRuntimeError
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkSenderActor
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkSenderActor.RegisterActorRef
 import edu.uci.ics.amber.engine.common.ambertag.neo.VirtualIdentity
-import edu.uci.ics.amber.engine.common.promise.{PromiseHandlerInitializer, PromiseManager}
+import edu.uci.ics.amber.engine.common.control.ControlHandlerInitializer
 
 import collection.JavaConverters._
 import scala.collection.mutable
@@ -149,7 +149,7 @@ class Controller(
   implicit val ec: ExecutionContext = context.dispatcher
   implicit val timeout: Timeout = 5.seconds
 
-  lazy val promiseHandlerInitializer = wire[PromiseHandlerInitializer]
+  lazy val rpcHandlerInitializer = wire[ControlHandlerInitializer]
 
   private def errorLogAction(err: WorkflowRuntimeError): Unit = {
     eventListener.workflowExecutionErrorListener.apply(ErrorOccurred(err))
@@ -1181,6 +1181,9 @@ class Controller(
         }
       case WorkerMessage.ReportState(state) =>
         controllerLogger.logInfo("running: " + sender + " to " + state)
+        if (state == WorkerState.Running) {
+          operatorStateMap(workerToOperator(sender)) = PrincipalState.Running
+        }
         operatorStateMap(workerToOperator(sender)) match {
           case PrincipalState.CollectingBreakpoints =>
             handleWorkerStateReportsInCollBreakpoints(state)
@@ -1309,12 +1312,6 @@ class Controller(
       case Resume =>
         operatorToIsUserPaused.keys.foreach(opId => operatorToIsUserPaused(opId) = false) //reset
         operatorToWorkerStateMap.keys.foreach(opId => {
-          assert(
-            operatorToWorkerStateMap(opId)
-              .filter(x => x._2 != WorkerState.Completed)
-              .values
-              .nonEmpty
-          )
           operatorToWorkerStateMap(opId)
             .filter(x => x._2 != WorkerState.Completed)
             .keys
