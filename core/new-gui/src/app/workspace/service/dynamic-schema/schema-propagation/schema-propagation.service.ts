@@ -170,7 +170,7 @@ export class SchemaPropagationService {
 
     const getAttrNames = (v: any): string[] => {
       const i = v['autofillAttributeOnPort'];
-      if (! i || !(typeof i === 'number') || ! Number.isInteger(i) || i >= inputAttributes.length) {
+      if (i === undefined || i === null || !(typeof i === 'number') || ! Number.isInteger(i) || i >= inputAttributes.length) {
         return [];
       }
       const inputAttrAtPort = inputAttributes[i];
@@ -184,7 +184,7 @@ export class SchemaPropagationService {
       old => ({ ...old, type: 'string', enum: getAttrNames(old), uniqueItems: true, }));
 
     newJsonSchema = DynamicSchemaService.mutateProperty(newJsonSchema, (k, v) => v['autofill'] === 'attributeNameList',
-      old => ({ ...old, type: 'array', items: { ...old.items, type: 'string', enum: getAttrNames(old), uniqueItems: true, }, }));
+      old => ({ ...old, type: 'array', uniqueItems: true, items: { ...old.items, type: 'string', enum: getAttrNames(old), }, }));
 
     return {
       ...operatorSchema,
@@ -200,7 +200,7 @@ export class SchemaPropagationService {
     old => ({ ...old, type: 'string', enum: undefined, uniqueItems: undefined, }));
 
     newJsonSchema = DynamicSchemaService.mutateProperty(newJsonSchema, (k, v) => v['autofill'] === 'attributeNameList',
-    old => ({ ...old, type: 'array', items: { ...old.items, type: 'string', enum: undefined, uniqueItems: undefined, }, }));
+    old => ({ ...old, type: 'array', uniqueItems: undefined, items: { ...old.items, type: 'string', enum: undefined, }, }));
 
     return {
       ...operatorSchema,
