@@ -15,6 +15,7 @@ import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.workflow.{
   BreakpointInfo,
   OperatorLink,
+  OperatorPort,
   WorkflowCompiler,
   WorkflowInfo
 }
@@ -27,7 +28,7 @@ import com.typesafe.scalalogging.Logger
 import org.scalatest.flatspec.AnyFlatSpecLike
 
 class PauseSpec
-    extends TestKit(ActorSystem("PauseSpec"))
+  extends TestKit(ActorSystem("PauseSpec"))
     with ImplicitSender
     with AnyFlatSpecLike
     with BeforeAndAfterAll {
@@ -46,9 +47,9 @@ class PauseSpec
   }
 
   def shouldPause(
-      operators: mutable.MutableList[OperatorDescriptor],
-      links: mutable.MutableList[OperatorLink]
-  ): Unit = {
+                   operators: mutable.MutableList[OperatorDescriptor],
+                   links: mutable.MutableList[OperatorLink]
+                 ): Unit = {
     val parent = TestProbe()
     val controller = parent.childActorOf(
       Utils.getControllerProps(operators, links)
@@ -80,7 +81,9 @@ class PauseSpec
     logger.info(s"csv-id ${csvOpDesc.operatorID}, sink-id ${sink.operatorID}")
     shouldPause(
       mutable.MutableList[OperatorDescriptor](csvOpDesc, sink),
-      mutable.MutableList[OperatorLink](OperatorLink(csvOpDesc.operatorID, sink.operatorID))
+      mutable.MutableList[OperatorLink](
+        OperatorLink(OperatorPort(csvOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
+      )
     )
   }
 
@@ -94,8 +97,11 @@ class PauseSpec
     shouldPause(
       mutable.MutableList[OperatorDescriptor](csvOpDesc, keywordOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(csvOpDesc.operatorID, keywordOpDesc.operatorID),
-        OperatorLink(keywordOpDesc.operatorID, sink.operatorID)
+        OperatorLink(
+          OperatorPort(csvOpDesc.operatorID, 0),
+          OperatorPort(keywordOpDesc.operatorID, 0)
+        ),
+        OperatorLink(OperatorPort(keywordOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
       )
     )
   }

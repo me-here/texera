@@ -35,6 +35,7 @@ import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.workflow.{
   BreakpointInfo,
   OperatorLink,
+  OperatorPort,
   WorkflowCompiler,
   WorkflowInfo
 }
@@ -48,7 +49,7 @@ import scala.concurrent.duration._
 import scala.util.Random
 
 class DataProcessingSpec
-    extends TestKit(ActorSystem("DataProcessingSpec"))
+  extends TestKit(ActorSystem("DataProcessingSpec"))
     with ImplicitSender
     with AnyFlatSpecLike
     with BeforeAndAfterAll {
@@ -64,9 +65,9 @@ class DataProcessingSpec
   }
 
   def expectCompletedAfterExecution(
-      operators: mutable.MutableList[OperatorDescriptor],
-      links: mutable.MutableList[OperatorLink]
-  ): Unit = {
+                                     operators: mutable.MutableList[OperatorDescriptor],
+                                     links: mutable.MutableList[OperatorLink]
+                                   ): Unit = {
     val parent = TestProbe()
     val context = new WorkflowContext
     context.workflowID = "workflow-test"
@@ -97,7 +98,10 @@ class DataProcessingSpec
     expectCompletedAfterExecution(
       mutable.MutableList[OperatorDescriptor](headerlessCsvOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(headerlessCsvOpDesc.operatorID, sink.operatorID)
+        OperatorLink(
+          OperatorPort(headerlessCsvOpDesc.operatorID, 0),
+          OperatorPort(sink.operatorID, 0)
+        )
       )
     )
   }
@@ -109,8 +113,11 @@ class DataProcessingSpec
     expectCompletedAfterExecution(
       mutable.MutableList[OperatorDescriptor](headerlessCsvOpDesc, keywordOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(headerlessCsvOpDesc.operatorID, keywordOpDesc.operatorID),
-        OperatorLink(keywordOpDesc.operatorID, sink.operatorID)
+        OperatorLink(
+          OperatorPort(headerlessCsvOpDesc.operatorID, 0),
+          OperatorPort(keywordOpDesc.operatorID, 0)
+        ),
+        OperatorLink(OperatorPort(keywordOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
       )
     )
   }
@@ -121,7 +128,7 @@ class DataProcessingSpec
     expectCompletedAfterExecution(
       mutable.MutableList[OperatorDescriptor](csvOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(csvOpDesc.operatorID, sink.operatorID)
+        OperatorLink(OperatorPort(csvOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
       )
     )
   }
@@ -133,8 +140,11 @@ class DataProcessingSpec
     expectCompletedAfterExecution(
       mutable.MutableList[OperatorDescriptor](csvOpDesc, keywordOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(csvOpDesc.operatorID, keywordOpDesc.operatorID),
-        OperatorLink(keywordOpDesc.operatorID, sink.operatorID)
+        OperatorLink(
+          OperatorPort(csvOpDesc.operatorID, 0),
+          OperatorPort(keywordOpDesc.operatorID, 0)
+        ),
+        OperatorLink(OperatorPort(keywordOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
       )
     )
   }
@@ -148,9 +158,15 @@ class DataProcessingSpec
     expectCompletedAfterExecution(
       mutable.MutableList[OperatorDescriptor](csvOpDesc, keywordOpDesc, countOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(csvOpDesc.operatorID, keywordOpDesc.operatorID),
-        OperatorLink(keywordOpDesc.operatorID, countOpDesc.operatorID),
-        OperatorLink(countOpDesc.operatorID, sink.operatorID)
+        OperatorLink(
+          OperatorPort(csvOpDesc.operatorID, 0),
+          OperatorPort(keywordOpDesc.operatorID, 0)
+        ),
+        OperatorLink(
+          OperatorPort(keywordOpDesc.operatorID, 0),
+          OperatorPort(countOpDesc.operatorID, 0)
+        ),
+        OperatorLink(OperatorPort(countOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
       )
     )
   }
@@ -169,9 +185,18 @@ class DataProcessingSpec
       mutable
         .MutableList[OperatorDescriptor](csvOpDesc, keywordOpDesc, averageAndGroupbyOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(csvOpDesc.operatorID, keywordOpDesc.operatorID),
-        OperatorLink(keywordOpDesc.operatorID, averageAndGroupbyOpDesc.operatorID),
-        OperatorLink(averageAndGroupbyOpDesc.operatorID, sink.operatorID)
+        OperatorLink(
+          OperatorPort(csvOpDesc.operatorID, 0),
+          OperatorPort(keywordOpDesc.operatorID, 0)
+        ),
+        OperatorLink(
+          OperatorPort(keywordOpDesc.operatorID, 0),
+          OperatorPort(averageAndGroupbyOpDesc.operatorID, 0)
+        ),
+        OperatorLink(
+          OperatorPort(averageAndGroupbyOpDesc.operatorID, 0),
+          OperatorPort(sink.operatorID, 0)
+        )
       )
     )
   }
