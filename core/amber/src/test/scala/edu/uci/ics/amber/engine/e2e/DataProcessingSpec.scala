@@ -49,7 +49,7 @@ import scala.concurrent.duration._
 import scala.util.Random
 
 class DataProcessingSpec
-  extends TestKit(ActorSystem("DataProcessingSpec"))
+    extends TestKit(ActorSystem("DataProcessingSpec"))
     with ImplicitSender
     with AnyFlatSpecLike
     with BeforeAndAfterAll {
@@ -65,9 +65,9 @@ class DataProcessingSpec
   }
 
   def expectCompletedAfterExecution(
-                                     operators: mutable.MutableList[OperatorDescriptor],
-                                     links: mutable.MutableList[OperatorLink]
-                                   ): Unit = {
+      operators: mutable.MutableList[OperatorDescriptor],
+      links: mutable.MutableList[OperatorLink]
+  ): Unit = {
     val parent = TestProbe()
     val context = new WorkflowContext
     context.workflowID = "workflow-test"

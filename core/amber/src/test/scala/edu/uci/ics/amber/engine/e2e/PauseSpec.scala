@@ -28,7 +28,7 @@ import com.typesafe.scalalogging.Logger
 import org.scalatest.flatspec.AnyFlatSpecLike
 
 class PauseSpec
-  extends TestKit(ActorSystem("PauseSpec"))
+    extends TestKit(ActorSystem("PauseSpec"))
     with ImplicitSender
     with AnyFlatSpecLike
     with BeforeAndAfterAll {
@@ -47,9 +47,9 @@ class PauseSpec
   }
 
   def shouldPause(
-                   operators: mutable.MutableList[OperatorDescriptor],
-                   links: mutable.MutableList[OperatorLink]
-                 ): Unit = {
+      operators: mutable.MutableList[OperatorDescriptor],
+      links: mutable.MutableList[OperatorLink]
+  ): Unit = {
     val parent = TestProbe()
     val controller = parent.childActorOf(
       Utils.getControllerProps(operators, links)
