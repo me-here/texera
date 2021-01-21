@@ -16,7 +16,7 @@ import edu.uci.ics.texera.workflow.common.tuple.schema.Schema
 import edu.uci.ics.texera.workflow.common.{ConstraintViolation, WorkflowContext}
 import org.jgrapht.graph.{DefaultEdge, DirectedAcyclicGraph}
 
-import scala.collection.{JavaConverters, mutable}
+import scala.collection.mutable
 
 class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowContext) {
 
@@ -47,11 +47,12 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
 
     val outLinks: mutable.Map[OperatorIdentifier, mutable.Set[OperatorIdentifier]] = mutable.Map()
     workflowInfo.links.foreach(link => {
-      val origin = OperatorIdentifier(this.context.workflowID, link.origin)
-      val dest = OperatorIdentifier(this.context.workflowID, link.destination)
+      val origin = OperatorIdentifier(this.context.workflowID, link.origin.operatorID)
+      val dest = OperatorIdentifier(this.context.workflowID, link.destination.operatorID)
       val destSet = outLinks.getOrElse(origin, mutable.Set())
       destSet.add(dest)
       outLinks.update(origin, destSet)
+      amberOperators(dest).setInputToOrdinalMapping(origin, link.destination.portOrdinal)
     })
 
     val outLinksImmutableValue: mutable.Map[OperatorIdentifier, Set[OperatorIdentifier]] =
@@ -61,23 +62,6 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
     })
     val outLinksImmutable: Map[OperatorIdentifier, Set[OperatorIdentifier]] =
       outLinksImmutableValue.toMap
-
-    val inLinksHighestOrdinal: mutable.Map[OperatorIdentifier, Int] =
-      mutable.Map().withDefault(_ => 0)
-    val inLinksOrdinalMap: mutable.Map[OperatorIdentifier, mutable.Map[OperatorIdentifier, Int]] =
-      mutable.Map().withDefault(_ => mutable.Map())
-    workflowInfo.links.foreach(link => {
-      val origin = OperatorIdentifier(this.context.workflowID, link.origin)
-      val dest = OperatorIdentifier(this.context.workflowID, link.destination)
-      val nextOrdinal = inLinksHighestOrdinal(dest)
-      inLinksHighestOrdinal.update(dest, nextOrdinal + 1)
-      val destInLinksOrdinalMap = inLinksOrdinalMap(dest)
-      destInLinksOrdinalMap.update(origin, nextOrdinal)
-      inLinksOrdinalMap.update(dest, destInLinksOrdinalMap)
-    })
-    amberOperators.values.foreach(opExecConfig =>
-      opExecConfig.setInputToOrdinalMapping(inLinksOrdinalMap(opExecConfig.tag).toMap)
-    )
 
     new Workflow(amberOperators, outLinksImmutable)
   }
