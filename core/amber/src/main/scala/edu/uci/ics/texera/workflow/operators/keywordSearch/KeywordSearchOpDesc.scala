@@ -1,11 +1,15 @@
 package edu.uci.ics.texera.workflow.operators.keywordSearch
 
-import edu.uci.ics.texera.workflow.common.operators.filter.FilterOpDesc
-import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonPropertyDescription
-import com.kjetland.jackson.jsonSchema.annotations.{JsonSchemaInject, JsonSchemaTitle}
-import edu.uci.ics.texera.workflow.common.metadata.{InputPort, OperatorGroupConstants, OperatorInfo, OutputPort}
+import com.fasterxml.jackson.annotation.{JsonProperty, JsonPropertyDescription}
+import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle
+import edu.uci.ics.texera.workflow.common.metadata.{
+  InputPort,
+  OperatorGroupConstants,
+  OperatorInfo,
+  OutputPort
+}
 import edu.uci.ics.texera.workflow.common.operators.OneToOneOpExecConfig
+import edu.uci.ics.texera.workflow.common.operators.filter.FilterOpDesc
 
 class KeywordSearchOpDesc extends FilterOpDesc {
 
@@ -32,6 +36,6 @@ class KeywordSearchOpDesc extends FilterOpDesc {
       operatorDescription = "Search for keyword(s) in a string column",
       operatorGroupName = OperatorGroupConstants.SEARCH_GROUP,
       inputPorts = List(InputPort()),
-      outputPorts = List(OutputPort()),
+      outputPorts = List(OutputPort())
     )
 }

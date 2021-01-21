@@ -2,13 +2,23 @@ package edu.uci.ics.amber.engine.e2e
 
 import edu.uci.ics.amber.clustering.SingleNodeListener
 import edu.uci.ics.amber.engine.common.ambermessage.ControlMessage.{Pause, Resume, Start}
-import edu.uci.ics.amber.engine.common.ambermessage.ControllerMessage.{AckedControllerInitialization, PassBreakpointTo, ReportState}
+import edu.uci.ics.amber.engine.common.ambermessage.ControllerMessage.{
+  AckedControllerInitialization,
+  PassBreakpointTo,
+  ReportState
+}
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import akka.util.Timeout
 import edu.uci.ics.amber.engine.architecture.controller.ControllerState
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
-import edu.uci.ics.texera.workflow.common.workflow.{BreakpointInfo, OperatorLink, OperatorPort, WorkflowCompiler, WorkflowInfo}
+import edu.uci.ics.texera.workflow.common.workflow.{
+  BreakpointInfo,
+  OperatorLink,
+  OperatorPort,
+  WorkflowCompiler,
+  WorkflowInfo
+}
 import org.scalatest.BeforeAndAfterAll
 
 import scala.collection.mutable
@@ -71,7 +81,9 @@ class PauseSpec
     logger.info(s"csv-id ${csvOpDesc.operatorID}, sink-id ${sink.operatorID}")
     shouldPause(
       mutable.MutableList[OperatorDescriptor](csvOpDesc, sink),
-      mutable.MutableList[OperatorLink](OperatorLink(OperatorPort(csvOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0)))
+      mutable.MutableList[OperatorLink](
+        OperatorLink(OperatorPort(csvOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
+      )
     )
   }
 
@@ -85,7 +97,10 @@ class PauseSpec
     shouldPause(
       mutable.MutableList[OperatorDescriptor](csvOpDesc, keywordOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(OperatorPort(csvOpDesc.operatorID, 0), OperatorPort(keywordOpDesc.operatorID, 0)),
+        OperatorLink(
+          OperatorPort(csvOpDesc.operatorID, 0),
+          OperatorPort(keywordOpDesc.operatorID, 0)
+        ),
         OperatorLink(OperatorPort(keywordOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
       )
     )

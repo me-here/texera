@@ -1,21 +1,44 @@
 package edu.uci.ics.amber.engine.e2e
 
 import edu.uci.ics.amber.clustering.SingleNodeListener
-import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.{ConditionalGlobalBreakpoint, CountGlobalBreakpoint}
-import edu.uci.ics.amber.engine.common.ambermessage.ControlMessage.{Ack, ModifyLogic, Pause, Resume, Start}
-import edu.uci.ics.amber.engine.common.ambermessage.ControllerMessage.{AckedControllerInitialization, PassBreakpointTo, ReportState}
+import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.{
+  ConditionalGlobalBreakpoint,
+  CountGlobalBreakpoint
+}
+import edu.uci.ics.amber.engine.common.ambermessage.ControlMessage.{
+  Ack,
+  ModifyLogic,
+  Pause,
+  Resume,
+  Start
+}
+import edu.uci.ics.amber.engine.common.ambermessage.ControllerMessage.{
+  AckedControllerInitialization,
+  PassBreakpointTo,
+  ReportState
+}
 import edu.uci.ics.amber.engine.common.ambertag.{OperatorIdentifier, WorkflowTag}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.Constants
 import akka.actor.{ActorSystem, PoisonPill, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import akka.util.Timeout
-import edu.uci.ics.amber.engine.architecture.controller.{Controller, ControllerEventListener, ControllerState}
+import edu.uci.ics.amber.engine.architecture.controller.{
+  Controller,
+  ControllerEventListener,
+  ControllerState
+}
 import edu.uci.ics.texera.web.model.request.{ExecuteWorkflowRequest, TexeraWebSocketRequest}
 import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource
 import edu.uci.ics.texera.workflow.common.{Utils, WorkflowContext}
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
-import edu.uci.ics.texera.workflow.common.workflow.{BreakpointInfo, OperatorLink, OperatorPort, WorkflowCompiler, WorkflowInfo}
+import edu.uci.ics.texera.workflow.common.workflow.{
+  BreakpointInfo,
+  OperatorLink,
+  OperatorPort,
+  WorkflowCompiler,
+  WorkflowInfo
+}
 import edu.uci.ics.texera.workflow.operators.aggregate.AggregationFunction
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpecLike
@@ -75,7 +98,10 @@ class DataProcessingSpec
     expectCompletedAfterExecution(
       mutable.MutableList[OperatorDescriptor](headerlessCsvOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(OperatorPort(headerlessCsvOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
+        OperatorLink(
+          OperatorPort(headerlessCsvOpDesc.operatorID, 0),
+          OperatorPort(sink.operatorID, 0)
+        )
       )
     )
   }
@@ -87,7 +113,10 @@ class DataProcessingSpec
     expectCompletedAfterExecution(
       mutable.MutableList[OperatorDescriptor](headerlessCsvOpDesc, keywordOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(OperatorPort(headerlessCsvOpDesc.operatorID, 0), OperatorPort(keywordOpDesc.operatorID, 0)),
+        OperatorLink(
+          OperatorPort(headerlessCsvOpDesc.operatorID, 0),
+          OperatorPort(keywordOpDesc.operatorID, 0)
+        ),
         OperatorLink(OperatorPort(keywordOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
       )
     )
@@ -111,7 +140,10 @@ class DataProcessingSpec
     expectCompletedAfterExecution(
       mutable.MutableList[OperatorDescriptor](csvOpDesc, keywordOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(OperatorPort(csvOpDesc.operatorID, 0), OperatorPort(keywordOpDesc.operatorID, 0)),
+        OperatorLink(
+          OperatorPort(csvOpDesc.operatorID, 0),
+          OperatorPort(keywordOpDesc.operatorID, 0)
+        ),
         OperatorLink(OperatorPort(keywordOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
       )
     )
@@ -126,8 +158,14 @@ class DataProcessingSpec
     expectCompletedAfterExecution(
       mutable.MutableList[OperatorDescriptor](csvOpDesc, keywordOpDesc, countOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(OperatorPort(csvOpDesc.operatorID, 0), OperatorPort(keywordOpDesc.operatorID, 0)),
-        OperatorLink(OperatorPort(keywordOpDesc.operatorID, 0), OperatorPort(countOpDesc.operatorID, 0)),
+        OperatorLink(
+          OperatorPort(csvOpDesc.operatorID, 0),
+          OperatorPort(keywordOpDesc.operatorID, 0)
+        ),
+        OperatorLink(
+          OperatorPort(keywordOpDesc.operatorID, 0),
+          OperatorPort(countOpDesc.operatorID, 0)
+        ),
         OperatorLink(OperatorPort(countOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
       )
     )
@@ -147,9 +185,18 @@ class DataProcessingSpec
       mutable
         .MutableList[OperatorDescriptor](csvOpDesc, keywordOpDesc, averageAndGroupbyOpDesc, sink),
       mutable.MutableList[OperatorLink](
-        OperatorLink(OperatorPort(csvOpDesc.operatorID, 0), OperatorPort(keywordOpDesc.operatorID, 0)),
-        OperatorLink(OperatorPort(keywordOpDesc.operatorID, 0), OperatorPort(averageAndGroupbyOpDesc.operatorID, 0)),
-        OperatorLink(OperatorPort(averageAndGroupbyOpDesc.operatorID, 0), OperatorPort(sink.operatorID, 0))
+        OperatorLink(
+          OperatorPort(csvOpDesc.operatorID, 0),
+          OperatorPort(keywordOpDesc.operatorID, 0)
+        ),
+        OperatorLink(
+          OperatorPort(keywordOpDesc.operatorID, 0),
+          OperatorPort(averageAndGroupbyOpDesc.operatorID, 0)
+        ),
+        OperatorLink(
+          OperatorPort(averageAndGroupbyOpDesc.operatorID, 0),
+          OperatorPort(sink.operatorID, 0)
+        )
       )
     )
   }
