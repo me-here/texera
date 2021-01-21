@@ -1,5 +1,7 @@
 package edu.uci.ics.texera.workflow.common.metadata
 
+import java.util
+
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.introspect.AnnotatedClass
 import com.fasterxml.jackson.databind.jsontype.NamedType
@@ -8,28 +10,19 @@ import com.kjetland.jackson.jsonSchema.JsonSchemaConfig.html5EnabledSchema
 import com.kjetland.jackson.jsonSchema.{JsonSchemaConfig, JsonSchemaDraft, JsonSchemaGenerator}
 import edu.uci.ics.texera.workflow.common.Utils.objectMapper
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
+import edu.uci.ics.texera.workflow.operators.linearregression.LinearRegressionOpDesc
 import edu.uci.ics.texera.workflow.operators.localscan.LocalCsvFileScanOpDesc
-import edu.uci.ics.texera.workflow.operators.projection.ProjectionOpDesc
 
-import java.util
 import scala.collection.JavaConverters
 import scala.collection.JavaConverters.asScalaIterator
-
-case class InputPort(
-    displayName: String = null,
-    allowMultiInputs: Boolean = false
-)
-
-case class OutputPort(
-    displayName: String = null
-)
 
 case class OperatorInfo(
     userFriendlyName: String,
     operatorDescription: String,
     operatorGroupName: String,
-    inputPorts: List[InputPort],
-    outputPorts: List[OutputPort]
+    numInputPorts: Int,
+    numOutputPorts: Int,
+    allowMultiInputs: Boolean = false
 )
 
 case class OperatorMetadata(
@@ -57,7 +50,7 @@ object OperatorMetadataGenerator {
   def main(args: Array[String]): Unit = {
     // run this if you want to check the json schema generated for an operator descriptor
     // replace the argument with the class of your operator descriptor
-    println(generateOperatorJsonSchema(classOf[ProjectionOpDesc]).toPrettyString)
+    println(generateOperatorJsonSchema(classOf[LocalCsvFileScanOpDesc]).toPrettyString)
   }
 
   val texeraSchemaGeneratorConfig: JsonSchemaConfig = html5EnabledSchema.copy(
