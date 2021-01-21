@@ -4,8 +4,17 @@ import java.io.Serializable
 import com.fasterxml.jackson.annotation.{JsonProperty, JsonPropertyDescription}
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle
 import edu.uci.ics.texera.workflow.common.metadata.annotations.AutofillAttributeName
-import edu.uci.ics.texera.workflow.common.metadata.{InputPort, OperatorGroupConstants, OperatorInfo, OutputPort}
-import edu.uci.ics.texera.workflow.common.operators.aggregate.{AggregateOpDesc, AggregateOpExecConfig, DistributedAggregation}
+import edu.uci.ics.texera.workflow.common.metadata.{
+  InputPort,
+  OperatorGroupConstants,
+  OperatorInfo,
+  OutputPort
+}
+import edu.uci.ics.texera.workflow.common.operators.aggregate.{
+  AggregateOpDesc,
+  AggregateOpExecConfig,
+  DistributedAggregation
+}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.{AttributeType, Schema}
 
