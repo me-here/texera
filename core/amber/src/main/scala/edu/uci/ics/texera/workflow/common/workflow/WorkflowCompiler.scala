@@ -1,7 +1,10 @@
 package edu.uci.ics.texera.workflow.common.workflow
 
 import akka.actor.ActorRef
-import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.{ConditionalGlobalBreakpoint, CountGlobalBreakpoint}
+import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.{
+  ConditionalGlobalBreakpoint,
+  CountGlobalBreakpoint
+}
 import edu.uci.ics.amber.engine.architecture.controller.Workflow
 import edu.uci.ics.amber.engine.common.ambermessage.ControllerMessage.PassBreakpointTo
 import edu.uci.ics.amber.engine.common.ambertag.OperatorIdentifier
@@ -122,9 +125,10 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
       new DirectedAcyclicGraph[OperatorDescriptor, DefaultEdge](classOf[DefaultEdge])
     this.workflowInfo.operators.foreach(op => workflowDag.addVertex(op))
     this.workflowInfo.links.foreach(link => {
-      val origin = this.workflowInfo.operators.filter(op => op.operatorID == link.origin).head
+      val origin =
+        this.workflowInfo.operators.filter(op => op.operatorID == link.origin.operatorID).head
       val destination =
-        this.workflowInfo.operators.filter(op => op.operatorID == link.destination).head
+        this.workflowInfo.operators.filter(op => op.operatorID == link.destination.operatorID).head
       workflowDag.addEdge(origin, destination)
     })
 
