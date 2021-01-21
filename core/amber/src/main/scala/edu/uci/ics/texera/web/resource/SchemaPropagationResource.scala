@@ -6,7 +6,6 @@ import edu.uci.ics.texera.workflow.common.{Utils, WorkflowContext}
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.{Consumes, POST, Path, Produces}
 
-
 case class SchemaPropagationResponse(
     code: Int,
     result: Map[String, List[Option[List[Attribute]]]],
