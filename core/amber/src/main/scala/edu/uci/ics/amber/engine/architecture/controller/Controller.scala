@@ -83,7 +83,6 @@ import akka.actor.{
   Props,
   Stash
 }
-import akka.dispatch.Futures
 import akka.event.LoggingAdapter
 import akka.pattern.ask
 import akka.remote.RemoteScope
@@ -94,13 +93,17 @@ import play.api.libs.json.{JsArray, JsValue, Json, __}
 import com.google.common.collect.BiMap
 import com.google.common.collect.HashBiMap
 import com.softwaremill.macwire.wire
+import com.twitter.util.{Future, Futures, Promise}
 import com.typesafe.scalalogging.Logger
 import edu.uci.ics.amber.engine.architecture.breakpoint.FaultedTuple
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
+import edu.uci.ics.amber.engine.architecture.messaginglayer.ControlInputPort.WorkflowControlMessage
 import edu.uci.ics.amber.engine.architecture.worker.{WorkerState, WorkerStatistics}
 import edu.uci.ics.amber.engine.common.ambermessage.WorkerMessage.{
   AckedWorkerInitialization,
   CheckRecovery,
+  CurrentLoadMetrics,
+  FutureLoadMetrics,
   QueryTriggeredBreakpoints,
   ReportWorkerPartialCompleted,
   ReportedQueriedBreakpoint,
@@ -109,14 +112,21 @@ import edu.uci.ics.amber.engine.common.ambermessage.WorkerMessage.{
 }
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.RegisterActorRef
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  NetworkAck,
+  NetworkMessage,
+  RegisterActorRef
+}
+import edu.uci.ics.amber.engine.architecture.worker.neo.promisehandlers.QueryLoadMetricsHandler.QueryLoadMetrics
+import edu.uci.ics.amber.engine.architecture.worker.neo.promisehandlers.QueryNextOpLoadMetricsHandler.QueryNextOpLoadMetrics
 import edu.uci.ics.amber.engine.common.ambertag.neo.VirtualIdentity
+import edu.uci.ics.amber.engine.common.ambertag.neo.VirtualIdentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCHandlerInitializer
 
 import collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
 
 object Controller {
@@ -975,25 +985,44 @@ class Controller(
     }
   }
 
-  // helper function used when an upstream operator sends `UpstreamExhausted` to an operator
-  // Helps when a stage ends and the other stage has to be started
-  // eg: When build side of Join finishes, and Probe side is to be sterted
-  private def getLayerTagOfExhaustedInput(
-      reportingOp: OperatorIdentifier,
-      exhaustedInputRef: Int
-  ): LayerTag = {
-    if (!workflow.inLinks.contains(reportingOp)) {
-      return null
+  // join-skew research related
+  private def analyzeLoad(operatorId: OperatorIdentifier): Unit = {
+    // collect metrics from the skewed operator. assuming this is a single layer operator
+    val workerMetricsFutures = new ArrayBuffer[Future[CurrentLoadMetrics]]()
+    operatorToWorkerLayers(operatorId)(0).identifiers.foreach(id => {
+      workerMetricsFutures.append(asyncRPCClient.send(QueryLoadMetrics(), id))
+    })
+    val futureOfWorkerMetrics = Future.collect(workerMetricsFutures.toList)
+
+    // collect metrics from upstream operator of skewed operator. assuming it is a join case and contacting the probe side
+    val probeInput: Option[OperatorIdentifier] = workflow
+      .inLinks(operatorId)
+      .find(inputOp => workflow.operators(operatorId).getInputNum(inputOp) == 1)
+    val inputOpMetricsFutures = new ArrayBuffer[Future[FutureLoadMetrics]]()
+    // assuming probe input is a single layer operator
+    probeInput match {
+      case Some(inputOp) =>
+        operatorToWorkerLayers(inputOp)(0).identifiers.foreach(id => {
+          inputOpMetricsFutures.append(asyncRPCClient.send(QueryNextOpLoadMetrics(), id))
+        })
+      case None => // ignore
     }
-    var inputExhaustedLayerTag: LayerTag = null
-    workflow
-      .inLinks(reportingOp)
-      .foreach(op => {
-        if (workflow.operators(reportingOp).getInputNum(op) == exhaustedInputRef) {
-          inputExhaustedLayerTag = workflow.operators(op).topology.layers.last.tag
+    val futureOfNextOpLoadMetrics = Future.collect(inputOpMetricsFutures.toList)
+
+    // combining the two metrics
+    val combinedFuture = Future.join(futureOfWorkerMetrics, futureOfNextOpLoadMetrics)
+    val loads = new mutable.HashMap[ActorVirtualIdentity, Long]()
+    combinedFuture.onSuccess(metrics => {
+      for ((id, currLoad) <- operatorToWorkerLayers(operatorId)(0).identifiers zip metrics._1) {
+        loads(id) = currLoad.stashedBatches + currLoad.unprocessedQueueLength
+      }
+      metrics._2.foreach(replyFromNetComm => {
+        for ((wId, futLoad) <- replyFromNetComm.dataToSend) {
+          loads(wId) = loads.getOrElse(wId, 0L) + futLoad
         }
       })
-    inputExhaustedLayerTag
+      println(s"The final loads map ${loads.mkString("\n\t")}")
+    })
   }
 
   final lazy val allowedStatesOnPausing: Set[WorkerState.Value] =
@@ -1159,6 +1188,7 @@ class Controller(
 
   private[this] def running: Receive = {
     disallowActorRefRelatedMessages orElse
+      processControlMessagesNewWay orElse
       handleBreakpointOnlyWorkerMessages orElse [Any, Unit] {
       case LogErrorToFrontEnd(err: WorkflowRuntimeError) =>
         controllerLogger.logError(err)
@@ -1262,8 +1292,11 @@ class Controller(
             }
           }
         }
-      case Resume =>
-      case msg    => stash()
+      case Resume     =>
+      case DetectSkew =>
+        // join-skew research related
+        analyzeLoad(workerToOperator(sender))
+      case msg => stash()
     }
   }
 
@@ -1513,6 +1546,14 @@ class Controller(
 
         this.exitIfCompleted
     }
+  }
+
+  private[this] def processControlMessagesNewWay: Receive = {
+    case msg @ NetworkMessage(id, cmd: WorkflowControlMessage) =>
+      logger.logInfo(s"received ${msg.internalMessage}")
+      sender ! NetworkAck(id)
+      // use control input port to pass control messages
+      controlInputPort.handleControlMessage(cmd)
   }
 
   private[this] def exitIfCompleted: Unit = {
