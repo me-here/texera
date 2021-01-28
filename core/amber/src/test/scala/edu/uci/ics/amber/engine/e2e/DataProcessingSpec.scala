@@ -30,7 +30,7 @@ import edu.uci.ics.amber.engine.architecture.controller.{
 }
 import edu.uci.ics.texera.web.model.request.{ExecuteWorkflowRequest, TexeraWebSocketRequest}
 import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource
-import edu.uci.ics.texera.workflow.common.{Utils, WorkflowContext}
+import edu.uci.ics.texera.workflow.common.WorkflowContext
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.workflow.{
   BreakpointInfo,

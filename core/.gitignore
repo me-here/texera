@@ -25,6 +25,10 @@ npm-debug.log
 yarn-error.log
 testem.log
 /typings
+**/.bloop/
+**/.bsp/
+**/.metals/
+**/project/metals.sbt
 
 # System Files
 .DS_Store
