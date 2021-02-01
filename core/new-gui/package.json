@@ -42,7 +42,6 @@
     "clonedeep": "^2.0.0",
     "core-js": "^2.5.0",
     "d3": "^6.3.1",
-    "d3-cloud": "^1.2.5",
     "deep-map": "^2.0.0",
     "es6-weak-map": "^2.0.3",
     "font-awesome": "^4.7.0",
