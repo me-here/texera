@@ -141,6 +141,9 @@ export class ResultPanelComponent {
       this.lastStatusUpdateTime = currentTime;
 
       const result = this.workflowStatusService.getCurrentResult()[this.resultPanelOperatorID];
+
+      // Don't update if the state is already in Completed
+      //  because our result may conflict with the more recent result from WorkflowCompletedEvent
       if (result && this.executeWorkflowService.getExecutionState().state !== ExecutionState.Completed) {
         this.chartType = result.chartType;
         this.isFrontPagination = false;
@@ -358,7 +361,10 @@ export class ResultPanelComponent {
     // creates a shallow copy of the readonly response.result,
     //  this copy will be has type object[] because MatTableDataSource's input needs to be object[]
 
-    // save a copy of current result
+    // save a copy of current result only when
+    //  currently there is no result OR
+    //  this function is called because of a new WorkflowCompletedEvent OR
+    //  this function is called because of a new WorkflowStatusUpdateEvent and the user is at the last page
     if (this.currentResult.length === 0 || this.executeWorkflowService.getExecutionState().state === ExecutionState.Completed || this.currentPageIndex === Math.ceil(totalRowCount / 10)) {
       this.currentResult = resultData.slice();
     }
