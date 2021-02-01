@@ -15,6 +15,7 @@ import { WorkflowWebsocketService } from '../../service/workflow-websocket/workf
 import { assertType } from 'src/app/common/util/assert';
 import { ResultPaginationInfo } from '../../types/result-table.interface';
 import { sessionGetObject, sessionRemoveObject, sessionSetObject } from 'src/app/common/util/storage';
+import { WorkflowStatusService } from "../../service/workflow-status/workflow-status.service";
 
 /**
  * ResultPanelCompoent is the bottom level area that displays the
@@ -36,8 +37,11 @@ import { sessionGetObject, sessionRemoveObject, sessionSetObject } from 'src/app
   styleUrls: ['./result-panel.component.scss']
 })
 export class ResultPanelComponent {
+  public static readonly DEFAULT_PAGE_SIZE: number = 10;
+
   private static readonly PRETTY_JSON_TEXT_LIMIT: number = 50000;
   private static readonly TABLE_COLUMN_TEXT_LIMIT: number = 1000;
+  private static readonly MIN_UPDATE_INTERVAL_MS: number = 1000;
 
   public showResultPanel: boolean = false;
 
@@ -70,14 +74,16 @@ export class ResultPanelComponent {
   // this starts from **ONE**, not zero
   public currentPageIndex: number = 1;
   public total: number = 0;
-  private operatorID: string = '';
+
+  private lastStatusUpdateTime: number = Date.now();
 
   constructor(
     private executeWorkflowService: ExecuteWorkflowService,
     private modalService: NzModalService,
     private resultPanelToggleService: ResultPanelToggleService,
     private workflowActionService: WorkflowActionService,
-    private workflowWebsocketService: WorkflowWebsocketService
+    private workflowWebsocketService: WorkflowWebsocketService,
+    private workflowStatusService: WorkflowStatusService
   ) {
     const activeStates: ExecutionState[] = [ExecutionState.Completed, ExecutionState.Failed, ExecutionState.BreakpointTriggered];
     Observable.merge(
@@ -121,9 +127,25 @@ export class ResultPanelComponent {
         if (result.operatorID === highlightedOperators[0]) {
           this.total = result.totalRowCount;
           this.currentResult = result.table.slice();
-          this.isLoadingResult = false;
           return;
         }
+      }
+    });
+
+    this.workflowStatusService.getResultUpdateStream().subscribe(event => {
+      const currentTime = Date.now();
+
+      if (!this.resultPanelOperatorID || currentTime - this.lastStatusUpdateTime < ResultPanelComponent.MIN_UPDATE_INTERVAL_MS) {
+        return;
+      }
+      this.lastStatusUpdateTime = currentTime;
+
+      const result = this.workflowStatusService.getCurrentResult()[this.resultPanelOperatorID];
+      if (result && this.executeWorkflowService.getExecutionState().state !== ExecutionState.Completed) {
+        this.chartType = result.chartType;
+        this.isFrontPagination = false;
+
+        this.setupResultTable(result.table, result.totalRowCount, this.resultPanelOperatorID);
       }
     });
 
@@ -202,7 +224,7 @@ export class ResultPanelComponent {
         currentPageIndex: this.currentPageIndex,
         currentPageSize: this.currentPageSize,
         total: this.total,
-        operatorID: this.operatorID
+        operatorID: this.resultPanelOperatorID
       });
     }
 
@@ -293,13 +315,12 @@ export class ResultPanelComponent {
   public onTableQueryParamsChange(params: NzTableQueryParams) {
     const { pageSize: newPageSize, pageIndex: newPageIndex } = params;
     this.currentPageSize = newPageSize;
-    this.currentPageIndex = newPageIndex;
+    //this.currentPageIndex = newPageIndex;
 
     if (this.isFrontPagination) {
       return;
     }
 
-    this.isLoadingResult = true;
     this.workflowWebsocketService.send('ResultPaginationRequest', { pageSize: newPageSize, pageIndex: newPageIndex });
   }
 
@@ -312,7 +333,7 @@ export class ResultPanelComponent {
    * @param operatorID id of the operator providing data
    */
   private setupResultTable(resultData: ReadonlyArray<object>, totalRowCount: number, operatorID: string) {
-    this.operatorID = operatorID;
+    this.resultPanelOperatorID = operatorID;
 
     if (resultData.length < 1) {
       return;
@@ -321,7 +342,7 @@ export class ResultPanelComponent {
     // if there is no new result
     //   then restore the previous paginated result data from session storage
     let resultPaginationInfo = sessionGetObject<ResultPaginationInfo>(PAGINATION_INFO_STORAGE_KEY);
-    if (resultPaginationInfo && !resultPaginationInfo.newWorkflowExecuted && resultPaginationInfo.operatorID === this.operatorID) {
+    if (resultPaginationInfo && !resultPaginationInfo.newWorkflowExecuted && resultPaginationInfo.operatorID === this.resultPanelOperatorID && this.executeWorkflowService.getExecutionState().state === ExecutionState.Completed) {
       this.isFrontPagination = false;
       this.currentResult = resultPaginationInfo.currentResult;
       this.currentPageIndex = resultPaginationInfo.currentPageIndex;
@@ -338,7 +359,9 @@ export class ResultPanelComponent {
     //  this copy will be has type object[] because MatTableDataSource's input needs to be object[]
 
     // save a copy of current result
-    this.currentResult = resultData.slice();
+    if (this.currentResult.length === 0 || this.executeWorkflowService.getExecutionState().state === ExecutionState.Completed || this.currentPageIndex === Math.ceil(totalRowCount / 10)) {
+      this.currentResult = resultData.slice();
+    }
 
     // When there is a result data from the backend,
     //  1. Get all the column names except '_id', using the first instance of
@@ -357,11 +380,11 @@ export class ResultPanelComponent {
 
     // generate columnDef from first row, column definition is in order
     this.currentColumns = ResultPanelComponent.generateColumns(columns);
-    this.total = totalRowCount ?? resultData.length;
+    this.total = totalRowCount;
 
     // get the current page size, if the result length is less than `this.currentPageSize`,
     //  then the maximum number of items each page will be the length of the result, otherwise `this.currentPageSize`.
-    this.currentPageSize = Math.min(this.total, this.currentPageSize);
+    this.currentPageSize = Math.min(this.total, ResultPanelComponent.DEFAULT_PAGE_SIZE);
 
     // save paginated result into session storage
     resultPaginationInfo = {
@@ -371,7 +394,7 @@ export class ResultPanelComponent {
       currentPageSize: this.currentPageSize,
       total: this.total,
       columnKeys: columnKeys,
-      operatorID: this.operatorID
+      operatorID: this.resultPanelOperatorID
     };
     sessionSetObject(PAGINATION_INFO_STORAGE_KEY, resultPaginationInfo);
   }

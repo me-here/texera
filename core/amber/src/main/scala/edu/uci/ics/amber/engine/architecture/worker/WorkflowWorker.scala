@@ -213,7 +213,12 @@ class WorkflowWorker(identifier: ActorVirtualIdentity, operator: IOperatorExecut
     case QueryState =>
       reportState()
     case QueryStatistics =>
-      val stat = WorkerStatistics(getOldWorkerState, getInputRowCount(), getOutputRowCount(), getResultTuples())
+      val stat = WorkerStatistics(
+        getOldWorkerState,
+        getInputRowCount(),
+        getOutputRowCount(),
+        getResultTuples()
+      )
       sender ! ReportStatistics(
         stat
       )

@@ -3,6 +3,7 @@ package edu.uci.ics.texera.web.model.event
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
 import edu.uci.ics.amber.engine.architecture.principal.PrincipalState.PrincipalState
 import edu.uci.ics.amber.engine.architecture.principal.{PrincipalStateType, PrincipalStatistics}
+import edu.uci.ics.texera.web.model.event.WorkflowCompletedEvent.defaultPageSize
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler
 
@@ -17,14 +18,26 @@ object OperatorStatistics {
       principalStatistics.aggregatedInputRowCount,
       principalStatistics.aggregatedOutputRowCount,
       principalStatistics.aggregatedOutputResults
-        .map(r =>
-          OperatorResult.apply(
-            operatorID,
-            r.map(t => t.asInstanceOf[Tuple].asKeyValuePairJson()),
-            OperatorResult.getChartType(operatorID, workflowCompiler),
-            r.size
-          )
-        )
+        .map(r => {
+          val chartType = OperatorResult.getChartType(operatorID, workflowCompiler)
+
+          chartType match {
+            case Some(_) =>
+              OperatorResult.apply(
+                operatorID,
+                r.map(t => t.asInstanceOf[Tuple].asKeyValuePairJson()),
+                chartType,
+                r.size
+              )
+            case None =>
+              OperatorResult.apply(
+                operatorID,
+                r.map(t => t.asInstanceOf[Tuple].asKeyValuePairJson()).takeRight(defaultPageSize),
+                chartType,
+                r.size
+              )
+          }
+        })
     )
   }
 }

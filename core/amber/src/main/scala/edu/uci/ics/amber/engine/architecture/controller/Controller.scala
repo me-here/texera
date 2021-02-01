@@ -333,17 +333,23 @@ class Controller(
   }
 
   // the output count is the sum of the output counts of the last-layer actors
-  private def aggregateWorkerOutputResults(opIdentifier: OperatorIdentifier): Option[List[ITuple]] = {
+  private def aggregateWorkerOutputResults(
+      opIdentifier: OperatorIdentifier
+  ): Option[List[ITuple]] = {
     val allEmpty = operatorToWorkerStatisticsMap(opIdentifier)
       .filter(e => operatorToWorkerLayers(opIdentifier).last.layer.contains(e._1))
       .forall(e => e._2.outputResults.isEmpty)
     if (allEmpty) {
       Option.empty
     } else {
-      Option.apply(operatorToWorkerStatisticsMap(opIdentifier)
-        .filter(e => operatorToWorkerLayers(opIdentifier).last.layer.contains(e._1))
-        .map(e => e._2.outputResults)
-        .filter(r => r.isDefined).flatMap(r => r.get).toList)
+      Option.apply(
+        operatorToWorkerStatisticsMap(opIdentifier)
+          .filter(e => operatorToWorkerLayers(opIdentifier).last.layer.contains(e._1))
+          .map(e => e._2.outputResults)
+          .filter(r => r.isDefined)
+          .flatMap(r => r.get)
+          .toList
+      )
     }
   }
 
@@ -358,7 +364,7 @@ class Controller(
           operatorStateMap(opIdentifier),
           aggregateWorkerInputRowCount(opIdentifier),
           aggregateWorkerOutputRowCount(opIdentifier),
-          aggregateWorkerOutputResults(opIdentifier),
+          aggregateWorkerOutputResults(opIdentifier)
         )
       })
       this.eventListener.workflowStatusUpdateListener

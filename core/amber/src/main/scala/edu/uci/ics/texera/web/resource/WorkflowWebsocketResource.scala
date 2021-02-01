@@ -185,13 +185,21 @@ class WorkflowWebsocketResource {
 
     val eventListener = ControllerEventListener(
       workflowCompletedListener = completed => {
-        sessionResults.remove(session.getId)
         sessionResults.update(session.getId, completed.result)
         send(session, WorkflowCompletedEvent.apply(completed, texeraWorkflowCompiler))
         WorkflowWebsocketResource.sessionJobs.remove(session.getId)
       },
       workflowStatusUpdateListener = statusUpdate => {
-        send(session, WorkflowStatusUpdateEvent.apply(statusUpdate.operatorStatistics, texeraWorkflowCompiler))
+        sessionResults.update(
+          session.getId,
+          statusUpdate.operatorStatistics
+            .filter(e => e._2.aggregatedOutputResults.isDefined)
+            .map(e => (e._1, e._2.aggregatedOutputResults.get))
+        )
+        send(
+          session,
+          WorkflowStatusUpdateEvent.apply(statusUpdate.operatorStatistics, texeraWorkflowCompiler)
+        )
       },
       modifyLogicCompletedListener = _ => {
         send(session, ModifyLogicCompletedEvent())
