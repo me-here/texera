@@ -119,9 +119,12 @@ import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunication
 }
 import edu.uci.ics.amber.engine.architecture.worker.neo.promisehandlers.QueryLoadMetricsHandler.QueryLoadMetrics
 import edu.uci.ics.amber.engine.architecture.worker.neo.promisehandlers.QueryNextOpLoadMetricsHandler.QueryNextOpLoadMetrics
+import edu.uci.ics.amber.engine.architecture.worker.neo.promisehandlers.SendBuildTableHandler.SendBuildTable
+import edu.uci.ics.amber.engine.architecture.worker.neo.promisehandlers.ShareFlowHandler.ShareFlow
 import edu.uci.ics.amber.engine.common.ambertag.neo.VirtualIdentity
 import edu.uci.ics.amber.engine.common.ambertag.neo.VirtualIdentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCHandlerInitializer
+import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExecConfig
 
 import collection.JavaConverters._
 import scala.collection.mutable
@@ -284,7 +287,8 @@ class Controller(
       scanLayer,
       firstLayer,
       Constants.defaultBatchSize,
-      hashFunc
+      hashFunc,
+      to.asInstanceOf[HashJoinOpExecConfig].getShuffleKey(topology.layers.last.tag)
     )
 
   }
@@ -1025,6 +1029,29 @@ class Controller(
     })
   }
 
+  // join-skew research related
+  private def changeDataFlow(
+      dataSourceOpId: OperatorIdentifier,
+      skewedReceiverId: ActorVirtualIdentity,
+      freeReceiverId: ActorVirtualIdentity
+  ): Unit = {
+    val buildReplFuture = asyncRPCClient.send(SendBuildTable(freeReceiverId), skewedReceiverId)
+
+    buildReplFuture.onSuccess(res => {
+      println("BUILD TABLE COPIED")
+      val networkChangeFutures = new ArrayBuffer[Future[Unit]]()
+      operatorToWorkerLayers(dataSourceOpId)(0).identifiers.foreach(id => {
+        networkChangeFutures.append(
+          asyncRPCClient.send(ShareFlow(skewedReceiverId, freeReceiverId), id)
+        )
+      })
+      val futureOfNetworkChanges = Future.collect(networkChangeFutures)
+      futureOfNetworkChanges.onSuccess(seq =>
+        controllerLogger.logInfo("THE NETWORK CHANGE HAS HAPPENED")
+      )
+    })
+  }
+
   final lazy val allowedStatesOnPausing: Set[WorkerState.Value] =
     Set(WorkerState.Completed, WorkerState.Paused, WorkerState.LocalBreakpointTriggered)
 
@@ -1285,6 +1312,11 @@ class Controller(
                       operatorToWorkerLayers(i.asInstanceOf[OperatorIdentifier]).foreach(l => {
                         l.layer.foreach(worker => worker ! Start)
                       })
+                      changeDataFlow(
+                        i.asInstanceOf[OperatorIdentifier],
+                        operatorToWorkerLayers(workerToOperator(sender)).last.identifiers(0),
+                        operatorToWorkerLayers(workerToOperator(sender)).last.identifiers(1)
+                      )
                     }
                   }
                 }

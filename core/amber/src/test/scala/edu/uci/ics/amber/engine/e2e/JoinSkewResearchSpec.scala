@@ -9,11 +9,7 @@ import edu.uci.ics.amber.engine.architecture.controller.{
   ControllerEventListener,
   ControllerState
 }
-import edu.uci.ics.amber.engine.common.ambermessage.ControlMessage.{
-  DetectSkew,
-  DetectSkewTemp,
-  Start
-}
+import edu.uci.ics.amber.engine.common.ambermessage.ControlMessage.{DetectSkew, Start}
 import edu.uci.ics.amber.engine.common.ambermessage.ControllerMessage.{
   AckedControllerInitialization,
   ReportState
@@ -51,7 +47,7 @@ class JoinSkewResearchSpec
     TestKit.shutdownActorSystem(system)
   }
 
-  ignore should "process DetectSkew message properly" in {
+  "Engine" should "process DetectSkew message properly" in {
     val headerlessCsvOpDesc1 = TestOperators.smallCsvScanOpDesc()
     val headerlessCsvOpDesc2 = TestOperators.smallCsvScanOpDesc()
     val joinOpDesc = TestOperators.joinOpDesc("Region", "Region")

@@ -1,11 +1,18 @@
 package edu.uci.ics.amber.engine.architecture.worker.neo
 
 import com.twitter.util.Promise
-import edu.uci.ics.amber.engine.architecture.messaginglayer.{ControlOutputPort, DataInputPort}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{
+  ControlOutputPort,
+  DataInputPort,
+  TupleToBatchConverter
+}
 import edu.uci.ics.amber.engine.architecture.worker.neo.promisehandlers.{
+  AcceptBuildTableHandler,
   PauseHandler,
   QueryLoadMetricsHandler,
-  QueryNextOpLoadMetricsHandler
+  QueryNextOpLoadMetricsHandler,
+  SendBuildTableHandler,
+  ShareFlowHandler
 }
 import edu.uci.ics.amber.engine.architecture.worker.neo.promisehandlers.QueryLoadMetricsHandler.QueryLoadMetrics
 import edu.uci.ics.amber.engine.common.WorkflowLogger
@@ -25,11 +32,15 @@ class WorkerAsyncRPCHandlerInitializer(
     val pauseManager: PauseManager,
     val dataProcessor: DataProcessor,
     val dataInputPort: DataInputPort,
+    val tupleToBatchConverter: TupleToBatchConverter,
     source: AsyncRPCClient,
     receiver: AsyncRPCServer
 ) extends AsyncRPCHandlerInitializer(source, receiver)
     with PauseHandler
     with QueryLoadMetricsHandler
-    with QueryNextOpLoadMetricsHandler {
+    with QueryNextOpLoadMetricsHandler
+    with ShareFlowHandler
+    with SendBuildTableHandler
+    with AcceptBuildTableHandler {
   val logger: WorkflowLogger = WorkflowLogger("WorkerControlHandler")
 }
