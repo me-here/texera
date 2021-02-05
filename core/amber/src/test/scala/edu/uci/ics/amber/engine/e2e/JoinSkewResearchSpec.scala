@@ -4,17 +4,15 @@ import akka.actor.{ActorSystem, PoisonPill, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import akka.util.Timeout
 import edu.uci.ics.amber.clustering.SingleNodeListener
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.StartWorkflowHandler.StartWorkflow
 import edu.uci.ics.amber.engine.architecture.controller.{
   Controller,
   ControllerEventListener,
   ControllerState
 }
-import edu.uci.ics.amber.engine.common.ambermessage.ControlMessage.{DetectSkew, Start}
-import edu.uci.ics.amber.engine.common.ambermessage.ControllerMessage.{
-  AckedControllerInitialization,
-  ReportState
-}
-import edu.uci.ics.amber.engine.common.ambertag.{OperatorIdentifier, WorkflowTag}
+import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient
+import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
+import edu.uci.ics.amber.engine.common.virtualidentity.WorkflowIdentity
 import edu.uci.ics.texera.workflow.common.WorkflowContext
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.workflow.{
@@ -89,17 +87,16 @@ class JoinSkewResearchSpec
     )
     texeraWorkflowCompiler.init()
     val workflow = texeraWorkflowCompiler.amberWorkflow
-    val workflowTag = WorkflowTag.apply("workflow-test")
+    val workflowTag = WorkflowIdentity("workflow-test")
 
     val controller = parent.childActorOf(
-      Controller.props(workflowTag, workflow, false, ControllerEventListener(), 100)
+      Controller.props(workflowTag, workflow, ControllerEventListener(), 100)
     )
-    controller ! AckedControllerInitialization
-    parent.expectMsg(30.seconds, ReportState(ControllerState.Ready))
-    controller ! Start
-    parent.expectMsg(ReportState(ControllerState.Running))
+    parent.expectMsg(ControllerState.Ready)
+    controller ! ControlInvocation(AsyncRPCClient.IgnoreReply, StartWorkflow())
+    parent.expectMsg(ControllerState.Running)
     // controller ! DetectSkewTemp(OperatorIdentifier("workflow-test", joinOpDesc.operatorID))
-    parent.expectMsg(10.minute, ReportState(ControllerState.Completed))
+    parent.expectMsg(10.minute, ControllerState.Completed)
     parent.ref ! PoisonPill
   }
 

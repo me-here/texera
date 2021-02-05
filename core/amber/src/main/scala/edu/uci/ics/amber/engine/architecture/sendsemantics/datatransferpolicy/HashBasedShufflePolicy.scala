@@ -1,14 +1,8 @@
 package edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy
 
-import edu.uci.ics.amber.engine.common.ambertag.{LinkTag, OperatorIdentifier}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
-import akka.actor.{ActorContext, ActorRef}
-import akka.event.LoggingAdapter
-import akka.util.Timeout
-import edu.uci.ics.amber.engine.common.ambermessage.WorkerMessage.{DataFrame, EndOfUpstream}
-import edu.uci.ics.amber.engine.common.ambermessage.neo.DataPayload
-import edu.uci.ics.amber.engine.common.ambertag.neo.VirtualIdentity
-import edu.uci.ics.amber.engine.common.ambertag.neo.VirtualIdentity.ActorVirtualIdentity
+import edu.uci.ics.amber.engine.common.ambermessage.{DataFrame, DataPayload, EndOfUpstream}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -27,12 +21,12 @@ import scala.concurrent.ExecutionContext
   */
 
 class HashBasedShufflePolicy(
-    policyTag: LinkTag,
+    policyTag: LinkIdentity,
     batchSize: Int,
     val hashFunc: ITuple => Int,
     val shuffleKey: ITuple => String,
     receivers: Array[ActorVirtualIdentity]
-) extends DataSendingPolicy(policyTag, batchSize, receivers) {
+) extends ParallelBatchingPolicy(policyTag, batchSize, receivers) {
   val numBuckets = receivers.length
 
   // buckets once decided will remain same because we are not changing the number of workers in Join
@@ -96,7 +90,7 @@ class HashBasedShufflePolicy(
     var receiver: ActorVirtualIdentity = null
     if (bucketsToReceivers(index).size > 1 && isHeavyHitterTuple(shuffleKey(tuple))) {
       // choose one of the receivers in round robin manner
-      println("GOING ROUND ROBIN")
+      // println("GOING ROUND ROBIN")
       receiver = getAndIncrementReceiverForBucket(index)
     } else {
       receiver = getDefaultReceiverForBucket(index)
@@ -123,5 +117,10 @@ class HashBasedShufflePolicy(
       receiverToBatch(_receivers(i)) = new Array[ITuple](batchSize)
       receiverToCurrBatchSize(_receivers(i)) = 0
     }
+  }
+
+  override def selectBatchingIndex(tuple: ITuple): Int = {
+    val numBuckets = receivers.length
+    (hashFunc(tuple) % numBuckets + numBuckets) % numBuckets
   }
 }

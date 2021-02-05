@@ -1,23 +1,6 @@
 package edu.uci.ics.amber.engine.architecture.controller
 
 import edu.uci.ics.amber.clustering.SingleNodeListener
-import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.{
-  ConditionalGlobalBreakpoint,
-  CountGlobalBreakpoint
-}
-import edu.uci.ics.amber.engine.common.ambermessage.ControlMessage.{
-  Ack,
-  ModifyLogic,
-  Pause,
-  Resume,
-  Start
-}
-import edu.uci.ics.amber.engine.common.ambermessage.ControllerMessage.{
-  AckedControllerInitialization,
-  PassBreakpointTo,
-  ReportState
-}
-import edu.uci.ics.amber.engine.common.ambertag.{OperatorIdentifier, WorkflowTag}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.{Constants, IOperatorExecutor}
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props}
@@ -30,12 +13,9 @@ import edu.uci.ics.amber.engine.architecture.messaginglayer.{
   NetworkCommunicationActor
 }
 import edu.uci.ics.amber.engine.architecture.worker.WorkflowWorker
-import edu.uci.ics.amber.engine.architecture.worker.neo.{DataProcessor, WorkerInternalQueue}
-import edu.uci.ics.amber.engine.common.ambertag.neo.VirtualIdentity
-import edu.uci.ics.amber.engine.common.ambertag.neo.VirtualIdentity.{
-  ActorVirtualIdentity,
-  WorkerActorVirtualIdentity
-}
+import edu.uci.ics.amber.engine.architecture.worker.{DataProcessor, WorkerInternalQueue}
+import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
+import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.e2e.TestOperators
 import edu.uci.ics.texera.workflow.common.WorkflowContext
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
