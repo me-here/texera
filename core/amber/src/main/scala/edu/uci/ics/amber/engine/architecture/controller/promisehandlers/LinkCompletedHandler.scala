@@ -53,7 +53,7 @@ trait LinkCompletedHandler {
               val upstreamOps = workflow.getDirectUpstreamOperators(joinOpId)
               val probeOpId = upstreamOps
                 .find(uOpId =>
-                  workflow.getOperator(uOpId).topology.layers(0).id == workflow
+                  workflow.getOperator(uOpId).topology.layers(0).id != workflow
                     .getOperator(joinOpId)
                     .asInstanceOf[HashJoinOpExecConfig[String]]
                     .buildTable

@@ -142,27 +142,3 @@ class Controller(
   }
 
 }
-
-//
-//  // join-skew research related
-//  private def changeDataFlow(
-//  dataSourceOpId: OperatorIdentifier,
-//  skewedReceiverId: ActorVirtualIdentity,
-//  freeReceiverId: ActorVirtualIdentity
-//  ): Unit = {
-//  val buildReplFuture = asyncRPCClient.send(SendBuildTable(freeReceiverId), skewedReceiverId)
-//
-//  buildReplFuture.onSuccess(res => {
-//  println("BUILD TABLE COPIED")
-//  val networkChangeFutures = new ArrayBuffer[Future[Unit]]()
-//  operatorToWorkerLayers(dataSourceOpId)(0).identifiers.foreach(id => {
-//  networkChangeFutures.append(
-//  asyncRPCClient.send(ShareFlow(skewedReceiverId, freeReceiverId), id)
-//  )
-//})
-//  val futureOfNetworkChanges = Future.collect(networkChangeFutures)
-//  futureOfNetworkChanges.onSuccess(seq =>
-//  controllerLogger.logInfo("THE NETWORK CHANGE HAS HAPPENED")
-//  )
-//})
-//}

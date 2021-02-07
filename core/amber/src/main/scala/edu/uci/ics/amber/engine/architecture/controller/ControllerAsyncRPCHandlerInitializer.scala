@@ -90,7 +90,7 @@ class ControllerAsyncRPCHandlerInitializer(
     if (detectSkewHandle == null) {
       detectSkewHandle = actorContext.system.scheduler.schedule(
         100.milliseconds,
-        FiniteDuration.apply(5, SECONDS),
+        FiniteDuration.apply(10, SECONDS),
         actorContext.self,
         ControlInvocation(AsyncRPCClient.IgnoreReplyAndDoNotLog, DetectSkew(joinLayer, probeLayer))
       )(actorContext.dispatcher)
