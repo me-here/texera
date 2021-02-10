@@ -53,12 +53,17 @@ trait WorkerExecutionCompletedHandler {
         } else {
           // if the operator is not a sink, just query the stats
           send(QueryStatistics(), sender).map { stats =>
-            if (workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[String]]) {
-              println(s"\tFinal i/o tuples in ${sender} are ${stats}")
+            {
+              workerEndTime(sender) = System.nanoTime()
+              if (workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[String]]) {
+                println(
+                  s"\tFinal i/o tuples and time in ${sender} are ${stats}, ${(workerEndTime(sender) - workerStartTime(sender)) / 1e9d}"
+                )
+              }
+              val workerInfo = operator.getWorker(sender)
+              workerInfo.stats = stats
+              workerInfo.state = stats.workerState
             }
-            val workerInfo = operator.getWorker(sender)
-            workerInfo.stats = stats
-            workerInfo.state = stats.workerState
           }
         }
       future.flatMap { ret =>

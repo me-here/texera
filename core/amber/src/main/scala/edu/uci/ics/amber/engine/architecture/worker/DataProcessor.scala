@@ -1,7 +1,6 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
 import java.util.concurrent.Executors
-
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.FatalErrorHandler.FatalError
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LinkCompletedHandler
@@ -22,8 +21,10 @@ import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, InputExhausted, WorkflowLogger}
 import edu.uci.ics.amber.error.WorkflowRuntimeError
+import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExec
 
 class DataProcessor( // dependencies:
+    selfID: ActorVirtualIdentity,
     logger: WorkflowLogger, // logger of the worker actor
     operator: IOperatorExecutor, // core logic
     asyncRPCClient: AsyncRPCClient, // to send controls
@@ -40,6 +41,11 @@ class DataProcessor( // dependencies:
   private var currentInputLink: LinkIdentity = _
   private var currentOutputIterator: Iterator[ITuple] = _
   private var isCompleted = false
+
+  // join-skew research related
+  var probeStartTime: Long = _
+  var probeEndTime: Long = _
+  var buildLinkDone: Boolean = false
 
   // initialize dp thread upon construction
   private val dpThreadExecutor = Executors.newSingleThreadExecutor
@@ -147,6 +153,18 @@ class DataProcessor( // dependencies:
           handleInputTuple()
           if (currentInputLink != null) {
             asyncRPCClient.send(LinkCompleted(currentInputLink), ActorVirtualIdentity.Controller)
+          }
+          // join-skew research related
+          if (operator.isInstanceOf[HashJoinOpExec[String]]) {
+            if (!buildLinkDone) {
+              buildLinkDone = true
+              probeStartTime = System.nanoTime()
+            } else {
+              probeEndTime = System.nanoTime()
+              println(
+                s"\tProbe part of Join finished in ${(probeEndTime - probeStartTime) / 1e9d} for ${selfID}"
+              )
+            }
           }
         case EndOfAllMarker =>
           // end of processing, break DP loop

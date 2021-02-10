@@ -4,9 +4,13 @@ import com.twitter.util.Future
 import edu.uci.ics.amber.engine.architecture.controller.ControllerAsyncRPCHandlerInitializer
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSkewHandler.{
   DetectSkew,
+  endTimeForBuildRepl,
+  endTimeForNetChange,
   getSkewedAndFreeWorker,
   previousCallFinished,
-  skewedWorkerToFreeWorker
+  skewedWorkerToFreeWorker,
+  startTimeForBuildRepl,
+  startTimeForNetChange
 }
 import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryLoadMetricsHandler.{
@@ -29,6 +33,11 @@ import scala.collection.mutable.ArrayBuffer
 object DetectSkewHandler {
   var previousCallFinished = true
   var skewedWorkerToFreeWorker = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
+  var startTimeForBuildRepl: Long = _
+  var endTimeForBuildRepl: Long = _
+  var startTimeForNetChange: Long = _
+  var endTimeForNetChange: Long = _
+
   final case class DetectSkew(joinLayer: WorkerLayer, probeLayer: WorkerLayer)
       extends ControlCommand[CommandCompleted]
 
@@ -104,16 +113,23 @@ trait DetectSkewHandler {
 
             val skewedAndFreeWorkers = getSkewedAndFreeWorker(loads)
             if (skewedAndFreeWorkers._1 != null && skewedAndFreeWorkers._2 != null) {
+              startTimeForBuildRepl = System.nanoTime()
               send(SendBuildTable(skewedAndFreeWorkers._2), skewedAndFreeWorkers._1).flatMap(
                 res => {
+                  endTimeForBuildRepl = System.nanoTime()
                   println(
-                    s"BUILD TABLE COPIED from ${skewedAndFreeWorkers._1} to ${skewedAndFreeWorkers._2}"
+                    s"\tBUILD TABLE COPIED in ${(endTimeForBuildRepl - startTimeForBuildRepl) / 1e9d} from ${skewedAndFreeWorkers._1} to ${skewedAndFreeWorkers._2}"
                   )
+
+                  startTimeForNetChange = System.nanoTime()
                   getResultsAsFuture(
                     cmd.probeLayer,
                     ShareFlow(skewedAndFreeWorkers._1, skewedAndFreeWorkers._2)
                   ).map(seq => {
-                    println("THE NETWORK CHANGE HAS HAPPENED")
+                    endTimeForNetChange = System.nanoTime()
+                    println(
+                      s"\tTHE NETWORK SHARE HAS HAPPENED in ${(endTimeForNetChange - startTimeForNetChange) / 1e9d} from ${skewedAndFreeWorkers._1} to ${skewedAndFreeWorkers._2}"
+                    )
                     previousCallFinished = true
                     CommandCompleted()
                   })

@@ -66,7 +66,7 @@ class HashJoinOpDesc[K] extends OperatorDescriptor {
             schemas(0).containsAttribute(attr.getName()) && attr.getName() != probeAttributeName
           ) {
             // appending 1 to the output of Join schema in case of duplicate attributes in probe and build table
-            builder.add(new Attribute(s"${attr.getName()}1", attr.getType()))
+            builder.add(new Attribute(s"${attr.getName()}#@1", attr.getType()))
           } else {
             builder.add(attr)
           }
@@ -76,7 +76,7 @@ class HashJoinOpDesc[K] extends OperatorDescriptor {
         .getAttributes()
         .forEach(attr => {
           if (schemas(0).containsAttribute(attr.getName())) {
-            builder.add(new Attribute(s"${attr.getName()}1", attr.getType()))
+            builder.add(new Attribute(s"${attr.getName()}#@1", attr.getType()))
           } else if (!attr.getName().equalsIgnoreCase(probeAttributeName)) {
             builder.add(attr)
           }
