@@ -33,6 +33,7 @@ trait StartWorkflowHandler {
 
   registerHandler { (msg: StartWorkflow, sender) =>
     {
+      workflowStartTime = System.nanoTime()
       val startedLayers = mutable.HashSet[WorkerLayer]()
       Future
         .collect(

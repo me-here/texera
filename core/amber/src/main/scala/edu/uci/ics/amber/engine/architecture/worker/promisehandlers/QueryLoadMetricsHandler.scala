@@ -23,6 +23,7 @@ trait QueryLoadMetricsHandler {
 
   registerHandler { (query: QueryLoadMetrics, sender) =>
     // workerStateManager.shouldBe(Running, Ready)
+    println(s"Current i/o tuples in ${selfID} - ${dataProcessor.collectStatistics()}")
     CurrentLoadMetrics(
       dataProcessor.getQueueSize() / Constants.defaultBatchSize,
       dataProcessor.collectStatistics()._1 / Constants.defaultBatchSize,

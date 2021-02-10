@@ -65,6 +65,9 @@ class ControllerAsyncRPCHandlerInitializer(
     with FatalErrorHandler
     with DetectSkewHandler {
 
+  var workflowStartTime: Long = _
+  var workflowEndTime: Long = _
+
   def enableStatusUpdate(): Unit = {
     if (statisticsUpdateIntervalMs.isDefined && statusUpdateAskHandle == null) {
       statusUpdateAskHandle = actorContext.system.scheduler.schedule(

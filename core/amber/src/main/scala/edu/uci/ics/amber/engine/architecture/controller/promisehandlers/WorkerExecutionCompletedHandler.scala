@@ -53,6 +53,9 @@ trait WorkerExecutionCompletedHandler {
         } else {
           // if the operator is not a sink, just query the stats
           send(QueryStatistics(), sender).map { stats =>
+            if (workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[String]]) {
+              println(s"\tFinal i/o tuples in ${sender} are ${stats}")
+            }
             val workerInfo = operator.getWorker(sender)
             workerInfo.stats = stats
             workerInfo.state = stats.workerState
@@ -71,6 +74,10 @@ trait WorkerExecutionCompletedHandler {
         updateFrontendWorkflowStatus()
         if (workflow.isCompleted) {
           actorContext.parent ! ControllerState.Completed // for testing
+          workflowEndTime = System.nanoTime()
+          println(
+            s"\tTOTAL EXECUTION TIME FOR WORKFLOW ${(workflowEndTime - workflowStartTime) / 1e9d}"
+          )
           //send result to frontend
           if (eventListener.workflowCompletedListener != null) {
             eventListener.workflowCompletedListener
