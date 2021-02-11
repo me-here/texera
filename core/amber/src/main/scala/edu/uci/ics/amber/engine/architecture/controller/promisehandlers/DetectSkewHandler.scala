@@ -5,11 +5,13 @@ import edu.uci.ics.amber.engine.architecture.controller.ControllerAsyncRPCHandle
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSkewHandler.{
   DetectSkew,
   endTimeForBuildRepl,
+  endTimeForMetricColl,
   endTimeForNetChange,
   getSkewedAndFreeWorker,
   previousCallFinished,
   skewedWorkerToFreeWorker,
   startTimeForBuildRepl,
+  startTimeForMetricColl,
   startTimeForNetChange
 }
 import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
@@ -33,6 +35,8 @@ import scala.collection.mutable.ArrayBuffer
 object DetectSkewHandler {
   var previousCallFinished = true
   var skewedWorkerToFreeWorker = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
+  var startTimeForMetricColl: Long = _
+  var endTimeForMetricColl: Long = _
   var startTimeForBuildRepl: Long = _
   var endTimeForBuildRepl: Long = _
   var startTimeForNetChange: Long = _
@@ -102,14 +106,19 @@ trait DetectSkewHandler {
     {
       if (previousCallFinished) {
         previousCallFinished = false
+        startTimeForMetricColl = System.nanoTime()
         Future
           .join(
             getResultsAsFuture(cmd.joinLayer, QueryLoadMetrics()),
             getResultsAsFuture(cmd.probeLayer, QueryNextOpLoadMetrics())
           )
           .flatMap(metrics => {
+            endTimeForMetricColl = System.nanoTime()
+            println(
+              s"\tThe metrics have been collected in ${(endTimeForMetricColl - startTimeForMetricColl) / 1e9d}s"
+            )
             val loads = aggregateLoadMetrics(cmd, metrics)
-            println(s"The final loads map ${loads.mkString("\n\t\t")}")
+            println(s"\tThe final loads map ${loads.mkString("\n\t\t")}")
 
             val skewedAndFreeWorkers = getSkewedAndFreeWorker(loads)
             if (skewedAndFreeWorkers._1 != null && skewedAndFreeWorkers._2 != null) {
@@ -118,7 +127,7 @@ trait DetectSkewHandler {
                 res => {
                   endTimeForBuildRepl = System.nanoTime()
                   println(
-                    s"\tBUILD TABLE COPIED in ${(endTimeForBuildRepl - startTimeForBuildRepl) / 1e9d} from ${skewedAndFreeWorkers._1} to ${skewedAndFreeWorkers._2}"
+                    s"\tBUILD TABLE COPIED in ${(endTimeForBuildRepl - startTimeForBuildRepl) / 1e9d}s from ${skewedAndFreeWorkers._1} to ${skewedAndFreeWorkers._2}"
                   )
 
                   startTimeForNetChange = System.nanoTime()
@@ -128,7 +137,7 @@ trait DetectSkewHandler {
                   ).map(seq => {
                     endTimeForNetChange = System.nanoTime()
                     println(
-                      s"\tTHE NETWORK SHARE HAS HAPPENED in ${(endTimeForNetChange - startTimeForNetChange) / 1e9d} from ${skewedAndFreeWorkers._1} to ${skewedAndFreeWorkers._2}"
+                      s"\tTHE NETWORK SHARE HAS HAPPENED in ${(endTimeForNetChange - startTimeForNetChange) / 1e9d}s from ${skewedAndFreeWorkers._1} to ${skewedAndFreeWorkers._2}"
                     )
                     previousCallFinished = true
                     CommandCompleted()

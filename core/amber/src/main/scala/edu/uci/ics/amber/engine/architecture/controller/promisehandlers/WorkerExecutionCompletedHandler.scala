@@ -57,7 +57,7 @@ trait WorkerExecutionCompletedHandler {
               workerEndTime(sender) = System.nanoTime()
               if (workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[String]]) {
                 println(
-                  s"\tFinal i/o tuples and time in ${sender} are ${stats}, ${(workerEndTime(sender) - workerStartTime(sender)) / 1e9d}"
+                  s"\tFinal i/o tuples and time in ${sender} are ${stats}, ${(workerEndTime(sender) - workerStartTime(sender)) / 1e9d}s"
                 )
               }
               val workerInfo = operator.getWorker(sender)
@@ -81,7 +81,7 @@ trait WorkerExecutionCompletedHandler {
           actorContext.parent ! ControllerState.Completed // for testing
           workflowEndTime = System.nanoTime()
           println(
-            s"\tTOTAL EXECUTION TIME FOR WORKFLOW ${(workflowEndTime - workflowStartTime) / 1e9d}"
+            s"\tTOTAL EXECUTION TIME FOR WORKFLOW ${(workflowEndTime - workflowStartTime) / 1e9d}s"
           )
           //send result to frontend
           if (eventListener.workflowCompletedListener != null) {
