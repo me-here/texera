@@ -285,7 +285,11 @@ export class ResultPanelComponent {
     this.breakpointAction = false;
 
     this.isFrontPagination = true;
-    this.currentPageIndex = 1;
+
+    if (sessionGetObject<ResultPaginationInfo>(PAGINATION_INFO_STORAGE_KEY) !== null) {
+      this.currentPageIndex = 1;
+    }
+
     this.total = 0;
     this.isLoadingResult = false;
   }
@@ -424,6 +428,8 @@ export class ResultPanelComponent {
     // generate columnDef from first row, column definition is in order
     this.currentColumns = ResultPanelComponent.generateColumns(columns);
     this.total = totalRowCount;
+
+    this.workflowWebsocketService.send('ResultPaginationRequest', { pageSize: ResultPanelComponent.DEFAULT_PAGE_SIZE, pageIndex: this.currentPageIndex });
 
     // save paginated result into session storage
     resultPaginationInfo = {
