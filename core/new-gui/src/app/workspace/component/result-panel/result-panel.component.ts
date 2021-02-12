@@ -41,7 +41,6 @@ export class ResultPanelComponent {
 
   private static readonly PRETTY_JSON_TEXT_LIMIT: number = 50000;
   private static readonly TABLE_COLUMN_TEXT_LIMIT: number = 1000;
-  private static readonly MIN_UPDATE_INTERVAL_MS: number = 1000;
 
   public showResultPanel: boolean = false;
 
@@ -70,12 +69,9 @@ export class ResultPanelComponent {
   //   for more details
   public isFrontPagination: boolean = true;
   public isLoadingResult: boolean = false;
-  public currentPageSize: number = 10;
   // this starts from **ONE**, not zero
   public currentPageIndex: number = 1;
   public total: number = 0;
-
-  private lastStatusUpdateTime: number = Date.now();
 
   constructor(
     private executeWorkflowService: ExecuteWorkflowService,
@@ -107,6 +103,11 @@ export class ResultPanelComponent {
         this.resultPanelToggleService.openResultPanel();
       }
       if (event.current.state === ExecutionState.Completed || event.current.state === ExecutionState.Running) {
+        if (event.current.state === ExecutionState.Completed) {
+          // remove previously stored partial result
+          sessionRemoveObject(PAGINATION_INFO_STORAGE_KEY);
+        }
+
         const sinkOperators = this.workflowActionService.getTexeraGraph().getAllOperators()
           .filter(op => op.operatorType.toLowerCase().includes('sink'));
         if (sinkOperators.length > 0) {
@@ -127,18 +128,44 @@ export class ResultPanelComponent {
         if (result.operatorID === highlightedOperators[0]) {
           this.total = result.totalRowCount;
           this.currentResult = result.table.slice();
+
+          // When there is a result data from the backend,
+          //  1. Get all the column names except '_id', using the first instance of
+          //      result data.
+          //  2. Use those names to generate a list of display columns, which would
+          //      be used for displaying on angular mateiral table.
+          //  3. Pass the result data as array to generate a new angular material
+          //      data table.
+          //  4. Set the newly created data table to our own paginator.
+
+          let columns: {columnKey: any, columnText: string}[];
+
+          const columnKeys = Object.keys(this.currentResult[0]).filter(x => x !== '_id');
+          this.currentDisplayColumns = columnKeys;
+          columns = columnKeys.map(v => ({columnKey: v, columnText: v}));
+
+          // generate columnDef from first row, column definition is in order
+          this.currentColumns = ResultPanelComponent.generateColumns(columns);
+
+          // save result
+          const resultPaginationInfo = {
+            newWorkflowExecuted: false,
+            currentResult: this.currentResult,
+            currentPageIndex: this.currentPageIndex,
+            total: this.total,
+            columnKeys: columnKeys,
+            operatorID: this.resultPanelOperatorID
+          };
+          sessionSetObject(PAGINATION_INFO_STORAGE_KEY, resultPaginationInfo);
           return;
         }
       }
     });
 
-    this.workflowStatusService.getResultUpdateStream().subscribe(event => {
-      const currentTime = Date.now();
-
-      if (!this.resultPanelOperatorID || currentTime - this.lastStatusUpdateTime < ResultPanelComponent.MIN_UPDATE_INTERVAL_MS) {
+    this.workflowStatusService.getResultUpdateStream().auditTime(1000).subscribe(event => {
+      if (!this.resultPanelOperatorID) {
         return;
       }
-      this.lastStatusUpdateTime = currentTime;
 
       const result = this.workflowStatusService.getCurrentResult()[this.resultPanelOperatorID];
 
@@ -148,7 +175,23 @@ export class ResultPanelComponent {
         this.chartType = result.chartType;
         this.isFrontPagination = false;
 
-        this.setupResultTable(result.table, result.totalRowCount, this.resultPanelOperatorID);
+        const previousTotal = this.total;
+        this.total = result.totalRowCount;
+
+        // if there are new results and we need them
+        if (previousTotal !== this.total && this.currentResult.length < ResultPanelComponent.DEFAULT_PAGE_SIZE) {
+          this.workflowWebsocketService.send('ResultPaginationRequest', { pageSize: ResultPanelComponent.DEFAULT_PAGE_SIZE, pageIndex: this.currentPageIndex });
+        } else {
+          const resultPaginationInfo = {
+            newWorkflowExecuted: false,
+            currentResult: this.currentResult,
+            currentPageIndex: this.currentPageIndex,
+            total: this.total,
+            columnKeys: this.currentColumns,
+            operatorID: this.resultPanelOperatorID
+          };
+          sessionSetObject(PAGINATION_INFO_STORAGE_KEY, resultPaginationInfo);
+        }
       }
     });
 
@@ -225,7 +268,6 @@ export class ResultPanelComponent {
         ...resultPaginationInfo,
         currentResult: this.currentResult,
         currentPageIndex: this.currentPageIndex,
-        currentPageSize: this.currentPageSize,
         total: this.total,
         operatorID: this.resultPanelOperatorID
       });
@@ -244,7 +286,6 @@ export class ResultPanelComponent {
 
     this.isFrontPagination = true;
     this.currentPageIndex = 1;
-    this.currentPageSize = 10;
     this.total = 0;
     this.isLoadingResult = false;
   }
@@ -317,12 +358,12 @@ export class ResultPanelComponent {
    */
   public onTableQueryParamsChange(params: NzTableQueryParams) {
     const { pageSize: newPageSize, pageIndex: newPageIndex } = params;
-    this.currentPageSize = newPageSize;
-    //this.currentPageIndex = newPageIndex;
 
     if (this.isFrontPagination) {
       return;
     }
+
+    this.currentPageIndex = newPageIndex;
 
     this.workflowWebsocketService.send('ResultPaginationRequest', { pageSize: newPageSize, pageIndex: newPageIndex });
   }
@@ -347,9 +388,10 @@ export class ResultPanelComponent {
     let resultPaginationInfo = sessionGetObject<ResultPaginationInfo>(PAGINATION_INFO_STORAGE_KEY);
     if (resultPaginationInfo && !resultPaginationInfo.newWorkflowExecuted && resultPaginationInfo.operatorID === this.resultPanelOperatorID && this.executeWorkflowService.getExecutionState().state === ExecutionState.Completed) {
       this.isFrontPagination = false;
+      console.log('resultPaginationInfo.currentResult;');
+      console.log(resultPaginationInfo.currentResult);
       this.currentResult = resultPaginationInfo.currentResult;
       this.currentPageIndex = resultPaginationInfo.currentPageIndex;
-      this.currentPageSize = resultPaginationInfo.currentPageSize;
       this.total = resultPaginationInfo.total;
       this.currentDisplayColumns = resultPaginationInfo.columnKeys;
       // generate columnDef from first row, column definition is in order
@@ -360,14 +402,9 @@ export class ResultPanelComponent {
     }
     // creates a shallow copy of the readonly response.result,
     //  this copy will be has type object[] because MatTableDataSource's input needs to be object[]
-
-    // save a copy of current result only when
-    //  currently there is no result OR
-    //  this function is called because of a new WorkflowCompletedEvent OR
-    //  this function is called because of a new WorkflowStatusUpdateEvent and the user is at the last page
-    if (this.currentResult.length === 0 || this.executeWorkflowService.getExecutionState().state === ExecutionState.Completed || this.currentPageIndex === Math.ceil(totalRowCount / 10)) {
-      this.currentResult = resultData.slice();
-    }
+    console.log('resultData');
+    console.log(resultData);
+    this.currentResult = resultData.slice();
 
     // When there is a result data from the backend,
     //  1. Get all the column names except '_id', using the first instance of
@@ -388,16 +425,11 @@ export class ResultPanelComponent {
     this.currentColumns = ResultPanelComponent.generateColumns(columns);
     this.total = totalRowCount;
 
-    // get the current page size, if the result length is less than `this.currentPageSize`,
-    //  then the maximum number of items each page will be the length of the result, otherwise `this.currentPageSize`.
-    this.currentPageSize = Math.min(this.total, ResultPanelComponent.DEFAULT_PAGE_SIZE);
-
     // save paginated result into session storage
     resultPaginationInfo = {
       newWorkflowExecuted: false,
       currentResult: this.currentResult,
       currentPageIndex: this.currentPageIndex,
-      currentPageSize: this.currentPageSize,
       total: this.total,
       columnKeys: columnKeys,
       operatorID: this.resultPanelOperatorID
