@@ -4,6 +4,7 @@ import com.twitter.util.Future
 import edu.uci.ics.amber.engine.architecture.controller.ControllerAsyncRPCHandlerInitializer
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSkewHandler.{
   DetectSkew,
+  detectSkewLogger,
   endTimeForBuildRepl,
   endTimeForMetricColl,
   endTimeForNetChange,
@@ -25,6 +26,7 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryNextOpL
 }
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.SendBuildTableHandler.SendBuildTable
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ShareFlowHandler.ShareFlow
+import edu.uci.ics.amber.engine.common.WorkflowLogger
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
@@ -41,6 +43,7 @@ object DetectSkewHandler {
   var endTimeForBuildRepl: Long = _
   var startTimeForNetChange: Long = _
   var endTimeForNetChange: Long = _
+  var detectSkewLogger: WorkflowLogger = new WorkflowLogger("DetectSkewHandler")
 
   final case class DetectSkew(joinLayer: WorkerLayer, probeLayer: WorkerLayer)
       extends ControlCommand[CommandCompleted]
@@ -87,7 +90,7 @@ trait DetectSkewHandler {
     val loads = new mutable.HashMap[ActorVirtualIdentity, Long]()
     for ((id, currLoad) <- cmd.joinLayer.workers.keys zip metrics._1) {
       loads(id) = currLoad.stashedBatches + currLoad.unprocessedQueueLength
-      println(
+      detectSkewLogger.logInfo(
         s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue"
       )
     }
@@ -95,7 +98,7 @@ trait DetectSkewHandler {
       for ((wId, futLoad) <- replyFromNetComm.dataToSend) {
         if (loads.contains(wId)) {
           loads(wId) = loads.getOrElse(wId, 0L) + futLoad
-          println(s"\tLOAD ${wId} - ${futLoad} going to arrive")
+          detectSkewLogger.logInfo(s"\tLOAD ${wId} - ${futLoad} going to arrive")
         }
       }
     })
@@ -114,11 +117,11 @@ trait DetectSkewHandler {
           )
           .flatMap(metrics => {
             endTimeForMetricColl = System.nanoTime()
-            println(
+            detectSkewLogger.logInfo(
               s"\tThe metrics have been collected in ${(endTimeForMetricColl - startTimeForMetricColl) / 1e9d}s"
             )
             val loads = aggregateLoadMetrics(cmd, metrics)
-            println(s"\tThe final loads map ${loads.mkString("\n\t\t")}")
+            detectSkewLogger.logInfo(s"\tThe final loads map ${loads.mkString("\n\t\t")}")
 
             val skewedAndFreeWorkers = getSkewedAndFreeWorker(loads)
             if (skewedAndFreeWorkers._1 != null && skewedAndFreeWorkers._2 != null) {
@@ -126,7 +129,7 @@ trait DetectSkewHandler {
               send(SendBuildTable(skewedAndFreeWorkers._2), skewedAndFreeWorkers._1).flatMap(
                 res => {
                   endTimeForBuildRepl = System.nanoTime()
-                  println(
+                  detectSkewLogger.logInfo(
                     s"\tBUILD TABLE COPIED in ${(endTimeForBuildRepl - startTimeForBuildRepl) / 1e9d}s from ${skewedAndFreeWorkers._1} to ${skewedAndFreeWorkers._2}"
                   )
 
@@ -136,7 +139,7 @@ trait DetectSkewHandler {
                     ShareFlow(skewedAndFreeWorkers._1, skewedAndFreeWorkers._2)
                   ).map(seq => {
                     endTimeForNetChange = System.nanoTime()
-                    println(
+                    detectSkewLogger.logInfo(
                       s"\tTHE NETWORK SHARE HAS HAPPENED in ${(endTimeForNetChange - startTimeForNetChange) / 1e9d}s from ${skewedAndFreeWorkers._1} to ${skewedAndFreeWorkers._2}"
                     )
                     previousCallFinished = true
@@ -144,7 +147,10 @@ trait DetectSkewHandler {
                   })
                 }
               )
-            } else { Future { CommandCompleted() } }
+            } else {
+              previousCallFinished = true
+              Future { CommandCompleted() }
+            }
           })
       } else { Future { CommandCompleted() } }
     }

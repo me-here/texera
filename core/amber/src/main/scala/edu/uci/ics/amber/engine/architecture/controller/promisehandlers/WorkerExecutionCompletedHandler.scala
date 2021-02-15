@@ -9,11 +9,15 @@ import edu.uci.ics.amber.engine.architecture.controller.{
   ControllerAsyncRPCHandlerInitializer,
   ControllerState
 }
-import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.{
+  WorkerExecutionCompleted,
+  workerCompletedLogger
+}
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.KillWorkflowHandler.KillWorkflow
 import edu.uci.ics.amber.engine.architecture.principal.OperatorState
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.CollectSinkResultsHandler.CollectSinkResults
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
+import edu.uci.ics.amber.engine.common.WorkflowLogger
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Completed
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.WorkerActorVirtualIdentity
@@ -23,6 +27,7 @@ import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExecConfig
 
 object WorkerExecutionCompletedHandler {
   final case class WorkerExecutionCompleted() extends ControlCommand[CommandCompleted]
+  var workerCompletedLogger: WorkflowLogger = new WorkflowLogger("WorkerExecutionCompletedHandler")
 }
 
 /** indicate a worker has completed its job
@@ -56,7 +61,7 @@ trait WorkerExecutionCompletedHandler {
             {
               workerEndTime(sender) = System.nanoTime()
               if (workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[String]]) {
-                println(
+                workerCompletedLogger.logInfo(
                   s"\tFinal i/o tuples and time in ${sender} are ${stats}, ${(workerEndTime(sender) - workerStartTime(sender)) / 1e9d}s"
                 )
               }
@@ -80,7 +85,7 @@ trait WorkerExecutionCompletedHandler {
         if (workflow.isCompleted) {
           actorContext.parent ! ControllerState.Completed // for testing
           workflowEndTime = System.nanoTime()
-          println(
+          workerCompletedLogger.logInfo(
             s"\tTOTAL EXECUTION TIME FOR WORKFLOW ${(workflowEndTime - workflowStartTime) / 1e9d}s"
           )
           //send result to frontend
