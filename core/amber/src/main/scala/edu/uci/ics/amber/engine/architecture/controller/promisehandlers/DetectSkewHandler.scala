@@ -26,7 +26,7 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryNextOpL
 }
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.SendBuildTableHandler.SendBuildTable
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ShareFlowHandler.ShareFlow
-import edu.uci.ics.amber.engine.common.WorkflowLogger
+import edu.uci.ics.amber.engine.common.{Constants, WorkflowLogger}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
@@ -62,8 +62,9 @@ object DetectSkewHandler {
       (null, null)
     } else {
       skewedWorkerToFreeWorker(skewedWorker) = freeWorker
-      (skewedWorker, freeWorker)
-//      (null, null)
+      if (Constants.onlyDetectSkew) { (null, null) }
+      else { (skewedWorker, freeWorker) }
+
     }
   }
 }

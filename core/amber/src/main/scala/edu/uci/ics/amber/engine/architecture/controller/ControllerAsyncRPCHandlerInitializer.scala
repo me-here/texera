@@ -25,7 +25,7 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.{
 import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
 import edu.uci.ics.amber.engine.architecture.messaginglayer.ControlOutputPort
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryLoadMetricsHandler.CurrentLoadMetrics
-import edu.uci.ics.amber.engine.common.WorkflowLogger
+import edu.uci.ics.amber.engine.common.{Constants, WorkflowLogger}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
 import edu.uci.ics.amber.engine.common.rpc.{
   AsyncRPCClient,
@@ -96,8 +96,8 @@ class ControllerAsyncRPCHandlerInitializer(
   def enableDetectSkewCalls(joinLayer: WorkerLayer, probeLayer: WorkerLayer): Unit = {
     if (detectSkewHandle == null) {
       detectSkewHandle = actorContext.system.scheduler.schedule(
-        100.milliseconds,
-        FiniteDuration.apply(2, SECONDS),
+        Constants.startDetection,
+        Constants.detectionPeriod,
         actorContext.self,
         ControlInvocation(AsyncRPCClient.IgnoreReplyAndDoNotLog, DetectSkew(joinLayer, probeLayer))
       )(actorContext.dispatcher)

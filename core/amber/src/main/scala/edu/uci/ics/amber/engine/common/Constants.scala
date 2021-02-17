@@ -13,4 +13,10 @@ object Constants {
   var numWorkerPerNode = 2
   var dataVolumePerNode = 10
   var defaultTau: FiniteDuration = 10.milliseconds
+
+  // join-skew reserach related
+  val onlyDetectSkew: Boolean = false
+  val startDetection: FiniteDuration = 100.milliseconds
+  val detectionPeriod: FiniteDuration = 2.seconds
+  val printResultsInConsole: Boolean = true
 }

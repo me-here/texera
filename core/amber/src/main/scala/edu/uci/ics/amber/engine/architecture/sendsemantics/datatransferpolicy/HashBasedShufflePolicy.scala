@@ -34,10 +34,14 @@ class HashBasedShufflePolicy(
   var nextReceiverIdxInBucket = new mutable.HashMap[Int, Int]()
   var receiverToBatch = new mutable.HashMap[ActorVirtualIdentity, Array[ITuple]]()
   var receiverToCurrBatchSize = new mutable.HashMap[ActorVirtualIdentity, Int]()
+  var receiverToTotalSent = new mutable.HashMap[ActorVirtualIdentity, Long]()
 
   initializeInternalState(receivers)
 
   override def noMore(): Array[(ActorVirtualIdentity, DataPayload)] = {
+    println(
+      s"No more received for worker. Already sent out ${receiverToTotalSent.mkString("\n\t")}"
+    )
     val receiversAndBatches = new ArrayBuffer[(ActorVirtualIdentity, DataPayload)]
     for ((receiver, currSize) <- receiverToCurrBatchSize) {
       if (currSize > 0) {
@@ -96,6 +100,7 @@ class HashBasedShufflePolicy(
       receiver = getDefaultReceiverForBucket(index)
     }
     receiverToBatch(receiver)(receiverToCurrBatchSize(receiver)) = tuple
+    receiverToTotalSent(receiver) = receiverToTotalSent.getOrElse(receiver, 0L) + 1
     receiverToCurrBatchSize(receiver) += 1
     if (receiverToCurrBatchSize(receiver) == batchSize) {
       receiverToCurrBatchSize(receiver) = 0

@@ -22,6 +22,7 @@ import edu.uci.ics.texera.workflow.common.workflow.{
   WorkflowCompiler,
   WorkflowInfo
 }
+import edu.uci.ics.texera.workflow.operators.aggregate.AggregationFunction
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpecLike
 
@@ -46,14 +47,24 @@ class JoinSkewResearchSpec
   }
 
   "Engine" should "process DetectSkew message properly" in {
-    val headerlessCsvOpDesc1 = TestOperators.smallCsvScanOpDesc()
-    val headerlessCsvOpDesc2 = TestOperators.smallCsvScanOpDesc()
-    val joinOpDesc = TestOperators.joinOpDesc("Region", "Region")
+    val headerlessProbe = TestOperators.getCsvScanOpDesc(
+      "/Users/avinash/TexeraOrleans/dataset/skewed/81k-8kcopy.csv",
+      false
+    )
+    val headerlessBuild = TestOperators.getCsvScanOpDesc(
+      "/Users/avinash/TexeraOrleans/dataset/small_input.csv",
+      false
+    )
+    val joinOpDesc = TestOperators.joinOpDesc("column0", "column0")
+    val aggOpDesc =
+      TestOperators.aggregateAndGroupbyDesc("column1", AggregationFunction.COUNT, List())
     val sink = TestOperators.sinkOpDesc()
 
-    println(
-      s"IDs csv1 ${headerlessCsvOpDesc1.operatorID}, csv2 ${headerlessCsvOpDesc2.operatorID}, join ${joinOpDesc.operatorID}, sink ${sink.operatorID}"
-    )
+    headerlessProbe.operatorID = "Probe-" + headerlessProbe.operatorID
+    headerlessBuild.operatorID = "Build-" + headerlessBuild.operatorID
+    joinOpDesc.operatorID = "HashJoin-" + joinOpDesc.operatorID
+    aggOpDesc.operatorID = "Aggregate-" + aggOpDesc.operatorID
+    sink.operatorID = "Sink-" + sink.operatorID
 
     val parent = TestProbe()
     val context = new WorkflowContext
@@ -62,22 +73,27 @@ class JoinSkewResearchSpec
     val texeraWorkflowCompiler = new WorkflowCompiler(
       WorkflowInfo(
         mutable.MutableList[OperatorDescriptor](
-          headerlessCsvOpDesc1,
-          headerlessCsvOpDesc2,
+          headerlessBuild,
+          headerlessProbe,
           joinOpDesc,
+          aggOpDesc,
           sink
         ),
         mutable.MutableList[OperatorLink](
           OperatorLink(
-            OperatorPort(headerlessCsvOpDesc1.operatorID, 0),
+            OperatorPort(headerlessBuild.operatorID, 0),
             OperatorPort(joinOpDesc.operatorID, 0)
           ),
           OperatorLink(
-            OperatorPort(headerlessCsvOpDesc2.operatorID, 0),
+            OperatorPort(headerlessProbe.operatorID, 0),
             OperatorPort(joinOpDesc.operatorID, 1)
           ),
           OperatorLink(
             OperatorPort(joinOpDesc.operatorID, 0),
+            OperatorPort(aggOpDesc.operatorID, 0)
+          ),
+          OperatorLink(
+            OperatorPort(aggOpDesc.operatorID, 0),
             OperatorPort(sink.operatorID, 0)
           )
         ),
@@ -97,6 +113,7 @@ class JoinSkewResearchSpec
     parent.expectMsg(ControllerState.Running)
     // controller ! DetectSkewTemp(OperatorIdentifier("workflow-test", joinOpDesc.operatorID))
     parent.expectMsg(10.minute, ControllerState.Completed)
+
     parent.ref ! PoisonPill
   }
 
