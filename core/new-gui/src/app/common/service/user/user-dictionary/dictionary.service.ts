@@ -66,7 +66,7 @@ export class DictionaryService {
 
   private dictionaryEventSubject = new Subject<USER_DICT_EVENT>();
   private localUserDictionary: UserDictionary = {}; // asynchronously initialized after construction (see initLocalDict)
-  private ready: {promise: Promise<boolean>, value: boolean} = {promise: Promise.reject(false), value: false};
+  private ready: {promise: Promise<boolean>, value: boolean} = {promise: Promise.resolve(false), value: false};
 
   constructor(private http: HttpClient) {
     this.initLocalDict();
@@ -249,7 +249,7 @@ export class DictionaryService {
     return new Proxy<UserDictionary>(snapshot, this.generateProxyHandler());
   }
 
-  private generateProxyHandler(): object {
+  private generateProxyHandler(): ProxyHandler<UserDictionary> {
     const _this = this;
     return {
       set(localUserDictionary: Readonly<UserDictionary>, key: string, value: JSONValue) {
@@ -257,8 +257,9 @@ export class DictionaryService {
         _this.set(key, value);
         return true;
       },
-      deleteProperty(localUserDictionary: Readonly<UserDictionary>, key: string) {
+      deleteProperty: function(localUserDictionary: Readonly<UserDictionary>, key: string) {
         _this.delete(key);
+        return true;
       },
       defineProperty(localUserDictionary: Readonly<UserDictionary>, key: string, value: JSONValue) {
         _this.set(key, value);

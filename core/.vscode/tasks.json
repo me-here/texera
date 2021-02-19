@@ -17,6 +17,16 @@
             "label": "build amber",
             "type": "shell",
             "command": "cd amber && sbt clean compile"
+        },
+        {
+            "label": "build ts",
+            "type": "shell",
+            "command": "cd new-gui && npm install"
+        },
+        {
+            "label": "run ts",
+            "type": "shell",
+            "command": "cd new-gui && ng serve --watch"
         }
     ]
 }

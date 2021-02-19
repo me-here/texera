@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
+import * as ajv from 'ajv';
 
 import * as joint from 'jointjs';
-import { cloneDeep } from 'lodash';
+import { JSONSchema7 } from 'json-schema';
+import { cloneDeep, merge } from 'lodash';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { Workflow, WorkflowContent } from '../../../../common/type/workflow';
 import { mapToRecord, recordToMap } from '../../../../common/util/map';
@@ -9,6 +11,7 @@ import { WorkflowMetadata } from '../../../../dashboard/type/workflow-metadata.i
 import { Breakpoint, OperatorLink, OperatorPort, OperatorPredicate, Point } from '../../../types/workflow-common.interface';
 import { JointUIService } from '../../joint-ui/joint-ui.service';
 import { OperatorMetadataService } from '../../operator-metadata/operator-metadata.service';
+import { Preset, PresetService } from '../../preset/preset.service';
 import { UndoRedoService } from '../../undo-redo/undo-redo.service';
 import { WorkflowUtilService } from '../util/workflow-util.service';
 import { JointGraphWrapper } from './joint-graph-wrapper';
@@ -76,7 +79,8 @@ export class WorkflowActionService {
     private operatorMetadataService: OperatorMetadataService,
     private jointUIService: JointUIService,
     private undoRedoService: UndoRedoService,
-    private workflowUtilService: WorkflowUtilService
+    private workflowUtilService: WorkflowUtilService,
+    private presetService: PresetService,
   ) {
     this.texeraGraph = new WorkflowGraph();
     this.jointGraph = new joint.dia.Graph();
@@ -90,6 +94,7 @@ export class WorkflowActionService {
     this.handleJointLinkAdd();
     this.handleJointOperatorDrag();
     this.handleHighlightedElementPositionChange();
+    this.handleApplyOperatorPresets();
   }
 
   // workflow modification lock interface (allows or prevents commands that would modify the workflow graph)
@@ -874,6 +879,31 @@ export class WorkflowActionService {
     this.undoRedoService.clearRedoStack();
   }
 
+  private handleApplyOperatorPresets() {
+    this.presetService.applyPresetStream.subscribe({
+      next: (applyEvent) => {
+        if ( applyEvent.type === 'operator' && this.texeraGraph.hasOperator(applyEvent.target) &&
+          this.isValidOperatorPreset(applyEvent.preset, applyEvent.target)) {
+          console.log('applypreset', applyEvent);
+          this.setOperatorProperty(
+            applyEvent.target,
+            merge(this.texeraGraph.getOperator(applyEvent.target).operatorProperties, applyEvent.preset)
+          );
+        }
+      }
+    });
+  }
+
+  private isValidOperatorPreset(preset: Preset, operatorID: string): boolean {
+    const presetSchema = WorkflowActionService.getOperatorPresetSchema(
+      this.operatorMetadataService.getOperatorSchema(this.texeraGraph.getOperator(operatorID).operatorType).jsonSchema  );
+    const fitsSchema = new ajv().compile(presetSchema)(preset);
+    const noEmptyProperties = Object.keys(preset).every(
+      (key: string) => typeof preset !== 'string' || ((<string>preset[key]).trim()).length > 0);
+
+    return fitsSchema && noEmptyProperties;
+  }
+
   private addOperatorInternal(operator: OperatorPredicate, point: Point): void {
     // check that the operator doesn't exist
     this.texeraGraph.assertOperatorNotExists(operator.operatorID);
@@ -1045,5 +1075,21 @@ export class WorkflowActionService {
     }
   }
 
+  public static getOperatorPresetSchema(operatorSchema: JSONSchema7): JSONSchema7 {
+    const copy = cloneDeep(operatorSchema);
+    if (copy.properties === undefined) {
+      throw new Error(`provided operator schema ${operatorSchema} has no properties`);
+    } else {
+      copy.required = [];
+      for (const key of Object.keys(copy.properties)) {
+        if (!(copy.properties[key] as any).autofill) {
+          delete copy.properties[key];
+        } else {
+          copy.required.push(key);
+        }
+      }
+      return copy;
+    }
+  }
 }
 

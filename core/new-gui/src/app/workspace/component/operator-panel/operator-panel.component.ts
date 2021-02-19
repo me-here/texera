@@ -11,6 +11,7 @@ import * as Fuse from 'fuse.js';
 import {MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
 
 import { OperatorSchema, OperatorMetadata, GroupInfo } from '../../types/operator-schema.interface';
+import { DictionaryService } from 'src/app/common/service/user/user-dictionary/dictionary.service';
 
 /**
  * OperatorPanelComponent is the left-side panel that shows the operators.
@@ -65,6 +66,7 @@ export class OperatorPanelComponent implements OnInit {
     private workflowActionService: WorkflowActionService,
     private workflowUtilService: WorkflowUtilService,
     private dragDropService: DragDropService,
+    private userDictionaryService: DictionaryService,
   ) {
     // create the search results observable
     // whenever the search box text is changed, perform the search using fuse.js

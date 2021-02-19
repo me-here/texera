@@ -66,6 +66,7 @@ import { ArrayTypeComponent } from './common/formly/array.type';
 import { MultiSchemaTypeComponent } from './common/formly/multischema.type';
 import { NullTypeComponent } from './common/formly/null.type';
 import { ObjectTypeComponent } from './common/formly/object.type';
+import { PresetWrapperComponent } from './common/formly/preset-wrapper/preset-wrapper.component';
 
 import { FileUploadModule } from 'ng2-file-upload';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -83,6 +84,9 @@ import { NzCollapseModule } from 'ng-zorro-antd/collapse';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzModalModule } from 'ng-zorro-antd/modal';
+import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
+import { NzEmptyModule } from 'ng-zorro-antd/empty';
+import { NzMessageModule } from 'ng-zorro-antd/message';
 
 import { UserService } from './common/service/user/user.service';
 import { NgbdModalUserLoginComponent } from './dashboard/component/top-bar/user-icon/user-login/ngbdmodal-user-login.component';
@@ -150,6 +154,7 @@ registerLocaleData(en);
 
     ArrayTypeComponent,
     ObjectTypeComponent,
+    PresetWrapperComponent,
     MultiSchemaTypeComponent,
     NullTypeComponent,
     VisualizationPanelComponent,
@@ -190,6 +195,9 @@ registerLocaleData(en);
     NzToolTipModule,
     NzTableModule,
     NzModalModule,
+    NzPopconfirmModule,
+    NzEmptyModule,
+    NzMessageModule,
     NgxAceModule,
     MatDialogModule,
   ],
@@ -208,7 +216,6 @@ registerLocaleData(en);
     UserService,
     UserFileService,
     UserFileUploadService,
-    UserDictionaryService,
     UserDictionaryUploadService,
     { provide: NZ_I18N, useValue: en_US }
   ],

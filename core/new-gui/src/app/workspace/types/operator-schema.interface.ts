@@ -37,7 +37,3 @@ export interface OperatorMetadata extends Readonly<{
   operators: ReadonlyArray<OperatorSchema>;
   groups: ReadonlyArray<GroupInfo>;
 }> { }
-
-export interface OperatorJsonSchema extends JSONSchema7 {
-  autofill?: boolean;
-}

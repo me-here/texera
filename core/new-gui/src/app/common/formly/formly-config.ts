@@ -1,6 +1,7 @@
 import { NullTypeComponent } from './null.type';
 import { ArrayTypeComponent } from './array.type';
 import { ObjectTypeComponent } from './object.type';
+import { PresetWrapperComponent } from './preset-wrapper/preset-wrapper.component';
 import { MultiSchemaTypeComponent } from './multischema.type';
 import { FormlyFieldConfig } from '@ngx-formly/core';
 import { CodeareaCustomTemplateComponent } from '../../workspace/component/codearea-custom-template/codearea-custom-template.component';
@@ -54,6 +55,9 @@ export const TEXERA_FORMLY_CONFIG = {
     { name: 'multischema', component: MultiSchemaTypeComponent },
     { name: 'codearea', component: CodeareaCustomTemplateComponent},
   ],
+  wrappers: [
+    {name: 'preset-wrapper', component: PresetWrapperComponent}
+  ]
 };
 
 export function minItemsValidationMessage(err: any, field: FormlyFieldConfig) {
