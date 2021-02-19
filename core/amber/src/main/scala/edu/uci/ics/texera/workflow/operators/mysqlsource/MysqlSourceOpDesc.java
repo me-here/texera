@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import edu.uci.ics.amber.engine.operators.OpExecConfig;
 import edu.uci.ics.texera.workflow.common.metadata.OperatorGroupConstants;
 import edu.uci.ics.texera.workflow.common.metadata.OperatorInfo;
-import edu.uci.ics.texera.workflow.common.metadata.Autofill;
+import edu.uci.ics.texera.workflow.common.metadata.EnablePresets;
 import edu.uci.ics.texera.workflow.common.operators.source.SourceOperatorDescriptor;
 import edu.uci.ics.texera.workflow.common.tuple.schema.Attribute;
 import edu.uci.ics.texera.workflow.common.tuple.schema.AttributeType;
@@ -15,31 +15,31 @@ import java.sql.*;
 
 public class MysqlSourceOpDesc extends SourceOperatorDescriptor {
 
-    @Autofill
+    @EnablePresets
     @JsonProperty(value = "host", required = true)
     @JsonPropertyDescription("mysql host IP address")
     public String host;
 
-    @Autofill
+    @EnablePresets
     @JsonProperty(value = "port", required = true, defaultValue = "3306")
     @JsonPropertyDescription("mysql host port")
     public String port;
 
-    @Autofill
+    @EnablePresets
     @JsonProperty(value = "database", required = true)
     @JsonPropertyDescription("mysql database name")
     public String database;
 
+    @EnablePresets
     @JsonProperty(value = "table", required = true)
     @JsonPropertyDescription("mysql table name")
     public String table;
 
-    @Autofill
+    @EnablePresets
     @JsonProperty(value = "username", required = true)
     @JsonPropertyDescription("mysql username")
     public String username;
 
-    @Autofill
     @JsonProperty(value = "password", required = true)
     @JsonPropertyDescription("mysql user password")
     public String password;

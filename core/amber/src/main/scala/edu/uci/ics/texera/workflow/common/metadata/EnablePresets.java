@@ -6,5 +6,5 @@ import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaInject;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 @JacksonAnnotationsInside
-@JsonSchemaInject(json = "{ \"autofill\": \"true\" } ")
-public @interface Autofill {}
+@JsonSchemaInject(json = "{ \"enable-presets\": true } ")
+public @interface EnablePresets {}

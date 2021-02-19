@@ -18,7 +18,7 @@ export type Preset = {[key: string]: string|number|boolean};
   providedIn: 'root'
 })
 export class PresetService {
-  private static DICT_PREFIX = 'Operator-Profile';
+  private static DICT_PREFIX = 'Preset';
 
   public readonly applyPresetStream: Observable<{type: string, target: string, preset: Preset}>;
   public readonly savePresetsStream: Observable<{type: string, target: string, presets: Preset[]}>;
