@@ -45,9 +45,9 @@ class UserDictionaryResource {
   def getValue(@Session session: HttpSession, @QueryParam("key") key: String): Response = {
     
     // check that user is logged in and authorized
-    val user = UserResource.getUser(session)
+    val user = UserResource.getUser(session).getOrElse(null);
     if (user == null) return Response.status(Response.Status.UNAUTHORIZED).build()
-
+    
     if (key == null) {
       return getAllValues(user)
     } else {
@@ -109,7 +109,7 @@ class UserDictionaryResource {
     if (value.length() == 0) return Response.status(Response.Status.BAD_REQUEST).entity("empty payload").build()
     
     // check that user is logged in and authorized
-    val user = UserResource.getUser(session)
+    val user = UserResource.getUser(session).getOrElse(null);
     if (user == null) return Response.status(Response.Status.UNAUTHORIZED).build()
 
     val queryResult = SqlServer.createDSLContext
@@ -148,7 +148,7 @@ class UserDictionaryResource {
   @DELETE
   def deleteValue(@Session session: HttpSession, @QueryParam("key") key: String): Response = {
     // check that user is logged in and authorized
-    val user = UserResource.getUser(session)
+    val user = UserResource.getUser(session).getOrElse(null);
     if (user == null) return Response.status(Response.Status.UNAUTHORIZED).build()
 
     val queryResult = SqlServer.createDSLContext

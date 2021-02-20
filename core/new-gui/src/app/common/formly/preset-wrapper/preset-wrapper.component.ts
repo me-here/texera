@@ -37,6 +37,7 @@ export class PresetWrapperComponent extends FieldWrapper implements OnInit {
   ngOnInit(): void {
     if (
       this.field.key === undefined ||
+      typeof this.field.key !== 'string' ||
       this.field.templateOptions === undefined ||
       this.field.templateOptions.presetKey === undefined) {
 
