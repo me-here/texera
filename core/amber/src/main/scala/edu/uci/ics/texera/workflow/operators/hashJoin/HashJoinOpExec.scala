@@ -26,7 +26,6 @@ class HashJoinOpExec[K](
 
   var currentEntry: Iterator[Tuple] = _
   var currentTuple: Tuple = _
-  val hashJoinLogger: WorkflowLogger = WorkflowLogger("HashJoinOpExecLogger")
 
   def getBuildHashTable(): ArrayBuffer[mutable.HashMap[K, ArrayBuffer[Tuple]]] = {
     val sendingMap = new ArrayBuffer[mutable.HashMap[K, ArrayBuffer[Tuple]]]
@@ -131,8 +130,8 @@ class HashJoinOpExec[K](
       case Right(_) =>
         if (input == buildTable) {
           isBuildTableFinished = true
-          hashJoinLogger.logInfo(
-            s"Keys in build table are: ${buildTableHashMap.keySet.mkString(", ")}"
+          println(
+            s"\tKeys in build table are: ${buildTableHashMap.keySet.mkString(", ")}"
           )
         }
         Iterator()
