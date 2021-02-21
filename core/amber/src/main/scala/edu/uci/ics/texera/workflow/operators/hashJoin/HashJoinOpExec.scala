@@ -132,7 +132,7 @@ class HashJoinOpExec[K](
         if (input == buildTable) {
           isBuildTableFinished = true
           hashJoinLogger.logInfo(
-            s"Keys in build table are: ${buildTableHashMap.keys.mkString(", ")}"
+            s"Keys in build table are: ${buildTableHashMap.keySet.mkString(", ")}"
           )
         }
         Iterator()
