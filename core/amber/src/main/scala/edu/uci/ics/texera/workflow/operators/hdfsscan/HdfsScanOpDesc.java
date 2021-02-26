@@ -130,7 +130,7 @@ public class HdfsScanOpDesc extends SourceOperatorDescriptor {
             if(indicesToKeep!=null && indicesToKeep.trim().length()>0) {
                 Schema.Builder builder = Schema.newBuilder();
                 Arrays.stream(indicesToKeep.split(",")).forEach(idx -> {
-                    builder.add(new Attribute("column" + idx.trim(), AttributeType.STRING))
+                    builder.add(new Attribute("column" + idx.trim(), AttributeType.STRING));
                 });
                 return builder.build();
             } else {
