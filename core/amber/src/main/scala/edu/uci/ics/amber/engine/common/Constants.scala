@@ -15,10 +15,10 @@ object Constants {
   var defaultTau: FiniteDuration = 10.milliseconds
 
   // join-skew reserach related
-  val onlyDetectSkew: Boolean = false
+  val onlyDetectSkew: Boolean = true
   val startDetection: FiniteDuration = 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
   val printResultsInConsole: Boolean = true
 
-  type joinType = Int
+  type joinType = String
 }
