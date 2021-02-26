@@ -13,7 +13,7 @@ import scala.collection.mutable.ArrayBuffer
 // join-skew research related.
 object AcceptBuildTableHandler {
   final case class AcceptBuildTable(
-      buildHashMap: mutable.HashMap[String, ArrayBuffer[Tuple]]
+      buildHashMap: mutable.HashMap[Constants.joinType, ArrayBuffer[Tuple]]
   ) extends ControlCommand[Unit]
 }
 
