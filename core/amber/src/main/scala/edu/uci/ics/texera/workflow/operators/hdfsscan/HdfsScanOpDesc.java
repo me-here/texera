@@ -13,6 +13,7 @@ import edu.uci.ics.texera.workflow.common.scanner.BufferedBlockReader;
 import edu.uci.ics.texera.workflow.common.tuple.schema.Attribute;
 import edu.uci.ics.texera.workflow.common.tuple.schema.AttributeType;
 import edu.uci.ics.texera.workflow.common.tuple.schema.Schema;
+import org.apache.avro.SchemaBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import scala.collection.immutable.List;
@@ -126,9 +127,17 @@ public class HdfsScanOpDesc extends SourceOperatorDescriptor {
             return Schema.newBuilder().add(Arrays.stream(headerLine).map(c -> c.trim())
                     .map(c -> new Attribute(c, AttributeType.STRING)).collect(Collectors.toList())).build();
         } else {
-            return Schema.newBuilder().add(IntStream.range(0, headerLine.length).
-                    mapToObj(i -> new Attribute("column" + i, AttributeType.STRING))
-                    .collect(Collectors.toList())).build();
+            if(indicesToKeep!=null && indicesToKeep.trim().length()>0) {
+                Schema.Builder builder = Schema.newBuilder();
+                Arrays.stream(indicesToKeep.split(",")).forEach(idx -> {
+                    builder.add(new Attribute("column" + idx.trim(), AttributeType.STRING))
+                });
+                return builder.build();
+            } else {
+                return Schema.newBuilder().add(IntStream.range(0, headerLine.length).
+                        mapToObj(i -> new Attribute("column" + i, AttributeType.STRING))
+                        .collect(Collectors.toList())).build();
+            }
         }
     }
 
