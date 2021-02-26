@@ -4,6 +4,7 @@ import com.twitter.util.Future
 import edu.uci.ics.amber.engine.architecture.worker.WorkerAsyncRPCHandlerInitializer
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AcceptBuildTableHandler.AcceptBuildTable
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.SendBuildTableHandler.SendBuildTable
+import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExec
@@ -23,7 +24,10 @@ trait SendBuildTableHandler {
   registerHandler { (cmd: SendBuildTable, sender) =>
     // workerStateManager.shouldBe(Running, Ready)
     val buildMaps =
-      dataProcessor.getOperatorExecutor().asInstanceOf[HashJoinOpExec[String]].getBuildHashTable()
+      dataProcessor
+        .getOperatorExecutor()
+        .asInstanceOf[HashJoinOpExec[Constants.joinType]]
+        .getBuildHashTable()
     val buildSendingFutures = new ArrayBuffer[Future[Unit]]()
     buildMaps.foreach(map => {
       buildSendingFutures.append(send(AcceptBuildTable(map), cmd.freeReceiverId))

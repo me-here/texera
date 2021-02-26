@@ -2,6 +2,7 @@ package edu.uci.ics.amber.engine.architecture.worker.promisehandlers
 
 import edu.uci.ics.amber.engine.architecture.worker.WorkerAsyncRPCHandlerInitializer
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AcceptBuildTableHandler.AcceptBuildTable
+import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExec
@@ -24,7 +25,7 @@ trait AcceptBuildTableHandler {
     try {
       dataProcessor
         .getOperatorExecutor()
-        .asInstanceOf[HashJoinOpExec[String]]
+        .asInstanceOf[HashJoinOpExec[Constants.joinType]]
         .addToHashTable(cmd.buildHashMap)
     } catch {
       case exception: Exception =>

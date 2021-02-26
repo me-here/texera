@@ -178,7 +178,7 @@ class Workflow(
         receiver,
         Constants.defaultBatchSize,
         to._1.getShuffleHashFunction(sender.id),
-        to._1.asInstanceOf[HashJoinOpExecConfig[String]].getShuffleKey(sender.id)
+        to._1.asInstanceOf[HashJoinOpExecConfig[Constants.joinType]].getShuffleKey(sender.id)
       )
     } else if (to._1.isInstanceOf[SinkOpExecConfig]) {
       new AllToOne(sender, receiver, Constants.defaultBatchSize)

@@ -19,4 +19,6 @@ object Constants {
   val startDetection: FiniteDuration = 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
   val printResultsInConsole: Boolean = true
+
+  type joinType = Int
 }

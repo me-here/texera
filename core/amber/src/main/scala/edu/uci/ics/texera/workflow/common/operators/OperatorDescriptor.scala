@@ -2,6 +2,7 @@ package edu.uci.ics.texera.workflow.common.operators
 
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type
 import com.fasterxml.jackson.annotation.{JsonIgnore, JsonProperty, JsonSubTypes, JsonTypeInfo}
+import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.operators.OpExecConfig
 import edu.uci.ics.texera.workflow.common.metadata.{OperatorInfo, PropertyNameConstants}
 import edu.uci.ics.texera.workflow.common.tuple.schema.Schema
@@ -60,7 +61,7 @@ import edu.uci.ics.texera.workflow.operators.hdfsscan.HdfsScanOpDesc
     new Type(value = classOf[LimitOpDesc], name = "Limit"),
     new Type(value = classOf[RandomKSamplingOpDesc], name = "RandomKSampling"),
     new Type(value = classOf[ReservoirSamplingOpDesc], name = "ReservoirSampling"),
-    new Type(value = classOf[HashJoinOpDesc[String]], name = "HashJoin"),
+    new Type(value = classOf[HashJoinOpDesc[Constants.joinType]], name = "HashJoin"),
     new Type(value = classOf[HdfsScanOpDesc], name = "HdfsScan")
   )
 )

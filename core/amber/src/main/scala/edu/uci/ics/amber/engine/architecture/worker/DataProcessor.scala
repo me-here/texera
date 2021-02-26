@@ -19,7 +19,12 @@ import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{Completed, Running}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
-import edu.uci.ics.amber.engine.common.{IOperatorExecutor, InputExhausted, WorkflowLogger}
+import edu.uci.ics.amber.engine.common.{
+  Constants,
+  IOperatorExecutor,
+  InputExhausted,
+  WorkflowLogger
+}
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExec
 
@@ -155,7 +160,7 @@ class DataProcessor( // dependencies:
             asyncRPCClient.send(LinkCompleted(currentInputLink), ActorVirtualIdentity.Controller)
           }
           // join-skew research related
-          if (operator.isInstanceOf[HashJoinOpExec[String]]) {
+          if (operator.isInstanceOf[HashJoinOpExec[Constants.joinType]]) {
             if (!buildLinkDone) {
               buildLinkDone = true
               probeStartTime = System.nanoTime()

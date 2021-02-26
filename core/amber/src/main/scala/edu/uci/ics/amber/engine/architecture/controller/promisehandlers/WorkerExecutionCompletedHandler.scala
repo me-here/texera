@@ -17,7 +17,7 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.KillWork
 import edu.uci.ics.amber.engine.architecture.principal.OperatorState
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.CollectSinkResultsHandler.CollectSinkResults
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
-import edu.uci.ics.amber.engine.common.WorkflowLogger
+import edu.uci.ics.amber.engine.common.{Constants, WorkflowLogger}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Completed
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.WorkerActorVirtualIdentity
@@ -60,7 +60,9 @@ trait WorkerExecutionCompletedHandler {
           send(QueryStatistics(), sender).map { stats =>
             {
               workerEndTime(sender) = System.nanoTime()
-              if (workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[String]]) {
+              if (
+                workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[Constants.joinType]]
+              ) {
                 workerCompletedLogger.logInfo(
                   s"\tFinal i/o tuples and time in ${sender} are ${stats}, ${(workerEndTime(sender) - workerStartTime(sender)) / 1e9d}s"
                 )
@@ -73,7 +75,9 @@ trait WorkerExecutionCompletedHandler {
         }
       future.flatMap { ret =>
         if (
-          workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[String]] && workflow
+          workflow
+            .getOperator(sender)
+            .isInstanceOf[HashJoinOpExecConfig[Constants.joinType]] && workflow
             .getOperator(sender)
             .getState == OperatorState.Completed
         ) {

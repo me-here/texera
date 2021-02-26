@@ -4,6 +4,7 @@ import com.twitter.util.Future
 import edu.uci.ics.amber.engine.architecture.controller.ControllerAsyncRPCHandlerInitializer
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LinkCompletedHandler.LinkCompleted
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.StartHandler.StartWorker
+import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.virtualidentity.{LinkIdentity, OperatorIdentity}
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExecConfig
@@ -47,7 +48,9 @@ trait LinkCompletedHandler {
               .toSeq
           )
           .map(ret => {
-            if (workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[String]]) {
+            if (
+              workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[Constants.joinType]]
+            ) {
               val joinLayer = workflow.getWorkerLayer(sender)
               val joinOpId = workflow.getOperatorIdentity(workflow.getOperator(sender))
               val upstreamOps = workflow.getDirectUpstreamOperators(joinOpId)
@@ -55,7 +58,7 @@ trait LinkCompletedHandler {
                 .find(uOpId =>
                   workflow.getOperator(uOpId).topology.layers(0).id != workflow
                     .getOperator(joinOpId)
-                    .asInstanceOf[HashJoinOpExecConfig[String]]
+                    .asInstanceOf[HashJoinOpExecConfig[Constants.joinType]]
                     .buildTable
                     .from
                 )
