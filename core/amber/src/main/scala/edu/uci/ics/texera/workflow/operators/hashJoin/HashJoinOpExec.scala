@@ -130,9 +130,9 @@ class HashJoinOpExec[K](
       case Right(_) =>
         if (input == buildTable) {
           isBuildTableFinished = true
-          println(
-            s"\tKeys in build table are: ${buildTableHashMap.keySet.mkString(", ")}"
-          )
+//          println(
+//            s"\tKeys in build table are: ${buildTableHashMap.keySet.mkString(", ")}"
+//          )
         }
         Iterator()
 
