@@ -72,7 +72,8 @@ class HashJoinSpecialOpDesc[K] extends OperatorDescriptor {
     Preconditions.checkArgument(schemas.length == 2)
     val builder = Schema.newBuilder()
     builder.add(new Attribute("Month", AttributeType.STRING))
-    builder.add(new Attribute("Sale-Count", AttributeType.INTEGER))
+    builder.add(new Attribute("Total-Sale#", AttributeType.INTEGER))
+    builder.add(new Attribute("Old-Cust-Sale#", AttributeType.INTEGER))
     builder.build()
   }
 }
