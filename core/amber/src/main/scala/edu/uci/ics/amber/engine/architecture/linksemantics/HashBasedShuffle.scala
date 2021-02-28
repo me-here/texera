@@ -21,6 +21,7 @@ class HashBasedShuffle(
   override def getPolicies()
       : Iterable[(ActorVirtualIdentity, DataSendingPolicy, Seq[ActorVirtualIdentity])] = {
     assert(from.isBuilt && to.isBuilt)
+    println(s"\t Receivers of hash shuffling are in this order ${to.identifiers.mkString(";; ")}")
     from.identifiers.map(x =>
       (
         x,
