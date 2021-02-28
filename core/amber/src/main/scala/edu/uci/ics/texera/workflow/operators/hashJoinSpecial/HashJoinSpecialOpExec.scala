@@ -7,24 +7,18 @@ import edu.uci.ics.amber.error.WorkflowRuntimeError
 import edu.uci.ics.texera.workflow.common.operators.OperatorExecutor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType, Schema}
+import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExec
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class HashJoinSpecialOpExec[K](
-    val buildTable: LinkIdentity,
-    val buildAttributeName: String,
-    val probeAttributeName: String,
+    override val buildTable: LinkIdentity,
+    override val buildAttributeName: String,
+    override val probeAttributeName: String,
     val saleCustomerAttr: String,
     val customerPKAttr: String
-) extends OperatorExecutor {
-
-  var isBuildTableFinished: Boolean = false
-  var buildTableHashMap: mutable.HashMap[K, ArrayBuffer[Tuple]] = _
-  var outputProbeSchema: Schema = _
-
-  var currentEntry: Iterator[Tuple] = _
-  var currentTuple: Tuple = _
+) extends HashJoinOpExec[K](buildTable, buildAttributeName, probeAttributeName) {
 
   var monthToStatistics: mutable.HashMap[K, (Int, Int)] = _
 
