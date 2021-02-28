@@ -26,13 +26,14 @@ class HashJoinSpecialOpExec[K](
   var currentEntry: Iterator[Tuple] = _
   var currentTuple: Tuple = _
 
-  var monthToStatistics: mutable.HashMap[K, Int] = _
+  var monthToStatistics: mutable.HashMap[K, (Int, Int)] = _
 
   // probe attribute removed in the output schema
   private def createOutputProbeSchema() = {
     val builder = Schema.newBuilder()
     builder.add(new Attribute("Month", AttributeType.STRING))
-    builder.add(new Attribute("Sale-Count", AttributeType.INTEGER))
+    builder.add(new Attribute("Total-Sale#", AttributeType.INTEGER))
+    builder.add(new Attribute("Old-Cust-Sale#", AttributeType.INTEGER))
     builder.build()
   }
 
@@ -61,16 +62,20 @@ class HashJoinSpecialOpExec[K](
             throw new WorkflowRuntimeException(err)
           } else {
             val key = t.getField(probeAttributeName).asInstanceOf[K]
-            val custFromSale = t.getField(saleCustomerAttr)
             val storedTuples = buildTableHashMap.getOrElse(key, new ArrayBuffer[Tuple]())
+            val statistics = monthToStatistics.getOrElse(key, (0, 0))
+            val totalSaleCount = statistics._1
+            val oldSalesCount = statistics._2
             if (storedTuples.isEmpty) {
-              Iterator()
+              monthToStatistics(key) = (totalSaleCount + 1, oldSalesCount + 1)
             } else {
-              val x = storedTuples.map(buildTuple => buildTuple.getField(customerPKAttr))
+              val custFromSale = t.getField(saleCustomerAttr).asInstanceOf[K]
+              val x =
+                storedTuples.map(buildTuple => buildTuple.getField(customerPKAttr).asInstanceOf[K])
               if (!x.contains(custFromSale)) {
-                var counter = monthToStatistics.getOrElse(key, 0)
-                counter += 1
-                monthToStatistics(key) = counter
+                monthToStatistics(key) = (totalSaleCount + 1, oldSalesCount + 1)
+              } else {
+                monthToStatistics(key) = (totalSaleCount + 1, oldSalesCount)
               }
             }
             Iterator()
@@ -94,8 +99,12 @@ class HashJoinSpecialOpExec[K](
             val builder = Tuple.newBuilder()
             builder.add(outputProbeSchema.getAttribute("Month"), month)
             builder.add(
-              outputProbeSchema.getAttribute("Sale-Count"),
-              monthToStatistics.getOrElse(month, 0)
+              outputProbeSchema.getAttribute("Total-Sale#"),
+              monthToStatistics.getOrElse(month, (0, 0))._1
+            )
+            builder.add(
+              outputProbeSchema.getAttribute("Old-Cust-Sale#"),
+              monthToStatistics.getOrElse(month, (0, 0))._2
             )
             tuplesToOutput.append(builder.build())
           })
@@ -106,7 +115,7 @@ class HashJoinSpecialOpExec[K](
 
   override def open(): Unit = {
     buildTableHashMap = new mutable.HashMap[K, mutable.ArrayBuffer[Tuple]]()
-    monthToStatistics = new mutable.HashMap[K, Int]()
+    monthToStatistics = new mutable.HashMap[K, (Int, Int)]()
   }
 
   override def close(): Unit = {
