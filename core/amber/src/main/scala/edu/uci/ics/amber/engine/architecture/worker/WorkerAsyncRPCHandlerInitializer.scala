@@ -47,6 +47,7 @@ class WorkerAsyncRPCHandlerInitializer(
     with QueryNextOpLoadMetricsHandler
     with ShareFlowHandler
     with SendBuildTableHandler
-    with AcceptBuildTableHandler {
+    with AcceptBuildTableHandler
+    with RollbackFlowHandler {
   val logger: WorkflowLogger = WorkflowLogger("WorkerControlHandler")
 }
