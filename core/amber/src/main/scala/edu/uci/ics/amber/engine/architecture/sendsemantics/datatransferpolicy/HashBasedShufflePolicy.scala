@@ -60,8 +60,17 @@ class HashBasedShufflePolicy(
 
   // to be called for heavy-hitter
   private def getAndIncrementReceiverForBucket(bucket: Int): ActorVirtualIdentity = {
-    val receiver = bucketsToReceivers(bucket)(nextReceiverIdxInBucket(bucket))
-    var nextReceiverIdx = nextReceiverIdxInBucket(bucket) + 1
+    var receiver: ActorVirtualIdentity = null
+    var nextReceiverIdx = -1
+    if (nextReceiverIdxInBucket(bucket) >= bucketsToReceivers(bucket).size) {
+      // may happen if `removeReceiverFromBucket()` removes the receiver pointed by the `nextReceiverIdxInBucket(bucket)`
+      receiver = bucketsToReceivers(bucket)(0)
+      nextReceiverIdx = 1
+    } else {
+      receiver = bucketsToReceivers(bucket)(nextReceiverIdxInBucket(bucket))
+      nextReceiverIdx = nextReceiverIdxInBucket(bucket) + 1
+    }
+
     if (nextReceiverIdx >= bucketsToReceivers(bucket).size) {
       nextReceiverIdx = 0
     }
@@ -81,6 +90,23 @@ class HashBasedShufflePolicy(
     if (!bucketsToReceivers(defaultBucket).contains(newRecId)) {
       bucketsToReceivers(defaultBucket).append(newRecId)
     }
+  }
+
+  override def removeReceiverFromBucket(
+      defaultRecId: ActorVirtualIdentity,
+      recIdToRemove: ActorVirtualIdentity
+  ): Unit = {
+    var defaultBucket: Int = -1
+    bucketsToReceivers.keys.foreach(b => {
+      if (bucketsToReceivers(b)(0) == defaultRecId) { defaultBucket = b }
+    })
+    assert(defaultBucket != -1)
+    var idxToRemove = -1
+    for (i <- 0 to bucketsToReceivers(defaultBucket).size) {
+      if (bucketsToReceivers(defaultBucket)(i) == recIdToRemove) { idxToRemove = i }
+    }
+    assert(idxToRemove != -1)
+    bucketsToReceivers(defaultBucket).remove(idxToRemove)
   }
 
   private def isHeavyHitterTuple(key: String) = {

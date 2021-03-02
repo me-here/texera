@@ -46,6 +46,13 @@ class TupleToBatchConverter(
     policies.foreach(policy => policy.addReceiverToBucket(skewedReceiverId, freeReceiverId))
   }
 
+  def rollbackFlow(
+      skewedReceiverId: ActorVirtualIdentity,
+      freeReceiverId: ActorVirtualIdentity
+  ): Unit = {
+    policies.foreach(policy => policy.removeReceiverFromBucket(skewedReceiverId, freeReceiverId))
+  }
+
   /** Push one tuple to the downstream, will be batched by each transfer policy.
     * Should ONLY be called by DataProcessor.
     * @param tuple

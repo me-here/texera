@@ -67,6 +67,11 @@ class WorkerSpec
           defaultRecId: ActorVirtualIdentity,
           newRecId: ActorVirtualIdentity
       ): Unit = {}
+
+      override def removeReceiverFromBucket(
+          defaultRecId: ActorVirtualIdentity,
+          newRecId: ActorVirtualIdentity
+      ): Unit = {}
     }
 
     inSequence {
