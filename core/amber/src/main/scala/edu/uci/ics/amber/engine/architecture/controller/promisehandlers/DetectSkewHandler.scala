@@ -8,7 +8,7 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSk
   endTimeForBuildRepl,
   endTimeForMetricColl,
   endTimeForNetChange,
-  getSkewedAndFreeWorker,
+  getSkewedAndFreeWorkers,
   isfreeGettingSkewed,
   previousCallFinished,
   skewedWorkerToFreeWorkerCurr,
@@ -61,40 +61,7 @@ object DetectSkewHandler {
   final case class DetectSkew(joinLayer: WorkerLayer, probeLayer: WorkerLayer)
       extends ControlCommand[CommandCompleted]
 
-  def isfreeGettingSkewed(
-      loads: mutable.HashMap[ActorVirtualIdentity, Long]
-  ): (ActorVirtualIdentity, ActorVirtualIdentity) = {
-    val sortedWorkers = loads.keys.toList.sortBy(loads(_))
-    val freeGettingSkewedWorker: ActorVirtualIdentity = sortedWorkers(sortedWorkers.size - 1)
-    if (
-      skewedWorkerToFreeWorkerCurr.size != 0 && skewedWorkerToFreeWorkerCurr.values.toList.contains(
-        freeGettingSkewedWorker
-      )
-    ) {
-      var actualSkewedWorker: ActorVirtualIdentity = null
-      skewedWorkerToFreeWorkerCurr.keys.foreach(sw => {
-        if (skewedWorkerToFreeWorkerCurr(sw) == freeGettingSkewedWorker) { actualSkewedWorker = sw }
-      })
-      assert(actualSkewedWorker != null)
-      var isSkewed = true
-      val historyOfActualSkewed = workerToLoadHistory(actualSkewedWorker)
-      val historyOfFreeGettingSkewed = workerToLoadHistory(freeGettingSkewedWorker)
-      assert(historyOfActualSkewed.size == historyOfFreeGettingSkewed.size)
-      for (j <- 0 to historyOfFreeGettingSkewed.size - 1) {
-        if (historyOfFreeGettingSkewed(j) < historyOfActualSkewed(j)) {
-          isSkewed = false
-        }
-      }
-      if (isSkewed && !Constants.onlyDetectSkew) {
-        skewedWorkerToFreeWorkerCurr.remove(actualSkewedWorker)
-        return (actualSkewedWorker, freeGettingSkewedWorker)
-      } else { return (null, null) }
-    } else { return (null, null) }
-  }
-
-  def getSkewedAndFreeWorker(
-      loads: mutable.HashMap[ActorVirtualIdentity, Long]
-  ): (ActorVirtualIdentity, ActorVirtualIdentity) = {
+  def updateLoadHistory(loads: mutable.HashMap[ActorVirtualIdentity, Long]): Unit = {
     loads.keys.foreach(worker => {
       val history = workerToLoadHistory.getOrElse(worker, new ListBuffer[Long]())
       if (history.size == historyLimit) {
@@ -103,70 +70,110 @@ object DetectSkewHandler {
       history.append(loads(worker))
       workerToLoadHistory(worker) = history
     })
+  }
 
+  def isEligibleForSkewed(worker: ActorVirtualIdentity): Boolean = {
+    skewedWorkerToFreeWorkerCurr.size == 0 || (!skewedWorkerToFreeWorkerCurr.keySet
+      .contains(worker) && !skewedWorkerToFreeWorkerHistory.values.toList.contains(worker))
+  }
+
+  def isEligibleForFree(worker: ActorVirtualIdentity): Boolean = {
+    skewedWorkerToFreeWorkerCurr.size == 0 || (!skewedWorkerToFreeWorkerCurr.keySet
+      .contains(worker) && !skewedWorkerToFreeWorkerHistory.values.toList.contains(worker))
+  }
+
+  def passSkewTest(
+      skewedWorkerCand: ActorVirtualIdentity,
+      freeWorkerCand: ActorVirtualIdentity,
+      multiplier: Double
+  ): Boolean = {
+    var isSkewed = true
+    val skewedHist = workerToLoadHistory(skewedWorkerCand)
+    val freeHist = workerToLoadHistory(freeWorkerCand)
+    assert(skewedHist.size == freeHist.size)
+    for (j <- 0 to skewedHist.size - 1) {
+      if (skewedHist(j) < multiplier * freeHist(j)) {
+        isSkewed = false
+      }
+    }
+    isSkewed
+  }
+
+  // return is array of actual skewed worker and free getting skewed
+  def isfreeGettingSkewed(
+      loads: mutable.HashMap[ActorVirtualIdentity, Long]
+  ): ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)] = {
+    val ret = new ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)]()
+    val sortedWorkers = loads.keys.toList.sortBy(loads(_))
+    val freeWorkersBeingUsed = skewedWorkerToFreeWorkerCurr.values.toList
+    for (i <- 0 to sortedWorkers.size - 1) {
+      if (
+        skewedWorkerToFreeWorkerCurr.size != 0 && freeWorkersBeingUsed.contains(sortedWorkers(i))
+      ) {
+        var actualSkewedWorker: ActorVirtualIdentity = null
+        skewedWorkerToFreeWorkerCurr.keys.foreach(sw => {
+          if (skewedWorkerToFreeWorkerCurr(sw) == sortedWorkers(i)) { actualSkewedWorker = sw }
+        })
+        assert(actualSkewedWorker != null)
+
+        if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, 1.5)) {
+          ret.append((actualSkewedWorker, sortedWorkers(i)))
+        }
+      }
+    }
+    ret
+  }
+
+  // return value is array of (skewedWorker, freeWorker, whether state replication has to be done)
+  def getSkewedAndFreeWorkers(
+      loads: mutable.HashMap[ActorVirtualIdentity, Long]
+  ): ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity, Boolean)] = {
+    val ret = new ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity, Boolean)]()
     // Get workers in increasing load
     val sortedWorkers = loads.keys.toList.sortBy(loads(_))
     val currSkewedWorkers = skewedWorkerToFreeWorkerCurr.keySet
     val currFreeWorkers = skewedWorkerToFreeWorkerCurr.values.toList
     val freeWorkersThatSharedLoadInPast = skewedWorkerToFreeWorkerHistory.values.toList
 
-    var skewedWorker: ActorVirtualIdentity = null
-    var freeWorker: ActorVirtualIdentity = null
-
-    breakable {
-      for (i <- sortedWorkers.size - 1 to 0 by -1) {
+    for (i <- sortedWorkers.size - 1 to 0 by -1) {
+      if (isEligibleForSkewed(sortedWorkers(i))) {
         if (
-          skewedWorkerToFreeWorkerCurr.size == 0 || (!currSkewedWorkers
-            .contains(sortedWorkers(i)) && !currFreeWorkers.contains(
-            sortedWorkers(i)
-          ) && !freeWorkersThatSharedLoadInPast.contains(sortedWorkers(i)))
+          skewedWorkerToFreeWorkerHistory.size > 0 && skewedWorkerToFreeWorkerHistory.keySet
+            .contains(sortedWorkers(i))
         ) {
-          skewedWorker = sortedWorkers(i)
-          break
-        }
-      }
-    }
-
-    // if load from skewed worker has previously been given to some worker then choose that worker, otherwise
-    //  choose the worker with lowest load that hasn't been assigned to anyone.
-    if (
-      skewedWorkerToFreeWorkerHistory.size > 0 && skewedWorker != null && skewedWorkerToFreeWorkerHistory.keySet
-        .contains(
-          skewedWorker
-        )
-    ) {
-      freeWorker = skewedWorkerToFreeWorkerHistory(skewedWorker)
-    } else {
-      breakable {
-        for (i <- 0 to sortedWorkers.size - 1) {
           if (
-            skewedWorkerToFreeWorkerCurr.size == 0 || (!currSkewedWorkers
-              .contains(sortedWorkers(i)) && !currFreeWorkers.contains(sortedWorkers(i)))
+            passSkewTest(sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), 2)
           ) {
-            freeWorker = sortedWorkers(i)
-            break
+            ret.append((sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), false))
+            skewedWorkerToFreeWorkerCurr(sortedWorkers(i)) = skewedWorkerToFreeWorkerHistory(
+              sortedWorkers(i)
+            )
+          }
+        } else {
+          breakable {
+            for (j <- 0 to i - 1) {
+              if (
+                isEligibleForFree(sortedWorkers(j)) && passSkewTest(
+                  sortedWorkers(i),
+                  sortedWorkers(j),
+                  2
+                )
+              ) {
+                ret.append((sortedWorkers(i), sortedWorkers(j), true))
+                skewedWorkerToFreeWorkerCurr(sortedWorkers(i)) = sortedWorkers(j)
+                skewedWorkerToFreeWorkerHistory(sortedWorkers(i)) = sortedWorkers(j)
+                break
+              }
+            }
           }
         }
       }
     }
 
-    if (freeWorker != null && skewedWorker != null) {
-      var isSkewed = true
-      val historyOfSkewCand = workerToLoadHistory(skewedWorker)
-      val historyOfFreeCand = workerToLoadHistory(freeWorker)
-      assert(historyOfSkewCand.size == historyOfFreeCand.size)
-      for (j <- 0 to historyOfSkewCand.size - 1) {
-        if (historyOfSkewCand(j) < 100 || historyOfFreeCand(j) * 2 > historyOfSkewCand(j)) {
-          isSkewed = false
-        }
-      }
-      if (isSkewed && !Constants.onlyDetectSkew) {
-        skewedWorkerToFreeWorkerCurr(skewedWorker) = freeWorker
-        skewedWorkerToFreeWorkerHistory(skewedWorker) = freeWorker
-        return (skewedWorker, freeWorker)
-      } else { return (null, null) }
+    if (Constants.onlyDetectSkew) {
+      return new ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity, Boolean)]()
     } else {
-      return (null, null)
+      return ret
     }
   }
 
@@ -183,6 +190,32 @@ trait DetectSkewHandler {
     val futuresArr = new ArrayBuffer[Future[T]]()
     workerLayer.workers.keys.foreach(id => {
       futuresArr.append(send(message, id))
+    })
+    Future.collect(futuresArr)
+  }
+
+  private def getShareFlowResultsAsFuture[T](
+      workerLayer: WorkerLayer,
+      skewedAndFreeWorkersList: ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity, Boolean)]
+  ): Future[Seq[Unit]] = {
+    val futuresArr = new ArrayBuffer[Future[Unit]]()
+    skewedAndFreeWorkersList.foreach(sf => {
+      workerLayer.workers.keys.foreach(id => {
+        futuresArr.append(send(ShareFlow(sf._1, sf._2), id))
+      })
+    })
+    Future.collect(futuresArr)
+  }
+
+  private def getRollbackFlowResultsAsFuture[T](
+      workerLayer: WorkerLayer,
+      actualSkewedAndFreeWorkersList: ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)]
+  ): Future[Seq[Unit]] = {
+    val futuresArr = new ArrayBuffer[Future[Unit]]()
+    actualSkewedAndFreeWorkersList.foreach(sf => {
+      workerLayer.workers.keys.foreach(id => {
+        futuresArr.append(send(RollbackFlow(sf._1, sf._2), id))
+      })
     })
     Future.collect(futuresArr)
   }
@@ -227,23 +260,29 @@ trait DetectSkewHandler {
             val loads = aggregateLoadMetrics(cmd, metrics)
             detectSkewLogger.logInfo(s"\tThe final loads map ${loads.mkString("\n\t\t")}")
 
-            val skewedAndFreeWorkers = getSkewedAndFreeWorker(loads)
-            if (skewedAndFreeWorkers._1 != null && skewedAndFreeWorkers._2 != null) {
-              detectSkewLogger.logInfo(
-                s"\tSkewed Worker:${skewedAndFreeWorkers._1}, Free Worker:${skewedAndFreeWorkers._2}"
-              )
+            val skewedAndFreeWorkers = getSkewedAndFreeWorkers(loads)
+            if (skewedAndFreeWorkers.size > 0) {
               startTimeForBuildRepl = System.nanoTime()
-              send(SendBuildTable(skewedAndFreeWorkers._2), skewedAndFreeWorkers._1).flatMap(
-                res => {
+
+              val futuresArr = new ArrayBuffer[Future[Seq[Unit]]]()
+              skewedAndFreeWorkers.foreach(sf => {
+                detectSkewLogger.logInfo(
+                  s"\tSkewed Worker:${sf._1}, Free Worker:${sf._2}, build replication:${sf._3}"
+                )
+                if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
+              })
+              Future
+                .collect(futuresArr)
+                .flatMap(res => {
                   endTimeForBuildRepl = System.nanoTime()
                   detectSkewLogger.logInfo(
-                    s"\tBUILD TABLE COPIED in ${(endTimeForBuildRepl - startTimeForBuildRepl) / 1e9d}s"
+                    s"\tBUILD TABLES COPIED in ${(endTimeForBuildRepl - startTimeForBuildRepl) / 1e9d}s"
                   )
 
                   startTimeForNetChange = System.nanoTime()
-                  getResultsAsFuture(
+                  getShareFlowResultsAsFuture(
                     cmd.probeLayer,
-                    ShareFlow(skewedAndFreeWorkers._1, skewedAndFreeWorkers._2)
+                    skewedAndFreeWorkers
                   ).map(seq => {
                     endTimeForNetChange = System.nanoTime()
                     detectSkewLogger.logInfo(
@@ -252,23 +291,20 @@ trait DetectSkewHandler {
                     previousCallFinished = true
                     CommandCompleted()
                   })
-                }
-              )
+                })
             } else {
               val actualSkewedAndFreeGettingSkewedWorkers = isfreeGettingSkewed(loads)
-              if (
-                actualSkewedAndFreeGettingSkewedWorkers._1 != null && actualSkewedAndFreeGettingSkewedWorkers._2 != null
-              ) {
-                detectSkewLogger.logInfo(
-                  s"\tFree Worker Getting skewed:${actualSkewedAndFreeGettingSkewedWorkers._2}, Actual skewed Worker:${actualSkewedAndFreeGettingSkewedWorkers._1}"
-                )
-                startTimeForNetRollback = System.nanoTime()
-                getResultsAsFuture(
-                  cmd.probeLayer,
-                  RollbackFlow(
-                    actualSkewedAndFreeGettingSkewedWorkers._1,
-                    actualSkewedAndFreeGettingSkewedWorkers._2
+              if (actualSkewedAndFreeGettingSkewedWorkers.size > 0) {
+                actualSkewedAndFreeGettingSkewedWorkers.foreach(sf =>
+                  detectSkewLogger.logInfo(
+                    s"\tFree Worker Getting skewed:${sf._2}, Actual skewed Worker:${sf._1}"
                   )
+                )
+
+                startTimeForNetRollback = System.nanoTime()
+                getRollbackFlowResultsAsFuture(
+                  cmd.probeLayer,
+                  actualSkewedAndFreeGettingSkewedWorkers
                 ).map(seq => {
                   startTimeForNetRollback = System.nanoTime()
                   detectSkewLogger.logInfo(
