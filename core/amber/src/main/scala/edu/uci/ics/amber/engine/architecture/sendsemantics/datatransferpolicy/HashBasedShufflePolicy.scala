@@ -102,7 +102,7 @@ class HashBasedShufflePolicy(
     })
     assert(defaultBucket != -1)
     var idxToRemove = -1
-    for (i <- 0 to bucketsToReceivers(defaultBucket).size) {
+    for (i <- 0 to bucketsToReceivers(defaultBucket).size - 1) {
       if (bucketsToReceivers(defaultBucket)(i) == recIdToRemove) { idxToRemove = i }
     }
     assert(idxToRemove != -1)
