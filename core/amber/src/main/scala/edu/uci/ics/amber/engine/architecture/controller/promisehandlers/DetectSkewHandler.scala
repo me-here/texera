@@ -240,7 +240,7 @@ trait DetectSkewHandler {
     for ((id, currLoad) <- cmd.joinLayer.workers.keys zip metrics._1) {
       loads(id) = currLoad.stashedBatches + currLoad.unprocessedQueueLength
       detectSkewLogger.logInfo(
-        s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue"
+        s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue, ${currLoad.totalPutInInternalQueue} total input"
       )
     }
     metrics._2.foreach(replyFromNetComm => {
