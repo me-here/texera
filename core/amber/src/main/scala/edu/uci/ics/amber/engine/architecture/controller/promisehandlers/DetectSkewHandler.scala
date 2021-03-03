@@ -100,7 +100,7 @@ object DetectSkewHandler {
     val freeHist = workerToLoadHistory(freeWorkerCand)
     assert(skewedHist.size == freeHist.size)
     for (j <- 0 to skewedHist.size - 1) {
-      if (skewedHist(j) < multiplier * freeHist(j)) {
+      if (skewedHist(j) < 100 || skewedHist(j) < multiplier * freeHist(j)) {
         isSkewed = false
       }
     }
@@ -145,24 +145,24 @@ object DetectSkewHandler {
     val currFreeWorkers = skewedWorkerToFreeWorkerCurr.values.toList
     val freeWorkersThatSharedLoadInPast = skewedWorkerToFreeWorkerHistory.values.toList
 
-    breakable {
-      for (i <- sortedWorkers.size - 1 to 0 by -1) {
-        if (isEligibleForSkewed(sortedWorkers(i))) {
+    for (i <- sortedWorkers.size - 1 to 0 by -1) {
+      if (isEligibleForSkewed(sortedWorkers(i))) {
+        if (
+          skewedWorkerToFreeWorkerHistory.size > 0 && skewedWorkerToFreeWorkerHistory.keySet
+            .contains(sortedWorkers(i))
+        ) {
           if (
-            skewedWorkerToFreeWorkerHistory.size > 0 && skewedWorkerToFreeWorkerHistory.keySet
-              .contains(sortedWorkers(i))
+            passSkewTest(sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), 2)
           ) {
-            if (
-              passSkewTest(sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), 2)
-            ) {
-              ret.append(
-                (sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), false)
-              )
-              skewedWorkerToFreeWorkerCurr(sortedWorkers(i)) = skewedWorkerToFreeWorkerHistory(
-                sortedWorkers(i)
-              )
-            }
-          } else if (i > 0) {
+            ret.append(
+              (sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), false)
+            )
+            skewedWorkerToFreeWorkerCurr(sortedWorkers(i)) = skewedWorkerToFreeWorkerHistory(
+              sortedWorkers(i)
+            )
+          }
+        } else if (i > 0) {
+          breakable {
             for (j <- 0 to i - 1) {
               if (
                 isEligibleForFree(sortedWorkers(j)) && passSkewTest(
