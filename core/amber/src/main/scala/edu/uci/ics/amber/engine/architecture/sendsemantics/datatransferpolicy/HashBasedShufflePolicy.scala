@@ -87,6 +87,11 @@ class HashBasedShufflePolicy(
       if (bucketsToReceivers(b)(0) == defaultRecId) { defaultBucket = b }
     })
     assert(defaultBucket != -1)
+    println(
+      s"\tAdd receiver to bucket received. Already sent out ${defaultRecId}:${receiverToTotalSent(
+        defaultRecId
+      )};;;${newRecId}:${receiverToTotalSent(newRecId)}"
+    )
     if (!bucketsToReceivers(defaultBucket).contains(newRecId)) {
       bucketsToReceivers(defaultBucket).append(newRecId)
     }
@@ -106,6 +111,11 @@ class HashBasedShufflePolicy(
       if (bucketsToReceivers(defaultBucket)(i) == recIdToRemove) { idxToRemove = i }
     }
     assert(idxToRemove != -1)
+    println(
+      s"\tRemove receiver from bucket received. Already sent out ${defaultRecId}:${receiverToTotalSent(
+        defaultRecId
+      )};;;${recIdToRemove}:${receiverToTotalSent(recIdToRemove)}"
+    )
     bucketsToReceivers(defaultBucket).remove(idxToRemove)
   }
 
