@@ -73,13 +73,21 @@ object DetectSkewHandler {
   }
 
   def isEligibleForSkewed(worker: ActorVirtualIdentity): Boolean = {
-    skewedWorkerToFreeWorkerCurr.size == 0 || (!skewedWorkerToFreeWorkerCurr.keySet
-      .contains(worker) && !skewedWorkerToFreeWorkerHistory.values.toList.contains(worker))
+    (skewedWorkerToFreeWorkerCurr.size == 0 || (!skewedWorkerToFreeWorkerCurr.keySet
+      .contains(worker) && !skewedWorkerToFreeWorkerCurr.values.toList
+      .contains(
+        worker
+      ))) && (skewedWorkerToFreeWorkerHistory.size == 0 || !skewedWorkerToFreeWorkerHistory.values.toList
+      .contains(worker))
   }
 
   def isEligibleForFree(worker: ActorVirtualIdentity): Boolean = {
-    skewedWorkerToFreeWorkerCurr.size == 0 || (!skewedWorkerToFreeWorkerCurr.keySet
-      .contains(worker) && !skewedWorkerToFreeWorkerHistory.values.toList.contains(worker))
+    (skewedWorkerToFreeWorkerCurr.size == 0 || (!skewedWorkerToFreeWorkerCurr.keySet
+      .contains(worker) && !skewedWorkerToFreeWorkerCurr.values.toList
+      .contains(
+        worker
+      ))) && (skewedWorkerToFreeWorkerHistory.size == 0 || !skewedWorkerToFreeWorkerHistory.values.toList
+      .contains(worker))
   }
 
   def passSkewTest(
@@ -118,6 +126,7 @@ object DetectSkewHandler {
 
         if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, 1.5)) {
           ret.append((actualSkewedWorker, sortedWorkers(i)))
+          skewedWorkerToFreeWorkerCurr.remove(actualSkewedWorker)
         }
       }
     }
@@ -128,6 +137,7 @@ object DetectSkewHandler {
   def getSkewedAndFreeWorkers(
       loads: mutable.HashMap[ActorVirtualIdentity, Long]
   ): ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity, Boolean)] = {
+    updateLoadHistory(loads)
     val ret = new ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity, Boolean)]()
     // Get workers in increasing load
     val sortedWorkers = loads.keys.toList.sortBy(loads(_))
@@ -135,22 +145,24 @@ object DetectSkewHandler {
     val currFreeWorkers = skewedWorkerToFreeWorkerCurr.values.toList
     val freeWorkersThatSharedLoadInPast = skewedWorkerToFreeWorkerHistory.values.toList
 
-    for (i <- sortedWorkers.size - 1 to 0 by -1) {
-      if (isEligibleForSkewed(sortedWorkers(i))) {
-        if (
-          skewedWorkerToFreeWorkerHistory.size > 0 && skewedWorkerToFreeWorkerHistory.keySet
-            .contains(sortedWorkers(i))
-        ) {
+    breakable {
+      for (i <- sortedWorkers.size - 1 to 0 by -1) {
+        if (isEligibleForSkewed(sortedWorkers(i))) {
           if (
-            passSkewTest(sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), 2)
+            skewedWorkerToFreeWorkerHistory.size > 0 && skewedWorkerToFreeWorkerHistory.keySet
+              .contains(sortedWorkers(i))
           ) {
-            ret.append((sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), false))
-            skewedWorkerToFreeWorkerCurr(sortedWorkers(i)) = skewedWorkerToFreeWorkerHistory(
-              sortedWorkers(i)
-            )
-          }
-        } else {
-          breakable {
+            if (
+              passSkewTest(sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), 2)
+            ) {
+              ret.append(
+                (sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), false)
+              )
+              skewedWorkerToFreeWorkerCurr(sortedWorkers(i)) = skewedWorkerToFreeWorkerHistory(
+                sortedWorkers(i)
+              )
+            }
+          } else if (i > 0) {
             for (j <- 0 to i - 1) {
               if (
                 isEligibleForFree(sortedWorkers(j)) && passSkewTest(
