@@ -209,8 +209,8 @@ trait DetectSkewHandler {
   private def getShareFlowResultsAsFuture[T](
       workerLayer: WorkerLayer,
       skewedAndFreeWorkersList: ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity, Boolean)]
-  ): Future[Seq[Unit]] = {
-    val futuresArr = new ArrayBuffer[Future[Unit]]()
+  ): Future[Seq[Map[ActorVirtualIdentity, Long]]] = {
+    val futuresArr = new ArrayBuffer[Future[Map[ActorVirtualIdentity, Long]]]()
     skewedAndFreeWorkersList.foreach(sf => {
       workerLayer.workers.keys.foreach(id => {
         futuresArr.append(send(ShareFlow(sf._1, sf._2), id))
@@ -222,8 +222,8 @@ trait DetectSkewHandler {
   private def getRollbackFlowResultsAsFuture[T](
       workerLayer: WorkerLayer,
       actualSkewedAndFreeWorkersList: ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)]
-  ): Future[Seq[Unit]] = {
-    val futuresArr = new ArrayBuffer[Future[Unit]]()
+  ): Future[Seq[Map[ActorVirtualIdentity, Long]]] = {
+    val futuresArr = new ArrayBuffer[Future[Map[ActorVirtualIdentity, Long]]]()
     actualSkewedAndFreeWorkersList.foreach(sf => {
       workerLayer.workers.keys.foreach(id => {
         futuresArr.append(send(RollbackFlow(sf._1, sf._2), id))
@@ -252,6 +252,18 @@ trait DetectSkewHandler {
       }
     })
     loads
+  }
+
+  private def aggregateAndPrintSentCount(
+      totalSentPerSender: Seq[Map[ActorVirtualIdentity, Long]]
+  ): Unit = {
+    val aggregatedSentCount = new mutable.HashMap[ActorVirtualIdentity, Long]()
+    totalSentPerSender.foreach(senderCount => {
+      for ((rec, count) <- senderCount) {
+        aggregatedSentCount(rec) = aggregatedSentCount.getOrElse(rec, 0L) + count
+      }
+    })
+    detectSkewLogger.logInfo(s"\tTOTAL SENT TILL NOW ${aggregatedSentCount.mkString("\n\t\t")}")
   }
 
   registerHandler { (cmd: DetectSkew, sender) =>
@@ -297,6 +309,7 @@ trait DetectSkewHandler {
                     skewedAndFreeWorkers
                   ).map(seq => {
                     endTimeForNetChange = System.nanoTime()
+                    aggregateAndPrintSentCount(seq)
                     detectSkewLogger.logInfo(
                       s"\tTHE NETWORK SHARE HAS HAPPENED in ${(endTimeForNetChange - startTimeForNetChange) / 1e9d}s"
                     )
@@ -319,6 +332,7 @@ trait DetectSkewHandler {
                   actualSkewedAndFreeGettingSkewedWorkers
                 ).map(seq => {
                   startTimeForNetRollback = System.nanoTime()
+                  aggregateAndPrintSentCount(seq)
                   detectSkewLogger.logInfo(
                     s"\tTHE NETWORK ROLLBACK HAS HAPPENED in ${(endTimeForNetChange - startTimeForNetChange) / 1e9d}s"
                   )

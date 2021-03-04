@@ -27,11 +27,14 @@ abstract class DataSendingPolicy(
 
   def reset(): Unit
 
-  def addReceiverToBucket(defaultRecId: ActorVirtualIdentity, newRecId: ActorVirtualIdentity): Unit
+  def addReceiverToBucket(
+      defaultRecId: ActorVirtualIdentity,
+      newRecId: ActorVirtualIdentity
+  ): Map[ActorVirtualIdentity, Long]
 
   def removeReceiverFromBucket(
       defaultRecId: ActorVirtualIdentity,
       newRecId: ActorVirtualIdentity
-  ): Unit
+  ): Map[ActorVirtualIdentity, Long]
 
 }

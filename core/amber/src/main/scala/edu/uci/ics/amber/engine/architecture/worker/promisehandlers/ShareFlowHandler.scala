@@ -10,7 +10,7 @@ object ShareFlowHandler {
   final case class ShareFlow(
       skewedReceiverId: ActorVirtualIdentity,
       freeReceiverId: ActorVirtualIdentity
-  ) extends ControlCommand[Unit]
+  ) extends ControlCommand[Map[ActorVirtualIdentity, Long]]
 }
 
 trait ShareFlowHandler {

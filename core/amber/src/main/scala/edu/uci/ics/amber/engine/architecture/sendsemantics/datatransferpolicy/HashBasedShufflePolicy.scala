@@ -81,7 +81,7 @@ class HashBasedShufflePolicy(
   override def addReceiverToBucket(
       defaultRecId: ActorVirtualIdentity,
       newRecId: ActorVirtualIdentity
-  ): Unit = {
+  ): Map[ActorVirtualIdentity, Long] = {
     var defaultBucket: Int = -1
     bucketsToReceivers.keys.foreach(b => {
       if (bucketsToReceivers(b)(0) == defaultRecId) { defaultBucket = b }
@@ -95,12 +95,13 @@ class HashBasedShufflePolicy(
     if (!bucketsToReceivers(defaultBucket).contains(newRecId)) {
       bucketsToReceivers(defaultBucket).append(newRecId)
     }
+    receiverToTotalSent.toMap
   }
 
   override def removeReceiverFromBucket(
       defaultRecId: ActorVirtualIdentity,
       recIdToRemove: ActorVirtualIdentity
-  ): Unit = {
+  ): Map[ActorVirtualIdentity, Long] = {
     var defaultBucket: Int = -1
     bucketsToReceivers.keys.foreach(b => {
       if (bucketsToReceivers(b)(0) == defaultRecId) { defaultBucket = b }
@@ -117,6 +118,7 @@ class HashBasedShufflePolicy(
       )};;;${recIdToRemove}:${receiverToTotalSent(recIdToRemove)}"
     )
     bucketsToReceivers(defaultBucket).remove(idxToRemove)
+    receiverToTotalSent.toMap
   }
 
   private def isHeavyHitterTuple(key: String) = {

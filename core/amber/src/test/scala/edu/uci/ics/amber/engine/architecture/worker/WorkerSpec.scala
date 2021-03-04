@@ -66,12 +66,12 @@ class WorkerSpec
       override def addReceiverToBucket(
           defaultRecId: ActorVirtualIdentity,
           newRecId: ActorVirtualIdentity
-      ): Unit = {}
+      ): Map[ActorVirtualIdentity, Long] = { null }
 
       override def removeReceiverFromBucket(
           defaultRecId: ActorVirtualIdentity,
           newRecId: ActorVirtualIdentity
-      ): Unit = {}
+      ): Map[ActorVirtualIdentity, Long] = { null }
     }
 
     inSequence {

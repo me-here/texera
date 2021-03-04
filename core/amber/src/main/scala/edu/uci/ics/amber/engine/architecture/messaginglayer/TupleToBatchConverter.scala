@@ -5,6 +5,7 @@ import edu.uci.ics.amber.engine.common.ambermessage.DataPayload
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 
+import scala.collection.mutable
 import scala.util.control.Breaks
 
 /** This class is a container of all the transfer policies.
@@ -42,15 +43,29 @@ class TupleToBatchConverter(
   def changeFlow(
       skewedReceiverId: ActorVirtualIdentity,
       freeReceiverId: ActorVirtualIdentity
-  ): Unit = {
-    policies.foreach(policy => policy.addReceiverToBucket(skewedReceiverId, freeReceiverId))
+  ): Map[ActorVirtualIdentity, Long] = {
+    var receiverToSentCount: Map[ActorVirtualIdentity, Long] = null
+    policies.foreach(policy => {
+      receiverToSentCount = policy.addReceiverToBucket(skewedReceiverId, freeReceiverId)
+    })
+    if (receiverToSentCount == null) {
+      receiverToSentCount = new mutable.HashMap[ActorVirtualIdentity, Long]().toMap
+    }
+    receiverToSentCount
   }
 
   def rollbackFlow(
       skewedReceiverId: ActorVirtualIdentity,
       freeReceiverId: ActorVirtualIdentity
-  ): Unit = {
-    policies.foreach(policy => policy.removeReceiverFromBucket(skewedReceiverId, freeReceiverId))
+  ): Map[ActorVirtualIdentity, Long] = {
+    var receiverToSentCount: Map[ActorVirtualIdentity, Long] = null
+    policies.foreach(policy => {
+      receiverToSentCount = policy.removeReceiverFromBucket(skewedReceiverId, freeReceiverId)
+    })
+    if (receiverToSentCount == null) {
+      receiverToSentCount = new mutable.HashMap[ActorVirtualIdentity, Long]().toMap
+    }
+    receiverToSentCount
   }
 
   /** Push one tuple to the downstream, will be batched by each transfer policy.
