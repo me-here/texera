@@ -33,6 +33,7 @@ import org.apache.commons.lang3.builder.{EqualsBuilder, HashCodeBuilder, ToStrin
 import java.util.UUID
 import edu.uci.ics.amber.engine.common.virtualidentity.OperatorIdentity
 import edu.uci.ics.texera.workflow.operators.hashJoinSpecial.HashJoinSpecialOpDesc
+import edu.uci.ics.texera.workflow.operators.hashJoinSpecial2.HashJoinSpecial2OpDesc
 import edu.uci.ics.texera.workflow.operators.hdfsscan.HdfsScanOpDesc
 
 @JsonTypeInfo(
@@ -64,6 +65,10 @@ import edu.uci.ics.texera.workflow.operators.hdfsscan.HdfsScanOpDesc
     new Type(value = classOf[ReservoirSamplingOpDesc], name = "ReservoirSampling"),
     new Type(value = classOf[HashJoinOpDesc[Constants.joinType]], name = "HashJoin"),
     new Type(value = classOf[HashJoinSpecialOpDesc[Constants.joinType]], name = "HashSpecialJoin"),
+    new Type(
+      value = classOf[HashJoinSpecial2OpDesc[Constants.joinType]],
+      name = "HashSpecialJoin2"
+    ),
     new Type(value = classOf[HdfsScanOpDesc], name = "HdfsScan")
   )
 )
