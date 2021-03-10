@@ -23,11 +23,13 @@ import edu.uci.ics.texera.workflow.common.{Utils, WorkflowContext}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.workflow.{WorkflowCompiler, WorkflowInfo}
 import edu.uci.ics.texera.workflow.operators.sink.SimpleSinkOpDesc
-
 import java.util.concurrent.atomic.AtomicInteger
+
+import edu.uci.ics.texera.workflow.common.operators.sink.SinkOpDesc
 import javax.servlet.http.HttpSession
 import javax.websocket.{EndpointConfig, _}
 import javax.websocket.server.ServerEndpoint
+
 import scala.collection.mutable
 object WorkflowWebsocketResource {
 
@@ -192,7 +194,7 @@ class WorkflowWebsocketResource {
       workflowStatusUpdateListener = statusUpdate => {
         val updateMutable = mutable.HashMap(statusUpdate.operatorStatistics.toSeq: _*)
         val sinkID = texeraWorkflowCompiler.workflowInfo.operators
-          .find(p => p.isInstanceOf[SimpleSinkOpDesc])
+          .find(p => p.isInstanceOf[SinkOpDesc])
           .get
           .operatorID
         val sinkInputID = texeraWorkflowCompiler.workflowInfo.links

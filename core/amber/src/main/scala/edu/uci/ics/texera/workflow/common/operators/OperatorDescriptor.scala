@@ -31,8 +31,9 @@ import edu.uci.ics.texera.workflow.operators.visualization.lineChart.LineChartOp
 import edu.uci.ics.texera.workflow.operators.visualization.pieChart.PieChartOpDesc
 import edu.uci.ics.texera.workflow.operators.visualization.wordCloud.WordCloudOpDesc
 import org.apache.commons.lang3.builder.{EqualsBuilder, HashCodeBuilder, ToStringBuilder}
-
 import java.util.UUID
+
+import edu.uci.ics.texera.workflow.operators.sink.file.FileSinkOpDesc
 
 @JsonTypeInfo(
   use = JsonTypeInfo.Id.NAME,
@@ -43,6 +44,7 @@ import java.util.UUID
   Array(
     new Type(value = classOf[CSVScanSourceOpDesc], name = "CSVFileScan"),
     new Type(value = classOf[SimpleSinkOpDesc], name = "SimpleSink"),
+    new Type(value = classOf[FileSinkOpDesc], name = "FileSink"),
     new Type(value = classOf[RegexOpDesc], name = "Regex"),
     new Type(value = classOf[SpecializedFilterOpDesc], name = "Filter"),
     new Type(value = classOf[SentimentAnalysisOpDesc], name = "SentimentAnalysis"),
