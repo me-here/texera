@@ -56,9 +56,19 @@ object OperatorMetadataGenerator {
   val texeraSchemaGeneratorConfig: JsonSchemaConfig = html5EnabledSchema.copy(
     useOneOfForOption = false,
     defaultArrayFormat = None,
-    jsonSchemaDraft = JsonSchemaDraft.DRAFT_07
+    jsonSchemaDraft = JsonSchemaDraft.DRAFT_07,
+    customType2FormatMapping = Map[String,String](
+      // Java7 dates
+      "java.time.LocalDateTime" -> "date-time",
+      "java.time.OffsetDateTime" -> "date-time",
+      "java.time.LocalDate" -> "date",
+
+      // Joda-dates
+      "org.joda.time.LocalDate" -> "date"
+    )
   )
   val jsonSchemaGenerator = new JsonSchemaGenerator(objectMapper, texeraSchemaGeneratorConfig)
+
   // a map from a Texera Operator Descriptor's class to its operatorType string value
   val operatorTypeMap: Map[Class[_ <: OperatorDescriptor], String] = {
     // find all the operator type declarations in PredicateBase annotation

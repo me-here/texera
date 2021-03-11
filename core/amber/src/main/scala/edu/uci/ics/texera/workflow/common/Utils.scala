@@ -2,6 +2,10 @@ package edu.uci.ics.texera.workflow.common
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
+import com.fasterxml.jackson.datatype.joda.JodaModule
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
 import java.nio.file.{Files, Path, Paths}
@@ -10,6 +14,10 @@ object Utils {
 
   final val objectMapper = new ObjectMapper()
     .registerModule(DefaultScalaModule)
+    .registerModule(new JavaTimeModule())
+    .registerModule(new Jdk8Module())
+    .registerModule(new ParameterNamesModule())
+    .registerModule(new JodaModule())
     .setSerializationInclusion(Include.NON_NULL)
     .setSerializationInclusion(Include.NON_ABSENT)
 

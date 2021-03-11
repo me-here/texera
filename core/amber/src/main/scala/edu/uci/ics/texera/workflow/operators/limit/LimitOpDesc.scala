@@ -4,15 +4,13 @@ import com.fasterxml.jackson.annotation.{JsonProperty, JsonPropertyDescription}
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle
 import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.operators.OpExecConfig
-import edu.uci.ics.texera.workflow.common.metadata.{
-  InputPort,
-  OperatorGroupConstants,
-  OperatorInfo,
-  OutputPort
-}
+import edu.uci.ics.texera.workflow.common.metadata.{InputPort, OperatorGroupConstants, OperatorInfo, OutputPort}
 import edu.uci.ics.texera.workflow.common.operators.{OneToOneOpExecConfig, OperatorDescriptor}
 import edu.uci.ics.texera.workflow.common.tuple.schema.Schema
 import edu.uci.ics.texera.workflow.operators.util.OperatorDescriptorUtils.equallyPartitionGoal
+import org.joda.time.DateTime
+
+import java.time.{LocalDate, LocalDateTime, OffsetDateTime}
 
 class LimitOpDesc extends OperatorDescriptor {
 
@@ -20,6 +18,11 @@ class LimitOpDesc extends OperatorDescriptor {
   @JsonSchemaTitle("Limit")
   @JsonPropertyDescription("the max number of output rows")
   var limit: Int = _
+
+
+  @JsonProperty
+  @JsonSchemaTitle("test")
+  var test: LocalDate = _
 
   override def operatorExecutor: OpExecConfig = {
     val limitPerWorker = equallyPartitionGoal(limit, Constants.defaultNumWorkers)

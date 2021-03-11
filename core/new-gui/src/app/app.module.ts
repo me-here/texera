@@ -78,6 +78,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzListModule } from 'ng-zorro-antd/list';
 import { NzInputModule } from 'ng-zorro-antd/input';
+import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzCollapseModule } from 'ng-zorro-antd/collapse';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
@@ -108,7 +109,13 @@ import { en_US } from 'ng-zorro-antd/i18n';
 import { registerLocaleData } from '@angular/common';
 import en from '@angular/common/locales/en';
 import { FormlyMaterialModule } from '@ngx-formly/material';
+import { FormlyBootstrapModule } from '@ngx-formly/bootstrap';
 import { TypecastingDisplayComponent } from './workspace/component/property-editor/typecasting-display/typecasting-display.component';
+import {
+  CustomDateTimePickerComponentComponent
+} from './common/formly/custom-datetime/custom-date-time-picker-component/custom-date-time-picker-component.component';
+import { CustomWrapperComponent } from './common/formly/custom-wrapper/custom-wrapper.component';
+import { CustomInputComponent } from './common/formly/custom-input/custom-input.component';
 
 registerLocaleData(en);
 
@@ -158,6 +165,10 @@ registerLocaleData(en);
     VisualizationPanelContentComponent,
     CodeareaCustomTemplateComponent,
     CodeEditorDialogComponent,
+    CustomDateTimePickerComponentComponent,
+    CustomWrapperComponent,
+    CustomInputComponent,
+
     TypecastingDisplayComponent,
   ],
   imports: [
@@ -179,7 +190,9 @@ registerLocaleData(en);
     ReactiveFormsModule,
     LoggerModule.forRoot({ level: environment.production ? NgxLoggerLevel.ERROR : NgxLoggerLevel.DEBUG, serverLogLevel: NgxLoggerLevel.OFF }),
     FormlyModule.forRoot(TEXERA_FORMLY_CONFIG),
-    FormlyMaterialModule,
+    // FormlyBootstrapModule,
+    // FormlyMaterialModule,
+    FormlyNgZorroAntdModule,
 
     NzDropDownModule,
     NzButtonModule,
@@ -187,6 +200,7 @@ registerLocaleData(en);
     NzFormModule,
     NzListModule,
     NzInputModule,
+    NzInputNumberModule,
     NzMenuModule,
     NzCollapseModule,
     NzToolTipModule,

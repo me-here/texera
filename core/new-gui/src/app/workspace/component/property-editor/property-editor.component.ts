@@ -378,7 +378,6 @@ export class PropertyEditorComponent {
       .filter(event => !isEqual(this.formData, this.workflowActionService.getTexeraGraph().getLinkBreakpoint(event.linkID)))
       .subscribe(event => {
         this.formData = cloneDeep(this.workflowActionService.getTexeraGraph().getLinkBreakpoint(event.linkID));
-
       });
   }
 
@@ -392,7 +391,8 @@ export class PropertyEditorComponent {
       if (this.currentOperatorID) {
         const operator = this.workflowActionService.getTexeraGraph().getOperator(this.currentOperatorID);
 
-        this.workflowActionService.setOperatorProperty(this.currentOperatorID, formData);
+        console.log(formData);
+        // this.workflowActionService.setOperatorProperty(this.currentOperatorID, formData);
         this.workflowActionService.setOperatorProperty(this.currentOperatorID, cloneDeep(formData));
       }
     });
@@ -435,9 +435,22 @@ export class PropertyEditorComponent {
     // intercept JsonSchema -> FormlySchema process, adding custom options
     const jsonSchemaMapIntercept = (mappedField: FormlyFieldConfig, mapSource: JSONSchema7): FormlyFieldConfig => {
       // if the title is python script (for Python UDF), then make this field a custom template 'codearea'
+      console.log(mapSource);
       if (mapSource?.description?.toLowerCase() === 'input your code here') {
         if (mappedField.type) {
           mappedField.type = 'codearea';
+        }
+      } else if (mapSource?.title === 'Batch by Interval') {
+        if (mappedField.type) {
+          mappedField.type = 'custom-datetime';
+          console.log('batch by interval type changed');
+          console.log(mappedField);
+        }
+      }
+      if (mapSource.title === 'test' ) {
+        mappedField.type = 'string';
+        if (mappedField.templateOptions) {
+          mappedField.templateOptions.type = 'datetime-local';
         }
       }
       return mappedField;

@@ -4,7 +4,7 @@
       {{formTitle}}
     </h3>
 
-    <form class="texera-workspace-property-editor-form" [formGroup]="formlyFormGroup" *ngIf="formlyFields">
+    <form class="texera-workspace-property-editor-form" [formGroup]="formlyFormGroup" *ngIf="formlyFields" nz-form nzLayout="vertical">
       <formly-form [model]="formData"
       [fields]="formlyFields"
       [options]="formlyOptions"

@@ -63,8 +63,8 @@ export class WorkflowUtilService {
     const { ...schemaWithoutID } = operatorSchema.jsonSchema;
 
     // value inserted in the data will be the deep clone of the default in the schema
-    const validate = this.ajv.compile(schemaWithoutID);
-    validate(operatorProperties);
+    // const validate = this.ajv.compile(schemaWithoutID);
+    // validate(operatorProperties);
 
     const inputPorts: {portID: string, displayName?: string}[] = [];
     const outputPorts: {portID: string, displayName?: string}[] = [];

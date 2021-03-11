@@ -4,6 +4,11 @@ import { ObjectTypeComponent } from './object.type';
 import { MultiSchemaTypeComponent } from './multischema.type';
 import { FormlyFieldConfig } from '@ngx-formly/core';
 import { CodeareaCustomTemplateComponent } from '../../workspace/component/codearea-custom-template/codearea-custom-template.component';
+import {
+  CustomDateTimePickerComponentComponent
+} from './custom-datetime/custom-date-time-picker-component/custom-date-time-picker-component.component';
+import { CustomWrapperComponent } from './custom-wrapper/custom-wrapper.component';
+import { CustomInputComponent } from './custom-input/custom-input.component';
 
 /**
  * Configuration for using Json Schema with Formly.
@@ -11,6 +16,10 @@ import { CodeareaCustomTemplateComponent } from '../../workspace/component/codea
  * see https://formly.dev/examples/advanced/json-schema
  */
 export const TEXERA_FORMLY_CONFIG = {
+  wrappers: [
+    { name: 'custom', component: CustomWrapperComponent },
+  ],
+
   validationMessages: [
     { name: 'required', message: 'This field is required' },
     { name: 'null', message: 'should be null' },
@@ -27,6 +36,30 @@ export const TEXERA_FORMLY_CONFIG = {
     { name: 'const', message: constValidationMessage },
   ],
   types: [
+    // { name: 'string', extends: 'input', wrappers: ['custom'] },
+    // {
+    //   name: 'number',
+    //   extends: 'input',
+    //   defaultOptions: {
+    //     templateOptions: {
+    //       type: 'number',
+    //     },
+    //   },
+    // },
+    // {
+    //   name: 'integer',
+    //   extends: 'input',
+    //   defaultOptions: {
+    //     templateOptions: {
+    //       type: 'number',
+    //     },
+    //   },
+    // },
+    {
+      name: 'input',
+      component: CustomInputComponent,
+      wrappers: ['custom'],
+    },
     { name: 'string', extends: 'input' },
     {
       name: 'number',
@@ -46,13 +79,16 @@ export const TEXERA_FORMLY_CONFIG = {
         },
       },
     },
+
+
     { name: 'boolean', extends: 'checkbox' },
     { name: 'enum', extends: 'select' },
-    { name: 'null', component: NullTypeComponent, wrappers: ['form-field'] },
-    { name: 'array', component: ArrayTypeComponent },
-    { name: 'object', component: ObjectTypeComponent },
-    { name: 'multischema', component: MultiSchemaTypeComponent },
-    { name: 'codearea', component: CodeareaCustomTemplateComponent},
+    { name: 'null', component: NullTypeComponent, wrappers: ['custom'] },
+    { name: 'array', component: ArrayTypeComponent, wrappers: ['custom'] },
+    { name: 'object', component: ObjectTypeComponent, wrappers: ['custom'] },
+    { name: 'multischema', component: MultiSchemaTypeComponent, wrappers: ['custom'] },
+    { name: 'codearea', component: CodeareaCustomTemplateComponent },
+    // { name: 'custom-datetime', component: CustomDateTimePickerComponentComponent }
   ],
 };
 
