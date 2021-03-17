@@ -88,7 +88,7 @@ export const TEXERA_FORMLY_CONFIG = {
     { name: 'object', component: ObjectTypeComponent, wrappers: ['custom'] },
     { name: 'multischema', component: MultiSchemaTypeComponent, wrappers: ['custom'] },
     { name: 'codearea', component: CodeareaCustomTemplateComponent },
-    // { name: 'custom-datetime', component: CustomDateTimePickerComponentComponent }
+    { name: 'custom-datetime', component: CustomDateTimePickerComponentComponent },
   ],
 };
 
