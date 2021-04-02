@@ -78,6 +78,7 @@ class TexeraWebApplication extends io.dropwizard.Application[TexeraWebConfigurat
     environment.jersey().register(classOf[UserResource])
     environment.jersey().register(classOf[WorkflowResource])
     environment.jersey().register(classOf[UserFileResource])
+    environment.jersey().register(classOf[WorkflowResultDownloadResource])
   }
 
 }

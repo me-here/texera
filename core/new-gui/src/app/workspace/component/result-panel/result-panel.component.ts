@@ -12,8 +12,14 @@ import { WorkflowActionService } from '../../service/workflow-graph/model/workfl
 import { WorkflowWebsocketService } from '../../service/workflow-websocket/workflow-websocket.service';
 import { ExecutionState } from '../../types/execute-workflow.interface';
 import { IndexableObject, PAGINATION_INFO_STORAGE_KEY, ResultPaginationInfo, TableColumn } from '../../types/result-table.interface';
-import { BreakpointTriggerInfo } from '../../types/workflow-common.interface';
+import { BreakpointTriggerInfo, OperatorPredicate } from '../../types/workflow-common.interface';
+import { AppSettings } from 'src/app/common/app-setting';
+import { HttpClient } from '@angular/common/http';
+import { UserService } from 'src/app/common/service/user/user.service';
 
+
+const DOWNLOAD_WORKFLOW_ENDPOINT = 'download/result';
+const FILE_SINK_OP_TYPE = 'FileSink';
 /**
  * ResultPanelComponent is the bottom level area that displays the
  *  execution result of a workflow after the execution finishes.
@@ -76,7 +82,9 @@ export class ResultPanelComponent {
     private modalService: NzModalService,
     private resultPanelToggleService: ResultPanelToggleService,
     private workflowActionService: WorkflowActionService,
-    private workflowWebsocketService: WorkflowWebsocketService
+    private workflowWebsocketService: WorkflowWebsocketService,
+    private http: HttpClient,
+    private userService: UserService
   ) {
     const activeStates: ExecutionState[] = [ExecutionState.Completed, ExecutionState.Failed, ExecutionState.BreakpointTriggered];
     Observable.merge(
@@ -303,6 +311,39 @@ export class ResultPanelComponent {
 
     this.isLoadingResult = true;
     this.workflowWebsocketService.send('ResultPaginationRequest', {pageSize: newPageSize, pageIndex: newPageIndex});
+  }
+
+  public isHighlightedOperatorSink(): boolean {
+    const sinkOperator = this.getCurrentSinkOperator();
+    return sinkOperator && sinkOperator.operatorType === FILE_SINK_OP_TYPE;
+  }
+
+  public downloadFile(){
+    const sinkOperator = this.getCurrentSinkOperator()
+    if (sinkOperator.operatorType !== FILE_SINK_OP_TYPE){
+      return;
+    } else if (!this.userService.isLogin()){
+      alert('Must login to download the result');
+      return;
+    }
+
+    const requestURL = `${AppSettings.getApiEndpoint()}/${DOWNLOAD_WORKFLOW_ENDPOINT}`
+      + `?userId=${this.userService.getUser()?.uid}&
+      fileName=${sinkOperator.operatorProperties.fileName}&
+      downloadType=${sinkOperator.operatorProperties.fileType}`;
+
+    this.http.get(
+      requestURL,
+      { responseType: 'blob' }
+    ).subscribe(
+      () => window.location.href = requestURL,
+      error => console.log(error)
+    );
+  }
+
+  private getCurrentSinkOperator(): OperatorPredicate {
+    return this.workflowActionService.getTexeraGraph().getAllOperators()
+    .filter(op => op.operatorID === this.resultPanelOperatorID)[0];
   }
 
   /**

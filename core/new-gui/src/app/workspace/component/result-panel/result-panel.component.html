@@ -12,7 +12,7 @@
     the elements in *ngIf is still loading. [hidden] attribute solves this issue by not
     removing the elements, but rather modify their css to make these elements invisible
     to the users-->
-  <div [hidden]="chartType">
+  <div [hidden]="chartType || isHighlightedOperatorSink()">
     <button class="btn btn-secondary" *ngIf="breakpointTriggerInfo !== undefined" (click)="onClickSkipTuples()"
       [disabled]="!breakpointAction">
       Skip Records
@@ -39,8 +39,14 @@
     </div>
   </div>
 
-  <div [hidden]="!chartType">
+  <div [hidden]="!chartType || isHighlightedOperatorSink()">
     <texera-visualization-panel [operatorID]="resultPanelOperatorID"></texera-visualization-panel>
+  </div>
+
+  <div [hidden]="!isHighlightedOperatorSink()">
+    <button class="btn btn-secondary" (click)="downloadFile()">
+    download
+  </button>
   </div>
 
 </div>

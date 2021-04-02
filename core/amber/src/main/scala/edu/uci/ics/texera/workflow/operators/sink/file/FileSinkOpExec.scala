@@ -9,6 +9,7 @@ import com.github.tototoshi.csv.CSVWriter
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, InputExhausted}
+import edu.uci.ics.texera.web.WebUtils
 import org.jooq.types.UInteger
 
 import scala.collection.mutable
@@ -20,7 +21,7 @@ class FileSinkOpExec(
 ) extends IOperatorExecutor {
 
   // TODO change path
-  val BaseDirectory: Path = Path.of("C:\\Users\\SuperTaunt\\Desktop")
+  val BaseDirectory: Path = WebUtils.resultBaseDirectory
   var csvWriter: CSVWriter = null
 
   override def open(): Unit = {

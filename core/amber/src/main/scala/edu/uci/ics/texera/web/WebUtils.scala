@@ -2,12 +2,15 @@ package edu.uci.ics.texera.web
 
 import java.io.{BufferedReader, InputStreamReader}
 import java.net.URL
+import java.nio.file.Path
 
 import akka.actor.{ActorSystem, Props}
 import com.typesafe.config.ConfigFactory
 import edu.uci.ics.amber.clustering.ClusterListener
 
 object WebUtils {
+
+  val resultBaseDirectory: Path = Path.of("")
 
   def startActorMaster(localhost: Boolean): ActorSystem = {
     var localIpAddress = "localhost"
