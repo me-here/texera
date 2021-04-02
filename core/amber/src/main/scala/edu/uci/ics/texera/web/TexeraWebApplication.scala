@@ -1,5 +1,7 @@
 package edu.uci.ics.texera.web
 
+import java.nio.file.Path
+
 import akka.actor.ActorSystem
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.github.dirkraft.dropwizard.fileassets.FileAssetsBundle
@@ -18,6 +20,8 @@ import org.glassfish.jersey.media.multipart.MultiPartFeature
 import edu.uci.ics.texera.web.resource.dashboard.UserDictionaryResource
 
 import java.time.Duration
+
+import com.typesafe.config.{Config, ConfigFactory}
 
 object TexeraWebApplication {
 
