@@ -11,7 +11,7 @@ import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType
 import java.sql._
 
 abstract class SQLSourceOpDesc extends SourceOperatorDescriptor {
-  
+
   @EnablePresets
   @JsonProperty(required = true)
   @JsonSchemaTitle("Host")

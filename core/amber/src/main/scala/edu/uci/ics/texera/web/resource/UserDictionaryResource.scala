@@ -36,18 +36,20 @@ import scala.collection.JavaConversions._
 @Path("/users/dictionary")
 @Produces(Array(MediaType.TEXT_PLAIN))
 class UserDictionaryResource {
-  final private val userDictionaryDao = new UserDictionaryDao(SqlServer.createDSLContext.configuration)
+  final private val userDictionaryDao = new UserDictionaryDao(
+    SqlServer.createDSLContext.configuration
+  )
 
   /**
     * This method either retrieves all values from the current in-session user's dictionary, or retrieves a value corresponding to the "key" query parameter
     */
   @GET
   def getValue(@Session session: HttpSession, @QueryParam("key") key: String): Response = {
-    
+
     // check that user is logged in and authorized
     val user = UserResource.getUser(session).getOrElse(null);
     if (user == null) return Response.status(Response.Status.UNAUTHORIZED).build()
-    
+
     if (key == null) {
       return getAllValues(user)
     } else {
@@ -59,28 +61,33 @@ class UserDictionaryResource {
 
     val queryResult = SqlServer.createDSLContext
       .select()
-      .from(USER_DICTIONARY) 
+      .from(USER_DICTIONARY)
       .where(USER_DICTIONARY.UID.eq(user.getUid()))
       .and(USER_DICTIONARY.KEY.eq(key))
       .fetchInto(classOf[UserDictionary])
-    
+
     // check that query doesn't return more than one result
-    if (queryResult.size() > 1) return Response.serverError.entity("key corresponds to more than one entry").build()
+    if (queryResult.size() > 1)
+      return Response.serverError.entity("key corresponds to more than one entry").build()
 
     // check that there is 1 result
-    if (queryResult.size() == 0) return Response.status(Response.Status.BAD_REQUEST).entity("no such entry").build()
+    if (queryResult.size() == 0)
+      return Response.status(Response.Status.BAD_REQUEST).entity("no such entry").build()
     // else return the entry
-    else return Response.ok(
-      jsonElementToString(
-        queryResult.get(0).getValue()
-      )
-    ).build()
+    else
+      return Response
+        .ok(
+          jsonElementToString(
+            queryResult.get(0).getValue()
+          )
+        )
+        .build()
   }
 
   private def getAllValues(user: User): Response = {
     val queryResult = SqlServer.createDSLContext
       .select()
-      .from(USER_DICTIONARY) 
+      .from(USER_DICTIONARY)
       .where(USER_DICTIONARY.UID.eq(user.getUid()))
       .fetchInto(classOf[UserDictionary])
 
@@ -88,15 +95,18 @@ class UserDictionaryResource {
     if (queryResult.size() == 0) return Response.ok("{}").build()
 
     var jObj = json.JsObject(
-        (for(dictEntry <- queryResult) yield (
-          dictEntry.getKey(), 
-          json.Json.parse(dictEntry.getValue().toString()).as[json.JsArray].value(0))
-        ).toSeq
+      (for (dictEntry <- queryResult)
+        yield (
+          dictEntry.getKey(),
+          json.Json.parse(dictEntry.getValue().toString()).as[json.JsArray].value(0)
+        )).toSeq
     )
-    
-    return Response.ok(
-      jObj.toString()
-    ).build()
+
+    return Response
+      .ok(
+        jObj.toString()
+      )
+      .build()
   }
 
   /**
@@ -104,24 +114,30 @@ class UserDictionaryResource {
     */
   @POST
   @Consumes(Array(MediaType.TEXT_PLAIN))
-  def setValue(@Session session: HttpSession, @QueryParam("key") key: String, value: String): Response = {
+  def setValue(
+      @Session session: HttpSession,
+      @QueryParam("key") key: String,
+      value: String
+  ): Response = {
     // check that request payload isn't empty
-    if (value.length() == 0) return Response.status(Response.Status.BAD_REQUEST).entity("empty payload").build()
-    
+    if (value.length() == 0)
+      return Response.status(Response.Status.BAD_REQUEST).entity("empty payload").build()
+
     // check that user is logged in and authorized
     val user = UserResource.getUser(session).getOrElse(null);
     if (user == null) return Response.status(Response.Status.UNAUTHORIZED).build()
 
     val queryResult = SqlServer.createDSLContext
       .select()
-      .from(USER_DICTIONARY) 
+      .from(USER_DICTIONARY)
       .where(USER_DICTIONARY.UID.eq(user.getUid()))
       .and(USER_DICTIONARY.KEY.eq(key))
       .fetchInto(classOf[UserDictionary])
 
     // check that query returns 1 or 0 results (dictionary entries should be unique)
-    if (queryResult.size() > 1) return Response.serverError.entity("key corresponds to more than one entry").build()
-    
+    if (queryResult.size() > 1)
+      return Response.serverError.entity("key corresponds to more than one entry").build()
+
     if (queryResult.size() == 0) {
       // insert new entry if no entry exists in the dictionary
       userDictionaryDao.insert(
@@ -153,24 +169,28 @@ class UserDictionaryResource {
 
     val queryResult = SqlServer.createDSLContext
       .select()
-      .from(USER_DICTIONARY) 
+      .from(USER_DICTIONARY)
       .where(USER_DICTIONARY.UID.eq(user.getUid()))
       .and(USER_DICTIONARY.KEY.eq(key))
       .fetchInto(classOf[UserDictionary])
 
     // check that query doesn't return more than one result
-    if (queryResult.size() > 1) return Response.serverError.entity("key corresponds to more than one entry").build()
+    if (queryResult.size() > 1)
+      return Response.serverError.entity("key corresponds to more than one entry").build()
 
     // check that there is 1 result
-    if (queryResult.size() == 0) return Response.status(Response.Status.BAD_REQUEST).entity("no such entry").build()
+    if (queryResult.size() == 0)
+      return Response.status(Response.Status.BAD_REQUEST).entity("no such entry").build()
     // else delete the entry
     else {
       userDictionaryDao.delete(queryResult.get(0))
-      return Response.ok(
-        jsonElementToString(
-          queryResult.get(0).getValue()
+      return Response
+        .ok(
+          jsonElementToString(
+            queryResult.get(0).getValue()
+          )
         )
-      ).build()
+        .build()
     }
   }
 
@@ -179,7 +199,7 @@ class UserDictionaryResource {
       json.Json.parse(string)
       return true
     } catch {
-      case e: JsonParseException => return false
+      case e: JsonParseException   => return false
       case e: JsonMappingException => return false
     }
   }
@@ -197,7 +217,7 @@ class UserDictionaryResource {
     val jArray = json.Json.parse(_json.toString()).as[json.JsArray]
     if (jArray.apply(0).validate[json.JsString].isSuccess) {
       var jString = jArray.apply(0).as[json.JsString].toString()
-      return jString.substring(1, jString.length()-1) // trim off double quotes -> "..."
+      return jString.substring(1, jString.length() - 1) // trim off double quotes -> "..."
     } else {
       return jArray.apply(0).toString()
     }
