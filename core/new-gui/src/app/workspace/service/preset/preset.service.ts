@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as Ajv from 'ajv';
 import { JSONSchema7 } from 'json-schema';
-import { cloneDeep, merge } from 'lodash';
+import { cloneDeep, isEqual, merge } from 'lodash';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { Observable, Subject } from 'rxjs';
 import { DictionaryService, JSONValue, UserDictionary } from 'src/app/common/service/user/user-dictionary/dictionary.service';
@@ -32,11 +32,14 @@ export class PresetService {
   constructor(
     private dictionaryService: DictionaryService,
     private messageService: NzMessageService,
+    private workflowActionService: WorkflowActionService,
+    private operatorMetadataService: OperatorMetadataService,
     ) {
     this.applyPresetStream = this.applyPresetSubject.asObservable();
     this.savePresetsStream = this.savePresetSubject.asObservable();
     this.presetDict = this.getPresetDict();
-    console.log('debug presetservice', this);
+
+    this.handleApplyOperatorPresets();
   }
 
   public applyPreset(type: string, target: string, preset: Preset) {
@@ -59,6 +62,25 @@ export class PresetService {
     } else {
       throw new Error(`stored preset data ${presets} is formatted incorrectly`);
     }
+  }
+
+  public isValidOperatorPreset(preset: Preset, operatorID: string): boolean {
+    const presetSchema = PresetService.getOperatorPresetSchema(
+      this.operatorMetadataService.getOperatorSchema(
+        this.workflowActionService.getTexeraGraph().getOperator(operatorID).operatorType).jsonSchema);
+    const fitsSchema = this.ajv.compile(presetSchema)(preset);
+    const noEmptyProperties = Object.keys(preset).every(
+      (key: string) => typeof preset !== 'string' || ((<string>preset[key]).trim()).length > 0);
+
+    return fitsSchema && noEmptyProperties;
+  }
+
+  public isValidNewOperatorPreset(preset: Preset, operatorID: string): boolean {
+    const existsAlready = this.getPresets('operator', this.workflowActionService.getTexeraGraph().getOperator(operatorID).operatorType)
+      .some(existingPreset => isEqual(preset, existingPreset));
+
+    return this.isValidOperatorPreset(preset, operatorID) && !existsAlready;
+
   }
 
   private getPresetDict(): UserDictionary {
@@ -131,6 +153,38 @@ export class PresetService {
           this.messageService.warning(displayMessage);
           break;
       }
+    }
+  }
+
+  private handleApplyOperatorPresets() {
+    this.applyPresetStream.subscribe({
+      next: (applyEvent) => {
+        if ( applyEvent.type === 'operator' && this.workflowActionService.getTexeraGraph().hasOperator(applyEvent.target) &&
+          this.isValidOperatorPreset(applyEvent.preset, applyEvent.target)) {
+          console.log('applypreset', applyEvent);
+          this.workflowActionService.setOperatorProperty(
+            applyEvent.target,
+            merge(this.workflowActionService.getTexeraGraph().getOperator(applyEvent.target).operatorProperties, applyEvent.preset)
+          );
+        }
+      }
+    });
+  }
+
+  public static getOperatorPresetSchema(operatorSchema: JSONSchema7): JSONSchema7 {
+    const copy = cloneDeep(operatorSchema);
+    if (copy.properties === undefined) {
+      throw new Error(`provided operator schema ${operatorSchema} has no properties`);
+    } else {
+      copy.required = [];
+      for (const key of Object.keys(copy.properties)) {
+        if (!(copy.properties[key] as any)['enable-presets']) {
+          delete copy.properties[key];
+        } else {
+          copy.required.push(key);
+        }
+      }
+      return copy;
     }
   }
 }

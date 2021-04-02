@@ -65,7 +65,6 @@ export class OperatorPanelComponent implements OnInit {
     private workflowActionService: WorkflowActionService,
     private workflowUtilService: WorkflowUtilService,
     private dragDropService: DragDropService,
-    private userDictionaryService: DictionaryService,
   ) {
     // create the search results observable
     // whenever the search box text is changed, perform the search using fuse.js

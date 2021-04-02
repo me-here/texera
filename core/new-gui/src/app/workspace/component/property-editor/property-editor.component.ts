@@ -224,12 +224,12 @@ export class PropertyEditorComponent {
     console.log('sv', Object.assign(this), newPreset);
 
     if (this.presetData.originalPreset !== null && this.getPresetIndex(this.presetData.originalPreset, presets) !== -1 &&
-      this.isValidNewOperatorPreset(newPreset, this.currentOperatorID)) {
+      this.presetService.isValidNewOperatorPreset(newPreset, this.currentOperatorID)) {
 
       presets[this.getPresetIndex(this.presetData.originalPreset, presets)] = newPreset;
       this.presetService.savePresets('operator', operatorType, presets);
 
-    } else if (this.isValidNewOperatorPreset(newPreset, this.currentOperatorID)) {
+    } else if (this.presetService.isValidNewOperatorPreset(newPreset, this.currentOperatorID)) {
       presets.push(newPreset);
       this.presetService.savePresets('operator', operatorType, presets);
     }
@@ -257,7 +257,7 @@ export class PropertyEditorComponent {
     const form_is_dirty = this.formlyFields !== undefined && !this.formlyFields[0].formControl?.pristine;
     const has_preset_fields = this.presetData.hasPresetFields;
     const form_preset_is_valid = this.currentOperatorID !== undefined && has_preset_fields &&
-      this.isValidOperatorPreset(
+      this.presetService.isValidOperatorPreset(
         this.getPresetFromForm(
           this.autocompleteService.getDynamicSchema(this.currentOperatorID).operatorType,
           this.formData),
@@ -498,7 +498,7 @@ export class PropertyEditorComponent {
     this.presetService.applyPresetStream.subscribe({
       next: (applyEvent) => {
         if ( this.currentOperatorID !== undefined && this.currentOperatorID === applyEvent.target &&
-          this.isValidOperatorPreset(applyEvent.preset, this.currentOperatorID)) {
+          this.presetService.isValidOperatorPreset(applyEvent.preset, this.currentOperatorID)) {
           this.presetData.originalPreset = applyEvent.preset;
         }
       }
@@ -591,38 +591,9 @@ export class PropertyEditorComponent {
     this.formlyFields = [field];
   }
 
-  private isValidOperatorPreset(preset: Preset, operatorID: string): boolean {
-    const presetSchema = WorkflowActionService.getOperatorPresetSchema(this.autocompleteService.getDynamicSchema(operatorID).jsonSchema);
-    const fitsSchema = this.ajv.compile(presetSchema)(preset);
-    const noEmptyProperties = Object.keys(preset).every(
-      (key: string) => typeof preset !== 'string' || ((<string>preset[key]).trim()).length > 0);
-
-    return fitsSchema && noEmptyProperties;
-  }
-
-  private isValidNewOperatorPreset(preset: Preset, operatorID: string): boolean {
-    const existsAlready = this.presetService.getPresets('operator', this.autocompleteService.getDynamicSchema(operatorID).operatorType)
-      .some(existingPreset => isEqual(preset, existingPreset));
-
-    return this.isValidOperatorPreset && !existsAlready;
-
-  }
-
-  private areValidOperatorPresets(presets: Preset[], operatorType: string) {
-    const presetSchema = WorkflowActionService.getOperatorPresetSchema(
-      this.operatorMetadataService.getOperatorSchema(operatorType).jsonSchema);
-    const schemaValidator = this.ajv.compile(presetSchema);
-
-    return presets.every(
-      (preset) =>
-        schemaValidator(preset) &&
-        Object.keys(preset).every((key: string) => typeof preset !== 'string' || ((<string>preset[key]).trim()).length > 0)
-    );
-  }
-
   private getPresetFromForm(operatorType: string, formData: object): Preset {
     const copy = cloneDeep(formData as Preset);
-    const presetSchema = WorkflowActionService.getOperatorPresetSchema(
+    const presetSchema = PresetService.getOperatorPresetSchema(
       this.operatorMetadataService.getOperatorSchema(operatorType).jsonSchema);
     console.log(Object.assign({}, copy));
     for (const key of Object.keys(copy)) {

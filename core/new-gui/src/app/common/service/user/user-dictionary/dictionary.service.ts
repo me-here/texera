@@ -116,7 +116,9 @@ export class DictionaryService {
             this.dictionaryEventSubject.next({type: EVENT_TYPE.GET, key: key, value: undefined as any});
             return undefined as any;
           default:
-            throw reason;
+            this.dictionaryEventSubject.next({type: EVENT_TYPE.GET, key: key, value: undefined as any});
+            console.warn(reason);
+            return undefined as any;
         }
       }
     );
@@ -189,7 +191,9 @@ export class DictionaryService {
             this.dictionaryEventSubject.next({type: EVENT_TYPE.GET_ALL, value: {}});
             return {} as any;
           default:
-            throw reason;
+            this.dictionaryEventSubject.next({type: EVENT_TYPE.GET_ALL, value: {}});
+            console.warn(reason);
+            return {} as any;
         }
       }
     );
