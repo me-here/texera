@@ -44,7 +44,7 @@
   </div>
 
   <div [hidden]="!isHighlightedOperatorSink()">
-    <button class="btn btn-secondary" (click)="downloadFile()">
+    <button class="btn btn-secondary" [hidden]="!isOperatorExecuted()" (click)="downloadFile()">
     download
   </button>
   </div>

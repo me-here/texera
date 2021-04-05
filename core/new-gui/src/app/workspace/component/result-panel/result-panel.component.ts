@@ -95,8 +95,6 @@ export class ResultPanelComponent {
     ).subscribe(trigger => this.displayResultPanel());
 
     this.executeWorkflowService.getExecutionStateStream().subscribe(event => {
-      console.log(event.current.state);
-      console.log(event.current);
       if (event.current.state === ExecutionState.BreakpointTriggered) {
         const breakpointOperator = this.executeWorkflowService.getBreakpointTriggerInfo()?.operatorID;
         if (breakpointOperator) {
@@ -318,6 +316,13 @@ export class ResultPanelComponent {
     return sinkOperator && sinkOperator.operatorType === FILE_SINK_OP_TYPE;
   }
 
+  public isOperatorExecuted(): boolean{
+    const executionState = this.executeWorkflowService.getExecutionState();
+    return executionState.state === ExecutionState.Completed &&
+    !!this.resultPanelOperatorID &&
+    executionState.resultMap.has(this.resultPanelOperatorID);
+  }
+
   public downloadFile(){
     const sinkOperator = this.getCurrentSinkOperator()
     if (sinkOperator.operatorType !== FILE_SINK_OP_TYPE){
@@ -327,10 +332,11 @@ export class ResultPanelComponent {
       return;
     }
 
+    const uid = this.userService.getUser()?.uid,
+    fileName = sinkOperator.operatorProperties.fileName,
+    downloadType = sinkOperator.operatorProperties.fileType;
     const requestURL = `${AppSettings.getApiEndpoint()}/${DOWNLOAD_WORKFLOW_ENDPOINT}`
-      + `?userId=${this.userService.getUser()?.uid}&
-      fileName=${sinkOperator.operatorProperties.fileName}&
-      downloadType=${sinkOperator.operatorProperties.fileType}`;
+      + `?userId=${uid}&fileName=${fileName}&downloadType=${downloadType}`;
 
     this.http.get(
       requestURL,

@@ -20,7 +20,7 @@ public enum ResultFileType {
 
     public static String getFileSuffix(String name){
         return Arrays.stream(values())
-                .filter(target -> target.name.equals(name))
+                .filter(target -> target.name.equals(name) || target.getName().equals(name))
                 .findAny()
                 .map(type -> type.fileSuffix)
                 .orElse(SUFFIX_DOES_NOT_EXIST);

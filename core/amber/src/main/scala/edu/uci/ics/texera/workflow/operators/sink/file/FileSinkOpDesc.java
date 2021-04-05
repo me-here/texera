@@ -33,7 +33,7 @@ public class FileSinkOpDesc extends SinkOpDesc {
     public OpExecConfig operatorExecutor() {
         // Current file saving is using user id as identifier so user is is required.
         if (context().userID().isEmpty()){
-            throw new RuntimeException("User id is null");
+            throw new RuntimeException("User is not login");
         }
         return new FileSinkOpExecConfig(this.operatorIdentifier(), fileName, fileType, context().userID().get());
     }
