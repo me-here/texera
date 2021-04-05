@@ -4,6 +4,10 @@ import edu.uci.ics.texera.workflow.common.operators.source.SourceOperatorExecuto
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, Schema}
 import edu.uci.ics.texera.workflow.common.tuple.schema.AttributeType._
+import edu.uci.ics.texera.workflow.common.tuple.schema.AttributeTypeUtils.{
+  parseField,
+  parseTimestamp
+}
 
 import java.sql._
 import scala.collection.Iterator
@@ -17,18 +21,21 @@ abstract class SQLSourceOpExec(
     table: String,
     var curLimit: Option[Long],
     var curOffset: Option[Long],
-    column: Option[String],
+    search: Option[Boolean],
+    searchByColumn: Option[String],
     keywords: Option[String],
     // progressiveness related
-    progressive: Boolean,
+    progressive: Option[Boolean],
     batchByColumn: Option[String],
+    min: Option[String],
+    max: Option[String],
     interval: Long
 ) extends SourceOperatorExecutor {
 
   // connection and query related
   val tableNames: ArrayBuffer[String] = ArrayBuffer()
   val batchByAttribute: Option[Attribute] =
-    if (progressive) Option(schema.getAttribute(batchByColumn.get)) else None
+    if (progressive.getOrElse(false)) Option(schema.getAttribute(batchByColumn.get)) else None
   var connection: Connection = _
   var curQuery: Option[PreparedStatement] = None
   var curResultSet: Option[ResultSet] = None
@@ -141,7 +148,7 @@ abstract class SQLSourceOpExec(
     if (!tableNames.contains(table))
       throw new RuntimeException("Can't find the given table `" + table + "`.")
     // load for batch column value boundaries used to split mini queries
-    if (progressive) loadBatchColumnBoundaries()
+    if (progressive.getOrElse(false)) initBatchColumnBoundaries()
   }
 
   /**
@@ -171,6 +178,7 @@ abstract class SQLSourceOpExec(
     val tupleBuilder = Tuple.newBuilder
 
     for (attr <- schema.getAttributes.asScala) {
+
       breakable {
         val columnName = attr.getName
         val columnType = attr.getType
@@ -183,22 +191,8 @@ abstract class SQLSourceOpExec(
         }
 
         // otherwise, transform the type of the value
-        columnType match {
-          case INTEGER =>
-            tupleBuilder.add(attr, value.toInt)
-          case LONG =>
-            tupleBuilder.add(attr, value.toLong)
-          case DOUBLE =>
-            tupleBuilder.add(attr, value.toDouble)
-          case STRING =>
-            tupleBuilder.add(attr, value)
-          case BOOLEAN =>
-            tupleBuilder.add(attr, !(value == "0"))
-          case TIMESTAMP =>
-            tupleBuilder.add(attr, Timestamp.valueOf(value))
-          case ANY | _ =>
-            throw new RuntimeException("Unhandled attribute type: " + columnType)
-        }
+        tupleBuilder.add(attr, parseField(value, columnType))
+
       }
     }
     tupleBuilder.build
@@ -333,7 +327,7 @@ abstract class SQLSourceOpExec(
     */
   @throws[SQLException]
   @throws[RuntimeException]
-  protected def getBatchByBoundary(side: String): Option[Number] = {
+  protected def fetchBatchByBoundary(side: String): Option[Number] = {
     batchByAttribute match {
       case Some(attribute) =>
         var result: Number = null
@@ -351,10 +345,7 @@ abstract class SQLSourceOpExec(
             result = resultSet.getTimestamp(1).getTime
           case DOUBLE =>
             result = resultSet.getDouble(1)
-          case BOOLEAN =>
-          case STRING  =>
-          case ANY     =>
-          case _ =>
+          case BOOLEAN | STRING | ANY | _ =>
             throw new IllegalStateException("Unexpected value: " + attribute.getType)
         }
         resultSet.close()
@@ -413,11 +404,12 @@ abstract class SQLSourceOpExec(
     addBaseSelect(queryBuilder)
 
     // add keyword search if applicable
-    if (column.isDefined && keywords.isDefined)
+    if (search.getOrElse(false) && searchByColumn.isDefined && keywords.isDefined)
       addKeywordSearch(queryBuilder)
 
     // add sliding window if progressive mode is enabled
-    if (progressive) addBatchSlidingWindow(queryBuilder)
+    if (progressive.getOrElse(false) && batchByColumn.isDefined && interval > 0L)
+      addBatchSlidingWindow(queryBuilder)
 
     // add limit if provided
     if (curLimit.isDefined) {
@@ -428,7 +420,7 @@ abstract class SQLSourceOpExec(
     }
 
     // add fixed offset if not progressive
-    if (!progressive && curOffset.isDefined) addOffset(queryBuilder)
+    if (!progressive.getOrElse(false) && curOffset.isDefined) addOffset(queryBuilder)
 
     // end
     terminateSQL(queryBuilder)
@@ -455,7 +447,7 @@ abstract class SQLSourceOpExec(
           var curIndex = 1
 
           // fill up the keywords
-          if (column.isDefined && keywords.isDefined) {
+          if (search.getOrElse(false) && searchByColumn.isDefined && keywords.isDefined) {
             preparedStatement.setString(curIndex, keywords.get)
             curIndex += 1
           }
@@ -469,7 +461,7 @@ abstract class SQLSourceOpExec(
           }
 
           // fill up offset if progressive mode is not enabled
-          if (!progressive)
+          if (!progressive.getOrElse(false))
             curOffset match {
               case Some(offset) =>
                 preparedStatement.setLong(curIndex, offset)
@@ -491,14 +483,29 @@ abstract class SQLSourceOpExec(
     */
   @throws[SQLException]
   @throws[RuntimeException]
-  private def loadBatchColumnBoundaries(): Unit = {
-    batchByAttribute match {
-      case Some(attribute) =>
-        if (attribute.getName.nonEmpty) {
-          upperBound = getBatchByBoundary("MAX").getOrElse(0)
-          curLowerBound = getBatchByBoundary("MIN").getOrElse(0)
+  private def initBatchColumnBoundaries(): Unit = {
+    // TODO: add interval
+    if (batchByAttribute.isDefined && min.isDefined && max.isDefined) {
+
+      if (min.get.equalsIgnoreCase("auto")) curLowerBound = fetchBatchByBoundary("MIN").getOrElse(0)
+      else
+        batchByAttribute.get.getType match {
+          case TIMESTAMP => curLowerBound = parseTimestamp(min.get).getTime
+          case LONG      => curLowerBound = min.get.toLong
+          case _         => throw new RuntimeException(s"Unsupported type ${batchByAttribute.get.getType}")
         }
-      case None =>
+
+      if (max.get.equalsIgnoreCase("auto")) upperBound = fetchBatchByBoundary("MAX").getOrElse(0)
+      else
+        batchByAttribute.get.getType match {
+          case TIMESTAMP => upperBound = parseTimestamp(max.get).getTime
+          case LONG      => upperBound = max.get.toLong
+          case _         => throw new RuntimeException(s"Unsupported type ${batchByAttribute.get.getType}")
+        }
+    } else {
+      throw new RuntimeException(
+        s"Missing required progressive configuration, $batchByAttribute, $min or $max."
+      )
     }
   }
 }

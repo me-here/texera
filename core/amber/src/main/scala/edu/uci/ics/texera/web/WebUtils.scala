@@ -1,14 +1,17 @@
 package edu.uci.ics.texera.web
 
+import java.nio.file.Path
+import akka.actor.{ActorSystem, Props}
+import com.typesafe.config.{Config, ConfigFactory}
+import edu.uci.ics.amber.clustering.ClusterListener
+import edu.uci.ics.texera.workflow.common.Utils
+
 import java.io.{BufferedReader, InputStreamReader}
 import java.net.URL
-import java.nio.file.Path
-
-import akka.actor.{ActorSystem, Props}
-import com.typesafe.config.ConfigFactory
-import edu.uci.ics.amber.clustering.ClusterListener
 
 object WebUtils {
+  val config: Config =
+    ConfigFactory.parseFile(Utils.amberHomePath.resolve("../conf").resolve("web.conf").toFile)
 
   val resultBaseDirectory: Path = Path.of("")
 
