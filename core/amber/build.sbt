@@ -8,6 +8,7 @@ scalaVersion := "2.12.8"
 //To turn off, use: WARNING
 scalacOptions ++= Seq("-Xelide-below", "WARNING")
 scalacOptions ++= Seq("-feature")
+javacOptions ++= Seq("-source", "11")
 
 // ensuring no parallel execution of multiple tasks
 concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
