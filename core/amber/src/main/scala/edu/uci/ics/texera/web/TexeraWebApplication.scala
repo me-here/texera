@@ -24,7 +24,7 @@ object TexeraWebApplication {
 
   def main(args: Array[String]): Unit = {
     // start actor system master node
-    actorSystem = AmberUtils.startActorMaster(true)
+    actorSystem = AmberUtils.startActorMaster(false)
 
     // start web server
     val server = "server"
