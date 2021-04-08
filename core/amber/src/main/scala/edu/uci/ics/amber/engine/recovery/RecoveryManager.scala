@@ -17,11 +17,11 @@ import scala.collection.mutable
 object RecoveryManager {
   def defaultControlLogStorage(
       id: ActorVirtualIdentity
-  ) = new EmptyLogStorage[WorkflowControlMessage]()
+  ) = new HDFSLogStorage[WorkflowControlMessage](id.toString+"-control")
 
-  def defaultDataLogStorage(id: ActorVirtualIdentity) = new EmptyLogStorage[DataLogElement]()
+  def defaultDataLogStorage(id: ActorVirtualIdentity) = new HDFSLogStorage[DataLogElement](id.toString+"-data")
 
-  def defaultDPLogStorage(id: ActorVirtualIdentity) = new EmptyLogStorage[Long]()
+  def defaultDPLogStorage(id: ActorVirtualIdentity) = new HDFSLogStorage[Long](id.toString+"-dp")
 
   sealed trait RecoveryMessage extends WorkflowMessage
   final case class TriggerRecovery(nodeAddr: Address) extends RecoveryMessage
