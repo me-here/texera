@@ -29,7 +29,9 @@ object FileLogStorage{
 
     def read():Array[Byte] ={
       val length = inputStream.readInt()
-      inputStream.readNBytes(length)
+      val result = new Array[Byte](length)
+      inputStream.read(result)
+      result
     }
 
     def close(): Unit ={
