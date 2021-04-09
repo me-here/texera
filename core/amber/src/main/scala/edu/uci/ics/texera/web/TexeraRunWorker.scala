@@ -6,7 +6,7 @@ object TexeraRunWorker {
 
   def main(args: Array[String]): Unit = {
     // start actor system worker node
-    AmberUtils.startActorWorker(Some("128.195.52.133"))
+    AmberUtils.startActorWorker(Some("128.195.52.129"))
   }
 
 }
