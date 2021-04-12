@@ -22,7 +22,8 @@ import edu.uci.ics.texera.workflow.common.tuple.Tuple
 
 class SortOpExecConfig(
     id: OperatorIdentity,
-    val sortAttributeName: String
+    val sortAttributeName: String,
+    val numOfWorkers: Int
 ) extends OpExecConfig(id) {
 
   override lazy val topology: Topology = {
@@ -34,7 +35,7 @@ class SortOpExecConfig(
           Constants.lowerLimit,
           Constants.upperLimit,
           i,
-          Constants.defaultNumWorkers
+          numOfWorkers
         ),
       Constants.defaultNumWorkers,
       UseAll(),
@@ -47,7 +48,7 @@ class SortOpExecConfig(
           sortAttributeName,
           Constants.lowerLimit,
           Constants.upperLimit,
-          Constants.defaultNumWorkers
+          numOfWorkers
         ),
       1,
       UseAll(),
@@ -77,7 +78,7 @@ class SortOpExecConfig(
     {
       val fieldVal: Float = t.asInstanceOf[Tuple].getField(sortAttributeName).asInstanceOf[Float]
       val jump: Int =
-        ((Constants.upperLimit - Constants.lowerLimit) / Constants.defaultNumWorkers).toInt + 1
+        ((Constants.upperLimit - Constants.lowerLimit) / numOfWorkers).toInt + 1
       var idx: Int = 0
       while (fieldVal >= jump * idx) {
         idx = idx + 1

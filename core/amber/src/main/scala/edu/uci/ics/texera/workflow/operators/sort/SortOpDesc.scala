@@ -3,6 +3,7 @@ package edu.uci.ics.texera.workflow.operators.sort
 import com.fasterxml.jackson.annotation.{JsonIgnore, JsonProperty, JsonPropertyDescription}
 import com.google.common.base.Preconditions
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle
+import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.operators.OpExecConfig
 import edu.uci.ics.texera.workflow.common.metadata.annotations.{
   AutofillAttributeName,
@@ -31,7 +32,8 @@ class SortOpDesc extends OperatorDescriptor {
   override def operatorExecutor: OpExecConfig = {
     opExecConfig = new SortOpExecConfig(
       this.operatorIdentifier,
-      sortAttributeName
+      sortAttributeName,
+      Constants.defaultNumWorkers
     )
     opExecConfig
   }
