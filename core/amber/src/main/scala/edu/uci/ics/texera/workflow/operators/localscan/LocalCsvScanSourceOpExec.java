@@ -82,16 +82,16 @@ public class LocalCsvScanSourceOpExec implements SourceOperatorExecutor {
                         return Tuple.newBuilder().add(schema, res).build();
                     } else {
                         String[] line = reader.readLine();
-                        Object[] res = new Object[line.length-1];
-                        for(int i=0; i<line.length-1; i++){
-                            res[i] = line[i];
-                        }
-                        if (res == null || Arrays.stream(res).noneMatch(Objects::nonNull)) {
+                        if (line == null || Arrays.stream(line).noneMatch(Objects::nonNull)) {
                             // discard tuple if it's null or it only contains null
                             // which means it will always discard Tuple(null) from readLine()
                             return null;
                         }
                         Verify.verify(schema != null);
+                        Object[] res = new Object[line.length-1];
+                        for(int i=0; i<line.length-1; i++){
+                            res[i] = line[i];
+                        }
                         for(int i=0; i<res.length;i++){
                             try
                             {
