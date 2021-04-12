@@ -1,5 +1,6 @@
 package edu.uci.ics.texera.workflow.operators.hdfsscan;
 
+import com.esotericsoftware.kryo.io.Input;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.google.common.io.Files;
@@ -129,11 +130,27 @@ public class HdfsScanOpDesc extends SourceOperatorDescriptor {
         } else {
             String[] p = filePath.trim().split("/");
             if(indicesToKeep!=null && indicesToKeep.trim().length()>0) {
-                Schema.Builder builder = Schema.newBuilder();
-                Arrays.stream(indicesToKeep.split(",")).forEach(idx -> {
-                    builder.add(new Attribute(p[p.length-1]+" column" + idx.trim(), AttributeType.STRING));
-                });
-                return builder.build();
+                if(!Constants.sortExperiment()) {
+                    Schema.Builder builder = Schema.newBuilder();
+                    Arrays.stream(indicesToKeep.split(",")).forEach(idx -> {
+                        builder.add(new Attribute(p[p.length - 1] + " column" + idx.trim(), AttributeType.STRING));
+                    });
+                    return builder.build();
+                } else {
+                    Schema.Builder builder = Schema.newBuilder();
+                    for(int i=0; i<headerLine.length; i++) {
+                        try
+                        {
+                            Float.parseFloat(headerLine[i]);
+                            builder.add(new Attribute("column" + indicesToKeep.split(",")[i].trim(), AttributeType.FLOAT));
+                        }
+                        catch(NumberFormatException e)
+                        {
+                            builder.add(new Attribute("column" + indicesToKeep.split(",")[i].trim(), AttributeType.STRING));
+                        }
+                    }
+                    return builder.build();
+                }
             } else {
                 return Schema.newBuilder().add(IntStream.range(0, headerLine.length).
                         mapToObj(i -> new Attribute(p[p.length-1]+" column" + i, AttributeType.STRING))

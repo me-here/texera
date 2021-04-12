@@ -7,7 +7,8 @@ import edu.uci.ics.amber.engine.architecture.linksemantics.{
   FullRoundRobin,
   HashBasedShuffle,
   LinkStrategy,
-  OneToOne
+  OneToOne,
+  RangeBasedShuffle
 }
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.NetworkSenderActorRef
 import edu.uci.ics.amber.engine.architecture.principal.OperatorState.Completed
@@ -22,6 +23,7 @@ import edu.uci.ics.amber.engine.common.virtualidentity.{
 import edu.uci.ics.amber.engine.common.{AmberUtils, Constants}
 import edu.uci.ics.amber.engine.operators.{OpExecConfig, SinkOpExecConfig}
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExecConfig
+import edu.uci.ics.texera.workflow.operators.sort.SortOpExecConfig
 
 import scala.collection.mutable
 
@@ -172,13 +174,21 @@ class Workflow(
   ): LinkStrategy = {
     val sender = from._2
     val receiver = to._2
-    if (to._1.requiredShuffle) {
+    if (to._1.requiredShuffle && !to._1.requiredRangePartition) {
       new HashBasedShuffle(
         sender,
         receiver,
         Constants.defaultBatchSize,
         to._1.getShuffleHashFunction(sender.id),
         to._1.asInstanceOf[HashJoinOpExecConfig[Constants.joinType]].getShuffleKey(sender.id)
+      )
+    } else if (to._1.requiredShuffle && to._1.requiredRangePartition) {
+      new RangeBasedShuffle(
+        sender,
+        receiver,
+        Constants.defaultBatchSize,
+        to._1.getShuffleHashFunction(sender.id),
+        to._1.asInstanceOf[SortOpExecConfig].getShuffleKey(sender.id)
       )
     } else if (to._1.isInstanceOf[SinkOpExecConfig]) {
       new AllToOne(sender, receiver, Constants.defaultBatchSize)

@@ -13,6 +13,7 @@ import edu.uci.ics.texera.workflow.common.operators.source.SourceOperatorDescrip
 import edu.uci.ics.texera.workflow.common.tuple.schema.Attribute;
 import edu.uci.ics.texera.workflow.common.tuple.schema.AttributeType;
 import edu.uci.ics.texera.workflow.common.tuple.schema.Schema;
+import org.apache.avro.SchemaBuilder;
 import scala.collection.immutable.List;
 
 import java.io.File;
@@ -93,9 +94,29 @@ public class LocalCsvFileScanOpDesc extends SourceOperatorDescriptor {
             return Schema.newBuilder().add(Arrays.stream(headerLine.split(delimiter)).map(c -> c.trim())
                     .map(c -> new Attribute(c, AttributeType.STRING)).collect(Collectors.toList())).build();
         } else {
-            return Schema.newBuilder().add(IntStream.range(0, headerLine.split(delimiter).length).
-                    mapToObj(i -> new Attribute("column" + i, AttributeType.STRING))
-                    .collect(Collectors.toList())).build();
+            if(!Constants.sortExperiment()) {
+                return Schema.newBuilder().add(IntStream.range(0, headerLine.split(delimiter).length).
+                        mapToObj(i -> new Attribute("column" + i, AttributeType.STRING))
+                        .collect(Collectors.toList())).build();
+            } else {
+                String tempDelimiter = "\\|";
+                Schema.Builder builder = Schema.newBuilder();
+                String[] fields = headerLine.split(tempDelimiter);
+                int idx = 0;
+                for(String fieldVal: fields) {
+                    try
+                    {
+                        Float.parseFloat(fieldVal);
+                        builder.add(new Attribute("column" + idx, AttributeType.FLOAT));
+                    }
+                    catch(NumberFormatException e)
+                    {
+                        builder.add(new Attribute("column" + idx, AttributeType.STRING));
+                    }
+                    idx++;
+                }
+                return builder.build();
+            }
         }
     }
 

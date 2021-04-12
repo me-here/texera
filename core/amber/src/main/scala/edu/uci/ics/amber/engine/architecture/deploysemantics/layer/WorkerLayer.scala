@@ -47,7 +47,7 @@ class WorkerLayer(
 
   def isBuilt: Boolean = workers != null
 
-  def identifiers: Array[ActorVirtualIdentity] = workers.values.map(_.id).toArray
+  val identifiers: Array[ActorVirtualIdentity] = new Array[ActorVirtualIdentity](numWorkers)
 
   def states: Array[WorkerState] = workers.values.map(_.state).toArray
 
@@ -61,9 +61,11 @@ class WorkerLayer(
       workerToLayer: mutable.HashMap[ActorVirtualIdentity, WorkerLayer]
   ): Unit = {
     deployStrategy.initialize(deploymentFilter.filter(prev, all, context.self.path.address))
+
     workers = (0 until numWorkers).map { i =>
       val m = metadata(i)
       val workerID = WorkerActorVirtualIdentity(id.toString + s"[$i]")
+      identifiers(i) = workerID
       val d = deployStrategy.next()
       val ref = context.actorOf(
         WorkflowWorker

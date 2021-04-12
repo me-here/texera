@@ -12,6 +12,7 @@ public enum AttributeType implements Serializable {
     INTEGER("integer", Integer.class),
     LONG("long", Long.class),
     DOUBLE("double", Double.class),
+    FLOAT("Float", Float.class),
     BOOLEAN("boolean", Boolean.class),
     TIMESTAMP("timestamp", Timestamp.class),
     ANY("ANY", Object.class);
@@ -40,6 +41,8 @@ public enum AttributeType implements Serializable {
             return INTEGER;
         } else if (fieldClass.equals(Double.class)) {
             return DOUBLE;
+        } else if (fieldClass.equals(Float.class)) {
+            return FLOAT;
         } else if (fieldClass.equals(Boolean.class)) {
             return BOOLEAN;
         } else {

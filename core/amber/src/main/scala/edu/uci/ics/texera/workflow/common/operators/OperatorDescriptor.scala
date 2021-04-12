@@ -35,6 +35,7 @@ import edu.uci.ics.amber.engine.common.virtualidentity.OperatorIdentity
 import edu.uci.ics.texera.workflow.operators.hashJoinSpecial.HashJoinSpecialOpDesc
 import edu.uci.ics.texera.workflow.operators.hashJoinSpecial2.HashJoinSpecial2OpDesc
 import edu.uci.ics.texera.workflow.operators.hdfsscan.HdfsScanOpDesc
+import edu.uci.ics.texera.workflow.operators.sort.SortOpDesc
 
 @JsonTypeInfo(
   use = JsonTypeInfo.Id.NAME,
@@ -69,7 +70,8 @@ import edu.uci.ics.texera.workflow.operators.hdfsscan.HdfsScanOpDesc
       value = classOf[HashJoinSpecial2OpDesc[Constants.joinType]],
       name = "HashSpecialJoin2"
     ),
-    new Type(value = classOf[HdfsScanOpDesc], name = "HdfsScan")
+    new Type(value = classOf[HdfsScanOpDesc], name = "HdfsScan"),
+    new Type(value = classOf[SortOpDesc], name = "Sort")
   )
 )
 abstract class OperatorDescriptor extends Serializable {

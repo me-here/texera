@@ -62,18 +62,51 @@ public class HdfsScanSourceOpExec implements SourceOperatorExecutor {
             @Override
             public Tuple next() {
                 try {
-                    String[] res = reader.readLine();
-                    if(res == null || Arrays.stream(res).anyMatch(f -> (f==null)||(f.trim().length()==0))){
-                        return null;
-                    }
-                    Verify.verify(schema != null);
-                    if (res.length != schema.getAttributes().size()) {
-                        res = Stream.concat(Arrays.stream(res),
-                                IntStream.range(0, schema.getAttributes().size() - res.length).mapToObj(i -> null))
-                                .toArray(String[]::new);
-                    }
+                    if(!Constants.sortExperiment()) {
+                        String[] res = reader.readLine();
+                        if(res == null || Arrays.stream(res).anyMatch(f -> (f==null)||(f.trim().length()==0))){
+                            return null;
+                        }
+                        Verify.verify(schema != null);
+                        if (res.length != schema.getAttributes().size()) {
+                            res = Stream.concat(Arrays.stream(res),
+                                    IntStream.range(0, schema.getAttributes().size() - res.length).mapToObj(i -> null))
+                                    .toArray(String[]::new);
+                        }
 
-                    return Tuple.newBuilder().add(schema, res).build();
+                        return Tuple.newBuilder().add(schema, res).build();
+                    } else {
+                        String[] line = reader.readLine();
+                        Object[] res = new Object[line.length-1];
+                        for(int i=0; i<line.length-1; i++){
+                            res[i] = line[i];
+                        }
+                        if (res == null || Arrays.stream(res).noneMatch(Objects::nonNull)) {
+                            // discard tuple if it's null or it only contains null
+                            // which means it will always discard Tuple(null) from readLine()
+                            return null;
+                        }
+                        Verify.verify(schema != null);
+                        for(int i=0; i<res.length;i++){
+                            try
+                            {
+                                float temp = Float.parseFloat((String)res[i]);
+                                res[i] = temp;
+                            }
+                            catch(NumberFormatException e){/** do nothing **/ }
+                        }
+                        if (res.length != schema.getAttributes().size()) {
+                            Object[] ret = new Object[schema.getAttributes().size()];
+                            for(int j=0; j<res.length; j++){
+                                ret[j] = res[j];
+                            }
+                            for(int j=res.length; j<ret.length; j++){
+                                ret[j] = "null";
+                            }
+                            res = ret;
+                        }
+                        return Tuple.newBuilder().add(schema, res).build();
+                    }
 
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);

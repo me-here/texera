@@ -102,6 +102,8 @@ abstract class OpExecConfig(val id: OperatorIdentity) extends Serializable {
 
   def requiredShuffle: Boolean = false
 
+  def requiredRangePartition: Boolean = false
+
   def setInputToOrdinalMapping(input: LinkIdentity, ordinal: Integer): Unit = {
     this.inputToOrdinalMapping.update(input, ordinal)
   }
