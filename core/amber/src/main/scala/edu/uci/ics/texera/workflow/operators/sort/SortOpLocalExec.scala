@@ -15,14 +15,15 @@ class SortOpLocalExec(
     val sortAttributeName: String,
     val rangeMin: Float,
     val rangeMax: Float,
-    val localIdx: Int
+    val localIdx: Int,
+    val numWorkers: Int
 ) extends OperatorExecutor {
 
   var sortedTuples: ArrayBuffer[Tuple] = _
   var newTuples: ArrayBuffer[Tuple] = _
 
   val jump: Int =
-    ((rangeMax - rangeMin) / Constants.defaultNumWorkers).toInt + 1
+    ((rangeMax - rangeMin) / numWorkers).toInt + 1
   val workerLowerLimitIncluded: Int = jump * localIdx
   val workerUpperLimitExcluded: Int =
     if (jump * (localIdx + 1) > rangeMax) rangeMax.toInt else jump * (localIdx + 1)

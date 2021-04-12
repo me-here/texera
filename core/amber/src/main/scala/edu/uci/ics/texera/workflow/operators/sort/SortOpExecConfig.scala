@@ -28,7 +28,14 @@ class SortOpExecConfig(
   override lazy val topology: Topology = {
     var partialLayer = new WorkerLayer(
       LayerIdentity(id, "localSort"),
-      i => new SortOpLocalExec(sortAttributeName, Constants.lowerLimit, Constants.upperLimit, i),
+      i =>
+        new SortOpLocalExec(
+          sortAttributeName,
+          Constants.lowerLimit,
+          Constants.upperLimit,
+          i,
+          Constants.defaultNumWorkers
+        ),
       Constants.defaultNumWorkers,
       UseAll(),
       RoundRobinDeployment()

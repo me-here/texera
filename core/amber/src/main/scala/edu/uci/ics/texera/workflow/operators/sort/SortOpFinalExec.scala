@@ -22,7 +22,7 @@ class SortOpFinalExec(
   var sortedListsConcat: Array[ArrayBuffer[Tuple]] = _
 
   val jump: Int =
-    ((rangeMax - rangeMin) / Constants.defaultNumWorkers).toInt + 1
+    ((rangeMax - rangeMin) / numOfWorkers).toInt + 1
 
   def getIndexOfWorker(t: Tuple): Int = {
     val fieldVal: Float = t.getField(sortAttributeName).asInstanceOf[Float]
