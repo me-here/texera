@@ -77,8 +77,8 @@ public class HdfsScanSourceOpExec implements SourceOperatorExecutor {
                         return Tuple.newBuilder().add(schema, res).build();
                     } else {
                         String[] line = reader.readLine();
-                        Object[] res = new Object[line.length-1];
-                        for(int i=0; i<line.length-1; i++){
+                        Object[] res = new Object[line.length];
+                        for(int i=0; i<line.length; i++){
                             res[i] = line[i];
                         }
                         if (res == null || Arrays.stream(res).noneMatch(Objects::nonNull)) {
