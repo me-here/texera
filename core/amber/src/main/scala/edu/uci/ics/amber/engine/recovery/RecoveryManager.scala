@@ -14,7 +14,13 @@ object RecoveryManager {
       id: ActorVirtualIdentity
   ) = new HDFSLogStorage[WorkflowControlMessage](id.toString+"-control")
 
-  def defaultDataLogStorage(id: ActorVirtualIdentity) = new HDFSLogStorage[DataLogElement](id.toString+"-data")
+  def defaultDataLogStorage(id: ActorVirtualIdentity): LogStorage[DataLogElement] = {
+    if(id.toString.contains("join")){
+      new HDFSLogStorage[DataLogElement](id.toString+"-data")
+    }else{
+      new EmptyLogStorage[DataLogElement]()
+    }
+  }
 
   def defaultDPLogStorage(id: ActorVirtualIdentity) = new HDFSLogStorage[Long](id.toString+"-dp")
 }
