@@ -8,6 +8,8 @@ import edu.uci.ics.texera.workflow.operators.source.scan.file.FileScanSourceOpDe
 
 class LocalFileScanSourceOpDesc extends FileScanSourceOpDesc {
 
+  fileTypeName = Option("Local")
+
   override def getOperatorExecutorConfig(path: String): OpExecConfig = {
     new LocalFileScanSourceOpExecConfig(
       operatorIdentifier,

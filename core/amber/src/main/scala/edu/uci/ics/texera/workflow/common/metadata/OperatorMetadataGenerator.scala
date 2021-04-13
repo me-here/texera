@@ -10,6 +10,7 @@ import edu.uci.ics.texera.workflow.common.Utils.objectMapper
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import java.util
 
+import edu.uci.ics.texera.workflow.operators.source.scan.file.hdfs.HDFSFileScanSourceOpDesc
 import edu.uci.ics.texera.workflow.operators.source.scan.file.local.LocalFileScanSourceOpDesc
 
 import scala.collection.JavaConverters
