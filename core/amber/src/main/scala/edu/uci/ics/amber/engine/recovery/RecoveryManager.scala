@@ -2,13 +2,8 @@ package edu.uci.ics.amber.engine.recovery
 
 import akka.actor.{ActorContext, Address}
 import edu.uci.ics.amber.engine.architecture.controller.Workflow
-import edu.uci.ics.amber.engine.architecture.messaginglayer.ControlInputPort.WorkflowControlMessage
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  GetActorRef,
-  NetworkSenderActorRef,
-  SendRequest
-}
-import edu.uci.ics.amber.engine.common.ambermessage.WorkflowMessage
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{GetActorRef, NetworkSenderActorRef, SendRequest}
+import edu.uci.ics.amber.engine.common.ambermessage.{WorkflowControlMessage, WorkflowMessage}
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.recovery.DataLogManager.DataLogElement
 
@@ -22,10 +17,6 @@ object RecoveryManager {
   def defaultDataLogStorage(id: ActorVirtualIdentity) = new EmptyLogStorage[DataLogElement]()
 
   def defaultDPLogStorage(id: ActorVirtualIdentity) = new EmptyLogStorage[Long]()
-
-  sealed trait RecoveryMessage extends WorkflowMessage
-  final case class TriggerRecovery(nodeAddr: Address) extends RecoveryMessage
-  final case class RecoveryCompleted(id: ActorVirtualIdentity) extends RecoveryMessage
 }
 
 class RecoveryManager(

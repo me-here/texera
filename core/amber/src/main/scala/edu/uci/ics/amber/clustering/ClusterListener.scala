@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Address, ExtendedActorSystem}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
 import edu.uci.ics.amber.engine.common.Constants
+import edu.uci.ics.amber.engine.common.ambermessage.TriggerRecovery
 
 import scala.collection.mutable
 

@@ -59,12 +59,9 @@ class BatchToTupleConverter(
     * @param dataPayload
     */
   def processDataPayload(from: VirtualIdentity, dataPayload: DataPayload): Unit = {
-    val link = inputMap(from)
-    if (currentLink == null || currentLink != link) {
-      workerInternalQueue.appendElement(SenderChangeMarker(link))
-      currentLink = link
-    }
     dataPayload match {
+      case InputLinking(link) =>
+        registerInput(from, link)
       case DataFrame(payload) =>
         transitStateToRunningFromReady()
         checkLinkChange(inputMap(from))

@@ -10,22 +10,12 @@ import edu.uci.ics.amber.clustering.ClusterRuntimeInfo
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{ErrorOccurred, WorkflowStatusUpdate}
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LinkWorkflowHandler.LinkWorkflow
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  NetworkMessage,
-  RegisterActorRef
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkAck, NetworkMessage, RegisterActorRef}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
-import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, WorkflowControlMessage}
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, RecoveryCompleted, RecoveryMessage, TriggerRecovery, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Ready
-import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, WorkflowIdentity}
-import edu.uci.ics.amber.engine.recovery.RecoveryManager.RecoveryMessage
 import edu.uci.ics.amber.engine.recovery.{ControlLogManager, LogStorage, RecoveryManager}
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  VirtualIdentity,
-  WorkflowIdentity
-}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity, WorkflowIdentity}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
@@ -82,6 +72,9 @@ class Controller(
   val controlLogManager: ControlLogManager = wire[ControlLogManager]
   val recoveryManager = wire[RecoveryManager]
 
+  lazy val controlInputPort: NetworkInputPort[ControlPayload] =
+    new NetworkInputPort[ControlPayload](this.logger, this.handleControlPayloadWithTryCatch)
+
   private def errorLogAction(err: WorkflowRuntimeError): Unit = {
     eventListener.workflowExecutionErrorListener.apply(ErrorOccurred(err))
   }
@@ -106,14 +99,14 @@ class Controller(
     processRecoveryMessages orElse {
       case NetworkMessage(
             id,
-             WorkflowControlMessage(from, seqNum, payload: ReturnPayload)
+            cmd @ WorkflowControlMessage(from, seqNum, payload: ReturnPayload)
           ) =>
         //process reply messages
         controlLogManager.persistControlMessage(cmd)
         controlInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
       case NetworkMessage(
             id,
-            WorkflowControlMessage(ActorVirtualIdentity.Controller, seqNum, payload)
+            cmd @ WorkflowControlMessage(ActorVirtualIdentity.Controller, seqNum, payload)
           ) =>
         //process control messages from self
         controlLogManager.persistControlMessage(cmd)
@@ -130,7 +123,6 @@ class Controller(
 
   def running: Receive = {
     acceptDirectInvocations orElse
-      processControlMessages orElse
       processRecoveryMessages orElse {
       case other =>
         logger.logInfo(s"unhandled message: $other")
@@ -154,14 +146,43 @@ class Controller(
     super.postStop()
   }
 
+  def handleControlPayloadWithTryCatch(
+                                        from: VirtualIdentity,
+                                        controlPayload: ControlPayload
+                                      ): Unit = {
+    try {
+      controlPayload match {
+        // use control input port to pass control messages
+        case invocation: ControlInvocation =>
+          assert(from.isInstanceOf[ActorVirtualIdentity])
+          asyncRPCServer.logControlInvocation(invocation, from)
+          asyncRPCServer.receive(invocation, from.asInstanceOf[ActorVirtualIdentity])
+        case ret: ReturnPayload =>
+          asyncRPCClient.logControlReply(ret, from)
+          asyncRPCClient.fulfillPromise(ret)
+        case other =>
+          logger.logError(
+            WorkflowRuntimeError(
+              s"unhandled control message: $other",
+              "ControlInputPort",
+              Map.empty
+            )
+          )
+      }
+    } catch safely {
+      case e =>
+        logger.logError(WorkflowRuntimeError(e, identifier.toString))
+    }
+  }
+
   def processRecoveryMessages: Receive = {
     case NetworkMessage(id, msg: RecoveryMessage) =>
       sender ! NetworkAck(id)
       msg match {
-        case RecoveryManager.TriggerRecovery(addr) =>
+        case TriggerRecovery(addr) =>
           val targetNode = availableNodes.head
           recoveryManager.recoverWorkerOnNode(addr, targetNode)
-        case RecoveryManager.RecoveryCompleted(id) =>
+        case RecoveryCompleted(id) =>
           recoveryManager.setRecoverCompleted(id)
       }
   }

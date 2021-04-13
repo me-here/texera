@@ -22,7 +22,9 @@ class NetworkInputPort[T](
       sequenceNumber: Long,
       payload: T
   ): Unit = {
-    sender ! NetworkAck(messageID)
+    if(sender != null){
+      sender ! NetworkAck(messageID)
+    }
 
     OrderingEnforcer.reorderMessage[T](
       idToOrderingEnforcers,

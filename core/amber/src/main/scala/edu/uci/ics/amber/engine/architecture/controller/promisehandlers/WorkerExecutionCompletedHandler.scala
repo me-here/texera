@@ -71,7 +71,7 @@ trait WorkerExecutionCompletedHandler {
               )
           }
           disableStatusUpdate()
-          actorContext.parent ! ControllerState.Completed // for testing
+          controller.context.parent ! ControllerState.Completed // for testing
           // clean up all workers and terminate self
           execute(KillWorkflow(), ActorVirtualIdentity.Controller)
         } else {

@@ -1,6 +1,7 @@
 package edu.uci.ics.amber.engine.common.ambermessage
 
-import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
+import akka.actor.Address
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
 
 sealed trait WorkflowMessage extends Serializable
 
@@ -20,3 +21,7 @@ case class WorkflowDataMessage(
     sequenceNumber: Long,
     payload: DataPayload
 ) extends WorkflowMessage
+
+sealed trait RecoveryMessage extends WorkflowMessage
+final case class TriggerRecovery(nodeAddr: Address) extends RecoveryMessage
+final case class RecoveryCompleted(id: ActorVirtualIdentity) extends RecoveryMessage

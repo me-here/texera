@@ -65,14 +65,6 @@ class DataProcessor( // dependencies:
       }
     }
   })
-  // dp thread stats:
-  // TODO: add another variable for recovery index instead of using the counts below.
-  private var inputTupleCount = 0L
-  private var outputTupleCount = 0L
-  private var currentInputTuple: Either[ITuple, InputExhausted] = _
-  private var currentInputLink: LinkIdentity = _
-  private var currentOutputIterator: Iterator[ITuple] = _
-  private var isCompleted = false
 
   /** provide API for actor to get stats of this operator
     * @return (input tuple count, output tuple count)
@@ -92,12 +84,6 @@ class DataProcessor( // dependencies:
 
   def setCurrentTuple(tuple: Either[ITuple, InputExhausted]): Unit = {
     currentInputTuple = tuple
-  }
-
-  def shutdown(): Unit = {
-    operator.close() // close operator
-    dpThread.cancel(true) // interrupt
-    dpThreadExecutor.shutdownNow() // destroy thread
   }
 
   /** process currentInputTuple through operator logic.
@@ -217,8 +203,8 @@ class DataProcessor( // dependencies:
 
   def shutdown(): Unit = {
     dpLogManager.releaseLogStorage()
-    dpThread.cancel(true) // interrupt
     operator.close() // close operator
+    dpThread.cancel(true) // interrupt
     dpThreadExecutor.shutdownNow() // destroy thread
   }
 
