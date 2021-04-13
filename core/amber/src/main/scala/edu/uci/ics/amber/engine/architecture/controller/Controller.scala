@@ -38,7 +38,7 @@ object Controller {
         id,
         workflow,
         eventListener,
-        Option.apply(100000000),
+        Option.apply(statusUpdateInterval),
         controlLogStorage,
         parentNetworkCommunicationActorRef
       )
