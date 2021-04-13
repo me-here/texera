@@ -2,7 +2,7 @@ package edu.uci.ics.texera.workflow.operators.source.scan.file
 
 import java.io.{BufferedReader, IOException, InputStreamReader}
 
-import com.fasterxml.jackson.annotation.{JsonProperty, JsonPropertyDescription}
+import com.fasterxml.jackson.annotation.{JsonIgnore, JsonProperty, JsonPropertyDescription}
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle
 import edu.uci.ics.amber.engine.operators.OpExecConfig
 import edu.uci.ics.texera.workflow.common.tuple.schema.AttributeTypeUtils.inferSchemaFromRows
@@ -27,6 +27,7 @@ abstract class FileScanSourceOpDesc extends ScanSourceOpDesc {
 
   def getOperatorExecutorConfig(path: String): OpExecConfig
 
+  @JsonIgnore
   def getFileInputStreamReader: InputStreamReader
 
   @throws[IOException]
