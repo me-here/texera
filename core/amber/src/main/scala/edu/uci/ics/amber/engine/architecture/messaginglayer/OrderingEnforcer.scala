@@ -6,7 +6,7 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 
 object OrderingEnforcer {
-  def reorderMessage[V: ClassTag](
+  def reorderMessage[V](
       seqMap: mutable.AnyRefMap[VirtualIdentity, OrderingEnforcer[V]],
       sender: VirtualIdentity,
       seq: Long,
@@ -25,7 +25,7 @@ object OrderingEnforcer {
 }
 
 /* The abstracted FIFO/exactly-once logic */
-class OrderingEnforcer[T: ClassTag] {
+class OrderingEnforcer[T] {
 
   var current = 0L
   val ofoMap = new mutable.LongMap[T]
@@ -44,7 +44,7 @@ class OrderingEnforcer[T: ClassTag] {
     ofoMap(sequenceNumber) = data
   }
 
-  def enforceFIFO(sequenceNumber: Long, data: T): Array[T] = {
+  def enforceFIFO(sequenceNumber: Long, data: T): List[T] = {
     val res = mutable.ArrayBuffer[T](data)
     current += 1
     while (ofoMap.contains(current)) {
@@ -52,6 +52,6 @@ class OrderingEnforcer[T: ClassTag] {
       ofoMap.remove(current)
       current += 1
     }
-    res.toArray
+    res.toList
   }
 }

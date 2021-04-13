@@ -10,13 +10,23 @@ import edu.uci.ics.amber.clustering.ClusterRuntimeInfo
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{ErrorOccurred, WorkflowStatusUpdate}
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LinkWorkflowHandler.LinkWorkflow
-import edu.uci.ics.amber.engine.architecture.messaginglayer.ControlInputPort.WorkflowControlMessage
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkAck, NetworkMessage, RegisterActorRef}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  NetworkMessage,
+  RegisterActorRef
+}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Ready
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, WorkflowIdentity}
 import edu.uci.ics.amber.engine.recovery.RecoveryManager.RecoveryMessage
 import edu.uci.ics.amber.engine.recovery.{ControlLogManager, LogStorage, RecoveryManager}
+import edu.uci.ics.amber.engine.common.virtualidentity.{
+  ActorVirtualIdentity,
+  VirtualIdentity,
+  WorkflowIdentity
+}
+import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
 import scala.concurrent.duration._
@@ -96,21 +106,24 @@ class Controller(
     processRecoveryMessages orElse {
       case NetworkMessage(
             id,
-            cmd @ WorkflowControlMessage(from, sequenceNumber, payload: ReturnPayload)
+             WorkflowControlMessage(from, seqNum, payload: ReturnPayload)
           ) =>
         //process reply messages
         controlLogManager.persistControlMessage(cmd)
-        sender ! NetworkAck(id)
-        handleControlMessageWithTryCatch(cmd)
+        controlInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
       case NetworkMessage(
             id,
-            cmd @ WorkflowControlMessage(ActorVirtualIdentity.Controller, sequenceNumber, payload)
+            WorkflowControlMessage(ActorVirtualIdentity.Controller, seqNum, payload)
           ) =>
         //process control messages from self
         controlLogManager.persistControlMessage(cmd)
-        sender ! NetworkAck(id)
-        handleControlMessageWithTryCatch(cmd)
-      case msg =>
+        controlInputPort.handleMessage(
+        this.sender(),
+        id,
+        ActorVirtualIdentity.Controller,
+        seqNum,
+        payload)
+      case _ =>
         stash() //prevent other messages to be executed until initialized
     }
   }

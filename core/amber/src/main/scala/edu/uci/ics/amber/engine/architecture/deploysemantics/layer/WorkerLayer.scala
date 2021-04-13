@@ -119,7 +119,11 @@ class WorkerLayer(
         .withDeploy(Deploy(scope = RemoteScope(onNode)))
     )
     parentNetworkCommunicationActorRef ! RegisterActorRef(workerID, ref)
-    workers(workerID) = WorkerInfo(workerID, Uninitialized, WorkerStatistics(Uninitialized, 0, 0))
+    workers(workerID) = WorkerInfo(
+        workerID,
+        Uninitialized,
+        WorkerStatistics(Uninitialized, 0, 0, Option.empty)
+      )
     workerRefs(workerID) = (index, ref)
   }
 
