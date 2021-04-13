@@ -14,13 +14,13 @@ case class WorkflowControlMessage(
     from: VirtualIdentity,
     sequenceNumber: Long,
     payload: ControlPayload
-) extends WorkflowMessage
+) extends WorkflowFIFOMessage
 
 case class WorkflowDataMessage(
     from: VirtualIdentity,
     sequenceNumber: Long,
     payload: DataPayload
-) extends WorkflowMessage
+) extends WorkflowFIFOMessage
 
 sealed trait RecoveryMessage extends WorkflowMessage
 final case class TriggerRecovery(nodeAddr: Address) extends RecoveryMessage

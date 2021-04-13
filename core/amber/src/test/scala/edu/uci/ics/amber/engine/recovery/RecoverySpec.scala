@@ -60,11 +60,11 @@ class RecoverySpec
   }
 
   override def beforeAll: Unit = {
-    //deleteFolderSafely("./logs")
+    deleteFolderSafely("./logs")
     system.actorOf(Props[SingleNodeListener], "cluster-info")
   }
   override def afterAll: Unit = {
-    //deleteFolderSafely("./logs")
+    deleteFolderSafely("./logs")
     TestKit.shutdownActorSystem(system)
   }
   val receiverID = WorkerActorVirtualIdentity("receiver")
