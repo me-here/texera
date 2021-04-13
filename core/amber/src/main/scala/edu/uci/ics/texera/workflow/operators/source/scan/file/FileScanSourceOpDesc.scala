@@ -1,22 +1,18 @@
-package edu.uci.ics.texera.workflow.operators.source.scan.csv
+package edu.uci.ics.texera.workflow.operators.source.scan.file
 
-import com.fasterxml.jackson.annotation.{JsonIgnore, JsonProperty, JsonPropertyDescription}
-import com.google.common.io.Files
+import java.io.{BufferedReader, IOException, InputStreamReader}
+
+import com.fasterxml.jackson.annotation.{JsonProperty, JsonPropertyDescription}
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle
-import edu.uci.ics.amber.engine.common.Constants
-import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType, Schema}
+import edu.uci.ics.amber.engine.operators.OpExecConfig
 import edu.uci.ics.texera.workflow.common.tuple.schema.AttributeTypeUtils.inferSchemaFromRows
+import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType, Schema}
 import edu.uci.ics.texera.workflow.operators.source.scan.ScanSourceOpDesc
 import org.codehaus.jackson.map.annotate.JsonDeserialize
 
-import java.io.{BufferedReader, File, FileReader, IOException}
-import java.nio.charset.Charset
 import scala.collection.JavaConverters._
 
-class CSVScanSourceOpDesc extends ScanSourceOpDesc {
-
-  @JsonIgnore
-  var headerLine: Option[String] = None
+abstract class FileScanSourceOpDesc extends ScanSourceOpDesc {
 
   @JsonProperty(defaultValue = ",")
   @JsonSchemaTitle("Delimiter")
@@ -26,32 +22,24 @@ class CSVScanSourceOpDesc extends ScanSourceOpDesc {
 
   @JsonProperty(defaultValue = "true")
   @JsonSchemaTitle("Header")
-  @JsonPropertyDescription("whether the CSV file contains a header line")
+  @JsonPropertyDescription("whether the file contains a header line")
   var hasHeader: Boolean = true
 
-  fileTypeName = Option("CSV")
+  fileTypeName = Option("Line-separated File")
+
+  def getOperatorExecutorConfig(path: String): OpExecConfig
+
+  def getFileInputStreamReader: InputStreamReader
 
   @throws[IOException]
-  override def operatorExecutor: CSVScanSourceOpExecConfig = {
+  override def operatorExecutor: OpExecConfig = {
     // fill in default values
     if (delimiter.get.isEmpty)
       delimiter = Option(",")
 
     filePath match {
       case Some(path) =>
-        if (headerLine.isEmpty) {
-          headerLine = Option(
-            Files.asCharSource(new File(path), Charset.defaultCharset).readFirstLine
-          )
-        }
-        new CSVScanSourceOpExecConfig(
-          operatorIdentifier,
-          Constants.defaultNumWorkers,
-          path,
-          inferSchema(),
-          delimiter.get.charAt(0),
-          hasHeader
-        )
+        getOperatorExecutorConfig(path)
       case None =>
         throw new RuntimeException("File path is not provided.")
     }
@@ -65,16 +53,12 @@ class CSVScanSourceOpDesc extends ScanSourceOpDesc {
   @Override
   def inferSchema(): Schema = {
     if (delimiter.isEmpty) return null
-    if (headerLine.isEmpty) {
-      headerLine = Option(
-        Files.asCharSource(new File(filePath.get), Charset.defaultCharset).readFirstLine
-      )
+    val reader = new BufferedReader(getFileInputStreamReader)
+    var headerLine: Option[String] = None
+    if (hasHeader) {
+      headerLine = Some(reader.readLine())
     }
     val headers: Array[String] = headerLine.get.split(delimiter.get)
-
-    val reader = new BufferedReader(new FileReader(filePath.get))
-    if (hasHeader)
-      reader.readLine()
 
     // TODO: real CSV may contain multi-line values. Need to handle multi-line values correctly.
 
@@ -103,5 +87,4 @@ class CSVScanSourceOpDesc extends ScanSourceOpDesc {
       )
       .build
   }
-
 }

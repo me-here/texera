@@ -1,29 +1,26 @@
-package edu.uci.ics.texera.workflow.operators.source.scan.csv
+package edu.uci.ics.texera.workflow.operators.source.scan.file
 
 import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.GlobalBreakpoint
 import edu.uci.ics.amber.engine.architecture.deploysemantics.deploymentfilter.UseAll
 import edu.uci.ics.amber.engine.architecture.deploysemantics.deploystrategy.RoundRobinDeployment
 import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
+import edu.uci.ics.amber.engine.common.IOperatorExecutor
 import edu.uci.ics.amber.engine.common.virtualidentity.{
   ActorVirtualIdentity,
   LayerIdentity,
   OperatorIdentity
 }
 import edu.uci.ics.amber.engine.operators.OpExecConfig
-import edu.uci.ics.texera.workflow.common.tuple.schema.Schema
 
-import java.io.File
-
-class CSVScanSourceOpExecConfig(
+abstract class FileScanSourceOpExecConfig(
     tag: OperatorIdentity,
     numWorkers: Int,
-    filePath: String,
-    schema: Schema,
-    delimiter: Char,
-    hasHeader: Boolean
+    totalBytes: Long
 ) extends OpExecConfig(tag) {
+
+  def getOpExec(startOffset: Long, endOffset: Long): IOperatorExecutor
+
   override lazy val topology: Topology = {
-    val totalBytes: Long = new File(filePath).length()
     new Topology(
       Array(
         new WorkerLayer(
@@ -32,14 +29,7 @@ class CSVScanSourceOpExecConfig(
             val startOffset: Long = totalBytes / numWorkers * i
             val endOffset: Long =
               if (i != numWorkers - 1) totalBytes / numWorkers * (i + 1) else totalBytes
-            new CSVScanSourceOpExec(
-              filePath,
-              schema,
-              delimiter,
-              hasHeader,
-              startOffset,
-              endOffset
-            )
+            getOpExec(startOffset, endOffset)
           },
           numWorkers,
           UseAll(), // it's source operator
@@ -49,7 +39,6 @@ class CSVScanSourceOpExecConfig(
       Array()
     )
   }
-  val totalBytes: Long = new File(filePath).length()
 
   override def assignBreakpoint(
       breakpoint: GlobalBreakpoint[_]

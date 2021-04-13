@@ -20,7 +20,6 @@ import edu.uci.ics.texera.workflow.operators.regex.RegexOpDesc
 import edu.uci.ics.texera.workflow.operators.reservoirsampling.ReservoirSamplingOpDesc
 import edu.uci.ics.texera.workflow.operators.sentiment.SentimentAnalysisOpDesc
 import edu.uci.ics.texera.workflow.operators.sink.SimpleSinkOpDesc
-import edu.uci.ics.texera.workflow.operators.source.scan.csv.CSVScanSourceOpDesc
 import edu.uci.ics.texera.workflow.operators.source.scan.json.JSONLScanSourceOpDesc
 import edu.uci.ics.texera.workflow.operators.source.sql.asterixdb.AsterixDBSourceOpDesc
 import edu.uci.ics.texera.workflow.operators.source.sql.mysql.MySQLSourceOpDesc
@@ -32,8 +31,10 @@ import edu.uci.ics.texera.workflow.operators.visualization.lineChart.LineChartOp
 import edu.uci.ics.texera.workflow.operators.visualization.pieChart.PieChartOpDesc
 import edu.uci.ics.texera.workflow.operators.visualization.wordCloud.WordCloudOpDesc
 import org.apache.commons.lang3.builder.{EqualsBuilder, HashCodeBuilder, ToStringBuilder}
-
 import java.util.UUID
+
+import edu.uci.ics.texera.workflow.operators.source.scan.file.hdfs.HDFSFileScanSourceOpDesc
+import edu.uci.ics.texera.workflow.operators.source.scan.file.local.LocalFileScanSourceOpDesc
 
 @JsonTypeInfo(
   use = JsonTypeInfo.Id.NAME,
@@ -42,7 +43,8 @@ import java.util.UUID
 )
 @JsonSubTypes(
   Array(
-    new Type(value = classOf[CSVScanSourceOpDesc], name = "CSVFileScan"),
+    new Type(value = classOf[LocalFileScanSourceOpDesc], name = "LocalFileScan"),
+    new Type(value = classOf[HDFSFileScanSourceOpDesc], name = "HDFSFileScan"),
     new Type(value = classOf[JSONLScanSourceOpDesc], name = "JSONLFileScan"),
     new Type(value = classOf[SimpleSinkOpDesc], name = "SimpleSink"),
     new Type(value = classOf[RegexOpDesc], name = "Regex"),

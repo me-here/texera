@@ -1,4 +1,4 @@
-package edu.uci.ics.texera.workflow.operators.source.scan.csv;
+package edu.uci.ics.texera.workflow.operators.source.scan.file;
 
 import com.google.common.base.Verify;
 import edu.uci.ics.texera.workflow.common.operators.source.SourceOperatorExecutor;
@@ -8,34 +8,35 @@ import edu.uci.ics.texera.workflow.common.tuple.schema.Attribute;
 import edu.uci.ics.texera.workflow.common.tuple.schema.AttributeType;
 import edu.uci.ics.texera.workflow.common.tuple.schema.AttributeTypeUtils;
 import edu.uci.ics.texera.workflow.common.tuple.schema.Schema;
-import org.tukaani.xz.SeekableFileInputStream;
 import scala.collection.Iterator;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class CSVScanSourceOpExec implements SourceOperatorExecutor {
+public abstract class FileScanSourceOpExec implements SourceOperatorExecutor {
 
-    private final String localPath;
     private final char delimiter;
     private BufferedBlockReader reader = null;
-    private final long startOffset;
+    protected final long startOffset;
     private final long endOffset;
     private final Schema schema;
     private final boolean hasHeader;
 
-    CSVScanSourceOpExec(String localPath, Schema schema, char delimiter,
+    public FileScanSourceOpExec(Schema schema, char delimiter,
                         boolean hasHeader, long startOffset, long endOffset) {
-        this.localPath = localPath;
         this.delimiter = delimiter;
         this.schema = schema;
         this.hasHeader = hasHeader;
         this.startOffset = startOffset;
         this.endOffset = endOffset;
     }
+
+
+    public abstract InputStream getPositionedInputStream() throws IOException;
 
     @Override
     public Iterator<Tuple> produceTexeraTuple() {
@@ -93,9 +94,7 @@ public class CSVScanSourceOpExec implements SourceOperatorExecutor {
     @Override
     public void open() {
         try {
-            SeekableFileInputStream stream = new SeekableFileInputStream(localPath);
-            stream.seek(startOffset);
-            reader = new BufferedBlockReader(stream, endOffset - startOffset, delimiter, null);
+            reader = new BufferedBlockReader(getPositionedInputStream(), endOffset - startOffset, delimiter, null);
             // skip line if this worker reads from middle of a file
             if (startOffset > 0)
                 reader.readLine();
@@ -119,5 +118,4 @@ public class CSVScanSourceOpExec implements SourceOperatorExecutor {
         }
 
     }
-
 }

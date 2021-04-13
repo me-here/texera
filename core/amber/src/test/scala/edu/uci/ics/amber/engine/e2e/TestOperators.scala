@@ -7,18 +7,18 @@ import edu.uci.ics.texera.workflow.operators.aggregate.{
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpDesc
 import edu.uci.ics.texera.workflow.operators.keywordSearch.KeywordSearchOpDesc
 import edu.uci.ics.texera.workflow.operators.sink.SimpleSinkOpDesc
-import edu.uci.ics.texera.workflow.operators.source.scan.csv.CSVScanSourceOpDesc
+import edu.uci.ics.texera.workflow.operators.source.scan.file.local.LocalFileScanSourceOpDesc
 import edu.uci.ics.texera.workflow.operators.source.scan.json.JSONLScanSourceOpDesc
 import edu.uci.ics.texera.workflow.operators.source.sql.asterixdb.AsterixDBSourceOpDesc
 import edu.uci.ics.texera.workflow.operators.source.sql.mysql.MySQLSourceOpDesc
 
 object TestOperators {
 
-  def headerlessSmallCsvScanOpDesc(): CSVScanSourceOpDesc = {
+  def headerlessSmallCsvScanOpDesc(): LocalFileScanSourceOpDesc = {
     getCsvScanOpDesc("src/test/resources/CountrySalesDataHeaderlessSmall.csv", header = false)
   }
 
-  def smallCsvScanOpDesc(): CSVScanSourceOpDesc = {
+  def smallCsvScanOpDesc(): LocalFileScanSourceOpDesc = {
     getCsvScanOpDesc("src/test/resources/CountrySalesDataSmall.csv", header = true)
   }
 
@@ -29,8 +29,8 @@ object TestOperators {
   def mediumFlattenJSONLScanOpDesc(): JSONLScanSourceOpDesc = {
     getJSONLScanOpDesc("src/test/resources/1000.jsonl", flatten = true)
   }
-  def getCsvScanOpDesc(fileName: String, header: Boolean): CSVScanSourceOpDesc = {
-    val csvHeaderlessOp = new CSVScanSourceOpDesc()
+  def getCsvScanOpDesc(fileName: String, header: Boolean): LocalFileScanSourceOpDesc = {
+    val csvHeaderlessOp = new LocalFileScanSourceOpDesc()
     csvHeaderlessOp.fileName = Option(fileName)
     csvHeaderlessOp.delimiter = Option(",")
     csvHeaderlessOp.hasHeader = header
@@ -51,7 +51,7 @@ object TestOperators {
     joinOp
   }
 
-  def mediumCsvScanOpDesc(): CSVScanSourceOpDesc = {
+  def mediumCsvScanOpDesc(): LocalFileScanSourceOpDesc = {
     getCsvScanOpDesc("src/test/resources/CountrySalesDataMedium.csv", header = true)
   }
 
