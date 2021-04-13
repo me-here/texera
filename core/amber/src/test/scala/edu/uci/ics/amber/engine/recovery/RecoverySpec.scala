@@ -11,9 +11,8 @@ import com.esotericsoftware.kryo.io.{Input, Output}
 import com.twitter.chill.akka.AkkaSerializer
 import edu.uci.ics.amber.clustering.SingleNodeListener
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.QueryWorkerStatisticsHandler.QueryWorkerStatistics
-import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkAck, NetworkMessage, RegisterActorRef}
-import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.{HashBasedShufflePolicy, OneToOnePolicy}
+import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.OneToOnePolicy
 import edu.uci.ics.amber.engine.architecture.worker.WorkflowWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.PauseHandler.PauseWorker
@@ -184,6 +183,7 @@ class RecoverySpec
     Thread.sleep(15000)
     forAllNetworkMessages(controller, x => assert(receivedMessages.dequeue() == x))
     forAllNetworkMessages(receiver, x => assert(receivedMessages.dequeue() == x))
+    assert(receivedMessages.isEmpty)
   }
 
   def smallWorkerChain(

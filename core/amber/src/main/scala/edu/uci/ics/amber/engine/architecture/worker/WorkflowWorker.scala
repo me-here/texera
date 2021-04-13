@@ -4,21 +4,21 @@ import akka.actor.{ActorRef, Props}
 import akka.util.Timeout
 import com.softwaremill.macwire.wire
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkAck, NetworkMessage, RegisterActorRef, SendRequest}
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkMessage, RegisterActorRef}
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionStartedHandler.WorkerStateUpdated
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkMessage, RegisterActorRef, SendRequest}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{BatchToTupleConverter, DataOutputPort, NetworkInputPort, TupleToBatchConverter}
+import edu.uci.ics.amber.engine.common.IOperatorExecutor
 import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload, RecoveryCompleted, WorkflowControlMessage, WorkflowDataMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCHandlerInitializer}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager._
-import edu.uci.ics.amber.engine.common.{IOperatorExecutor, ISourceOperatorExecutor, ITupleSinkOperatorExecutor}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
 import edu.uci.ics.amber.engine.recovery.DataLogManager.DataLogElement
 import edu.uci.ics.amber.engine.recovery.{ControlLogManager, DPLogManager, DataLogManager, EmptyLogStorage, LogStorage}
-import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
+import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
-import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
@@ -92,7 +92,7 @@ class WorkflowWorker(
 
   def recovering: Receive = {
     disallowActorRefRelatedMessages orElse
-      receiveDataMessagesDuringRecovery orElse
+      receiveDataMessages orElse
       stashControlMessages orElse
       logUnhandledMessages
   }
@@ -100,12 +100,9 @@ class WorkflowWorker(
   override def receive: Receive = recovering
 
   def receiveAndProcessMessages: Receive = {
-    disallowActorRefRelatedMessages orElse {
-      case NetworkMessage(id, WorkflowDataMessage(from, seqNum, payload)) =>
-        dataInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
-      case NetworkMessage(id, cmd @ WorkflowControlMessage(from, seqNum, payload)) =>
-        controlLogManager.persistControlMessage(cmd)
-        controlInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
+    disallowActorRefRelatedMessages orElse
+      receiveDataMessages orElse
+      receiveControlMessages orElse {
       case other =>
         logger.logError(
           WorkflowRuntimeError(s"unhandled message: $other", identifier.toString, Map.empty)
@@ -113,16 +110,29 @@ class WorkflowWorker(
     }
   }
 
-  final def handleDataPayload(from: VirtualIdentity, dataPayload: DataPayload): Unit = {
-    dataLogManager.filterMessage(from, dataPayload).foreach {
-      case (vid, payload) => tupleProducer.processDataPayload(vid, payload)
-    }
+  final def receiveDataMessages: Receive = {
+    case NetworkMessage(id, WorkflowDataMessage(from, seqNum, payload)) =>
+      dataInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
   }
 
-  final def receiveDataMessagesDuringRecovery: Receive = {
-    case msg @ NetworkMessage(id, WorkflowDataMessage(from, seqNum, payload)) =>
-      sender ! NetworkAck(id)
-      dataInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
+  def receiveControlMessages: Receive = {
+    case NetworkMessage(id, cmd @ WorkflowControlMessage(from, seqNum, payload)) =>
+      controlLogManager.persistControlMessage(cmd)
+      try {
+        // use control input port to pass control messages
+        controlInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
+      } catch safely {
+        case e =>
+          logger.logError(WorkflowRuntimeError(e, identifier.toString))
+      }
+  }
+
+
+  final def handleDataPayload(from: VirtualIdentity, dataPayload: DataPayload): Unit = {
+    dataLogManager.filterMessage(from, dataPayload).foreach {
+      case (vid, payload) =>
+        tupleProducer.processDataPayload(vid, payload)
+    }
   }
 
   final def handleControlPayload(from: VirtualIdentity, controlPayload: ControlPayload): Unit = {
@@ -149,5 +159,6 @@ class WorkflowWorker(
     dataLogManager.releaseLogStorage()
     super.postStop()
   }
+
 
 }

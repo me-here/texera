@@ -22,10 +22,11 @@ class NetworkInputPort[T](
       sequenceNumber: Long,
       payload: T
   ): Unit = {
-    if(sender != null){
-      sender ! NetworkAck(messageID)
-    }
+    sender ! NetworkAck(messageID)
+    handleAfterFIFO(from, sequenceNumber, payload)
+  }
 
+  def handleAfterFIFO(from: VirtualIdentity, sequenceNumber: Long, payload: T): Unit = {
     OrderingEnforcer.reorderMessage[T](
       idToOrderingEnforcers,
       from,

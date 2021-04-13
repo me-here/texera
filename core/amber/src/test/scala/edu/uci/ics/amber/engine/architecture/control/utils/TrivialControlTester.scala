@@ -22,7 +22,7 @@ class TrivialControlTester(id: ActorVirtualIdentity, parentNetworkCommunicationA
   override val rpcHandlerInitializer: AsyncRPCHandlerInitializer =
     wire[TesterAsyncRPCHandlerInitializer]
 
-  override val controlLogManager: ControlLogManager = new ControlLogManager(rpcHandlerInitializer,new EmptyLogStorage[WorkflowControlMessage],controlInputPort)
+  override val controlLogManager: ControlLogManager = new ControlLogManager(new EmptyLogStorage[WorkflowControlMessage],controlInputPort)
 
   override def receive: Receive = {
     disallowActorRefRelatedMessages orElse {
