@@ -6,6 +6,7 @@ import java.nio.file.Files
 import com.twitter.chill.akka.AkkaSerializer
 import edu.uci.ics.amber.engine.recovery.FileLogStorage.{ByteArrayReader, ByteArrayWriter, globalSerializer}
 import edu.uci.ics.amber.error.ErrorUtils.safely
+import org.apache.hadoop.fs.Syncable
 
 import scala.collection.mutable
 
@@ -17,7 +18,12 @@ object FileLogStorage{
     def writeAndFlush(content:Array[Byte]): Unit ={
       outputStream.writeInt(content.length)
       outputStream.write(content)
-      outputStream.flush()
+      outputStream match {
+        case syncable: Syncable =>
+          syncable.hflush()
+        case _ =>
+          outputStream.flush()
+      }
     }
 
     def close(): Unit ={

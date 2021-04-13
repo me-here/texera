@@ -449,4 +449,18 @@ class RecoverySpec
     dummyDPLogStorage.clear()
   }
 
+  "I " should "test this" in{
+    val file = HDFSLogStorage.hdfs.create(new Path("./logs/sample1.log"))
+    var sumLatency = 0L
+    val content = Array.fill(1)(1.byteValue())
+    (0 until 1000).foreach{
+      x =>
+        val start = System.currentTimeMillis()
+        file.write(content)
+        file.hflush()
+        sumLatency += (System.currentTimeMillis()-start)
+    }
+    println(sumLatency/1000f)
+  }
+
 }

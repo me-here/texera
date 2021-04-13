@@ -38,7 +38,7 @@ object Controller {
         id,
         workflow,
         eventListener,
-        Option.apply(statusUpdateInterval),
+        Option.apply(100000000),
         controlLogStorage,
         parentNetworkCommunicationActorRef
       )
@@ -124,6 +124,9 @@ class Controller(
   def running: Receive = {
     acceptDirectInvocations orElse
       processRecoveryMessages orElse {
+      case NetworkMessage(id, cmd @ WorkflowControlMessage(from, seqNum, payload)) =>
+        controlLogManager.persistControlMessage(cmd)
+        controlInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
       case other =>
         logger.logInfo(s"unhandled message: $other")
     }
