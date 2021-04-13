@@ -25,8 +25,6 @@ abstract class FileScanSourceOpDesc extends ScanSourceOpDesc {
   @JsonPropertyDescription("whether the file contains a header line")
   var hasHeader: Boolean = true
 
-  fileTypeName = Option("Line-separated File")
-
   def getOperatorExecutorConfig(path: String): OpExecConfig
 
   def getFileInputStreamReader: InputStreamReader
