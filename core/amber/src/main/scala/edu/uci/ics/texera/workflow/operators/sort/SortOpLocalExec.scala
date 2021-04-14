@@ -76,7 +76,7 @@ class SortOpLocalExec(
         }
         Iterator()
       case Right(_) =>
-        sortedTuples.toIterator
+        sortedTuples.toIterator ++ newTuples.toIterator
 
     }
   }
