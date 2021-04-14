@@ -5,10 +5,12 @@ import com.twitter.util.Future
 import com.softwaremill.tagging._
 import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.WorkflowStatusUpdate
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSkewHandler.DetectSkew
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSortSkewHandler.DetectSortSkew
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.QueryWorkerStatisticsHandler.QueryWorkerStatistics
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.{
   AssignBreakpointHandler,
   DetectSkewHandler,
+  DetectSortSkewHandler,
   FatalErrorHandler,
   KillWorkflowHandler,
   LinkCompletedHandler,
@@ -63,7 +65,8 @@ class ControllerAsyncRPCHandlerInitializer(
     with KillWorkflowHandler
     with LinkCompletedHandler
     with FatalErrorHandler
-    with DetectSkewHandler {
+    with DetectSkewHandler
+    with DetectSortSkewHandler {
 
   var workflowStartTime: Long = _
   var workflowEndTime: Long = _
@@ -91,6 +94,7 @@ class ControllerAsyncRPCHandlerInitializer(
   }
 
   var detectSkewHandle: Cancellable = _
+  var detectSortSkewHandle: Cancellable = _
 
   // related to join-skew research
   def enableDetectSkewCalls(joinLayer: WorkerLayer, probeLayer: WorkerLayer): Unit = {
@@ -104,10 +108,32 @@ class ControllerAsyncRPCHandlerInitializer(
     }
   }
 
+  // related to join-skew research
+  def enableDetectSortSkewCalls(sortLayer: WorkerLayer, prevLayer: WorkerLayer): Unit = {
+    if (detectSortSkewHandle == null) {
+      detectSortSkewHandle = actorContext.system.scheduler.schedule(
+        Constants.startDetection,
+        Constants.detectionPeriod,
+        actorContext.self,
+        ControlInvocation(
+          AsyncRPCClient.IgnoreReplyAndDoNotLog,
+          DetectSortSkew(sortLayer, prevLayer)
+        )
+      )(actorContext.dispatcher)
+    }
+  }
+
   def disableDetectSkewCalls(): Unit = {
     if (detectSkewHandle != null) {
       detectSkewHandle.cancel()
       detectSkewHandle = null
+    }
+  }
+
+  def disableDetectSortSkewCalls(): Unit = {
+    if (detectSortSkewHandle != null) {
+      detectSortSkewHandle.cancel()
+      detectSortSkewHandle = null
     }
   }
 

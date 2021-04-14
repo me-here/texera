@@ -15,6 +15,7 @@ import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, Con
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Running
 import edu.uci.ics.amber.engine.common.virtualidentity.{LayerIdentity, OperatorIdentity}
 import edu.uci.ics.amber.engine.operators.OpExecConfig
+import edu.uci.ics.texera.workflow.operators.sort.SortOpExecConfig
 
 import scala.collection.mutable
 import scala.concurrent.duration.{DurationInt, FiniteDuration, MILLISECONDS}
@@ -56,6 +57,18 @@ trait StartWorkflowHandler {
         .map { ret =>
           actorContext.parent ! ControllerState.Running // for testing
           enableStatusUpdate()
+
+          // avinash skew-research related
+          val sortConfig =
+            workflow.getAllOperators.find(config => config.isInstanceOf[SortOpExecConfig])
+          if (!sortConfig.isEmpty) {
+            // sort operator present
+            val sortOpId = workflow.getOperatorIdentity(sortConfig.get)
+            val upstreamOps = workflow.getDirectUpstreamOperators(sortOpId).toList(0)
+            val upstreamLayer = workflow.getOperator(upstreamOps).topology.layers(0)
+            enableDetectSortSkewCalls(sortConfig.get.topology.layers(0), upstreamLayer)
+          }
+
           CommandCompleted()
         }
     }

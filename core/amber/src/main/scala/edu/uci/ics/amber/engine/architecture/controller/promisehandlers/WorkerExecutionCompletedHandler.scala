@@ -24,6 +24,7 @@ import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.Work
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
 import edu.uci.ics.amber.engine.operators.SinkOpExecConfig
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExecConfig
+import edu.uci.ics.texera.workflow.operators.sort.SortOpExecConfig
 
 object WorkerExecutionCompletedHandler {
   final case class WorkerExecutionCompleted() extends ControlCommand[CommandCompleted]
@@ -61,7 +62,11 @@ trait WorkerExecutionCompletedHandler {
             {
               workerEndTime(sender) = System.nanoTime()
               if (
-                workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[Constants.joinType]]
+                workflow
+                  .getOperator(sender)
+                  .isInstanceOf[HashJoinOpExecConfig[Constants.joinType]] || workflow
+                  .getOperator(sender)
+                  .isInstanceOf[SortOpExecConfig]
               ) {
                 workerCompletedLogger.logInfo(
                   s"\tFinal i/o tuples and time in ${sender} are ${stats}, ${(workerEndTime(sender) - workerStartTime(sender)) / 1e9d}s"
@@ -83,6 +88,15 @@ trait WorkerExecutionCompletedHandler {
         ) {
           // join-skew research related
           disableDetectSkewCalls()
+        } else if (
+          workflow
+            .getOperator(sender)
+            .isInstanceOf[SortOpExecConfig] && workflow
+            .getOperator(sender)
+            .getState == OperatorState.Completed
+        ) {
+          // sort-skew research related
+          disableDetectSortSkewCalls()
         }
 
         updateFrontendWorkflowStatus()

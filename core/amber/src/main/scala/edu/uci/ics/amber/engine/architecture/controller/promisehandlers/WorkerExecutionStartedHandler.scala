@@ -6,6 +6,7 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerEx
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{Running, WorkerState}
+import edu.uci.ics.texera.workflow.operators.sort.SortOpExecConfig
 
 object WorkerExecutionStartedHandler {
   final case class WorkerStateUpdated(state: WorkerState) extends ControlCommand[CommandCompleted]
