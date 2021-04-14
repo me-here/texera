@@ -1,20 +1,22 @@
 package edu.uci.ics.texera.web
 
+import java.io.{BufferedReader, InputStreamReader}
+import java.net.URL
 import java.nio.file.Path
+
 import akka.actor.{ActorSystem, Props}
 import com.typesafe.config.{Config, ConfigFactory}
 import edu.uci.ics.amber.clustering.ClusterListener
 import edu.uci.ics.texera.workflow.common.Utils
-
-import java.io.{BufferedReader, InputStreamReader}
-import java.net.URL
 
 object WebUtils {
   val config: Config =
     ConfigFactory.parseFile(Utils.amberHomePath.resolve("../conf").resolve("web.conf").toFile)
 
   val resultBaseDirectory: Path =
-    Utils.amberHomePath.resolve("../user-resources").resolve("workflow_result");
+    Utils.amberHomePath
+      .resolve("../user-resources")
+      .resolve(WebUtils.config.getString("userResource.workflowResultPath"));
 
   def startActorMaster(localhost: Boolean): ActorSystem = {
     var localIpAddress = "localhost"

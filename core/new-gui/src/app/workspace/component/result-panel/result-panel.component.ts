@@ -332,11 +332,8 @@ export class ResultPanelComponent {
       return;
     }
 
-    const uid = this.userService.getUser()?.uid,
-    fileName = sinkOperator.operatorProperties.fileName,
-    downloadType = sinkOperator.operatorProperties.fileType;
     const requestURL = `${AppSettings.getApiEndpoint()}/${DOWNLOAD_WORKFLOW_ENDPOINT}`
-      + `?userId=${uid}&fileName=${fileName}&downloadType=${downloadType}`;
+      + `?fileName=${sinkOperator.operatorProperties.fileName}&downloadType=${sinkOperator.operatorProperties.fileType}`;
 
     this.http.get(
       requestURL,

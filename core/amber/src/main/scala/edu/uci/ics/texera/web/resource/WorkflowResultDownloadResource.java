@@ -2,15 +2,19 @@ package edu.uci.ics.texera.web.resource;
 
 import com.google.common.io.Files;
 import edu.uci.ics.texera.web.WebUtils;
+import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.User;
+import edu.uci.ics.texera.web.resource.auth.UserResource;
 import edu.uci.ics.texera.workflow.operators.sink.file.ResultFileType;
+import io.dropwizard.jersey.sessions.Session;
+import scala.Option;
 
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -20,14 +24,19 @@ public class WorkflowResultDownloadResource {
 
     @GET
     @Path("/result")
-    public Response downloadFile(@QueryParam("userId") String userId,
+    public Response downloadFile(@Session HttpSession session,
                                  @QueryParam("fileName") String fileName,
-                                 @QueryParam("downloadType") String downloadType)
-            throws IOException {
+                                 @QueryParam("downloadType") String downloadType) {
+
+        Option<User> userOptional = UserResource.getUser(session);
+        if (userOptional.isEmpty()) {
+            return Response.status(Status.UNAUTHORIZED).build();
+        }
+        String userId = userOptional.get().getUid().toString();
+
         java.nio.file.Path directory = WebUtils.resultBaseDirectory().resolve(userId);
         String downloadName = fileName + ResultFileType.getFileSuffix(downloadType);
         File file = directory.resolve(downloadName).toFile();
-
 
         if (!file.exists()) {
             return Response.status(Status.NOT_FOUND).build();
