@@ -12,13 +12,11 @@ import scala.collection.mutable
 object RecoveryManager {
   def defaultControlLogStorage(
       id: ActorVirtualIdentity
-  ) = new HDFSLogStorage[WorkflowControlMessage](id.toString+"-control")
+  ) = new EmptyLogStorage[WorkflowControlMessage]()
 
-  def defaultDataLogStorage(id: ActorVirtualIdentity): LogStorage[DataLogElement] = {
-      new HDFSLogStorage[DataLogElement](id.toString+"-data")
-  }
+  def defaultDataLogStorage(id: ActorVirtualIdentity) = new EmptyLogStorage[DataLogElement]()
 
-  def defaultDPLogStorage(id: ActorVirtualIdentity) = new HDFSLogStorage[Long](id.toString+"-dp")
+  def defaultDPLogStorage(id: ActorVirtualIdentity) = new EmptyLogStorage[Long]()
 }
 
 class RecoveryManager(
