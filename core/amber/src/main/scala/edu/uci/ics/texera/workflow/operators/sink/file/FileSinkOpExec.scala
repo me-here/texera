@@ -1,18 +1,16 @@
 package edu.uci.ics.texera.workflow.operators.sink.file
 
-import java.io.{FileWriter, IOException}
+import java.io.{File, FileWriter, IOException}
 import java.nio.file.{Files, Path}
-import java.text.SimpleDateFormat
-import java.util.Date
 
 import com.github.tototoshi.csv.CSVWriter
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, InputExhausted}
 import edu.uci.ics.texera.web.WebUtils
+import edu.uci.ics.texera.workflow.common.tuple.Tuple
+import edu.uci.ics.texera.workflow.common.tuple.schema.Schema
 import org.jooq.types.UInteger
-
-import scala.collection.mutable
 
 class FileSinkOpExec(
     val fileName: String,
@@ -20,15 +18,14 @@ class FileSinkOpExec(
     val userId: UInteger
 ) extends IOperatorExecutor {
 
-  // TODO change path
-  val BaseDirectory: Path = WebUtils.resultBaseDirectory
+  var headerInitialized: Boolean = false;
   var csvWriter: CSVWriter = null
 
   override def open(): Unit = {
     // currently assume server and client are on the same machine so file could be accessed locally
     // TODO change the file saving so that server and client could access the file on different machine
-    val directory: Path = BaseDirectory.resolve(userId.toString)
-    val file = directory.resolve(fileName + fileType.fileSuffix).toFile
+    val file: File = WebUtils.locateResultFile(userId.toString, fileName + fileType.fileSuffix)
+    val directory: Path = file.toPath.getParent
 
     try {
       if (Files.notExists(directory)) Files.createDirectories(directory)
@@ -42,7 +39,7 @@ class FileSinkOpExec(
         throw new RuntimeException("fail to create file", e)
     }
 
-    // TODO write header
+    // TODO generate header here when schema are known during open stage later
   }
 
   override def close(): Unit = {
@@ -57,7 +54,8 @@ class FileSinkOpExec(
       case Left(t) =>
         fileType match {
           case ResultFileType.EXCEL => {
-            // TODO get header
+            // TODO only takes Tuple now. Generate header during open() method After separating the schema and tuple
+            createHeaderIfNotExist(t.asInstanceOf[Tuple].getSchema)
             csvWriter.writeRow(t.toSeq)
           }
         }
@@ -67,4 +65,9 @@ class FileSinkOpExec(
     }
   }
 
+  def createHeaderIfNotExist(schema: Schema): Unit = {
+    if (headerInitialized) return
+    csvWriter.writeRow(schema.getAttributeNames.toArray)
+    headerInitialized = true
+  }
 }

@@ -7,9 +7,9 @@ import java.util.Arrays;
 public enum ResultFileType {
     EXCEL("excel", ".csv");
 
-    final String name;
+    public final String name;
 
-    final String fileSuffix;
+    public final String fileSuffix;
 
     static final String SUFFIX_DOES_NOT_EXIST = ".NOT_EXISTED";
 

@@ -1,6 +1,6 @@
 package edu.uci.ics.texera.web
 
-import java.io.{BufferedReader, InputStreamReader}
+import java.io.{BufferedReader, File, InputStreamReader}
 import java.net.URL
 import java.nio.file.Path
 
@@ -17,6 +17,10 @@ object WebUtils {
     Utils.amberHomePath
       .resolve("../user-resources")
       .resolve(WebUtils.config.getString("userResource.workflowResultPath"));
+
+  def locateResultFile(uid: String, fileName: String): File = {
+    resultBaseDirectory.resolve(uid).resolve(fileName).toFile
+  }
 
   def startActorMaster(localhost: Boolean): ActorSystem = {
     var localIpAddress = "localhost"

@@ -34,9 +34,8 @@ public class WorkflowResultDownloadResource {
         }
         String userId = userOptional.get().getUid().toString();
 
-        java.nio.file.Path directory = WebUtils.resultBaseDirectory().resolve(userId);
         String downloadName = fileName + ResultFileType.getFileSuffix(downloadType);
-        File file = directory.resolve(downloadName).toFile();
+        File file = WebUtils.locateResultFile(userId, downloadName);
 
         if (!file.exists()) {
             return Response.status(Status.NOT_FOUND).build();
