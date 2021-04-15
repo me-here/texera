@@ -125,10 +125,6 @@ class RangeBasedShufflePolicy(
     true
   }
 
-  private def isHeavyHitterTuple(key: Float) = {
-    true
-  }
-
   override def addTupleToBatch(
       tuple: ITuple
   ): Option[(ActorVirtualIdentity, DataPayload)] = {

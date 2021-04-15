@@ -71,7 +71,7 @@ class SortOpExecConfig(
   override def requiredRangePartition: Boolean = true
 
   def getShuffleKey(layer: LayerIdentity): ITuple => String = { t: ITuple =>
-    t.asInstanceOf[Tuple].getField(sortAttributeName).asInstanceOf[String]
+    t.asInstanceOf[Tuple].getField(sortAttributeName).asInstanceOf[Float].toString()
   }
 
   override def getShuffleHashFunction(layer: LayerIdentity): ITuple => Int = { t: ITuple =>
