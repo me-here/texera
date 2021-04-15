@@ -1,33 +1,26 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
-import java.util.concurrent.{Executors, LinkedBlockingDeque}
-
-import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LinkCompletedHandler.LinkCompleted
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LocalOperatorExceptionHandler.LocalOperatorException
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
 import edu.uci.ics.amber.engine.architecture.messaginglayer.TupleToBatchConverter
-import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue.{
-  ControlElement,
-  EndMarker,
-  EndOfAllMarker,
-  InputTuple,
-  InternalQueueElement,
-  SenderChangeMarker
-}
+import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue._
+import edu.uci.ics.amber.engine.common.{InputExhausted, IOperatorExecutor, WorkflowLogger}
 import edu.uci.ics.amber.engine.common.ambermessage.ControlPayload
-import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCServer}
+import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{Completed, Running}
+import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Completed
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.{
   ActorVirtualIdentity,
   LinkIdentity,
   VirtualIdentity
 }
-import edu.uci.ics.amber.engine.common.{IOperatorExecutor, InputExhausted, WorkflowLogger}
-import edu.uci.ics.amber.error.WorkflowRuntimeError
 import edu.uci.ics.amber.error.ErrorUtils.safely
+import edu.uci.ics.amber.error.WorkflowRuntimeError
+
+import java.util.concurrent.{Executors, ExecutorService, Future}
 
 class DataProcessor( // dependencies:
     logger: WorkflowLogger, // logger of the worker actor
@@ -39,18 +32,9 @@ class DataProcessor( // dependencies:
     stateManager: WorkerStateManager,
     asyncRPCServer: AsyncRPCServer
 ) extends WorkerInternalQueue {
-  // dp thread stats:
-  // TODO: add another variable for recovery index instead of using the counts below.
-  private var inputTupleCount = 0L
-  private var outputTupleCount = 0L
-  private var currentInputTuple: Either[ITuple, InputExhausted] = _
-  private var currentInputLink: LinkIdentity = _
-  private var currentOutputIterator: Iterator[ITuple] = _
-  private var isCompleted = false
-
   // initialize dp thread upon construction
-  private val dpThreadExecutor = Executors.newSingleThreadExecutor
-  private val dpThread = dpThreadExecutor.submit(new Runnable() {
+  private val dpThreadExecutor: ExecutorService = Executors.newSingleThreadExecutor
+  private val dpThread: Future[_] = dpThreadExecutor.submit(new Runnable() {
     def run(): Unit = {
       try {
         // initialize operator
@@ -66,6 +50,14 @@ class DataProcessor( // dependencies:
       }
     }
   })
+  // dp thread stats:
+  // TODO: add another variable for recovery index instead of using the counts below.
+  private var inputTupleCount = 0L
+  private var outputTupleCount = 0L
+  private var currentInputTuple: Either[ITuple, InputExhausted] = _
+  private var currentInputLink: LinkIdentity = _
+  private var currentOutputIterator: Iterator[ITuple] = _
+  private var isCompleted = false
 
   /** provide API for actor to get stats of this operator
     * @return (input tuple count, output tuple count)
@@ -85,6 +77,12 @@ class DataProcessor( // dependencies:
 
   def setCurrentTuple(tuple: Either[ITuple, InputExhausted]): Unit = {
     currentInputTuple = tuple
+  }
+
+  def shutdown(): Unit = {
+    operator.close() // close operator
+    dpThread.cancel(true) // interrupt
+    dpThreadExecutor.shutdownNow() // destroy thread
   }
 
   /** process currentInputTuple through operator logic.
@@ -180,7 +178,7 @@ class DataProcessor( // dependencies:
         ActorVirtualIdentity.Controller
       )
     }
-    e.printStackTrace()
+    logger.logWarning(e.getLocalizedMessage + "\n" + e.getStackTrace.mkString("\n"))
     pauseManager.pause()
   }
 
@@ -200,12 +198,6 @@ class DataProcessor( // dependencies:
         processControlCommandsDuringExecution()
       }
     }
-  }
-
-  def shutdown(): Unit = {
-    dpThread.cancel(true) // interrupt
-    operator.close() // close operator
-    dpThreadExecutor.shutdownNow() // destroy thread
   }
 
   private[this] def outputAvailable(outputIterator: Iterator[ITuple]): Boolean = {
