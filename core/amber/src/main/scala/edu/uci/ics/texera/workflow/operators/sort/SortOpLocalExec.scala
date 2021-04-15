@@ -20,7 +20,8 @@ class SortOpLocalExec(
 ) extends OperatorExecutor {
 
   var sortedTuples: ArrayBuffer[Tuple] = _
-  var newTuples: ArrayBuffer[Tuple] = _
+  var othersTuples: ArrayBuffer[Tuple] = _
+  @volatile var gotTuplesFromOther: Boolean = false
 
   val jump: Int =
     ((rangeMax - rangeMin) / numWorkers).toInt + 1
@@ -72,21 +73,23 @@ class SortOpLocalExec(
         ) {
           addTupleToSortedList(t, sortedTuples)
         } else {
-          addTupleToSortedList(t, newTuples)
+          gotTuplesFromOther = true
+          addTupleToSortedList(t, othersTuples)
         }
         Iterator()
       case Right(_) =>
-        sortedTuples.toIterator ++ newTuples.toIterator
+        sortedTuples.toIterator ++ othersTuples.toIterator
 
     }
   }
 
   override def open(): Unit = {
     sortedTuples = new ArrayBuffer[Tuple]()
-    newTuples = new ArrayBuffer[Tuple]()
+    othersTuples = new ArrayBuffer[Tuple]()
   }
 
   override def close(): Unit = {
     sortedTuples.clear()
+    othersTuples.clear()
   }
 }
