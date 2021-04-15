@@ -2,6 +2,7 @@ package edu.uci.ics.amber.engine.architecture.controller.promisehandlers
 
 import com.twitter.util.Future
 import edu.uci.ics.amber.engine.architecture.controller.ControllerAsyncRPCHandlerInitializer
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSkewHandler.detectSkewLogger
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSortSkewHandler.{
   DetectSortSkew,
   detectSortSkewLogger,
@@ -285,6 +286,11 @@ trait DetectSortSkewHandler {
 
             val skewedAndFreeWorkers = getSkewedAndFreeWorkers(loads)
             if (skewedAndFreeWorkers.size > 0) {
+              skewedAndFreeWorkers.foreach(sf => {
+                detectSortSkewLogger.logInfo(
+                  s"\tSkewed Worker:${sf._1}, Free Worker:${sf._2}"
+                )
+              })
               startTimeForNetChange = System.nanoTime()
               getShareFlowResultsAsFuture(
                 cmd.prevLayer,
