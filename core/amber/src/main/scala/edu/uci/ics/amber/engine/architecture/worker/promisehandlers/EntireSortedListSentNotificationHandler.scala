@@ -21,7 +21,9 @@ trait EntireSortedListSentNotificationHandler {
         .asInstanceOf[SortOpLocalExec]
         .receivedTuplesFromFree = true
 
-      if (dataProcessor.endMarkersEatenInSkewedWorker) {}
+      if (dataProcessor.endMarkersEatenInSkewedWorker) {
+        dataProcessor.putEndMarkersInQueue()
+      }
     } catch {
       case exception: Exception =>
         println(
