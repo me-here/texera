@@ -100,8 +100,11 @@ class SortOpLocalExec(
         }
         Iterator()
       case Right(_) =>
-        if (!sentTuplesToFree) { sortedTuples.toIterator }
-        else {
+        if (!sentTuplesToFree) {
+          println(s"\t PRODUCED ${sortedTuples.size}")
+          sortedTuples.toIterator
+        } else {
+          println(s"\t PRODUCED ${sortedTuples.size + receivedFromFreeWorker.size}")
           // merge the two sorted lists
           new Iterator[Tuple] {
             var ownListIdx = 0
