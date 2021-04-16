@@ -23,7 +23,8 @@ trait ShareFlowHandler {
     } catch {
       case exception: Exception =>
         println(
-          "Exception happened" + exception.getMessage() + " stacktrace " + exception.getStackTrace()
+          "Exception happened" + exception
+            .getMessage() + " stacktrace " + exception.getStackTrace().mkString("\n\t")
         )
         Map[ActorVirtualIdentity, Long]()
     }
