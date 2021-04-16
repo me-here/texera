@@ -1,5 +1,7 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
+import com.twitter.util.Future
+
 import java.util.concurrent.Executors
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.FatalErrorHandler.FatalError
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
@@ -14,6 +16,8 @@ import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue.{
   InputTuple,
   SenderChangeMarker
 }
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AcceptSortedListHandler.AcceptSortedList
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.EntireSortedListSentNotificationHandler.EntireSortedListSentNotification
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{Completed, Running}
@@ -27,6 +31,9 @@ import edu.uci.ics.amber.engine.common.{
 }
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExec
+import edu.uci.ics.texera.workflow.operators.sort.SortOpLocalExec
+
+import scala.collection.mutable.ArrayBuffer
 
 class DataProcessor( // dependencies:
     selfID: ActorVirtualIdentity,
@@ -51,6 +58,9 @@ class DataProcessor( // dependencies:
   var probeStartTime: Long = _
   var probeEndTime: Long = _
   var buildLinkDone: Boolean = false
+
+  // sort-skew research related
+  var endMarkersEatenInSkewedWorker: Boolean = false
 
   // initialize dp thread upon construction
   private val dpThreadExecutor = Executors.newSingleThreadExecutor
@@ -92,6 +102,10 @@ class DataProcessor( // dependencies:
 
   def setCurrentTuple(tuple: Either[ITuple, InputExhausted]): Unit = {
     currentInputTuple = tuple
+  }
+  def putEndMarkersInQueue(): Unit = {
+    blockingDeque.add(EndMarker)
+    blockingDeque.add(EndOfAllMarker)
   }
 
   /** process currentInputTuple through operator logic.
@@ -155,10 +169,53 @@ class DataProcessor( // dependencies:
           currentInputLink = link
         case EndMarker =>
           currentInputTuple = Right(InputExhausted())
-          handleInputTuple()
-          if (currentInputLink != null) {
-            asyncRPCClient.send(LinkCompleted(currentInputLink), ActorVirtualIdentity.Controller)
+          if (Constants.sortExperiment) {
+            // sort skew research related
+            if (
+              operator.isInstanceOf[SortOpLocalExec] && operator
+                .asInstanceOf[SortOpLocalExec]
+                .skewedWorkerIdentity != null
+            ) {
+              // this is a free worker. It needs to send the skewed worker tuples to the
+              // rightful owner
+              val sortSendingFutures = new ArrayBuffer[Future[Unit]]()
+              val listsToSend = operator.asInstanceOf[SortOpLocalExec].getSortedLists()
+              listsToSend.foreach(list => {
+                sortSendingFutures.append(
+                  asyncRPCClient.send(
+                    AcceptSortedList(list),
+                    operator
+                      .asInstanceOf[SortOpLocalExec]
+                      .skewedWorkerIdentity
+                  )
+                )
+              })
+              Future
+                .collect(sortSendingFutures)
+                .map(seq =>
+                  asyncRPCClient.send(
+                    EntireSortedListSentNotification(),
+                    operator
+                      .asInstanceOf[SortOpLocalExec]
+                      .skewedWorkerIdentity
+                  )
+                )
+            }
           }
+          if (
+            Constants.sortExperiment && operator.isInstanceOf[SortOpLocalExec] && operator
+              .asInstanceOf[SortOpLocalExec]
+              .sentTuplesToFree && !operator.asInstanceOf[SortOpLocalExec].receivedTuplesFromFree
+          ) {
+            // this is a skewed worker. It needs to receive all data from free worker before ending
+            endMarkersEatenInSkewedWorker = true
+          } else {
+            handleInputTuple()
+            if (currentInputLink != null) {
+              asyncRPCClient.send(LinkCompleted(currentInputLink), ActorVirtualIdentity.Controller)
+            }
+          }
+
           // join-skew research related
           if (operator.isInstanceOf[HashJoinOpExec[Constants.joinType]]) {
             if (!buildLinkDone) {
@@ -172,9 +229,17 @@ class DataProcessor( // dependencies:
             }
           }
         case EndOfAllMarker =>
-          // end of processing, break DP loop
-          isCompleted = true
-          batchProducer.emitEndOfUpstream()
+          if (
+            Constants.sortExperiment && operator.isInstanceOf[SortOpLocalExec] && operator
+              .asInstanceOf[SortOpLocalExec]
+              .sentTuplesToFree && !operator.asInstanceOf[SortOpLocalExec].receivedTuplesFromFree
+          ) {
+            endMarkersEatenInSkewedWorker = true
+          } else {
+            // end of processing, break DP loop
+            isCompleted = true
+            batchProducer.emitEndOfUpstream()
+          }
         case DummyInput =>
           // do a pause check
           pauseManager.checkForPause()

@@ -2,17 +2,16 @@ package edu.uci.ics.amber.engine.architecture.controller.promisehandlers
 
 import com.twitter.util.Future
 import edu.uci.ics.amber.engine.architecture.controller.ControllerAsyncRPCHandlerInitializer
-import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSkewHandler.detectSkewLogger
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSortSkewHandler.{
   DetectSortSkew,
   detectSortSkewLogger,
-  endTimeForBuildRepl,
+  endTimeForNotification,
   endTimeForMetricColl,
   endTimeForNetChange,
   getSkewedAndFreeWorkers,
   isfreeGettingSkewed,
   previousCallFinished,
-  startTimeForBuildRepl,
+  startTimeForNotification,
   startTimeForMetricColl,
   startTimeForNetChange,
   startTimeForNetRollback
@@ -43,8 +42,8 @@ object DetectSortSkewHandler {
   var previousCallFinished = true
   var startTimeForMetricColl: Long = _
   var endTimeForMetricColl: Long = _
-  var startTimeForBuildRepl: Long = _
-  var endTimeForBuildRepl: Long = _
+  var startTimeForNotification: Long = _
+  var endTimeForNotification: Long = _
   var startTimeForNetChange: Long = _
   var endTimeForNetChange: Long = _
   var startTimeForNetRollback: Long = _
@@ -100,7 +99,7 @@ object DetectSortSkewHandler {
     val freeHist = workerToLoadHistory(freeWorkerCand)
     assert(skewedHist.size == freeHist.size)
     for (j <- 0 to skewedHist.size - 1) {
-      if (skewedHist(j) < 100 || skewedHist(j) < multiplier * freeHist(j)) {
+      if (skewedHist(j) < 20 || skewedHist(j) < multiplier * freeHist(j)) {
         isSkewed = false
       }
     }
@@ -286,24 +285,37 @@ trait DetectSortSkewHandler {
 
             val skewedAndFreeWorkers = getSkewedAndFreeWorkers(loads)
             if (skewedAndFreeWorkers.size > 0) {
+              startTimeForNotification = System.nanoTime()
+
+              val futuresArr = new ArrayBuffer[Future[Seq[Unit]]]()
               skewedAndFreeWorkers.foreach(sf => {
                 detectSortSkewLogger.logInfo(
-                  s"\tSkewed Worker:${sf._1}, Free Worker:${sf._2}"
+                  s"\tSkewed Worker:${sf._1}, Free Worker:${sf._2}, notification required:${sf._3}"
                 )
+                if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
               })
-              startTimeForNetChange = System.nanoTime()
-              getShareFlowResultsAsFuture(
-                cmd.prevLayer,
-                skewedAndFreeWorkers
-              ).map(seq => {
-                endTimeForNetChange = System.nanoTime()
-                aggregateAndPrintSentCount(seq)
-                detectSortSkewLogger.logInfo(
-                  s"\tTHE NETWORK SHARE HAS HAPPENED in ${(endTimeForNetChange - startTimeForNetChange) / 1e9d}s"
-                )
-                previousCallFinished = true
-                CommandCompleted()
-              })
+              Future
+                .collect(futuresArr)
+                .flatMap(res => {
+                  endTimeForNotification = System.nanoTime()
+                  detectSortSkewLogger.logInfo(
+                    s"\tBUILD TABLES COPIED in ${(endTimeForNotification - startTimeForNotification) / 1e9d}s"
+                  )
+
+                  startTimeForNetChange = System.nanoTime()
+                  getShareFlowResultsAsFuture(
+                    cmd.prevLayer,
+                    skewedAndFreeWorkers
+                  ).map(seq => {
+                    endTimeForNetChange = System.nanoTime()
+                    aggregateAndPrintSentCount(seq)
+                    detectSortSkewLogger.logInfo(
+                      s"\tTHE NETWORK SHARE HAS HAPPENED in ${(endTimeForNetChange - startTimeForNetChange) / 1e9d}s"
+                    )
+                    previousCallFinished = true
+                    CommandCompleted()
+                  })
+                })
             } else {
               val actualSkewedAndFreeGettingSkewedWorkers = isfreeGettingSkewed(loads)
               if (actualSkewedAndFreeGettingSkewedWorkers.size > 0) {

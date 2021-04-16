@@ -48,6 +48,10 @@ class WorkerAsyncRPCHandlerInitializer(
     with ShareFlowHandler
     with SendBuildTableHandler
     with AcceptBuildTableHandler
-    with RollbackFlowHandler {
+    with RollbackFlowHandler
+    with AcceptSortedListHandler
+    with AcceptStateTransferNotificationHandler
+    with EntireSortedListSentNotificationHandler
+    with SendStateTransferNotificationHandler {
   val logger: WorkflowLogger = WorkflowLogger("WorkerControlHandler")
 }
