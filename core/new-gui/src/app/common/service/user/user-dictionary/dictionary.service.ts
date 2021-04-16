@@ -74,7 +74,7 @@ export class DictionaryService {
   }
 
   public getUserDictionary(): UserDictionary {
-    if (!this.ready) { throw new NotReadyError('incomplete initialization of user-dictionary service'); }
+    if (this.ready.value === false) { throw new NotReadyError('incomplete initialization of user-dictionary service'); }
     return this.proxyUserDictionary(this.localUserDictionary);
   }
 
@@ -178,7 +178,6 @@ export class DictionaryService {
     .toPromise()
     .then<UserDictionary>(
       result => {
-        console.log(result);
         assertType<UserDictionary>(result.body);
         const value = result.body;
         this.dictionaryEventSubject.next({type: EVENT_TYPE.GET_ALL, value: value});
@@ -202,10 +201,9 @@ export class DictionaryService {
   private initLocalDict() {
     let resolveReady: (read: boolean) => void;
     this.ready = { promise: new Promise((resolvefunc) => resolveReady = resolvefunc), value: false };
-    this.ready.promise.then(() => this.ready.value = true);
 
-    // getAll sets the base
-    this.getAll().then(() => { resolveReady(true); console.log("debug dict", this.getUserDictionary()); });
+    // getAll automatically creates a dictionaryEvent that updates the localdict with the remote
+    this.getAll().then(() => { this.ready.value = true; resolveReady(true); });
 
   }
 
@@ -213,18 +211,14 @@ export class DictionaryService {
     this.getDictionaryEventStream().subscribe(event => {
       switch (event.type) {
         case EVENT_TYPE.GET:
-          if (event.key in this.localUserDictionary) {
-            if (JSON.stringify(this.localUserDictionary[event.key]) !== JSON.stringify(event.value)) {
-              console.warn(`[user-dictionary service] Dictionary desynchronized at key "${event.key}": locally had ${this.localUserDictionary[event.key]} but remote reported  ${event.value}`);
-              this.localUserDictionary[event.key] = event.value;
-            }
-          } else {
-            Object.defineProperty(this.localUserDictionary, event.key, event.value);
+          if (event.key in this.localUserDictionary &&
+            JSON.stringify(this.localUserDictionary[event.key]) !== JSON.stringify(event.value)) {
+            console.warn(`[user-dictionary service] Dictionary desynchronized at key "${event.key}": locally had ${this.localUserDictionary[event.key]} but remote reported  ${event.value}`);
           }
+          this.localUserDictionary[event.key] = event.value;
           break;
 
         case EVENT_TYPE.SET:
-          console.log(event.value);
           this.localUserDictionary[event.key] = event.value;
           break;
 
@@ -234,7 +228,7 @@ export class DictionaryService {
 
         case EVENT_TYPE.GET_ALL:
           if (JSON.stringify(this.localUserDictionary) !== JSON.stringify(event.value)) {
-            console.warn(`[user-dictionary service] Dictionary desynchronized, local had ${this.localUserDictionary}, but remote reported ${event.value}`);
+            console.warn(`[user-dictionary service] Dictionary was desynchronized, local had ${this.localUserDictionary}, but remote reported ${event.value}`);
 
             // setting this.localUserDictionary = event.value would
             // ruin the references to this.localUserDictionary in all the proxy dictionaries
@@ -257,7 +251,6 @@ export class DictionaryService {
     const _this = this;
     return {
       set(localUserDictionary: Readonly<UserDictionary>, key: string, value: JSONValue) {
-        console.log(value);
         _this.set(key, value);
         return true;
       },
