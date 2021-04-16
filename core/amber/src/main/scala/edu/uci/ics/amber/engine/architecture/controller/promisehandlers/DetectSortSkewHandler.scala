@@ -5,16 +5,16 @@ import edu.uci.ics.amber.engine.architecture.controller.ControllerAsyncRPCHandle
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSortSkewHandler.{
   DetectSortSkew,
   detectSortSkewLogger,
-  endTimeForNotification,
   endTimeForMetricColl,
   endTimeForNetChange,
+  endTimeForNotification,
   getSkewedAndFreeWorkers,
   isfreeGettingSkewed,
   previousCallFinished,
-  startTimeForNotification,
   startTimeForMetricColl,
   startTimeForNetChange,
-  startTimeForNetRollback
+  startTimeForNetRollback,
+  startTimeForNotification
 }
 import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryLoadMetricsHandler.{
@@ -27,6 +27,7 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryNextOpL
 }
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.RollbackFlowHandler.RollbackFlow
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.SendBuildTableHandler.SendBuildTable
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.SendStateTransferNotificationHandler.SendStateTranferNotification
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ShareFlowHandler.ShareFlow
 import edu.uci.ics.amber.engine.common.{Constants, WorkflowLogger}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
@@ -287,19 +288,19 @@ trait DetectSortSkewHandler {
             if (skewedAndFreeWorkers.size > 0) {
               startTimeForNotification = System.nanoTime()
 
-              val futuresArr = new ArrayBuffer[Future[Seq[Unit]]]()
+              val futuresArr = new ArrayBuffer[Future[Unit]]()
               skewedAndFreeWorkers.foreach(sf => {
                 detectSortSkewLogger.logInfo(
                   s"\tSkewed Worker:${sf._1}, Free Worker:${sf._2}, notification required:${sf._3}"
                 )
-                if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
+                if (sf._3) { futuresArr.append(send(SendStateTranferNotification(sf._2), sf._1)) }
               })
               Future
                 .collect(futuresArr)
                 .flatMap(res => {
                   endTimeForNotification = System.nanoTime()
                   detectSortSkewLogger.logInfo(
-                    s"\tBUILD TABLES COPIED in ${(endTimeForNotification - startTimeForNotification) / 1e9d}s"
+                    s"\tState Transfer notification sent in ${(endTimeForNotification - startTimeForNotification) / 1e9d}s"
                   )
 
                   startTimeForNetChange = System.nanoTime()
