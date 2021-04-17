@@ -40,7 +40,17 @@ class SortOpLocalExec(
     val sendingLists = new ArrayBuffer[ArrayBuffer[Tuple]]
     var count = 1
     var curr = new ArrayBuffer[Tuple]
-    for (value <- tuplesFromSkewedWorker) {
+
+    /** *< For Sort at end >**
+      */
+    val tuplesFromSkewedWorkerSorted = tuplesFromSkewedWorker.sortWith(
+      _.getField(sortAttributeName).asInstanceOf[Float] > _.getField(sortAttributeName)
+        .asInstanceOf[Float]
+    )
+
+    /** *</ For Sort at end >**
+      */
+    for (value <- tuplesFromSkewedWorkerSorted) {
       curr.append(value)
       if (count % 4000 == 0) {
         sendingLists.append(curr)
@@ -94,17 +104,46 @@ class SortOpLocalExec(
             .getField(sortAttributeName)
             .asInstanceOf[Float] < workerUpperLimitExcluded
         ) {
-          addTupleToSortedList(t, sortedTuples)
+          // addTupleToSortedList(t, sortedTuples)
+          /** *< For Sort at end >**
+            */
+          sortedTuples.append(t)
+
+          /** *</ For Sort at end >**
+            */
         } else {
-          addTupleToSortedList(t, tuplesFromSkewedWorker)
+          // addTupleToSortedList(t, tuplesFromSkewedWorker)
+          /** *< For Sort at end >**
+            */
+          tuplesFromSkewedWorker.append(t)
+
+          /** *</ For Sort at end >**
+            */
         }
         Iterator()
       case Right(_) =>
         if (!sentTuplesToFree) {
           println(s"\t PRODUCED ${sortedTuples.size}")
-          sortedTuples.toIterator
+          // sortedTuples.toIterator
+          sortedTuples
+            .sortWith(
+              _.getField(sortAttributeName).asInstanceOf[Float] > _.getField(sortAttributeName)
+                .asInstanceOf[Float]
+            )
+            .toIterator
         } else {
           println(s"\t PRODUCED ${sortedTuples.size + receivedFromFreeWorker.size}")
+
+          /** *< For Sort at end >**
+            */
+          sortedTuples = sortedTuples
+            .sortWith(
+              _.getField(sortAttributeName).asInstanceOf[Float] > _.getField(sortAttributeName)
+                .asInstanceOf[Float]
+            )
+
+          /** *</ For Sort at end >**
+            */
           // merge the two sorted lists
           new Iterator[Tuple] {
             var ownListIdx = 0
