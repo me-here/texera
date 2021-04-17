@@ -18,15 +18,7 @@ trait ShareFlowHandler {
 
   registerHandler { (cmd: ShareFlow, sender) =>
     // workerStateManager.shouldBe(Running, Ready)
-    try {
-      tupleToBatchConverter.changeFlow(cmd.skewedReceiverId, cmd.freeReceiverId)
-    } catch {
-      case exception: Exception =>
-        println(
-          "Exception happened" + exception
-            .getMessage() + " stacktrace " + exception.getStackTrace().mkString("\n\t")
-        )
-        Map[ActorVirtualIdentity, Long]()
-    }
+    tupleToBatchConverter.changeFlow(cmd.skewedReceiverId, cmd.freeReceiverId)
+
   }
 }
