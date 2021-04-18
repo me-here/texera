@@ -48,7 +48,7 @@ class FileSinkOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
 
   it should "process Tuple and save results to file" in {
     fileSinkOpExec.open()
-    fileSinkOpExec.processTuple(Left(tuple), null).next()
+    fileSinkOpExec.processTuple(Left(tuple), null)
     fileSinkOpExec.close()
 
     val file: File =
@@ -57,8 +57,10 @@ class FileSinkOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
     val result: List[List[String]] = reader.all()
 
     assert(result.length == 2)
+    assert(result(0).length == 4)
+    assert(result(1).length == 4)
     assert(result(0).sameElements(tuple.getSchema.getAttributeNames.toArray))
-    assert(result(1).sameElements(tuple.getFields.toArray))
+    assert(result(1).sameElements(tuple.getFields.stream().map(e => e.toString).toArray))
 
     reader.close()
   }
