@@ -10,4 +10,5 @@ public class VisualizationConstants {
     public static final String DONUT = "donut";
 
     public static final String WORD_CLOUD = "word cloud";
+    public static final String SCATTERPLOT = "scatter";
 }

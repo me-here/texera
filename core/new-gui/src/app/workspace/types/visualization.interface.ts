@@ -12,7 +12,8 @@ export enum ChartType {
   STACKED_BAR = 'stacked bar',
   WORD_CLOUD = 'word cloud',
   LINE = 'line',
-  SPLINE = 'spline'
+  SPLINE = 'spline',
+  SCATTERPLOT = 'scatter'
 }
 
 /**
@@ -21,4 +22,5 @@ export enum ChartType {
 export interface WordCloudTuple extends Readonly<{
   word: string,
   count: number
-}> {}
+}> {
+}
