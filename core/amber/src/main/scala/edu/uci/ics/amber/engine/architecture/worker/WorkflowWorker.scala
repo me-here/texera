@@ -77,6 +77,8 @@ class WorkflowWorker(
   lazy val tupleProducer: BatchToTupleConverter = wire[BatchToTupleConverter]
   lazy val breakpointManager: BreakpointManager = wire[BreakpointManager]
 
+  var processingTime = 0L
+
   if (parentNetworkCommunicationActorRef != null) {
     parentNetworkCommunicationActorRef ! RegisterActorRef(identifier, self)
   }
@@ -112,11 +114,14 @@ class WorkflowWorker(
 
   final def receiveDataMessages: Receive = {
     case NetworkMessage(id, WorkflowDataMessage(from, seqNum, payload)) =>
+      val start = System.currentTimeMillis()
       dataInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
+      processingTime += System.currentTimeMillis() - start
   }
 
   def receiveControlMessages: Receive = {
     case NetworkMessage(id, cmd @ WorkflowControlMessage(from, seqNum, payload)) =>
+      val start = System.currentTimeMillis()
       controlLogManager.persistControlMessage(cmd)
       try {
         // use control input port to pass control messages
@@ -125,6 +130,7 @@ class WorkflowWorker(
         case e =>
           logger.logError(WorkflowRuntimeError(e, identifier.toString))
       }
+      processingTime += System.currentTimeMillis() - start
   }
 
 
@@ -153,6 +159,7 @@ class WorkflowWorker(
   }
 
   override def postStop(): Unit = {
+    logger.logInfo(s"${identifier.toString} main thread processing time: ${processingTime/1000f}s")
     // shutdown dp thread by sending a command
     dataProcessor.enqueueCommand(ShutdownDPThread(), ActorVirtualIdentity.Self)
     // release the resource

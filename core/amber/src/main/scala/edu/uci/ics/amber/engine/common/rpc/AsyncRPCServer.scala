@@ -88,12 +88,12 @@ class AsyncRPCServer(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
   }
 
   def logControlInvocation(call: ControlInvocation, sender: VirtualIdentity): Unit = {
-//    if (call.commandID == AsyncRPCClient.IgnoreReplyAndDoNotLog) {
-//      return
-//    }
-//    if (call.command.isInstanceOf[QueryStatistics]) {
-//      return
-//    }
+    if (call.commandID == AsyncRPCClient.IgnoreReplyAndDoNotLog) {
+      return
+    }
+    if (call.command.isInstanceOf[QueryStatistics]) {
+      return
+    }
     logger.logInfo(
       s"receive command: ${call.command} from ${sender.toString} (controlID: ${call.commandID})"
     )

@@ -83,9 +83,9 @@ class AsyncRPCClient(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
       return
     }
     if (ret.returnValue != null) {
-//      if (ret.returnValue.isInstanceOf[WorkerStatistics]) {
-//        return
-//      }
+      if (ret.returnValue.isInstanceOf[WorkerStatistics]) {
+        return
+      }
       logger.logInfo(
         s"receive reply: ${ret.returnValue.getClass.getSimpleName} from ${sender.toString} (controlID: ${ret.originalCommandID})"
       )

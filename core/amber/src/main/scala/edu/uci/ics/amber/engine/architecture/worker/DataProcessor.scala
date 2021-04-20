@@ -50,6 +50,8 @@ class DataProcessor( // dependencies:
   private var isCompleted = false
   private var dataCursor = 0L
   private val controlRecoveryQueue = mutable.Queue[ControlElement]()
+  private var startTime = 0L
+  private var processingTime = 0L
 
   // initialize dp thread upon construction
   private val dpThreadExecutor: ExecutorService = Executors.newSingleThreadExecutor
@@ -58,6 +60,7 @@ class DataProcessor( // dependencies:
       try {
         // initialize operator
         operator.open()
+        startTime = System.currentTimeMillis()
         runDPThreadMainLogic()
       } catch safely {
         case e: InterruptedException =>
@@ -143,7 +146,9 @@ class DataProcessor( // dependencies:
     // main DP loop
     while (!isCompleted) {
       // take the next data element from internal queue, blocks if not available.
-      getElement match {
+      val elem = getElement
+      val start = System.currentTimeMillis()
+      elem match {
         case InputTuple(tuple) =>
           currentInputTuple = Left(tuple)
           handleInputTuple()
@@ -162,9 +167,10 @@ class DataProcessor( // dependencies:
         case ctrl: ControlElement =>
           handleControlElement(ctrl)
       }
+      processingTime += System.currentTimeMillis() - start
     }
     // Send Completed signal to worker actor.
-    logger.logInfo(s"${operator.toString} completed")
+    logger.logInfo(s"${operator.toString} completed in ${(System.currentTimeMillis()-startTime)/1000f}")
     asyncRPCClient.send(WorkerExecutionCompleted(), ActorVirtualIdentity.Controller)
     stateManager.transitTo(Completed)
     disableDataQueue()
@@ -206,6 +212,7 @@ class DataProcessor( // dependencies:
   }
 
   def shutdown(): Unit = {
+    logger.logInfo(s"processing time: ${processingTime/1000f}")
     dpLogManager.releaseLogStorage()
     operator.close() // close operator
     dpThread.cancel(true) // interrupt
@@ -243,7 +250,9 @@ class DataProcessor( // dependencies:
         replayControlCommands()
       }
       val control = getElement.asInstanceOf[ControlElement]
+      val start = System.currentTimeMillis()
       handleControlElement(control)
+      processingTime += System.currentTimeMillis() - start
     }
   }
 
