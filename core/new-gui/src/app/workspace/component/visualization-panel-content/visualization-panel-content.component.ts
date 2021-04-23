@@ -49,6 +49,7 @@ export class VisualizationPanelContentComponent implements AfterViewInit, OnDest
   data: object[] | undefined;
   chartType: ChartType | undefined;
   columns: string[] = [];
+  batchID: number = 0;
 
   private d3ChartElement: d3.Selection<SVGGElement, unknown, HTMLElement, any> | undefined;
   private c3ChartElement: c3.ChartAPI | undefined;
@@ -289,22 +290,27 @@ export class VisualizationPanelContentComponent implements AfterViewInit, OnDest
   }
 
   spatialScatterplot() {
-    /* mapbox object with default configuration */
-    this.map = new mapboxgl.Map({
-      container: VisualizationPanelContentComponent.MAP_CONTAINER,
-      style: 'mapbox://styles/mapbox/light-v9',
-      center: [-96.35, 39.5],
-      zoom: 3,
-      maxZoom: 17,
-      minZoom: 0
-    });
-    this.map.on('load', () => {
-      this.addScatterLayer();
-    });
+    if (this.map === undefined) {
+      /* mapbox object with default configuration */
+      this.map = new mapboxgl.Map({
+        container: VisualizationPanelContentComponent.MAP_CONTAINER,
+        style: 'mapbox://styles/mapbox/light-v9',
+        center: [-96.35, 39.5],
+        zoom: 3,
+        maxZoom: 17,
+        minZoom: 0
+      });
+      this.map.on('load', () => {
+        this.addScatterLayer();
+      });
+    } else {
+    this.addScatterLayer();
+    }
   }
 
   addScatterLayer() {
     if (this.map !== undefined) {
+      this.batchID++;
       const props: ScatterplotLayerProps<any> = {
         opacity: 0.8,
         filled: true,
@@ -316,7 +322,7 @@ export class VisualizationPanelContentComponent implements AfterViewInit, OnDest
       };
 
       const clusterLayer = new MapboxLayer({
-        id: 'scatter',
+        id: 'scatter' + this.batchID,
         type: ScatterplotLayer,
         data: this.data,
         pickable: true,
