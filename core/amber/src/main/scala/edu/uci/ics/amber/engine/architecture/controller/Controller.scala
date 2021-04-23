@@ -14,7 +14,7 @@ import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunication
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
 import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, RecoveryCompleted, RecoveryMessage, TriggerRecovery, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
-import edu.uci.ics.amber.engine.recovery.{ControlLogManager, LogStorage, RecoveryManager}
+import edu.uci.ics.amber.engine.recovery.{ControlLogManager, InputCounter, LogStorage, ParallelLogWriter, RecoveryManager}
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity, WorkflowIdentity}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
@@ -29,8 +29,8 @@ object Controller {
       workflow: Workflow,
       eventListener: ControllerEventListener,
       statusUpdateInterval: Long,
-      controlLogStorage: LogStorage[WorkflowControlMessage] =
-        RecoveryManager.defaultControlLogStorage(ActorVirtualIdentity.Controller),
+      controlLogStorage: LogStorage =
+        RecoveryManager.defaultLogStorage(ActorVirtualIdentity.Controller),
       parentNetworkCommunicationActorRef: ActorRef = null
   ): Props =
     Props(
@@ -50,7 +50,7 @@ class Controller(
     val workflow: Workflow,
     val eventListener: ControllerEventListener = ControllerEventListener(),
     val statisticsUpdateIntervalMs: Option[Long],
-    logStorage: LogStorage[WorkflowControlMessage],
+    logStorage: LogStorage,
     parentNetworkCommunicationActorRef: ActorRef
 ) extends WorkflowActor(
       ActorVirtualIdentity.Controller,
@@ -72,6 +72,8 @@ class Controller(
   val controlLogManager: ControlLogManager = wire[ControlLogManager]
   val recoveryManager = wire[RecoveryManager]
 
+  lazy val logWriter:ParallelLogWriter = new ParallelLogWriter(logStorage, networkCommunicationActor, true)
+
   lazy val controlInputPort: NetworkInputPort[ControlPayload] =
     new NetworkInputPort[ControlPayload](this.logger, this.handleControlPayloadWithTryCatch)
 
@@ -84,6 +86,7 @@ class Controller(
   var statusUpdateAskHandle: Cancellable = _
 
   controlLogManager.onComplete(()=>{
+    inputCounter.enable()
     // activate all links
     controlOutputPort.sendTo(ActorVirtualIdentity.Self, ControlInvocation(-1, LinkWorkflow()))
   })
@@ -146,6 +149,7 @@ class Controller(
     ClusterRuntimeInfo.controllers.remove(self)
     val timeSpent = (System.nanoTime()-startTime).asInstanceOf[Double]/1000000000
     logger.logInfo("workflow finished in "+timeSpent+" seconds")
+    logWriter.shutdown()
     super.postStop()
   }
 
@@ -153,6 +157,7 @@ class Controller(
                                         from: VirtualIdentity,
                                         controlPayload: ControlPayload
                                       ): Unit = {
+    inputCounter.advanceControlInputCount()
     try {
       controlPayload match {
         // use control input port to pass control messages

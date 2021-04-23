@@ -3,9 +3,9 @@ package edu.uci.ics.amber.engine.recovery
 import java.io.{DataInputStream, DataOutputStream, IOException, InputStream, OutputStream}
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 
-class LocalDiskLogStorage[T](logName: String) extends FileLogStorage[T] {
+class LocalDiskLogStorage(logName: String) extends FileLogStorage(logName) {
 
-  private lazy val path = Paths.get(s"./logs/$logName.logfile")
+  private lazy val path = Paths.get(s"./logs/$logName.log")
 
   override def getInputStream: DataInputStream = new DataInputStream(Files.newInputStream(path))
 

@@ -1,42 +1,28 @@
 package edu.uci.ics.amber.engine.recovery
 
 import java.io.File
-import java.net.URI
-import java.nio.file.{Files, Paths, StandardOpenOption}
 
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props}
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
 import akka.util.Timeout
-import com.esotericsoftware.kryo.io.{Input, Output}
-import com.twitter.chill.akka.AkkaSerializer
 import edu.uci.ics.amber.clustering.SingleNodeListener
-import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.QueryWorkerStatisticsHandler.QueryWorkerStatistics
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkAck, NetworkMessage, RegisterActorRef}
 import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.OneToOnePolicy
 import edu.uci.ics.amber.engine.architecture.worker.WorkflowWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
-import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.PauseHandler.PauseWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
-import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ResumeHandler.ResumeWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.StartHandler.StartWorker
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, ISourceOperatorExecutor, InputExhausted}
-import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataFrame, EndOfUpstream, InputLinking, WorkflowControlMessage, WorkflowDataMessage, WorkflowFIFOMessage, WorkflowMessage}
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DPCursor, DataBatchSequence, DataFrame, EndOfUpstream, FromSender, InputLinking, WorkflowControlMessage, WorkflowDataMessage, WorkflowFIFOMessage, WorkflowMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.WorkerActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LayerIdentity, LinkIdentity}
-import edu.uci.ics.amber.engine.recovery.DataLogManager.DataLogElement
-import edu.uci.ics.amber.engine.recovery.HDFSLogStorage.hostAddress
-import edu.uci.ics.texera.workflow.common.operators.aggregate.DistributedAggregation
-import edu.uci.ics.texera.workflow.common.tuple.Tuple
-import edu.uci.ics.texera.workflow.operators.aggregate.SpecializedAverageOpDesc
 import org.apache.commons.io.FileUtils
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpecLike
-import org.scalamock.scalatest.MockFactory
 
 import scala.collection.mutable
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
@@ -121,12 +107,10 @@ class RecoverySpec
       op: IOperatorExecutor,
       controller: TestProbe,
       actorMappingToRegister: Seq[(ActorVirtualIdentity, ActorRef)],
-      controlLogStorage: LogStorage[WorkflowControlMessage],
-      dataLogStorage: LogStorage[DataLogElement],
-      dpLogStorage: LogStorage[Long]
+      logStorage: LogStorage
   ): ActorRef = {
     val worker = TestActorRef(
-      new WorkflowWorker(id, op, controller.ref, controlLogStorage, dataLogStorage, dpLogStorage) {
+      new WorkflowWorker(id, op, controller.ref, logStorage) {
         networkCommunicationActor ! RegisterActorRef(
           ActorVirtualIdentity.Controller,
           controller.ref
@@ -189,12 +173,8 @@ class RecoverySpec
   def smallWorkerChain(
       sender1: ActorVirtualIdentity,
       sender2: ActorVirtualIdentity,
-      sender1ControlLog: LogStorage[WorkflowControlMessage],
-      sender2ControlLog: LogStorage[WorkflowControlMessage],
-      sender1DataLog: LogStorage[DataLogElement],
-      sender2DataLog: LogStorage[DataLogElement],
-      sender1DPLog: LogStorage[Long],
-      sender2DPLog: LogStorage[Long]
+      sender1Log: LogStorage,
+      sender2Log: LogStorage
   ): (
       ISourceOperatorExecutor,
       IOperatorExecutor,
@@ -229,18 +209,14 @@ class RecoverySpec
       dummy,
       controller2,
       Seq((receiverID, receiver.ref)),
-      sender2ControlLog,
-      sender2DataLog,
-      sender2DPLog
+      sender2Log
     )
     val sourceWorker = initWorker(
       sender1,
       source,
       controller1,
       Seq((sender2, dummyWorker)),
-      sender1ControlLog,
-      sender1DataLog,
-      sender1DPLog
+      sender1Log
     )
     val f1 = sendMessagesAsync(sourceWorker, controlsForSource)
     val f2 = sendMessagesAsync(dummyWorker, controlsForDummy)
@@ -280,23 +256,20 @@ class RecoverySpec
       WorkflowDataMessage(sender1, 2, DataFrame(Array.empty))
     )
     val op = new SourceOperatorForRecoveryTest()
-    val controlLogStorage: LogStorage[WorkflowControlMessage] =
-      new LocalDiskLogStorage(id.toString + "-control")
-    val dataLogStorage: LogStorage[DataLogElement] = new LocalDiskLogStorage(id.toString + "-data")
-    val dpLogStorage: LogStorage[Long] = new LocalDiskLogStorage(id.toString + "-dp")
+    val logStorage: LogStorage =
+      new LocalDiskLogStorage(id.toString)
     val worker = system.actorOf(
-      WorkflowWorker.props(id, op, TestProbe().ref, controlLogStorage, dataLogStorage, dpLogStorage)
+      WorkflowWorker.props(id, op, TestProbe().ref, logStorage)
     )
     messages.foreach { x =>
       worker ! NetworkMessage(0, x)
     }
     Thread.sleep(10000)
-    assert(controlLogStorage.load().size == 2)
-    assert(dataLogStorage.load().size == 11)
-    assert(dpLogStorage.load().size == 2)
-    dataLogStorage.clear()
-    dpLogStorage.clear()
-    controlLogStorage.clear()
+    val logStorage2 = new LocalDiskLogStorage(id.toString)
+    assert(logStorage2.getLogs.count(p => p.isInstanceOf[WorkflowControlMessage]) == 2)
+    assert(logStorage2.getLogs.count(p => p.isInstanceOf[FromSender]) == 8)
+    assert(logStorage2.getLogs.count(p => p.isInstanceOf[DPCursor]) == 2)
+    logStorage.clear()
   }
 
   "source worker" should "recover with the log after restarting" in {
@@ -312,17 +285,13 @@ class RecoverySpec
       QueryStatistics(),
       QueryStatistics()
     )
-    val workerControlLog = new LocalDiskLogStorage[WorkflowControlMessage](id + "-control")
-    val workerDataLog = new LocalDiskLogStorage[DataLogElement](id + "-data")
-    val workerDPLog = new LocalDiskLogStorage[Long](id + "-dp")
+    val workerLog = new LocalDiskLogStorage(id.toString)
     val worker = initWorker(
       id,
       op,
       controller,
       Seq((receiverID, receiver.ref)),
-      workerControlLog,
-      workerDataLog,
-      workerDPLog
+      workerLog
     )
     sendMessages(worker, controls)
     val received = waitResponsesAndKillWorker(worker, controller, receiver)
@@ -331,39 +300,23 @@ class RecoverySpec
       op,
       controller,
       Seq((receiverID, receiver.ref)),
-      workerControlLog,
-      workerDataLog,
-      workerDPLog
+      workerLog
     )
     testRecovery(recovered, controller, receiver, received)
-    workerControlLog.clear()
-    workerDataLog.clear()
-    workerDPLog.clear()
+    workerLog.clear()
   }
 
   "multiple workers" should "recover with their logs after restarting" in {
     val sourceID = WorkerActorVirtualIdentity("source1")
     val dummyID = WorkerActorVirtualIdentity("dummy1")
-    val sourceControlLogStorage: LogStorage[WorkflowControlMessage] =
-      new LocalDiskLogStorage(sourceID.toString + "-control")
-    val sourceDataLogStorage: LogStorage[DataLogElement] =
-      new LocalDiskLogStorage(sourceID.toString + "-data")
-    val sourceDPLogStorage: LogStorage[Long] = new LocalDiskLogStorage(sourceID.toString + "-dp")
-    val dummyControlLogStorage: LogStorage[WorkflowControlMessage] =
-      new LocalDiskLogStorage(dummyID.toString + "-control")
-    val dummyDataLogStorage: LogStorage[DataLogElement] =
-      new LocalDiskLogStorage(dummyID.toString + "-data")
-    val dummyDPLogStorage: LogStorage[Long] = new LocalDiskLogStorage(dummyID.toString + "-dp")
+    val sourceLogStorage: LogStorage = new LocalDiskLogStorage(sourceID.toString)
+    val dummyLogStorage: LogStorage = new LocalDiskLogStorage(dummyID.toString)
     val (source, dummy, sourceWorker, dummyWorker, controller1, controller2, receiver) =
       smallWorkerChain(
         sourceID,
         dummyID,
-        sourceControlLogStorage,
-        dummyControlLogStorage,
-        sourceDataLogStorage,
-        dummyDataLogStorage,
-        sourceDPLogStorage,
-        dummyDPLogStorage
+        sourceLogStorage,
+        dummyLogStorage
       )
     val receivedMessageForSource =
       waitResponsesAndKillWorker(sourceWorker, controller1, null)
@@ -374,52 +327,32 @@ class RecoverySpec
       dummy,
       controller2,
       Seq((receiverID, receiver.ref)),
-      dummyControlLogStorage,
-      dummyDataLogStorage,
-      dummyDPLogStorage
+      dummyLogStorage
     )
     val recoveredSource = initWorker(
       sourceID,
       source,
       controller1,
       Seq((dummyID, recoveredDummy)),
-      sourceControlLogStorage,
-      sourceDataLogStorage,
-      sourceDPLogStorage
+      sourceLogStorage
     )
     testRecovery(recoveredSource, controller1, null, receivedMessageForSource)
     testRecovery(recoveredDummy, controller2, receiver, receivedMessageForDummy)
-    sourceControlLogStorage.clear()
-    dummyControlLogStorage.clear()
-    sourceDataLogStorage.clear()
-    dummyDataLogStorage.clear()
-    sourceDPLogStorage.clear()
-    dummyDPLogStorage.clear()
+    sourceLogStorage.clear()
+    dummyLogStorage.clear()
   }
 
   "one worker" should "recover correctly while the other worker are still alive" in {
     val sourceID = WorkerActorVirtualIdentity("source2")
     val dummyID = WorkerActorVirtualIdentity("dummy2")
-    val sourceControlLogStorage: LogStorage[WorkflowControlMessage] =
-      new LocalDiskLogStorage(sourceID.toString + "-control")
-    val sourceDataLogStorage: LogStorage[DataLogElement] =
-      new LocalDiskLogStorage(sourceID.toString + "-data")
-    val sourceDPLogStorage: LogStorage[Long] = new LocalDiskLogStorage(sourceID.toString + "-dp")
-    val dummyControlLogStorage: LogStorage[WorkflowControlMessage] =
-      new LocalDiskLogStorage(dummyID.toString + "-control")
-    val dummyDataLogStorage: LogStorage[DataLogElement] =
-      new LocalDiskLogStorage(dummyID.toString + "-data")
-    val dummyDPLogStorage: LogStorage[Long] = new LocalDiskLogStorage(dummyID.toString + "-dp")
+    val sourceLogStorage: LogStorage = new LocalDiskLogStorage(sourceID.toString)
+    val dummyLogStorage: LogStorage = new LocalDiskLogStorage(dummyID.toString)
     val (source, dummy, sourceWorker, dummyWorker, controller1, controller2, receiver) =
       smallWorkerChain(
         sourceID,
         dummyID,
-        sourceControlLogStorage,
-        dummyControlLogStorage,
-        sourceDataLogStorage,
-        dummyDataLogStorage,
-        sourceDPLogStorage,
-        dummyDPLogStorage
+        sourceLogStorage,
+        dummyLogStorage
       )
     val receivedMessageForSource =
       waitResponsesAndKillWorker(sourceWorker, controller1, null)
@@ -428,9 +361,7 @@ class RecoverySpec
       source,
       controller1,
       Seq((dummyID, dummyWorker)),
-      sourceControlLogStorage,
-      sourceDataLogStorage,
-      sourceDPLogStorage
+      sourceLogStorage
     )
     testRecovery(recoveredSource, controller1, null, receivedMessageForSource)
     val expectedData =
@@ -441,12 +372,8 @@ class RecoverySpec
     val receivedControl = mutable.Queue[WorkflowMessage]()
     forAllNetworkMessages(controller2, w => receivedControl.enqueue(w))
     assert(receivedControl.size == 8)
-    sourceControlLogStorage.clear()
-    dummyControlLogStorage.clear()
-    sourceDataLogStorage.clear()
-    dummyDataLogStorage.clear()
-    sourceDPLogStorage.clear()
-    dummyDPLogStorage.clear()
+    sourceLogStorage.clear()
+    dummyLogStorage.clear()
   }
 
   "I " should "test this" in{
@@ -458,7 +385,7 @@ class RecoverySpec
         x =>
           val start = System.currentTimeMillis()
           file.write(content2)
-          file.hsync()
+          file.hflush()
           sumLatency += (System.currentTimeMillis()-start)
       }
       println(sumLatency/1000f)

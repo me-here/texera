@@ -8,23 +8,19 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LocalOpe
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
 import edu.uci.ics.amber.engine.architecture.messaginglayer.TupleToBatchConverter
 import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue._
-import edu.uci.ics.amber.engine.common.{InputExhausted, IOperatorExecutor, WorkflowLogger}
+import edu.uci.ics.amber.engine.common.{IOperatorExecutor, InputExhausted, WorkflowLogger}
 import edu.uci.ics.amber.engine.common.ambermessage.ControlPayload
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCServer}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Completed
 import edu.uci.ics.amber.engine.common.tuple.ITuple
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  LinkIdentity,
-  VirtualIdentity
-}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity, VirtualIdentity}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
+import java.util.concurrent.{ExecutorService, Executors, Future}
 
-import java.util.concurrent.{Executors, ExecutorService, Future}
-import edu.uci.ics.amber.engine.recovery.DPLogManager
+import edu.uci.ics.amber.engine.recovery.{DPLogManager, InputCounter}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -38,10 +34,10 @@ class DataProcessor( // dependencies:
     breakpointManager: BreakpointManager, // to evaluate breakpoints
     stateManager: WorkerStateManager,
     asyncRPCServer: AsyncRPCServer,
-    dpLogManager: DPLogManager
+    dpLogManager: DPLogManager,
+                     inputCounter:InputCounter
 ) extends WorkerInternalQueue {
   // dp thread stats:
-  // TODO: add another variable for recovery index instead of using the counts below.
   private var inputTupleCount = 0L
   private var outputTupleCount = 0L
   private var currentInputTuple: Either[ITuple, InputExhausted] = _
@@ -149,12 +145,20 @@ class DataProcessor( // dependencies:
       val elem = getElement
       val start = System.currentTimeMillis()
       elem match {
+        case EnableInputCounter =>
+          dpLogManager.onComplete{
+            () => inputCounter.enable()
+          }
         case InputTuple(tuple) =>
+          inputCounter.advanceDataInputCount()
           currentInputTuple = Left(tuple)
           handleInputTuple()
         case SenderChangeMarker(link) =>
           currentInputLink = link
         case EndMarker =>
+          if(currentInputLink != null){
+            inputCounter.advanceDataInputCount()
+          }
           currentInputTuple = Right(InputExhausted())
           handleInputTuple()
           if (currentInputLink != null) {
@@ -213,7 +217,6 @@ class DataProcessor( // dependencies:
 
   def shutdown(): Unit = {
     logger.logInfo(s"processing time: ${processingTime/1000f}")
-    dpLogManager.releaseLogStorage()
     operator.close() // close operator
     dpThread.cancel(true) // interrupt
     dpThreadExecutor.shutdownNow() // destroy thread
@@ -276,6 +279,7 @@ class DataProcessor( // dependencies:
   }
 
   private[this] def processControlCommand(cmd: ControlPayload, from: VirtualIdentity): Unit = {
+    inputCounter.advanceControlInputCount()
     cmd match {
       case ShutdownDPThread() =>
         shutdown()

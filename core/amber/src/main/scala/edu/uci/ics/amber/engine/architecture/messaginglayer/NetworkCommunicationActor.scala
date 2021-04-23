@@ -2,18 +2,10 @@ package edu.uci.ics.amber.engine.architecture.messaginglayer
 
 import akka.actor.{Actor, ActorRef, Cancellable, Props}
 import com.typesafe.scalalogging.LazyLogging
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  GetActorRef,
-  MessageBecomesDeadLetter,
-  NetworkAck,
-  NetworkMessage,
-  RegisterActorRef,
-  ResendMessages,
-  SendRequest
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{DisableCountCheck, GetActorRef, MessageBecomesDeadLetter, NetworkAck, NetworkMessage, RegisterActorRef, ResendMessages, SendRequest, UpdateCount}
 import edu.uci.ics.amber.engine.common.amberexception.WorkflowRuntimeException
 import edu.uci.ics.amber.engine.common.ambermessage.WorkflowMessage
-import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
 import scala.collection.mutable
@@ -32,7 +24,7 @@ object NetworkCommunicationActor {
     }
   }
 
-  final case class SendRequest(id: ActorVirtualIdentity, message: WorkflowMessage)
+  final case class SendRequest(id: ActorVirtualIdentity, message: WorkflowMessage, inputDataCount:Long, inputControlCount:Long)
 
   /** Identifier <-> ActorRef related messages
     */
@@ -54,6 +46,10 @@ object NetworkCommunicationActor {
   final case class ResendMessages()
 
   final case class MessageBecomesDeadLetter(message: NetworkMessage)
+
+  final case class UpdateCount(dataCount:Long, controlCount:Long)
+
+  final case object DisableCountCheck
 
   def props(parentSender: ActorRef): Props =
     Props(new NetworkCommunicationActor(parentSender))
@@ -77,6 +73,11 @@ class NetworkCommunicationActor(parentRef: ActorRef) extends Actor with LazyLogg
     */
   var networkMessageID = 0L
   val messageIDToIdentity = new mutable.LongMap[ActorVirtualIdentity]
+
+  var dataCountFromLogWriter = 0L
+  var controlCountFromLogWriter = 0L
+  val delayedRequests = new mutable.Queue[SendRequest]()
+  var countCheckEnabled = true
 
   //add parent actor into idMap
   idToActorRefs(ActorVirtualIdentity.Self) = context.parent
@@ -149,8 +150,29 @@ class NetworkCommunicationActor(parentRef: ActorRef) extends Actor with LazyLogg
   }
 
   def sendMessagesAndReceiveAcks: Receive = {
-    case SendRequest(id, msg) =>
-      handleSendRequest(id, msg)
+    case req @ SendRequest(id, msg, dataCount, controlCount) =>
+      //println(s"receive send request for $dataCount, $controlCount. From log writer: $dataCountFromLogWriter, $controlCountFromLogWriter")
+      if(countCheckEnabled && (dataCount > dataCountFromLogWriter || controlCount > controlCountFromLogWriter)){
+        delayedRequests.enqueue(req)
+      }else{
+        handleSendRequest(id, msg)
+      }
+    case UpdateCount(dc, cc) =>
+      //println(s"updated count from log writer: $dc, $cc")
+      dataCountFromLogWriter = dc
+      controlCountFromLogWriter = cc
+      var cont = delayedRequests.nonEmpty
+      while(cont){
+        if(delayedRequests.head.inputDataCount > dc || delayedRequests.head.inputControlCount > cc){
+          cont = false
+        }else{
+          val req = delayedRequests.dequeue()
+          handleSendRequest(req.id, req.message)
+          cont = delayedRequests.nonEmpty
+        }
+      }
+    case DisableCountCheck =>
+      countCheckEnabled = false
     case NetworkAck(id) =>
       val actorID = messageIDToIdentity(id)
       val congestionControl = idToCongestionControls(actorID)

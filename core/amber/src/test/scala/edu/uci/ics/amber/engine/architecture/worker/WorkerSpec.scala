@@ -77,9 +77,7 @@ class WorkerSpec
         identifier1,
         mockOpExecutor,
         TestProbe().ref,
-        new EmptyLogStorage(),
-        new EmptyLogStorage(),
-        new EmptyLogStorage()
+        new EmptyLogStorage("")
       ) {
         override lazy val batchProducer = mockTupleToBatchConverter
         override lazy val controlOutputPort = mockControlOutputPort

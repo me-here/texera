@@ -7,15 +7,15 @@ import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionStartedHandler.WorkerStateUpdated
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkMessage, RegisterActorRef, SendRequest}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{BatchToTupleConverter, DataOutputPort, NetworkInputPort, TupleToBatchConverter}
+import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue.EnableInputCounter
 import edu.uci.ics.amber.engine.common.IOperatorExecutor
-import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload, RecoveryCompleted, WorkflowControlMessage, WorkflowDataMessage}
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload, RecoveryCompleted, ShutdownWriter, WorkflowControlMessage, WorkflowDataMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCHandlerInitializer}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager._
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
-import edu.uci.ics.amber.engine.recovery.DataLogManager.DataLogElement
-import edu.uci.ics.amber.engine.recovery.{ControlLogManager, DPLogManager, DataLogManager, EmptyLogStorage, LogStorage}
+import edu.uci.ics.amber.engine.recovery.{ControlLogManager, DPLogManager, DataLogManager, EmptyLogStorage, InputCounter, LogStorage, ParallelLogWriter}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
@@ -27,29 +27,28 @@ object WorkflowWorker {
       id: ActorVirtualIdentity,
       op: IOperatorExecutor,
       parentNetworkCommunicationActorRef: ActorRef,
-      controlLogStorage: LogStorage[WorkflowControlMessage] = new EmptyLogStorage(),
-      dataLogStorage: LogStorage[DataLogElement] = new EmptyLogStorage(),
-      dpLogStorage: LogStorage[Long] = new EmptyLogStorage()
-  ): Props =
+      logStorage: LogStorage = null
+  ): Props = {
     Props(
       new WorkflowWorker(
         id,
         op,
         parentNetworkCommunicationActorRef,
-        controlLogStorage,
-        dataLogStorage,
-        dpLogStorage
+        if(logStorage == null){
+          new EmptyLogStorage(id.toString)
+        }else{
+          logStorage
+        }
       )
     )
+  }
 }
 
 class WorkflowWorker(
     identifier: ActorVirtualIdentity,
     operator: IOperatorExecutor,
     parentNetworkCommunicationActorRef: ActorRef,
-    controlLogStorage: LogStorage[WorkflowControlMessage] = new EmptyLogStorage(),
-    dataLogStorage: LogStorage[DataLogElement] = new EmptyLogStorage(),
-    dpLogStorage: LogStorage[Long] = new EmptyLogStorage()
+    logStorage: LogStorage
 ) extends WorkflowActor(identifier, parentNetworkCommunicationActorRef) {
   implicit val ec: ExecutionContext = context.dispatcher
   implicit val timeout: Timeout = 5.seconds
@@ -61,6 +60,8 @@ class WorkflowWorker(
 
   workerStateManager.assertState(Uninitialized)
   workerStateManager.transitTo(Ready)
+
+  lazy val logWriter:ParallelLogWriter = new ParallelLogWriter(logStorage, networkCommunicationActor)
 
   lazy val dataLogManager: DataLogManager = wire[DataLogManager]
   lazy val dpLogManager: DPLogManager = wire[DPLogManager]
@@ -84,9 +85,12 @@ class WorkflowWorker(
   }
 
   dataLogManager.onComplete(() => {
+    dataProcessor.appendElement(EnableInputCounter)
     networkCommunicationActor ! SendRequest(
       ActorVirtualIdentity.Controller,
-      RecoveryCompleted(identifier)
+      RecoveryCompleted(identifier),
+      0,
+      0
     )
     context.become(receiveAndProcessMessages)
     unstashAll()
@@ -135,9 +139,15 @@ class WorkflowWorker(
 
 
   final def handleDataPayload(from: VirtualIdentity, dataPayload: DataPayload): Unit = {
-    dataLogManager.filterMessage(from, dataPayload).foreach {
-      case (vid, payload) =>
+    if(!dataLogManager.isRecovering){
+      dataLogManager.persistDataSender(from, dataPayload.size)
+      tupleProducer.processDataPayload(from, dataPayload)
+    }else{
+      dataLogManager.feedInMessage(from, dataPayload)
+      while(dataLogManager.hasNext){
+        val (vid, payload) = dataLogManager.next()
         tupleProducer.processDataPayload(vid, payload)
+      }
     }
   }
 
@@ -163,7 +173,7 @@ class WorkflowWorker(
     // shutdown dp thread by sending a command
     dataProcessor.enqueueCommand(ShutdownDPThread(), ActorVirtualIdentity.Self)
     // release the resource
-    dataLogManager.releaseLogStorage()
+    logWriter.shutdown()
     super.postStop()
   }
 

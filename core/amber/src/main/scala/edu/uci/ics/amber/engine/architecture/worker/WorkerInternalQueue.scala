@@ -28,6 +28,7 @@ object WorkerInternalQueue {
   case object EndMarker extends InternalQueueElement
   case object EndOfAllMarker extends InternalQueueElement
   case class ControlElement(cmd: ControlPayload, from: VirtualIdentity) extends InternalQueueElement
+  case object EnableInputCounter extends InternalQueueElement
 
   final val DATA_QUEUE = 1
   final val CONTROL_QUEUE = 0

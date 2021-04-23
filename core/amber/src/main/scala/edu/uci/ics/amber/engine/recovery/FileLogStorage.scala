@@ -1,10 +1,13 @@
 package edu.uci.ics.amber.engine.recovery
 
 import java.io.{DataInputStream, DataOutputStream, InputStream, OutputStream}
+import java.nio.ByteBuffer
 import java.nio.file.Files
 
 import com.twitter.chill.akka.AkkaSerializer
-import edu.uci.ics.amber.engine.recovery.FileLogStorage.{ByteArrayReader, ByteArrayWriter, globalSerializer}
+import edu.uci.ics.amber.engine.common.ambermessage.{DPCursor, DataBatchSequence, FromSender, LogRecord, LogWriterPayload, WorkflowControlMessage}
+import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
+import edu.uci.ics.amber.engine.recovery.FileLogStorage.{ByteArrayReader, ByteArrayWriter, VirtualIdentityMapping, globalSerializer}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import org.apache.hadoop.fs.Syncable
 
@@ -13,14 +16,19 @@ import scala.collection.mutable
 object FileLogStorage{
   val globalSerializer = new AkkaSerializer(null)
 
+  case class VirtualIdentityMapping(vid:VirtualIdentity, id:Int)
+
   class ByteArrayWriter(outputStream: DataOutputStream) {
 
-    def writeAndFlush(content:Array[Byte]): Unit ={
+    def write(content:Array[Byte]): Unit ={
       outputStream.writeInt(content.length)
       outputStream.write(content)
+    }
+
+    def flush(): Unit ={
       outputStream match {
         case syncable: Syncable =>
-          syncable.hflush()
+          syncable.hsync()
         case _ =>
           outputStream.flush()
       }
@@ -48,7 +56,7 @@ object FileLogStorage{
   }
 }
 
-abstract class FileLogStorage[T] extends LogStorage[T] {
+abstract class FileLogStorage(logName:String) extends LogStorage(logName) {
 
   def getInputStream:DataInputStream
 
@@ -62,36 +70,69 @@ abstract class FileLogStorage[T] extends LogStorage[T] {
 
   private lazy val output = new ByteArrayWriter(getOutputStream)
 
-  override def load(): Iterable[T] = {
+  private val vidMapping = mutable.HashMap[VirtualIdentity, Int]()
+  private var count = 0
+  private val loadedLogs = mutable.ArrayBuffer.empty[LogRecord]
+
+  override def getLogs: Iterable[LogRecord] = {
     createDirectories()
     // read file
     if (!fileExists) {
-      return Iterable.empty
-    }
-    val input = new ByteArrayReader(getInputStream)
-    val buf = mutable.ArrayBuffer.empty[T]
-    while (input.isAvailable) {
-      try {
-        val binary = input.read()
-        val message = globalSerializer.fromBinary(binary).asInstanceOf[T]
-        buf.append(message)
-      } catch {
-        case e:Exception =>
-          input.close()
-          throw e
+      Iterable.empty
+    }else{
+      if(loadedLogs.nonEmpty){
+        return loadedLogs
       }
+      val input = new ByteArrayReader(getInputStream)
+      val mapping = mutable.HashMap[Int,VirtualIdentity]()
+      while (input.isAvailable) {
+        try {
+          val binary = input.read()
+          val message = globalSerializer.fromBinary(binary)
+          message match{
+            case cursor: java.lang.Long =>
+              loadedLogs.append(DPCursor(cursor))
+            case VirtualIdentityMapping(vid, id) =>
+              mapping(id) = vid
+              loadedLogs.append(FromSender(vid))
+            case vidRef: java.lang.Integer =>
+              loadedLogs.append(FromSender(mapping(vidRef)))
+            case ctrl:WorkflowControlMessage =>
+              loadedLogs.append(ctrl)
+            case other =>
+              throw new RuntimeException("cannot deserialize log: "+(binary.map(_.toChar)).mkString)
+          }
+        } catch {
+          case e:Exception =>
+            input.close()
+            throw e
+        }
+      }
+      input.close()
+      loadedLogs
     }
-    input.close()
-    buf
   }
 
-  override def persistElement(elem: T): Unit = {
-    try {
-      val byteArray = globalSerializer.toBinary(elem.asInstanceOf[AnyRef])
-      output.writeAndFlush(byteArray)
-    } catch safely {
-      case e:Throwable => throw e
+  override def writeControlLogRecord(record: WorkflowControlMessage): Unit = output.write(globalSerializer.toBinary(record))
+
+  override def writeDataLogRecord(from:VirtualIdentity): Unit = {
+    if(vidMapping.contains(from)){
+      output.write(globalSerializer.toBinary(Integer.valueOf(vidMapping(from))))
+    }else{
+      vidMapping(from) = count
+      output.write(globalSerializer.toBinary(VirtualIdentityMapping(from, count)))
+      count+=1
     }
+  }
+
+  override def writeDPLogRecord(cursor:Long): Unit = output.write(globalSerializer.toBinary(java.lang.Long.valueOf(cursor)))
+
+  override def commit(): Unit = {
+    output.flush()
+  }
+
+  def persistRecord(elem: LogWriterPayload): Unit = {
+    output.write(globalSerializer.toBinary(elem))
   }
 
   override def clear(): Unit = {

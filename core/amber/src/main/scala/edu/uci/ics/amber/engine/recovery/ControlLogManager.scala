@@ -4,18 +4,22 @@ import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
 import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, WorkflowControlMessage}
 
 class ControlLogManager(
-    logStorage: LogStorage[WorkflowControlMessage],
+                         storage: LogStorage,
+    logWriter: ParallelLogWriter,
     controlInputPort: NetworkInputPort[ControlPayload]
-) extends LogManager(logStorage) {
+)extends RecoveryComponent {
 
   // For recovery, only need to replay control messages, and then it's done
-  logStorage.load().foreach { msg =>
-    controlInputPort.handleAfterFIFO(msg.from, msg.sequenceNumber, msg.payload)
+  storage.getLogs.foreach {
+    case msg:WorkflowControlMessage =>
+      controlInputPort.handleAfterFIFO(msg.from, msg.sequenceNumber, msg.payload)
+    case other =>
+      //skip
   }
   setRecoveryCompleted()
 
   def persistControlMessage(msg: WorkflowControlMessage): Unit = {
-    logStorage.persistElement(msg)
+    logWriter.addLogRecord(msg)
   }
 
 }

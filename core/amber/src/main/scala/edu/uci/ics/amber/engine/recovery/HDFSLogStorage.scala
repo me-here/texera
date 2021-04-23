@@ -14,9 +14,9 @@ object HDFSLogStorage{
   val hdfs = FileSystem.get(new URI(hostAddress),hdfsConf)
 }
 
-class HDFSLogStorage[T](logName: String) extends FileLogStorage[T] {
+class HDFSLogStorage(logName: String) extends FileLogStorage(logName) {
 
-  private lazy val path = new Path(s"./logs/$logName.logfile")
+  private lazy val path = new Path(s"./logs/$logName.log")
 
   override def getInputStream: DataInputStream = hdfs.open(path)
 

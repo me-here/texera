@@ -3,12 +3,7 @@ package edu.uci.ics.amber.engine.architecture.worker
 import akka.actor.ActorContext
 import com.softwaremill.macwire.wire
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
-import edu.uci.ics.amber.engine.architecture.messaginglayer.{
-  BatchToTupleConverter,
-  ControlOutputPort,
-  DataOutputPort,
-  TupleToBatchConverter
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{BatchToTupleConverter, ControlOutputPort, DataOutputPort, TupleToBatchConverter}
 import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue._
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.PauseHandler.PauseWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
@@ -19,19 +14,11 @@ import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, Con
 import edu.uci.ics.amber.engine.common.{InputExhausted, WorkflowLogger}
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCServer}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{
-  Completed,
-  Ready,
-  Running
-}
+import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{Completed, Ready, Running}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.WorkerActorVirtualIdentity
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  LayerIdentity,
-  LinkIdentity
-}
-import edu.uci.ics.amber.engine.recovery.{DPLogManager, InMemoryLogStorage, LogStorage}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LayerIdentity, LinkIdentity}
+import edu.uci.ics.amber.engine.recovery.{DPLogManager, InMemoryLogStorage, InputCounter, LogStorage, ParallelLogWriter}
 import edu.uci.ics.texera.workflow.common.operators.OperatorExecutor
 import lbmq.LinkedBlockingMultiQueue
 import org.scalamock.scalatest.MockFactory
@@ -48,7 +35,9 @@ class DataProcessorSpec extends AnyFlatSpec with MockFactory with BeforeAndAfter
   lazy val batchProducer: TupleToBatchConverter = mock[TupleToBatchConverter]
   lazy val breakpointManager: BreakpointManager = mock[BreakpointManager]
   lazy val controlOutputPort: ControlOutputPort = mock[ControlOutputPort]
-  lazy val logStorage: LogStorage[Long] = new InMemoryLogStorage[Long]("testDPLog")
+  lazy val logStorage: LogStorage = new InMemoryLogStorage("testDPLog")
+  lazy val logWriter:ParallelLogWriter = mock[ParallelLogWriter]
+  lazy val inputCounter:InputCounter = wire[InputCounter]
   lazy val replayManager: DPLogManager = wire[DPLogManager]
   val id = WorkerActorVirtualIdentity("testDPActor")
   val linkID: LinkIdentity =

@@ -5,6 +5,8 @@ import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, Vi
 
 sealed trait WorkflowMessage extends Serializable
 
+sealed trait LogWriterPayload extends Serializable
+
 trait WorkflowFIFOMessage extends WorkflowMessage {
   val from: VirtualIdentity
   val sequenceNumber: Long
@@ -14,7 +16,7 @@ case class WorkflowControlMessage(
     from: VirtualIdentity,
     sequenceNumber: Long,
     payload: ControlPayload
-) extends WorkflowFIFOMessage
+) extends WorkflowFIFOMessage with LogWriterPayload with LogRecord
 
 case class WorkflowDataMessage(
     from: VirtualIdentity,
@@ -25,3 +27,12 @@ case class WorkflowDataMessage(
 sealed trait RecoveryMessage extends WorkflowMessage
 final case class TriggerRecovery(nodeAddr: Address) extends RecoveryMessage
 final case class RecoveryCompleted(id: ActorVirtualIdentity) extends RecoveryMessage
+
+
+case class DataBatchSequence(virtualId: VirtualIdentity, batchSize:Int) extends LogWriterPayload
+case class DPCursor(idx:Long) extends LogWriterPayload with LogRecord
+case object ShutdownWriter extends LogWriterPayload
+
+
+sealed trait LogRecord
+case class FromSender(virtualId:VirtualIdentity) extends LogRecord

@@ -1,14 +1,18 @@
 package edu.uci.ics.amber.engine.recovery
 
+import edu.uci.ics.amber.engine.common.ambermessage.DPCursor
+
 import scala.collection.mutable
 
-class DPLogManager(logStorage: LogStorage[Long]) extends LogManager(logStorage) {
-  private val correlatedSeq = logStorage.load().to[mutable.Queue]
+class DPLogManager(logStorage: LogStorage, logWriter: ParallelLogWriter) extends RecoveryComponent {
+  private val correlatedSeq = logStorage.getLogs.collect{
+    case DPCursor(idx) => idx
+  }.to[mutable.Queue]
 
   checkIfCompleted()
 
   def persistCurrentDataCursor(cur: Long): Unit = {
-    logStorage.persistElement(cur)
+    logWriter.addLogRecord(DPCursor(cur))
   }
 
   def isCurrentCorrelated(cur: Long): Boolean = {

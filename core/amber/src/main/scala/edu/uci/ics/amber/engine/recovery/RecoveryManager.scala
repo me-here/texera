@@ -3,20 +3,14 @@ package edu.uci.ics.amber.engine.recovery
 import akka.actor.{ActorContext, Address}
 import edu.uci.ics.amber.engine.architecture.controller.Workflow
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{GetActorRef, NetworkSenderActorRef, SendRequest}
-import edu.uci.ics.amber.engine.common.ambermessage.{WorkflowControlMessage, WorkflowMessage}
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
-import edu.uci.ics.amber.engine.recovery.DataLogManager.DataLogElement
 
 import scala.collection.mutable
 
 object RecoveryManager {
-  def defaultControlLogStorage(
+  def defaultLogStorage(
       id: ActorVirtualIdentity
-  ) = new HDFSLogStorage[WorkflowControlMessage](id.toString+"control")
-
-  def defaultDataLogStorage(id: ActorVirtualIdentity) = new HDFSLogStorage[DataLogElement](id.toString+"data")
-
-  def defaultDPLogStorage(id: ActorVirtualIdentity) = new HDFSLogStorage[Long](id.toString+"dp")
+  ) = new EmptyLogStorage(id.toString)
 }
 
 class RecoveryManager(
@@ -56,9 +50,7 @@ class RecoveryManager(
         onNode,
         context,
         communicationActor.ref,
-        RecoveryManager.defaultControlLogStorage(id),
-        RecoveryManager.defaultDataLogStorage(id),
-        RecoveryManager.defaultDPLogStorage(id)
+        RecoveryManager.defaultLogStorage(id)
       )
     isRecovering.add(id)
   }

@@ -12,7 +12,7 @@ import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, Vi
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
-import edu.uci.ics.amber.engine.recovery.{ControlLogManager, EmptyLogStorage}
+import edu.uci.ics.amber.engine.recovery.{ControlLogManager, EmptyLogStorage, ParallelLogWriter}
 
 class TrivialControlTester(id: ActorVirtualIdentity, parentNetworkCommunicationActorRef: ActorRef)
     extends WorkflowActor(id, parentNetworkCommunicationActorRef) {
@@ -22,7 +22,9 @@ class TrivialControlTester(id: ActorVirtualIdentity, parentNetworkCommunicationA
   override val rpcHandlerInitializer: AsyncRPCHandlerInitializer =
     wire[TesterAsyncRPCHandlerInitializer]
 
-  override val controlLogManager: ControlLogManager = new ControlLogManager(new EmptyLogStorage[WorkflowControlMessage],controlInputPort)
+  val logStorage = new EmptyLogStorage(id.toString)
+  lazy val logWriter:ParallelLogWriter = new ParallelLogWriter(logStorage, networkCommunicationActor)
+  override val controlLogManager: ControlLogManager = new ControlLogManager(logStorage,logWriter,controlInputPort)
 
   override def receive: Receive = {
     disallowActorRefRelatedMessages orElse {

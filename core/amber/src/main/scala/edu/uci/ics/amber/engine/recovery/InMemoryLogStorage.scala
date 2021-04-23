@@ -1,16 +1,19 @@
 package edu.uci.ics.amber.engine.recovery
 
+import edu.uci.ics.amber.engine.common.ambermessage.{DPCursor, DataBatchSequence, FromSender, LogRecord, LogWriterPayload, WorkflowControlMessage}
+import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
+
 import scala.collection.mutable
 
 object InMemoryLogStorage {
 
-  private lazy val logs = new mutable.HashMap[String, mutable.Queue[_]]()
+  private lazy val logs = new mutable.HashMap[String, mutable.Queue[LogRecord]]()
 
-  def getLogOf[T](k: String): mutable.Queue[T] = {
+  def getLogOf(k: String): mutable.Queue[LogRecord] = {
     if (!logs.contains(k)) {
-      logs(k) = new mutable.Queue[T]()
+      logs(k) = new mutable.Queue[LogRecord]()
     }
-    logs(k).asInstanceOf[mutable.Queue[T]]
+    logs(k)
   }
 
   def clearLogOf(k: String): Unit = {
@@ -21,13 +24,23 @@ object InMemoryLogStorage {
 
 }
 
-class InMemoryLogStorage[T](logName: String) extends LogStorage[T] {
+class InMemoryLogStorage(logName: String) extends LogStorage(logName) {
 
-  override def persistElement(elem: T): Unit = {
-    InMemoryLogStorage.getLogOf(logName).enqueue(elem)
+  override def writeControlLogRecord(record: WorkflowControlMessage): Unit = {
+    InMemoryLogStorage.getLogOf(logName).enqueue(record)
   }
 
-  override def load(): Iterable[T] = {
+  override def writeDataLogRecord(from:VirtualIdentity): Unit = {
+    InMemoryLogStorage.getLogOf(logName).enqueue(FromSender(from))
+  }
+
+  override def writeDPLogRecord(idx:Long): Unit = {
+    InMemoryLogStorage.getLogOf(logName).enqueue(DPCursor(idx))
+  }
+
+  override def commit(): Unit = {}
+
+  override def getLogs: Iterable[LogRecord] = {
     InMemoryLogStorage.getLogOf(logName)
   }
 
@@ -36,4 +49,5 @@ class InMemoryLogStorage[T](logName: String) extends LogStorage[T] {
   }
 
   override def release(): Unit = {}
+
 }
