@@ -8,13 +8,14 @@ object Constants {
   val remoteHDFSIP = "10.138.0.2"
   var defaultNumWorkers = 0
   var dataset = 0
-  var masterNodeAddr: String = ""
+  var masterNodeAddr: String = null
 
   var numWorkerPerNode = 2
   var dataVolumePerNode = 10
   var defaultTau: FiniteDuration = 10.milliseconds
 
   // join-skew reserach related
+  val gcpExp: Boolean = true
   val onlyDetectSkew: Boolean = true
   val startDetection: FiniteDuration = 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
@@ -23,7 +24,7 @@ object Constants {
   // sort-skew research related
   val lowerLimit: Float = 0f
   val upperLimit: Float = 350000f
-  val sortExperiment: Boolean = true
+  val sortExperiment: Boolean = false
 
   type joinType = String
 }

@@ -19,7 +19,7 @@ object AmberUtils {
   def startActorMaster(localhost: Boolean): ActorSystem = {
     var localIpAddress = "localhost"
     if (!localhost) {
-      if (Constants.masterNodeAddr.isBlank()) {
+      if (!Constants.gcpExp) {
         try {
           val query = new URL("http://checkip.amazonaws.com")
           val in = new BufferedReader(new InputStreamReader(query.openStream()))
@@ -28,7 +28,8 @@ object AmberUtils {
           case e: Exception => throw e
         }
       } else {
-        localIpAddress = Constants.masterNodeAddr
+        val localhost: InetAddress = InetAddress.getLocalHost
+        localIpAddress = localhost.getHostAddress
       }
     }
 
@@ -54,7 +55,7 @@ object AmberUtils {
     val addr = mainNodeAddress.getOrElse("localhost")
     var localIpAddress = "localhost"
     if (!mainNodeAddress.isEmpty) {
-      if (Constants.masterNodeAddr.isBlank()) {
+      if (!Constants.gcpExp) {
         try {
           val query = new URL("http://checkip.amazonaws.com")
           val in = new BufferedReader(new InputStreamReader(query.openStream()))
