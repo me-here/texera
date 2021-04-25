@@ -13,15 +13,6 @@ object WebUtils {
   val config: Config =
     ConfigFactory.parseFile(Utils.amberHomePath.resolve("../conf").resolve("web.conf").toFile)
 
-  val resultBaseDirectory: Path =
-    Utils.amberHomePath
-      .resolve("../user-resources")
-      .resolve(WebUtils.config.getString("userResource.workflowResultPath"));
-
-  def locateResultFile(uid: String, fileName: String): File = {
-    resultBaseDirectory.resolve(uid).resolve(fileName).toFile
-  }
-
   def startActorMaster(localhost: Boolean): ActorSystem = {
     var localIpAddress = "localhost"
     if (!localhost) {

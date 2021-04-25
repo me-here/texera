@@ -24,7 +24,8 @@ class FileSinkOpExec(
   override def open(): Unit = {
     // currently assume server and client are on the same machine so file could be accessed locally
     // TODO change the file saving so that server and client could access the file on different machine
-    val file: File = WebUtils.locateResultFile(userId.toString, fileName + fileType.fileSuffix)
+    val file: File =
+      FileSinkOpHelper.locateResultFile(userId.toString, fileName + fileType.fileSuffix)
     val directory: Path = file.toPath.getParent
 
     try {

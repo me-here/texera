@@ -6,7 +6,11 @@ import com.github.tototoshi.csv.CSVReader
 import edu.uci.ics.texera.web.WebUtils
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType}
-import edu.uci.ics.texera.workflow.operators.sink.file.{FileSinkOpExec, ResultFileType}
+import edu.uci.ics.texera.workflow.operators.sink.file.{
+  FileSinkOpExec,
+  FileSinkOpHelper,
+  ResultFileType
+}
 import org.jooq.types.UInteger
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
@@ -32,7 +36,7 @@ class FileSinkOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
   }
   after {
     val file: File =
-      WebUtils.locateResultFile(testUid.toString, testFileName + testFileType.fileSuffix)
+      FileSinkOpHelper.locateResultFile(testUid.toString, testFileName + testFileType.fileSuffix)
     if (file.exists()) file.delete()
   }
 
@@ -41,7 +45,7 @@ class FileSinkOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
     fileSinkOpExec.close()
 
     val file: File =
-      WebUtils.locateResultFile(testUid.toString, testFileName + testFileType.fileSuffix)
+      FileSinkOpHelper.locateResultFile(testUid.toString, testFileName + testFileType.fileSuffix)
     assert(file.exists)
     assert(file.canRead)
   }
@@ -52,7 +56,7 @@ class FileSinkOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
     fileSinkOpExec.close()
 
     val file: File =
-      WebUtils.locateResultFile(testUid.toString, testFileName + testFileType.fileSuffix)
+      FileSinkOpHelper.locateResultFile(testUid.toString, testFileName + testFileType.fileSuffix)
     val reader: CSVReader = CSVReader.open(file)
     val result: List[List[String]] = reader.all()
 

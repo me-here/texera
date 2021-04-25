@@ -4,6 +4,7 @@ import com.google.common.io.Files;
 import edu.uci.ics.texera.web.WebUtils;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.User;
 import edu.uci.ics.texera.web.resource.auth.UserResource;
+import edu.uci.ics.texera.workflow.operators.sink.file.FileSinkOpHelper;
 import edu.uci.ics.texera.workflow.operators.sink.file.ResultFileType;
 import io.dropwizard.jersey.sessions.Session;
 import scala.Option;
@@ -35,7 +36,7 @@ public class WorkflowResultDownloadResource {
         String userId = userOptional.get().getUid().toString();
 
         String downloadName = fileName + ResultFileType.getFileSuffix(downloadType);
-        File file = WebUtils.locateResultFile(userId, downloadName);
+        File file = FileSinkOpHelper.locateResultFile(userId, downloadName);
 
         if (!file.exists()) {
             return Response.status(Status.NOT_FOUND).build();

@@ -20,12 +20,12 @@ import static scala.collection.JavaConverters.asScalaBuffer;
 public class FileSinkOpDesc extends SinkOpDesc {
 
     @JsonProperty(required = true)
-    @JsonSchemaTitle("file name")
+    @JsonSchemaTitle("File Name")
     @JsonPropertyDescription("The file name to save to workflow results")
     public String fileName;
 
     @JsonProperty(required = true)
-    @JsonSchemaTitle("file type")
+    @JsonSchemaTitle("File Type")
     @JsonPropertyDescription("The type to save the workflow results to")
     public ResultFileType fileType;
 
@@ -42,7 +42,7 @@ public class FileSinkOpDesc extends SinkOpDesc {
     public OperatorInfo operatorInfo() {
         return new OperatorInfo(
                 "Save To File",
-                "save the edu.uci.ics.texera.workflow results into file",
+                "Save the edu.uci.ics.texera.workflow results into file",
                 OperatorGroupConstants.RESULT_GROUP(),
                 asScalaBuffer(singletonList(new InputPort("", false))).toList(),
                 List.empty());
