@@ -239,15 +239,15 @@ trait DetectSkewHandler {
     val loads = new mutable.HashMap[ActorVirtualIdentity, Long]()
     for ((id, currLoad) <- cmd.joinLayer.workers.keys zip metrics._1) {
       loads(id) = currLoad.stashedBatches + currLoad.unprocessedQueueLength
-      detectSkewLogger.logInfo(
-        s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue, ${currLoad.totalPutInInternalQueue} total input"
-      )
+//      detectSkewLogger.logInfo(
+//        s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue, ${currLoad.totalPutInInternalQueue} total input"
+//      )
     }
     metrics._2.foreach(replyFromNetComm => {
       for ((wId, futLoad) <- replyFromNetComm.dataToSend) {
         if (loads.contains(wId)) {
           loads(wId) = loads.getOrElse(wId, 0L) + futLoad
-          detectSkewLogger.logInfo(s"\tLOAD ${wId} - ${futLoad} going to arrive")
+          // detectSkewLogger.logInfo(s"\tLOAD ${wId} - ${futLoad} going to arrive")
         }
       }
     })
