@@ -98,7 +98,7 @@ class HashJoinOpExec[K](
             val storedTuples = buildTableHashMap.getOrElse(key, new ArrayBuffer[Tuple]())
             var tuplesToOutput: ArrayBuffer[Tuple] = new ArrayBuffer[Tuple]()
             if (storedTuples.isEmpty) {
-              Iterator()
+              return Iterator()
             }
             if (outputProbeSchema == null) {
               outputProbeSchema = createOutputProbeSchema(storedTuples(0), t)
