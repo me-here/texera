@@ -19,12 +19,16 @@ object AmberUtils {
   def startActorMaster(localhost: Boolean): ActorSystem = {
     var localIpAddress = "localhost"
     if (!localhost) {
-      try {
-        val query = new URL("http://checkip.amazonaws.com")
-        val in = new BufferedReader(new InputStreamReader(query.openStream()))
-        localIpAddress = in.readLine()
-      } catch {
-        case e: Exception => throw e
+      if (Constants.masterNodeAddr.isBlank()) {
+        try {
+          val query = new URL("http://checkip.amazonaws.com")
+          val in = new BufferedReader(new InputStreamReader(query.openStream()))
+          localIpAddress = in.readLine()
+        } catch {
+          case e: Exception => throw e
+        }
+      } else {
+        localIpAddress = Constants.masterNodeAddr
       }
     }
 
