@@ -6,7 +6,6 @@ import java.util.concurrent.{ExecutorService, Executors, Future, LinkedBlockingQ
 import akka.actor.ActorRef
 import com.google.common.collect.Queues
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  DisableCountCheck,
   NetworkSenderActorRef,
   UpdateCountForOutput
 }
@@ -79,8 +78,6 @@ class ParallelLogWriter(
         storage.release()
       }
     })
-  } else {
-    networkCommunicationActor ! DisableCountCheck
   }
 
   def shutdown(): Unit = {

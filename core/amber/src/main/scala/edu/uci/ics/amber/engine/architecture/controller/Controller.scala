@@ -30,6 +30,7 @@ import edu.uci.ics.amber.engine.common.ambermessage.{
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.recovery.{
   ControlLogManager,
+  EmptyLogStorage,
   InputCounter,
   LogStorage,
   ParallelLogWriter,
@@ -78,6 +79,7 @@ class Controller(
     parentNetworkCommunicationActorRef: ActorRef
 ) extends WorkflowActor(
       ActorVirtualIdentity.Controller,
+      !logStorage.isInstanceOf[EmptyLogStorage],
       parentNetworkCommunicationActorRef
     ) {
   implicit val ec: ExecutionContext = context.dispatcher
@@ -132,7 +134,7 @@ class Controller(
           ) =>
         //process reply messages
         controlLogManager.persistControlMessage(cmd)
-        stashedControlAck.enqueue((sender, id))
+        enqueueDelayedAck(stashedControlAck, (sender, id))
         controlInputPort.handleMessage(from, seqNum, payload)
       case NetworkMessage(
             id,
@@ -140,7 +142,7 @@ class Controller(
           ) =>
         //process control messages from self
         controlLogManager.persistControlMessage(cmd)
-        stashedControlAck.enqueue((sender, id))
+        enqueueDelayedAck(stashedControlAck, (sender, id))
         controlInputPort.handleMessage(ActorVirtualIdentity.Controller, seqNum, payload)
       case _ =>
         stash() //prevent other messages to be executed until initialized
@@ -153,7 +155,7 @@ class Controller(
       processRecoveryMessages orElse {
       case NetworkMessage(id, cmd @ WorkflowControlMessage(from, seqNum, payload)) =>
         controlLogManager.persistControlMessage(cmd)
-        stashedControlAck.enqueue((sender, id))
+        enqueueDelayedAck(stashedControlAck, (sender, id))
         controlInputPort.handleMessage(from, seqNum, payload)
       case other =>
         logger.logInfo(s"unhandled message: $other")

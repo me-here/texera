@@ -38,20 +38,23 @@ trait LinkWorkflowHandler {
               Seq(send(AddOutputPolicy(policy), from))
           }
         }.toSeq)
-        .map { ret =>
-          numUpstreamSender.filter(_._2 == 1).keys.map(x => send(DisableDataLog(), x))
-        }
-        .map { ret =>
-          controller.workflow.getAllOperators.foreach(_.setAllWorkerState(Ready))
-          if (controller.eventListener.workflowStatusUpdateListener != null) {
-            controller.eventListener.workflowStatusUpdateListener
-              .apply(WorkflowStatusUpdate(controller.workflow.getWorkflowStatus))
-          }
-          // for testing, report ready state to parent
-          controller.context.parent ! ControllerState.Ready
-          controller.context.become(controller.running)
-          controller.unstashAll()
-          CommandCompleted()
+        .flatMap { ret1 =>
+          Future
+            .collect(
+              numUpstreamSender.filter(_._2 == 1).keys.map(x => send(DisableDataLog(), x)).toSeq
+            )
+            .map { ret2 =>
+              controller.workflow.getAllOperators.foreach(_.setAllWorkerState(Ready))
+              if (controller.eventListener.workflowStatusUpdateListener != null) {
+                controller.eventListener.workflowStatusUpdateListener
+                  .apply(WorkflowStatusUpdate(controller.workflow.getWorkflowStatus))
+              }
+              // for testing, report ready state to parent
+              controller.context.parent ! ControllerState.Ready
+              controller.context.become(controller.running)
+              controller.unstashAll()
+              CommandCompleted()
+            }
         }
     }
   }

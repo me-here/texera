@@ -18,7 +18,7 @@ import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.recovery.{ControlLogManager, EmptyLogStorage, ParallelLogWriter}
 
 class TrivialControlTester(id: ActorVirtualIdentity, parentNetworkCommunicationActorRef: ActorRef)
-    extends WorkflowActor(id, parentNetworkCommunicationActorRef) {
+    extends WorkflowActor(id, false, parentNetworkCommunicationActorRef) {
 
   lazy val controlInputPort: NetworkInputPort[ControlPayload] =
     new NetworkInputPort[ControlPayload](this.logger, this.handleControlPayloadWithTryCatch)

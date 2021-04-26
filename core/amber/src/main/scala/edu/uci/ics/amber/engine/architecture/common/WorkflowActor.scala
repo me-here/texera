@@ -35,6 +35,7 @@ import scala.collection.mutable
 
 abstract class WorkflowActor(
     val identifier: ActorVirtualIdentity,
+    val countCheckEnabled: Boolean,
     parentNetworkCommunicationActorRef: ActorRef
 ) extends Actor
     with Stash {
@@ -49,7 +50,9 @@ abstract class WorkflowActor(
   })
 
   val networkCommunicationActor: NetworkSenderActorRef = NetworkSenderActorRef(
-    context.actorOf(NetworkCommunicationActor.props(parentNetworkCommunicationActorRef))
+    context.actorOf(
+      NetworkCommunicationActor.props(parentNetworkCommunicationActorRef, countCheckEnabled)
+    )
   )
 
   lazy val inputCounter: InputCounter = wire[InputCounter]
@@ -108,6 +111,17 @@ abstract class WorkflowActor(
     for (_ <- 0L until count) {
       val (senderRef, messageID) = queue.dequeue()
       senderRef ! NetworkAck(messageID)
+    }
+  }
+
+  final def enqueueDelayedAck(
+      queue: mutable.Queue[(ActorRef, Long)],
+      elem: (ActorRef, Long)
+  ): Unit = {
+    if (countCheckEnabled) {
+      queue.enqueue(elem)
+    } else {
+      elem._1 ! NetworkAck(elem._2)
     }
   }
 

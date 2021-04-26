@@ -76,7 +76,11 @@ class WorkflowWorker(
     operator: IOperatorExecutor,
     parentNetworkCommunicationActorRef: ActorRef,
     logStorage: LogStorage
-) extends WorkflowActor(identifier, parentNetworkCommunicationActorRef) {
+) extends WorkflowActor(
+      identifier,
+      !logStorage.isInstanceOf[EmptyLogStorage],
+      parentNetworkCommunicationActorRef
+    ) {
   implicit val ec: ExecutionContext = context.dispatcher
   implicit val timeout: Timeout = 5.seconds
 
@@ -164,7 +168,7 @@ class WorkflowWorker(
           val msg = dataLogManager.next()
           if (!dataLogManager.isRecovering) {
             dataLogManager.persistDataSender(from, payload.size, seqNum)
-            stashedDataAck.enqueue((sender, id))
+            enqueueDelayedAck(stashedDataAck, (sender, id))
           } else {
             sender ! NetworkAck(id)
           }
@@ -172,7 +176,7 @@ class WorkflowWorker(
         }
       } else {
         dataLogManager.persistDataSender(from, payload.size, seqNum)
-        stashedDataAck.enqueue((sender, id))
+        enqueueDelayedAck(stashedDataAck, (sender, id))
         dataInputPort.handleMessage(from, seqNum, payload)
       }
       processingTime += System.currentTimeMillis() - start
@@ -182,7 +186,7 @@ class WorkflowWorker(
     case NetworkMessage(id, cmd @ WorkflowControlMessage(from, seqNum, payload)) =>
       val start = System.currentTimeMillis()
       controlLogManager.persistControlMessage(cmd)
-      stashedControlAck.enqueue((sender, id))
+      enqueueDelayedAck(stashedControlAck, (sender, id))
       try {
         // use control input port to pass control messages
         controlInputPort.handleMessage(from, seqNum, payload)

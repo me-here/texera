@@ -24,6 +24,6 @@ class OneToOne(from: WorkerLayer, to: WorkerLayer, batchSize: Int)
   override def getMappingFromDownstreamToUpstream
       : Map[ActorVirtualIdentity, Iterable[ActorVirtualIdentity]] = {
     assert(from.isBuilt && to.isBuilt && from.numWorkers == to.numWorkers)
-    from.identifiers.indices.map(x => from.identifiers(x) -> Iterable(to.identifiers(x))).toMap
+    from.identifiers.indices.map(x => to.identifiers(x) -> Iterable(from.identifiers(x))).toMap
   }
 }
