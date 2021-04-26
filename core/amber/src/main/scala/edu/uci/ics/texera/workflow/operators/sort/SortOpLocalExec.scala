@@ -66,12 +66,13 @@ class SortOpLocalExec(
       return
     }
 
+    sortedList.append(tuple)
     if (sortedList.length % Constants.sortingFrequency == 0) {
       sortedList.sortWith(
         _.getField(sortAttributeName).asInstanceOf[Float] > _.getField(sortAttributeName)
           .asInstanceOf[Float]
       )
-    } else {}
+    }
 
 //    var currIdx: Int = sortedList.length - 1
 //    var lastElem: Tuple = null
