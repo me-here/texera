@@ -52,8 +52,8 @@ class ControllerAsyncRPCHandlerInitializer(
 
   def updateFrontendWorkflowStatus(): Unit = {
     if (controller.eventListener.workflowStatusUpdateListener != null) {
-      controller.eventListener.workflowStatusUpdateListener
-        .apply(WorkflowStatusUpdate(controller.workflow.getWorkflowStatus))
+      sendToOWP(() =>  controller.eventListener.workflowStatusUpdateListener
+        .apply(WorkflowStatusUpdate(controller.workflow.getWorkflowStatus)))
     }
   }
 

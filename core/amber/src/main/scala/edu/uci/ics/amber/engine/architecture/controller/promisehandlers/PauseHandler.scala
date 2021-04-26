@@ -68,8 +68,8 @@ trait PauseHandler {
             .map { ret =>
               // for each paused operator, send the input tuple
               if (controller.eventListener.reportCurrentTuplesListener != null) {
-                controller.eventListener.reportCurrentTuplesListener
-                  .apply(ReportCurrentProcessingTuple(operator.id.operator, buffer.toArray))
+                sendToOWP(() => controller.eventListener.reportCurrentTuplesListener
+                  .apply(ReportCurrentProcessingTuple(operator.id.operator, buffer.toArray)))
               }
             }
         }.toSeq)
@@ -78,7 +78,7 @@ trait PauseHandler {
           updateFrontendWorkflowStatus()
           // send paused to frontend
           if (controller.eventListener.workflowPausedListener != null) {
-            controller.eventListener.workflowPausedListener.apply(WorkflowPaused())
+            sendToOWP(() => controller.eventListener.workflowPausedListener.apply(WorkflowPaused()))
           }
           disableStatusUpdate() // to be enabled in resume
           controller.context.parent ! ControllerState.Paused // for testing

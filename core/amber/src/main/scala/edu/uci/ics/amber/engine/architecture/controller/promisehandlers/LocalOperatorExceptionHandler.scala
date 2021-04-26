@@ -37,7 +37,7 @@ trait LocalOperatorExceptionHandler {
     {
       // report the faulted tuple to the frontend with the exception
       if (controller.eventListener.breakpointTriggeredListener != null) {
-        controller.eventListener.breakpointTriggeredListener.apply(
+        sendToOWP(() => controller.eventListener.breakpointTriggeredListener.apply(
           BreakpointTriggered(
             mutable.HashMap(
               (sender, FaultedTuple(msg.triggeredTuple, 0)) -> Array(
@@ -46,7 +46,7 @@ trait LocalOperatorExceptionHandler {
             ),
             controller.workflow.getOperator(sender).id.operator
           )
-        )
+        ))
       }
       // then pause the workflow
       execute(PauseWorkflow(), ActorVirtualIdentity.Controller)

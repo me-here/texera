@@ -12,7 +12,7 @@ class ControlLogManager(
   // For recovery, only need to replay control messages, and then it's done
   storage.getLogs.foreach {
     case msg:WorkflowControlMessage =>
-      controlInputPort.handleAfterFIFO(msg.from, msg.sequenceNumber, msg.payload)
+      controlInputPort.handleMessage(msg.from, msg.sequenceNumber, msg.payload)
     case other =>
       //skip
   }

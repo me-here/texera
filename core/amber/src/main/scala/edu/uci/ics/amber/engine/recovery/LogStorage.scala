@@ -9,7 +9,7 @@ abstract class LogStorage(val id:String) extends Serializable {
   // for persist:
   def writeControlLogRecord(record:WorkflowControlMessage)
 
-  def writeDataLogRecord(from:VirtualIdentity)
+  def writeDataLogRecord(from:VirtualIdentity, seq:Long)
 
   def writeDPLogRecord(cursor:Long)
 

@@ -2,7 +2,7 @@ package edu.uci.ics.amber.engine.architecture.messaginglayer
 
 import akka.actor.{Actor, ActorRef, Cancellable, Props}
 import com.typesafe.scalalogging.LazyLogging
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{DisableCountCheck, GetActorRef, MessageBecomesDeadLetter, NetworkAck, NetworkMessage, RegisterActorRef, ResendMessages, SendRequest, UpdateCount}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{CommittableRequest, DisableCountCheck, GetActorRef, MessageBecomesDeadLetter, NetworkAck, NetworkMessage, RegisterActorRef, ResendMessages, SendRequest, SendRequestOWP, UpdateCountForOutput}
 import edu.uci.ics.amber.engine.common.amberexception.WorkflowRuntimeException
 import edu.uci.ics.amber.engine.common.ambermessage.WorkflowMessage
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
@@ -24,7 +24,14 @@ object NetworkCommunicationActor {
     }
   }
 
-  final case class SendRequest(id: ActorVirtualIdentity, message: WorkflowMessage, inputDataCount:Long, inputControlCount:Long)
+  sealed trait CommittableRequest{
+    val inputDataCount:Long
+    val inputControlCount:Long
+  }
+
+  final case class SendRequest(id: ActorVirtualIdentity, message: WorkflowMessage, inputDataCount:Long, inputControlCount:Long) extends CommittableRequest
+
+  final case class SendRequestOWP(closure:() => Unit, inputDataCount:Long, inputControlCount:Long) extends CommittableRequest
 
   /** Identifier <-> ActorRef related messages
     */
@@ -47,7 +54,7 @@ object NetworkCommunicationActor {
 
   final case class MessageBecomesDeadLetter(message: NetworkMessage)
 
-  final case class UpdateCount(dataCount:Long, controlCount:Long)
+  final case class UpdateCountForOutput(dataCount:Long, controlCount:Long)
 
   final case object DisableCountCheck
 
@@ -76,7 +83,7 @@ class NetworkCommunicationActor(parentRef: ActorRef) extends Actor with LazyLogg
 
   var dataCountFromLogWriter = 0L
   var controlCountFromLogWriter = 0L
-  val delayedRequests = new mutable.Queue[SendRequest]()
+  val delayedRequests = new mutable.Queue[CommittableRequest]()
   var countCheckEnabled = true
 
   //add parent actor into idMap
@@ -150,14 +157,14 @@ class NetworkCommunicationActor(parentRef: ActorRef) extends Actor with LazyLogg
   }
 
   def sendMessagesAndReceiveAcks: Receive = {
-    case req @ SendRequest(id, msg, dataCount, controlCount) =>
+    case req: CommittableRequest =>
       //println(s"receive send request for $dataCount, $controlCount. From log writer: $dataCountFromLogWriter, $controlCountFromLogWriter")
-      if(countCheckEnabled && (dataCount > dataCountFromLogWriter || controlCount > controlCountFromLogWriter)){
+      if(countCheckEnabled && (req.inputDataCount > dataCountFromLogWriter || req.inputControlCount > controlCountFromLogWriter)){
         delayedRequests.enqueue(req)
       }else{
-        handleSendRequest(id, msg)
+        handleRequest(req)
       }
-    case UpdateCount(dc, cc) =>
+    case UpdateCountForOutput(dc, cc) =>
       //println(s"updated count from log writer: $dc, $cc")
       dataCountFromLogWriter = dc
       controlCountFromLogWriter = cc
@@ -167,7 +174,7 @@ class NetworkCommunicationActor(parentRef: ActorRef) extends Actor with LazyLogg
           cont = false
         }else{
           val req = delayedRequests.dequeue()
-          handleSendRequest(req.id, req.message)
+          handleRequest(req)
           cont = delayedRequests.nonEmpty
         }
       }
@@ -222,13 +229,18 @@ class NetworkCommunicationActor(parentRef: ActorRef) extends Actor with LazyLogg
   }
 
   @inline
-  private[this] def handleSendRequest(id: ActorVirtualIdentity, msg: WorkflowMessage): Unit = {
-    if (idToActorRefs.contains(id)) {
-      forwardMessage(id, msg)
-    } else {
-      val stash = messageStash.getOrElseUpdate(id, new mutable.Queue[WorkflowMessage]())
-      stash.enqueue(msg)
-      getActorRefMappingFromParent(id)
+  private[this] def handleRequest(request:CommittableRequest): Unit = {
+    request match {
+      case SendRequest(id, msg, _, _) =>
+        if (idToActorRefs.contains(id)) {
+          forwardMessage(id, msg)
+        } else {
+          val stash = messageStash.getOrElseUpdate(id, new mutable.Queue[WorkflowMessage]())
+          stash.enqueue(msg)
+          getActorRefMappingFromParent(id)
+        }
+      case SendRequestOWP(closure, _, _) =>
+        closure()
     }
   }
 

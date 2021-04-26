@@ -103,9 +103,9 @@ trait LocalBreakpointTriggeredHandler {
                 } else {
                   // other wise, report to frontend and pause entire workflow
                   if (controller.eventListener.breakpointTriggeredListener != null) {
-                    controller.eventListener.breakpointTriggeredListener.apply(
+                    sendToOWP(() => controller.eventListener.breakpointTriggeredListener.apply(
                       BreakpointTriggered(mutable.HashMap.empty, opID)
-                    )
+                    ))
                   }
                   execute(PauseWorkflow(), ActorVirtualIdentity.Controller)
                 }

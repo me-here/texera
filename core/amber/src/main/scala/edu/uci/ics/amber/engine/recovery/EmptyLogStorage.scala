@@ -14,7 +14,7 @@ class EmptyLogStorage(id:String) extends LogStorage(id) {
 
   override def getLogs: Iterable[LogRecord] = Iterable.empty
 
-  override def writeDataLogRecord(from: VirtualIdentity): Unit = {}
+  override def writeDataLogRecord(from: VirtualIdentity, seq:Long): Unit = {}
 
   override def writeDPLogRecord(cursor: Long): Unit = {}
 }

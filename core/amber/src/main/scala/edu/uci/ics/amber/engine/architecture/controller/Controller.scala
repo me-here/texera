@@ -12,7 +12,7 @@ import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{ErrorOc
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LinkWorkflowHandler.LinkWorkflow
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkAck, NetworkMessage, RegisterActorRef}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
-import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, RecoveryCompleted, RecoveryMessage, TriggerRecovery, WorkflowControlMessage}
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, RecoveryCompleted, RecoveryMessage, TriggerRecovery, UpdateCountForInput, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.recovery.{ControlLogManager, InputCounter, LogStorage, ParallelLogWriter, RecoveryManager}
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity, WorkflowIdentity}
@@ -72,7 +72,7 @@ class Controller(
   val controlLogManager: ControlLogManager = wire[ControlLogManager]
   val recoveryManager = wire[RecoveryManager]
 
-  lazy val logWriter:ParallelLogWriter = new ParallelLogWriter(logStorage, networkCommunicationActor, true)
+  lazy val logWriter:ParallelLogWriter = new ParallelLogWriter(logStorage, self, networkCommunicationActor, true)
 
   lazy val controlInputPort: NetworkInputPort[ControlPayload] =
     new NetworkInputPort[ControlPayload](this.logger, this.handleControlPayloadWithTryCatch)
@@ -99,23 +99,24 @@ class Controller(
   override def receive: Receive = initializing
 
   def initializing: Receive = {
-    processRecoveryMessages orElse {
+    processRecoveryMessages orElse
+      receiveCountUpdate orElse {
       case NetworkMessage(
             id,
             cmd @ WorkflowControlMessage(from, seqNum, payload: ReturnPayload)
           ) =>
         //process reply messages
         controlLogManager.persistControlMessage(cmd)
-        controlInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
+        stashedControlAck.enqueue((sender, id))
+        controlInputPort.handleMessage(from, seqNum, payload)
       case NetworkMessage(
             id,
             cmd @ WorkflowControlMessage(ActorVirtualIdentity.Controller, seqNum, payload)
           ) =>
         //process control messages from self
         controlLogManager.persistControlMessage(cmd)
+        stashedControlAck.enqueue((sender, id))
         controlInputPort.handleMessage(
-        this.sender(),
-        id,
         ActorVirtualIdentity.Controller,
         seqNum,
         payload)
@@ -126,10 +127,12 @@ class Controller(
 
   def running: Receive = {
     acceptDirectInvocations orElse
+      receiveCountUpdate orElse
       processRecoveryMessages orElse {
       case NetworkMessage(id, cmd @ WorkflowControlMessage(from, seqNum, payload)) =>
         controlLogManager.persistControlMessage(cmd)
-        controlInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
+        stashedControlAck.enqueue((sender, id))
+        controlInputPort.handleMessage(from, seqNum, payload)
       case other =>
         logger.logInfo(s"unhandled message: $other")
     }
@@ -193,6 +196,12 @@ class Controller(
         case RecoveryCompleted(id) =>
           recoveryManager.setRecoverCompleted(id)
       }
+  }
+
+  final def receiveCountUpdate:Receive = {
+    case UpdateCountForInput(dc,cc) =>
+      replyAcks(stashedControlAck, cc - controlCount)
+      controlCount = cc
   }
 
 }

@@ -23,7 +23,7 @@ class TrivialControlTester(id: ActorVirtualIdentity, parentNetworkCommunicationA
     wire[TesterAsyncRPCHandlerInitializer]
 
   val logStorage = new EmptyLogStorage(id.toString)
-  lazy val logWriter:ParallelLogWriter = new ParallelLogWriter(logStorage, networkCommunicationActor)
+  lazy val logWriter:ParallelLogWriter = new ParallelLogWriter(logStorage, self, networkCommunicationActor)
   override val controlLogManager: ControlLogManager = new ControlLogManager(logStorage,logWriter,controlInputPort)
 
   override def receive: Receive = {
@@ -34,8 +34,6 @@ class TrivialControlTester(id: ActorVirtualIdentity, parentNetworkCommunicationA
           ) =>
         logger.logInfo(s"received ${internalMessage}")
         this.controlInputPort.handleMessage(
-          this.sender(),
-          id,
           from,
           sequenceNumber,
           payload

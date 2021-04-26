@@ -3,16 +3,17 @@ package edu.uci.ics.amber.engine.architecture.common
 import akka.actor.{Actor, ActorRef, Stash}
 import com.softwaremill.macwire.wire
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.FatalErrorHandler.FatalError
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{GetActorRef, NetworkMessage, NetworkSenderActorRef, RegisterActorRef}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{GetActorRef, NetworkAck, NetworkMessage, NetworkSenderActorRef, RegisterActorRef}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{ControlOutputPort, NetworkCommunicationActor}
 import edu.uci.ics.amber.engine.common.WorkflowLogger
-import edu.uci.ics.amber.engine.common.ambermessage.WorkflowControlMessage
-import edu.uci.ics.amber.engine.common.ambermessage.WorkflowControlMessage
+import edu.uci.ics.amber.engine.common.ambermessage.{UpdateCountForInput, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCHandlerInitializer, AsyncRPCServer}
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.recovery.{ControlLogManager, EmptyLogStorage, InputCounter, LogStorage}
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 import edu.uci.ics.amber.error.ErrorUtils.safely
+
+import scala.collection.mutable
 
 abstract class WorkflowActor(
     val identifier: ActorVirtualIdentity,
@@ -41,6 +42,9 @@ abstract class WorkflowActor(
   // because it should be initialized with the actor itself
   val rpcHandlerInitializer: AsyncRPCHandlerInitializer
   val controlLogManager: ControlLogManager
+
+  var controlCount = 0L
+  val stashedControlAck = new mutable.Queue[(ActorRef, Long)]()
 
   def disallowActorRefRelatedMessages: Receive = {
     case GetActorRef(id, replyTo) =>
@@ -80,6 +84,13 @@ abstract class WorkflowActor(
 
   override def postStop(): Unit = {
     logger.logInfo("workflow actor stopped!")
+  }
+
+  final def replyAcks(queue:mutable.Queue[(ActorRef, Long)], count:Long): Unit ={
+    for(_ <- 0L until count) {
+      val (senderRef, messageID) = queue.dequeue()
+      senderRef ! NetworkAck(messageID)
+    }
   }
 
 }

@@ -1,6 +1,7 @@
 package edu.uci.ics.amber.engine.recovery
 
-import edu.uci.ics.amber.engine.common.ambermessage.{DataBatchSequence, DataPayload, FromSender}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.BatchToTupleConverter
+import edu.uci.ics.amber.engine.common.ambermessage.{DataBatchSequence, DataPayload, FromSender, WorkflowDataMessage}
 import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
 
 import scala.collection.mutable
@@ -8,65 +9,57 @@ import scala.collection.mutable
 object DataLogManager {
 }
 
-class DataLogManager(logStorage: LogStorage, logWriter: ParallelLogWriter) extends RecoveryComponent {
+class DataLogManager(logStorage: LogStorage, logWriter: ParallelLogWriter, batchToTupleConverter: BatchToTupleConverter) extends RecoveryComponent {
 
-  private val persistedDataOrder:mutable.Queue[VirtualIdentity] =
+  private val persistedDataOrder:mutable.Queue[FromSender] =
     logStorage
       .getLogs
       .collect {
-        case msg: FromSender =>
-          msg.virtualId
+        case msg: FromSender => msg
       }.to[mutable.Queue]
 
-  private val stashedMessages = mutable.HashMap[VirtualIdentity, mutable.Queue[DataPayload]]()
-  private var nextPayload:(VirtualIdentity, DataPayload) = _
-  private val remainingMessages = mutable.Queue[(VirtualIdentity, DataPayload)]()
+  private val stashedMessages = mutable.HashMap[FromSender, WorkflowDataMessage]()
+  private var nextMessage:WorkflowDataMessage = _
+  private val remainingMessages = mutable.Queue[WorkflowDataMessage]()
 
   checkIfCompleted()
 
-  def feedInMessage(from: VirtualIdentity, message: DataPayload): Unit ={
-    if (stashedMessages.contains(from)) {
-      stashedMessages(from).enqueue(message)
-    } else {
-      stashedMessages(from) = mutable.Queue[DataPayload](message)
-    }
+  def feedInMessage(message:WorkflowDataMessage): Unit ={
+    val from = FromSender(message.from, message.sequenceNumber)
+    stashedMessages(from) = message
   }
 
   def hasNext:Boolean= {
     checkIfCompleted()
     if(isRecovering){
-      val vid = persistedDataOrder.head
-      if (stashedMessages.contains(vid) && stashedMessages(vid).nonEmpty) {
-        val payload = stashedMessages(vid).dequeue()
-        nextPayload = (vid, payload)
+      val from = persistedDataOrder.head
+      if (stashedMessages.contains(from)) {
+        nextMessage = stashedMessages(from)
         persistedDataOrder.dequeue()
       }
     }
-    nextPayload != null || remainingMessages.nonEmpty
+    nextMessage != null || remainingMessages.nonEmpty
   }
 
-  def next():(VirtualIdentity, DataPayload)={
-    if(nextPayload != null){
-      val ret = nextPayload
-      nextPayload = null
+  def next():WorkflowDataMessage ={
+    if(nextMessage != null){
+      val ret = nextMessage
+      nextMessage = null
       ret
     }else{
       remainingMessages.dequeue()
     }
   }
 
-   def persistDataSender(vid: VirtualIdentity, batchSize: Int): Unit = {
-    logWriter.addLogRecord(DataBatchSequence(vid, batchSize))
+   def persistDataSender(vid: VirtualIdentity, batchSize: Int, seq:Long): Unit = {
+     if(batchToTupleConverter.getNumOfInputWorkers > 1){
+       logWriter.addLogRecord(DataBatchSequence(vid, batchSize, seq))
+     }
   }
 
   private[this] def checkIfCompleted(): Unit = {
     if (persistedDataOrder.isEmpty && isRecovering) {
-      stashedMessages.foreach{
-        case(vid, queue) =>
-          while(queue.nonEmpty){
-            remainingMessages.enqueue((vid, queue.dequeue()))
-        }
-      }
+      stashedMessages.values.foreach(msg => remainingMessages.enqueue(msg))
       setRecoveryCompleted()
     }
   }

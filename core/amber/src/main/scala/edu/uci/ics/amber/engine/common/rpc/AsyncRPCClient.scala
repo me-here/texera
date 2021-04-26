@@ -63,6 +63,10 @@ class AsyncRPCClient(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
     p
   }
 
+  def sendToOWP(closure:() => Unit): Unit ={
+    controlOutputPort.sendToOWP(closure)
+  }
+
   private def createPromise[T](): (Promise[T], Long) = {
     promiseID += 1
     val promise = new WorkflowPromise[T]()

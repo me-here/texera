@@ -30,8 +30,8 @@ class InMemoryLogStorage(logName: String) extends LogStorage(logName) {
     InMemoryLogStorage.getLogOf(logName).enqueue(record)
   }
 
-  override def writeDataLogRecord(from:VirtualIdentity): Unit = {
-    InMemoryLogStorage.getLogOf(logName).enqueue(FromSender(from))
+  override def writeDataLogRecord(from:VirtualIdentity, seq:Long): Unit = {
+    InMemoryLogStorage.getLogOf(logName).enqueue(FromSender(from, seq))
   }
 
   override def writeDPLogRecord(idx:Long): Unit = {

@@ -100,4 +100,6 @@ class BatchToTupleConverter(
     }
   }
 
+  def getNumOfInputWorkers:Int = inputMap.size
+
 }

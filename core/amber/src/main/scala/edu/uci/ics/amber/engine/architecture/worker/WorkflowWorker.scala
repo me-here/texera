@@ -5,11 +5,11 @@ import akka.util.Timeout
 import com.softwaremill.macwire.wire
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionStartedHandler.WorkerStateUpdated
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkMessage, RegisterActorRef, SendRequest}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkAck, NetworkMessage, RegisterActorRef, SendRequest}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{BatchToTupleConverter, DataOutputPort, NetworkInputPort, TupleToBatchConverter}
 import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue.EnableInputCounter
 import edu.uci.ics.amber.engine.common.IOperatorExecutor
-import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload, RecoveryCompleted, ShutdownWriter, WorkflowControlMessage, WorkflowDataMessage}
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload, RecoveryCompleted, ShutdownWriter, UpdateCountForInput, WorkflowControlMessage, WorkflowDataMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCHandlerInitializer}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
@@ -19,6 +19,7 @@ import edu.uci.ics.amber.engine.recovery.{ControlLogManager, DPLogManager, DataL
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
@@ -61,7 +62,7 @@ class WorkflowWorker(
   workerStateManager.assertState(Uninitialized)
   workerStateManager.transitTo(Ready)
 
-  lazy val logWriter:ParallelLogWriter = new ParallelLogWriter(logStorage, networkCommunicationActor)
+  lazy val logWriter:ParallelLogWriter = new ParallelLogWriter(logStorage, self, networkCommunicationActor)
 
   lazy val dataLogManager: DataLogManager = wire[DataLogManager]
   lazy val dpLogManager: DPLogManager = wire[DPLogManager]
@@ -79,6 +80,8 @@ class WorkflowWorker(
   lazy val breakpointManager: BreakpointManager = wire[BreakpointManager]
 
   var processingTime = 0L
+  var dataCount = 0L
+  val stashedDataAck = new mutable.Queue[(ActorRef, Long)]()
 
   if (parentNetworkCommunicationActorRef != null) {
     parentNetworkCommunicationActorRef ! RegisterActorRef(identifier, self)
@@ -108,6 +111,7 @@ class WorkflowWorker(
   def receiveAndProcessMessages: Receive = {
     disallowActorRefRelatedMessages orElse
       receiveDataMessages orElse
+      receiveCountUpdate orElse
       receiveControlMessages orElse {
       case other =>
         logger.logError(
@@ -116,10 +120,34 @@ class WorkflowWorker(
     }
   }
 
+  final def receiveCountUpdate:Receive = {
+    case UpdateCountForInput(dc,cc) =>
+      replyAcks(stashedControlAck, cc - controlCount)
+      replyAcks(stashedDataAck, dc - dataCount)
+      dataCount = dc
+      controlCount = cc
+  }
+
   final def receiveDataMessages: Receive = {
-    case NetworkMessage(id, WorkflowDataMessage(from, seqNum, payload)) =>
+    case NetworkMessage(id, dataMsg @ WorkflowDataMessage(from, seqNum, payload)) =>
       val start = System.currentTimeMillis()
-      dataInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
+      if(dataLogManager.isRecovering) {
+        dataLogManager.feedInMessage(dataMsg)
+        while(dataLogManager.hasNext){
+          val msg = dataLogManager.next()
+          if(!dataLogManager.isRecovering){
+            dataLogManager.persistDataSender(from, payload.size, seqNum)
+            stashedDataAck.enqueue((sender, id))
+          }else{
+            sender ! NetworkAck(id)
+          }
+          dataInputPort.handleMessage(msg.from, msg.sequenceNumber, msg.payload)
+        }
+      }else{
+        dataLogManager.persistDataSender(from, payload.size, seqNum)
+        stashedDataAck.enqueue((sender, id))
+        dataInputPort.handleMessage(from, seqNum, payload)
+      }
       processingTime += System.currentTimeMillis() - start
   }
 
@@ -127,9 +155,10 @@ class WorkflowWorker(
     case NetworkMessage(id, cmd @ WorkflowControlMessage(from, seqNum, payload)) =>
       val start = System.currentTimeMillis()
       controlLogManager.persistControlMessage(cmd)
+      stashedControlAck.enqueue((sender, id))
       try {
         // use control input port to pass control messages
-        controlInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
+        controlInputPort.handleMessage(from, seqNum, payload)
       } catch safely {
         case e =>
           logger.logError(WorkflowRuntimeError(e, identifier.toString))
@@ -139,16 +168,7 @@ class WorkflowWorker(
 
 
   final def handleDataPayload(from: VirtualIdentity, dataPayload: DataPayload): Unit = {
-    if(!dataLogManager.isRecovering){
-      dataLogManager.persistDataSender(from, dataPayload.size)
-      tupleProducer.processDataPayload(from, dataPayload)
-    }else{
-      dataLogManager.feedInMessage(from, dataPayload)
-      while(dataLogManager.hasNext){
-        val (vid, payload) = dataLogManager.next()
-        tupleProducer.processDataPayload(vid, payload)
-      }
-    }
+    tupleProducer.processDataPayload(from, dataPayload)
   }
 
   final def handleControlPayload(from: VirtualIdentity, controlPayload: ControlPayload): Unit = {

@@ -7,7 +7,7 @@ import java.nio.file.Files
 import com.twitter.chill.akka.AkkaSerializer
 import edu.uci.ics.amber.engine.common.ambermessage.{DPCursor, DataBatchSequence, FromSender, LogRecord, LogWriterPayload, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
-import edu.uci.ics.amber.engine.recovery.FileLogStorage.{ByteArrayReader, ByteArrayWriter, VirtualIdentityMapping, globalSerializer}
+import edu.uci.ics.amber.engine.recovery.FileLogStorage.{ByteArrayReader, ByteArrayWriter, SenderWithSeqNum, VirtualIdentityMapping, globalSerializer}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import org.apache.hadoop.fs.Syncable
 
@@ -16,7 +16,8 @@ import scala.collection.mutable
 object FileLogStorage{
   val globalSerializer = new AkkaSerializer(null)
 
-  case class VirtualIdentityMapping(vid:VirtualIdentity, id:Int)
+  case class VirtualIdentityMapping(vid:VirtualIdentity, id:Int, seq:Long)
+  case class SenderWithSeqNum(id:Int, seq:Long)
 
   class ByteArrayWriter(outputStream: DataOutputStream) {
 
@@ -92,11 +93,11 @@ abstract class FileLogStorage(logName:String) extends LogStorage(logName) {
           message match{
             case cursor: java.lang.Long =>
               loadedLogs.append(DPCursor(cursor))
-            case VirtualIdentityMapping(vid, id) =>
+            case VirtualIdentityMapping(vid, id, seq) =>
               mapping(id) = vid
-              loadedLogs.append(FromSender(vid))
-            case vidRef: java.lang.Integer =>
-              loadedLogs.append(FromSender(mapping(vidRef)))
+              loadedLogs.append(FromSender(vid, seq))
+            case SenderWithSeqNum(vidRef, seq) =>
+              loadedLogs.append(FromSender(mapping(vidRef),seq))
             case ctrl:WorkflowControlMessage =>
               loadedLogs.append(ctrl)
             case other =>
@@ -115,12 +116,12 @@ abstract class FileLogStorage(logName:String) extends LogStorage(logName) {
 
   override def writeControlLogRecord(record: WorkflowControlMessage): Unit = output.write(globalSerializer.toBinary(record))
 
-  override def writeDataLogRecord(from:VirtualIdentity): Unit = {
+  override def writeDataLogRecord(from:VirtualIdentity, seq:Long): Unit = {
     if(vidMapping.contains(from)){
-      output.write(globalSerializer.toBinary(Integer.valueOf(vidMapping(from))))
+      output.write(globalSerializer.toBinary(SenderWithSeqNum(vidMapping(from),seq)))
     }else{
       vidMapping(from) = count
-      output.write(globalSerializer.toBinary(VirtualIdentityMapping(from, count)))
+      output.write(globalSerializer.toBinary(VirtualIdentityMapping(from, count, seq)))
       count+=1
     }
   }

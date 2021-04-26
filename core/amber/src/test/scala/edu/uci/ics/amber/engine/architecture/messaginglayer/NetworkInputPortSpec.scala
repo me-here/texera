@@ -35,8 +35,6 @@ class NetworkInputPortSpec extends AnyFlatSpec with MockFactory {
 
     List(2, 1, 0, 3).foreach(id => {
       inputPort.handleMessage(
-        testActor.ref,
-        id,
         messages(id).from,
         messages(id).sequenceNumber,
         messages(id).payload
@@ -58,8 +56,6 @@ class NetworkInputPortSpec extends AnyFlatSpec with MockFactory {
 
     (0 until 10).foreach(i => {
       inputPort.handleMessage(
-        testActor.ref,
-        i,
         message.from,
         message.sequenceNumber,
         message.payload
@@ -76,8 +72,6 @@ class NetworkInputPortSpec extends AnyFlatSpec with MockFactory {
     val messageID = 0
 
     inputPort.handleMessage(
-      testActor.ref,
-      messageID,
       message.from,
       message.sequenceNumber,
       message.payload
