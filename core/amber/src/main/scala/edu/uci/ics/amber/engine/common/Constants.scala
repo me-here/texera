@@ -22,6 +22,7 @@ object Constants {
   val printResultsInConsole: Boolean = true
 
   // sort-skew research related
+  val sortingFrequency: Int = 1000
   val lowerLimit: Float = 0f
   val upperLimit: Float = 350000f
   val sortExperiment: Boolean = false

@@ -41,6 +41,13 @@ class SortOpLocalExec(
     var count = 1
     var curr = new ArrayBuffer[Tuple]
 
+    if (tuplesFromSkewedWorker.length % Constants.sortingFrequency != 0) {
+      tuplesFromSkewedWorker.sortWith(
+        _.getField(sortAttributeName).asInstanceOf[Float] > _.getField(sortAttributeName)
+          .asInstanceOf[Float]
+      )
+    }
+
     for (value <- tuplesFromSkewedWorker) {
       curr.append(value)
       if (count % 4000 == 0) {
@@ -59,28 +66,35 @@ class SortOpLocalExec(
       return
     }
 
-    var currIdx: Int = sortedList.length - 1
-    var lastElem: Tuple = null
-    while (
-      currIdx >= 0 &&
-      sortedList(currIdx).getField(sortAttributeName).asInstanceOf[Float] > tuple
-        .getField(sortAttributeName)
-        .asInstanceOf[Float]
-    ) {
-      if (currIdx == sortedList.length - 1) {
-        lastElem = sortedList(sortedList.length - 1)
-      } else {
-        sortedList(currIdx + 1) = sortedList(currIdx)
-      }
-      currIdx -= 1
-    }
-    if (lastElem != null) {
-      sortedList(currIdx + 1) = tuple
-      sortedList.append(lastElem)
-      lastElem = null
-    } else {
-      sortedList.append(tuple)
-    }
+    if (sortedList.length % Constants.sortingFrequency == 0) {
+      sortedList.sortWith(
+        _.getField(sortAttributeName).asInstanceOf[Float] > _.getField(sortAttributeName)
+          .asInstanceOf[Float]
+      )
+    } else {}
+
+//    var currIdx: Int = sortedList.length - 1
+//    var lastElem: Tuple = null
+//    while (
+//      currIdx >= 0 &&
+//      sortedList(currIdx).getField(sortAttributeName).asInstanceOf[Float] > tuple
+//        .getField(sortAttributeName)
+//        .asInstanceOf[Float]
+//    ) {
+//      if (currIdx == sortedList.length - 1) {
+//        lastElem = sortedList(sortedList.length - 1)
+//      } else {
+//        sortedList(currIdx + 1) = sortedList(currIdx)
+//      }
+//      currIdx -= 1
+//    }
+//    if (lastElem != null) {
+//      sortedList(currIdx + 1) = tuple
+//      sortedList.append(lastElem)
+//      lastElem = null
+//    } else {
+//      sortedList.append(tuple)
+//    }
 
   }
 
@@ -101,9 +115,14 @@ class SortOpLocalExec(
         }
         Iterator()
       case Right(_) =>
+        if (sortedTuples.length % Constants.sortingFrequency != 0) {
+          sortedTuples.sortWith(
+            _.getField(sortAttributeName).asInstanceOf[Float] > _.getField(sortAttributeName)
+              .asInstanceOf[Float]
+          )
+        }
         if (!sentTuplesToFree) {
           println(s"\t PRODUCED ${sortedTuples.size}")
-          // sortedTuples.toIterator
           sortedTuples.toIterator
         } else {
           println(s"\t PRODUCED ${sortedTuples.size + receivedFromFreeWorker.size}")
