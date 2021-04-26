@@ -68,8 +68,10 @@ trait PauseHandler {
             .map { ret =>
               // for each paused operator, send the input tuple
               if (controller.eventListener.reportCurrentTuplesListener != null) {
-                sendToOWP(() => controller.eventListener.reportCurrentTuplesListener
-                  .apply(ReportCurrentProcessingTuple(operator.id.operator, buffer.toArray)))
+                sendToOWP(() =>
+                  controller.eventListener.reportCurrentTuplesListener
+                    .apply(ReportCurrentProcessingTuple(operator.id.operator, buffer.toArray))
+                )
               }
             }
         }.toSeq)

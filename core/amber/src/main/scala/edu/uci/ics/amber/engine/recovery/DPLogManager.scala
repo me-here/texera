@@ -5,9 +5,11 @@ import edu.uci.ics.amber.engine.common.ambermessage.DPCursor
 import scala.collection.mutable
 
 class DPLogManager(logStorage: LogStorage, logWriter: ParallelLogWriter) extends RecoveryComponent {
-  private val correlatedSeq = logStorage.getLogs.collect{
-    case DPCursor(idx) => idx
-  }.to[mutable.Queue]
+  private val correlatedSeq = logStorage.getLogs
+    .collect {
+      case DPCursor(idx) => idx
+    }
+    .to[mutable.Queue]
 
   checkIfCompleted()
 

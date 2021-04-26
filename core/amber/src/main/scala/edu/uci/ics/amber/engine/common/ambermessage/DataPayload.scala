@@ -4,14 +4,14 @@ import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.{LinkIdentity, VirtualIdentity}
 
 sealed trait DataPayload extends Serializable {
-  val size:Int
+  val size: Int
 }
 
-final case class EndOfUpstream() extends DataPayload{
+final case class EndOfUpstream() extends DataPayload {
   override val size: Int = 1
 }
 
-final case class InputLinking(link: LinkIdentity) extends DataPayload{
+final case class InputLinking(link: LinkIdentity) extends DataPayload {
   override val size: Int = 0
 }
 

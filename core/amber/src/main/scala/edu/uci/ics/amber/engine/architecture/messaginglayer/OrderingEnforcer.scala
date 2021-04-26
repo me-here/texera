@@ -31,12 +31,12 @@ class OrderingEnforcer[T] {
   val ofoMap = new mutable.LongMap[T]
 
   def isDuplicated(sequenceNumber: Long): Boolean = {
-    if(sequenceNumber == -1)return false
+    if (sequenceNumber == -1) return false
     sequenceNumber < current || ofoMap.contains(sequenceNumber)
   }
 
   def isAhead(sequenceNumber: Long): Boolean = {
-    if(sequenceNumber == -1)return false
+    if (sequenceNumber == -1) return false
     sequenceNumber > current
   }
 

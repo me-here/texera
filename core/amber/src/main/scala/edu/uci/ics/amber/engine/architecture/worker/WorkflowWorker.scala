@@ -5,17 +5,43 @@ import akka.util.Timeout
 import com.softwaremill.macwire.wire
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionStartedHandler.WorkerStateUpdated
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkAck, NetworkMessage, RegisterActorRef, SendRequest}
-import edu.uci.ics.amber.engine.architecture.messaginglayer.{BatchToTupleConverter, DataOutputPort, NetworkInputPort, TupleToBatchConverter}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  NetworkAck,
+  NetworkMessage,
+  RegisterActorRef,
+  SendRequest
+}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{
+  BatchToTupleConverter,
+  DataOutputPort,
+  NetworkInputPort,
+  TupleToBatchConverter
+}
 import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue.EnableInputCounter
 import edu.uci.ics.amber.engine.common.IOperatorExecutor
-import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload, RecoveryCompleted, ShutdownWriter, UpdateCountForInput, WorkflowControlMessage, WorkflowDataMessage}
+import edu.uci.ics.amber.engine.common.ambermessage.{
+  ControlPayload,
+  DataPayload,
+  RecoveryCompleted,
+  ShutdownWriter,
+  UpdateCountForInput,
+  WorkflowControlMessage,
+  WorkflowDataMessage
+}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCHandlerInitializer}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager._
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
-import edu.uci.ics.amber.engine.recovery.{ControlLogManager, DPLogManager, DataLogManager, EmptyLogStorage, InputCounter, LogStorage, ParallelLogWriter}
+import edu.uci.ics.amber.engine.recovery.{
+  ControlLogManager,
+  DPLogManager,
+  DataLogManager,
+  EmptyLogStorage,
+  InputCounter,
+  LogStorage,
+  ParallelLogWriter
+}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
@@ -35,9 +61,9 @@ object WorkflowWorker {
         id,
         op,
         parentNetworkCommunicationActorRef,
-        if(logStorage == null){
+        if (logStorage == null) {
           new EmptyLogStorage(id.toString)
-        }else{
+        } else {
           logStorage
         }
       )
@@ -62,7 +88,8 @@ class WorkflowWorker(
   workerStateManager.assertState(Uninitialized)
   workerStateManager.transitTo(Ready)
 
-  lazy val logWriter:ParallelLogWriter = new ParallelLogWriter(logStorage, self, networkCommunicationActor)
+  lazy val logWriter: ParallelLogWriter =
+    new ParallelLogWriter(logStorage, self, networkCommunicationActor)
 
   lazy val dataLogManager: DataLogManager = wire[DataLogManager]
   lazy val dpLogManager: DPLogManager = wire[DPLogManager]
@@ -120,8 +147,8 @@ class WorkflowWorker(
     }
   }
 
-  final def receiveCountUpdate:Receive = {
-    case UpdateCountForInput(dc,cc) =>
+  final def receiveCountUpdate: Receive = {
+    case UpdateCountForInput(dc, cc) =>
       replyAcks(stashedControlAck, cc - controlCount)
       replyAcks(stashedDataAck, dc - dataCount)
       dataCount = dc
@@ -131,19 +158,19 @@ class WorkflowWorker(
   final def receiveDataMessages: Receive = {
     case NetworkMessage(id, dataMsg @ WorkflowDataMessage(from, seqNum, payload)) =>
       val start = System.currentTimeMillis()
-      if(dataLogManager.isRecovering) {
+      if (dataLogManager.isRecovering) {
         dataLogManager.feedInMessage(dataMsg)
-        while(dataLogManager.hasNext){
+        while (dataLogManager.hasNext) {
           val msg = dataLogManager.next()
-          if(!dataLogManager.isRecovering){
+          if (!dataLogManager.isRecovering) {
             dataLogManager.persistDataSender(from, payload.size, seqNum)
             stashedDataAck.enqueue((sender, id))
-          }else{
+          } else {
             sender ! NetworkAck(id)
           }
           dataInputPort.handleMessage(msg.from, msg.sequenceNumber, msg.payload)
         }
-      }else{
+      } else {
         dataLogManager.persistDataSender(from, payload.size, seqNum)
         stashedDataAck.enqueue((sender, id))
         dataInputPort.handleMessage(from, seqNum, payload)
@@ -165,7 +192,6 @@ class WorkflowWorker(
       }
       processingTime += System.currentTimeMillis() - start
   }
-
 
   final def handleDataPayload(from: VirtualIdentity, dataPayload: DataPayload): Unit = {
     tupleProducer.processDataPayload(from, dataPayload)
@@ -189,13 +215,14 @@ class WorkflowWorker(
   }
 
   override def postStop(): Unit = {
-    logger.logInfo(s"${identifier.toString} main thread processing time: ${processingTime/1000f}s")
+    logger.logInfo(
+      s"${identifier.toString} main thread processing time: ${processingTime / 1000f}s"
+    )
     // shutdown dp thread by sending a command
     dataProcessor.enqueueCommand(ShutdownDPThread(), ActorVirtualIdentity.Self)
     // release the resource
     logWriter.shutdown()
     super.postStop()
   }
-
 
 }

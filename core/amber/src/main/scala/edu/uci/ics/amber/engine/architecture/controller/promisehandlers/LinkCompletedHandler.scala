@@ -32,7 +32,7 @@ trait LinkCompletedHandler {
         // e.g. hash join's probe table must be started after all the tuples
         // from build table have arrived at the join operator
         val layerWithDependencies =
-        controller.workflow.getAllLayers.filter(l => !l.canStart && l.hasDependency(msg.linkID))
+          controller.workflow.getAllLayers.filter(l => !l.canStart && l.hasDependency(msg.linkID))
         layerWithDependencies.foreach { layer =>
           layer.resolveDependency(msg.linkID)
         }

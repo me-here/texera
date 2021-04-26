@@ -2,7 +2,11 @@ package edu.uci.ics.amber.engine.recovery
 
 import akka.actor.{ActorContext, Address}
 import edu.uci.ics.amber.engine.architecture.controller.Workflow
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{GetActorRef, NetworkSenderActorRef, SendRequest}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  GetActorRef,
+  NetworkSenderActorRef,
+  SendRequest
+}
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 
 import scala.collection.mutable

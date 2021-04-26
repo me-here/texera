@@ -79,7 +79,7 @@ class AsyncRPCHandlerInitializer(
     ctrlReceiver.execute((cmd, sender)).asInstanceOf[Future[T]]
   }
 
-  def sendToOWP(closure:() =>Unit): Unit ={
+  def sendToOWP(closure: () => Unit): Unit = {
     ctrlSource.sendToOWP(closure)
   }
 

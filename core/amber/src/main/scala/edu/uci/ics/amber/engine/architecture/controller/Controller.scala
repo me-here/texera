@@ -8,14 +8,38 @@ import com.twitter.util.Future
 import edu.uci.ics.amber.clustering.ClusterListener.GetAvailableNodeAddresses
 import edu.uci.ics.amber.clustering.ClusterRuntimeInfo
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
-import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{ErrorOccurred, WorkflowStatusUpdate}
+import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{
+  ErrorOccurred,
+  WorkflowStatusUpdate
+}
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LinkWorkflowHandler.LinkWorkflow
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkAck, NetworkMessage, RegisterActorRef}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  NetworkAck,
+  NetworkMessage,
+  RegisterActorRef
+}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
-import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, RecoveryCompleted, RecoveryMessage, TriggerRecovery, UpdateCountForInput, WorkflowControlMessage}
+import edu.uci.ics.amber.engine.common.ambermessage.{
+  ControlPayload,
+  RecoveryCompleted,
+  RecoveryMessage,
+  TriggerRecovery,
+  UpdateCountForInput,
+  WorkflowControlMessage
+}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
-import edu.uci.ics.amber.engine.recovery.{ControlLogManager, InputCounter, LogStorage, ParallelLogWriter, RecoveryManager}
-import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity, WorkflowIdentity}
+import edu.uci.ics.amber.engine.recovery.{
+  ControlLogManager,
+  InputCounter,
+  LogStorage,
+  ParallelLogWriter,
+  RecoveryManager
+}
+import edu.uci.ics.amber.engine.common.virtualidentity.{
+  ActorVirtualIdentity,
+  VirtualIdentity,
+  WorkflowIdentity
+}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
@@ -72,7 +96,8 @@ class Controller(
   val controlLogManager: ControlLogManager = wire[ControlLogManager]
   val recoveryManager = wire[RecoveryManager]
 
-  lazy val logWriter:ParallelLogWriter = new ParallelLogWriter(logStorage, self, networkCommunicationActor, true)
+  lazy val logWriter: ParallelLogWriter =
+    new ParallelLogWriter(logStorage, self, networkCommunicationActor, true)
 
   lazy val controlInputPort: NetworkInputPort[ControlPayload] =
     new NetworkInputPort[ControlPayload](this.logger, this.handleControlPayloadWithTryCatch)
@@ -85,7 +110,7 @@ class Controller(
 
   var statusUpdateAskHandle: Cancellable = _
 
-  controlLogManager.onComplete(()=>{
+  controlLogManager.onComplete(() => {
     inputCounter.enable()
     // activate all links
     controlOutputPort.sendTo(ActorVirtualIdentity.Self, ControlInvocation(-1, LinkWorkflow()))
@@ -116,10 +141,7 @@ class Controller(
         //process control messages from self
         controlLogManager.persistControlMessage(cmd)
         stashedControlAck.enqueue((sender, id))
-        controlInputPort.handleMessage(
-        ActorVirtualIdentity.Controller,
-        seqNum,
-        payload)
+        controlInputPort.handleMessage(ActorVirtualIdentity.Controller, seqNum, payload)
       case _ =>
         stash() //prevent other messages to be executed until initialized
     }
@@ -140,7 +162,9 @@ class Controller(
 
   def acceptDirectInvocations: Receive = {
     case invocation: ControlInvocation =>
-      controlLogManager.persistControlMessage(WorkflowControlMessage(ActorVirtualIdentity.Client,-1,invocation))
+      controlLogManager.persistControlMessage(
+        WorkflowControlMessage(ActorVirtualIdentity.Client, -1, invocation)
+      )
       asyncRPCServer.receive(invocation, ActorVirtualIdentity.Client)
   }
 
@@ -150,16 +174,16 @@ class Controller(
     }
     workflow.cleanupResults()
     ClusterRuntimeInfo.controllers.remove(self)
-    val timeSpent = (System.nanoTime()-startTime).asInstanceOf[Double]/1000000000
-    logger.logInfo("workflow finished in "+timeSpent+" seconds")
+    val timeSpent = (System.nanoTime() - startTime).asInstanceOf[Double] / 1000000000
+    logger.logInfo("workflow finished in " + timeSpent + " seconds")
     logWriter.shutdown()
     super.postStop()
   }
 
   def handleControlPayloadWithTryCatch(
-                                        from: VirtualIdentity,
-                                        controlPayload: ControlPayload
-                                      ): Unit = {
+      from: VirtualIdentity,
+      controlPayload: ControlPayload
+  ): Unit = {
     inputCounter.advanceControlInputCount()
     try {
       controlPayload match {
@@ -198,8 +222,8 @@ class Controller(
       }
   }
 
-  final def receiveCountUpdate:Receive = {
-    case UpdateCountForInput(dc,cc) =>
+  final def receiveCountUpdate: Receive = {
+    case UpdateCountForInput(dc, cc) =>
       replyAcks(stashedControlAck, cc - controlCount)
       controlCount = cc
   }

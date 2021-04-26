@@ -63,7 +63,7 @@ class AsyncRPCClient(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
     p
   }
 
-  def sendToOWP(closure:() => Unit): Unit ={
+  def sendToOWP(closure: () => Unit): Unit = {
     controlOutputPort.sendToOWP(closure)
   }
 

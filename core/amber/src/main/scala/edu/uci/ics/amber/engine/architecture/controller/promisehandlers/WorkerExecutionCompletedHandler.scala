@@ -63,12 +63,16 @@ trait WorkerExecutionCompletedHandler {
           controller.context.parent ! ControllerState.Completed // for testing
           //send result to frontend
           if (controller.eventListener.workflowCompletedListener != null) {
-            sendToOWP(() =>controller.eventListener.workflowCompletedListener
-              .apply(
-                WorkflowCompleted(
-                  controller.workflow.getEndOperators.map(op => op.id.operator -> op.results).toMap
+            sendToOWP(() =>
+              controller.eventListener.workflowCompletedListener
+                .apply(
+                  WorkflowCompleted(
+                    controller.workflow.getEndOperators
+                      .map(op => op.id.operator -> op.results)
+                      .toMap
+                  )
                 )
-              ))
+            )
           }
           disableStatusUpdate()
           controller.context.parent ! ControllerState.Completed // for testing

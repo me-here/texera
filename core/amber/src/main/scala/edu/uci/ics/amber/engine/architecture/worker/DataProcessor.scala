@@ -15,7 +15,11 @@ import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, Re
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Completed
 import edu.uci.ics.amber.engine.common.tuple.ITuple
-import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity, VirtualIdentity}
+import edu.uci.ics.amber.engine.common.virtualidentity.{
+  ActorVirtualIdentity,
+  LinkIdentity,
+  VirtualIdentity
+}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 import java.util.concurrent.{ExecutorService, Executors, Future}
@@ -35,7 +39,7 @@ class DataProcessor( // dependencies:
     stateManager: WorkerStateManager,
     asyncRPCServer: AsyncRPCServer,
     dpLogManager: DPLogManager,
-                     inputCounter:InputCounter
+    inputCounter: InputCounter
 ) extends WorkerInternalQueue {
   // dp thread stats:
   private var inputTupleCount = 0L
@@ -146,8 +150,8 @@ class DataProcessor( // dependencies:
       val start = System.currentTimeMillis()
       elem match {
         case EnableInputCounter =>
-          dpLogManager.onComplete{
-            () => inputCounter.enable()
+          dpLogManager.onComplete { () =>
+            inputCounter.enable()
           }
         case InputTuple(tuple) =>
           inputCounter.advanceDataInputCount()
@@ -156,7 +160,7 @@ class DataProcessor( // dependencies:
         case SenderChangeMarker(link) =>
           currentInputLink = link
         case EndMarker =>
-          if(currentInputLink != null){
+          if (currentInputLink != null) {
             inputCounter.advanceDataInputCount()
           }
           currentInputTuple = Right(InputExhausted())
@@ -174,7 +178,9 @@ class DataProcessor( // dependencies:
       processingTime += System.currentTimeMillis() - start
     }
     // Send Completed signal to worker actor.
-    logger.logInfo(s"${operator.toString} completed in ${(System.currentTimeMillis()-startTime)/1000f}")
+    logger.logInfo(
+      s"${operator.toString} completed in ${(System.currentTimeMillis() - startTime) / 1000f}"
+    )
     asyncRPCClient.send(WorkerExecutionCompleted(), ActorVirtualIdentity.Controller)
     stateManager.transitTo(Completed)
     disableDataQueue()
@@ -216,7 +222,7 @@ class DataProcessor( // dependencies:
   }
 
   def shutdown(): Unit = {
-    logger.logInfo(s"processing time: ${processingTime/1000f}")
+    logger.logInfo(s"processing time: ${processingTime / 1000f}")
     operator.close() // close operator
     dpThread.cancel(true) // interrupt
     dpThreadExecutor.shutdownNow() // destroy thread

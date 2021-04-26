@@ -16,7 +16,9 @@ case class WorkflowControlMessage(
     from: VirtualIdentity,
     sequenceNumber: Long,
     payload: ControlPayload
-) extends WorkflowFIFOMessage with LogWriterPayload with LogRecord
+) extends WorkflowFIFOMessage
+    with LogWriterPayload
+    with LogRecord
 
 case class WorkflowDataMessage(
     from: VirtualIdentity,
@@ -28,12 +30,12 @@ sealed trait RecoveryMessage extends WorkflowMessage
 final case class TriggerRecovery(nodeAddr: Address) extends RecoveryMessage
 final case class RecoveryCompleted(id: ActorVirtualIdentity) extends RecoveryMessage
 
-final case class UpdateCountForInput(dataCount:Long, controlCount:Long) extends WorkflowMessage
+final case class UpdateCountForInput(dataCount: Long, controlCount: Long) extends WorkflowMessage
 
-case class DataBatchSequence(virtualId: VirtualIdentity, batchSize:Int, sequenceNum:Long) extends LogWriterPayload
-case class DPCursor(idx:Long) extends LogWriterPayload with LogRecord
+case class DataBatchSequence(virtualId: VirtualIdentity, batchSize: Int, sequenceNum: Long)
+    extends LogWriterPayload
+case class DPCursor(idx: Long) extends LogWriterPayload with LogRecord
 case object ShutdownWriter extends LogWriterPayload
 
-
 sealed trait LogRecord
-case class FromSender(virtualId:VirtualIdentity, seq:Long) extends LogRecord
+case class FromSender(virtualId: VirtualIdentity, seq: Long) extends LogRecord

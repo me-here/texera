@@ -3,7 +3,10 @@ package edu.uci.ics.amber.engine.architecture.messaginglayer
 import java.util.concurrent.atomic.AtomicLong
 
 import edu.uci.ics.amber.engine.common.ambermessage.WorkflowDataMessage
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkSenderActorRef, SendRequest}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  NetworkSenderActorRef,
+  SendRequest
+}
 import edu.uci.ics.amber.engine.common.ambermessage.DataPayload
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.recovery.InputCounter
@@ -14,7 +17,11 @@ import scala.collection.mutable
   * The internal logic can send data messages to other actor without knowing
   * where the actor is and without determining the sequence number.
   */
-class DataOutputPort(selfID: ActorVirtualIdentity, networkSenderActor: NetworkSenderActorRef, inputCounter: InputCounter) {
+class DataOutputPort(
+    selfID: ActorVirtualIdentity,
+    networkSenderActor: NetworkSenderActorRef,
+    inputCounter: InputCounter
+) {
 
   private val idToSequenceNums = new mutable.AnyRefMap[ActorVirtualIdentity, AtomicLong]()
 
@@ -30,7 +37,12 @@ class DataOutputPort(selfID: ActorVirtualIdentity, networkSenderActor: NetworkSe
       idToSequenceNums.getOrElseUpdate(to, new AtomicLong()).getAndIncrement(),
       payload
     )
-    networkSenderActor ! SendRequest(to, msg, inputCounter.getDataInputCount, inputCounter.getControlInputCount)
+    networkSenderActor ! SendRequest(
+      to,
+      msg,
+      inputCounter.getDataInputCount,
+      inputCounter.getControlInputCount
+    )
   }
 
 }

@@ -16,6 +16,7 @@ import edu.uci.ics.amber.engine.common.rpc.{
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, WorkflowLogger}
+import edu.uci.ics.amber.engine.recovery.DataLogManager
 
 class WorkerAsyncRPCHandlerInitializer(
     val selfID: ActorVirtualIdentity,
@@ -29,6 +30,7 @@ class WorkerAsyncRPCHandlerInitializer(
     val breakpointManager: BreakpointManager,
     val stateManager: WorkerStateManager,
     val actorContext: ActorContext,
+    val dataLogManager: DataLogManager,
     source: AsyncRPCClient,
     receiver: AsyncRPCServer
 ) extends AsyncRPCHandlerInitializer(source, receiver)

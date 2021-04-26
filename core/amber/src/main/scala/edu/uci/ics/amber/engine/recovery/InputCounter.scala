@@ -5,19 +5,19 @@ class InputCounter {
   private var dataInputCount = 0L
   private var controlInputCount = 0L
 
-  def advanceDataInputCount(): Unit ={
-    if(enabled) dataInputCount += 1
+  def advanceDataInputCount(): Unit = {
+    if (enabled) dataInputCount += 1
   }
 
-  def advanceControlInputCount(): Unit ={
-    if(enabled) controlInputCount += 1
+  def advanceControlInputCount(): Unit = {
+    if (enabled) controlInputCount += 1
   }
 
-  def enable(): Unit ={
+  def enable(): Unit = {
     enabled = true
   }
 
-  def getDataInputCount:Long = dataInputCount
+  def getDataInputCount: Long = dataInputCount
 
-  def getControlInputCount:Long = controlInputCount
+  def getControlInputCount: Long = controlInputCount
 }

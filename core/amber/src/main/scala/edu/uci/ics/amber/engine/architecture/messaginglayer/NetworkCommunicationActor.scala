@@ -2,7 +2,19 @@ package edu.uci.ics.amber.engine.architecture.messaginglayer
 
 import akka.actor.{Actor, ActorRef, Cancellable, Props}
 import com.typesafe.scalalogging.LazyLogging
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{CommittableRequest, DisableCountCheck, GetActorRef, MessageBecomesDeadLetter, NetworkAck, NetworkMessage, RegisterActorRef, ResendMessages, SendRequest, SendRequestOWP, UpdateCountForOutput}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  CommittableRequest,
+  DisableCountCheck,
+  GetActorRef,
+  MessageBecomesDeadLetter,
+  NetworkAck,
+  NetworkMessage,
+  RegisterActorRef,
+  ResendMessages,
+  SendRequest,
+  SendRequestOWP,
+  UpdateCountForOutput
+}
 import edu.uci.ics.amber.engine.common.amberexception.WorkflowRuntimeException
 import edu.uci.ics.amber.engine.common.ambermessage.WorkflowMessage
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
@@ -24,14 +36,23 @@ object NetworkCommunicationActor {
     }
   }
 
-  sealed trait CommittableRequest{
-    val inputDataCount:Long
-    val inputControlCount:Long
+  sealed trait CommittableRequest {
+    val inputDataCount: Long
+    val inputControlCount: Long
   }
 
-  final case class SendRequest(id: ActorVirtualIdentity, message: WorkflowMessage, inputDataCount:Long, inputControlCount:Long) extends CommittableRequest
+  final case class SendRequest(
+      id: ActorVirtualIdentity,
+      message: WorkflowMessage,
+      inputDataCount: Long,
+      inputControlCount: Long
+  ) extends CommittableRequest
 
-  final case class SendRequestOWP(closure:() => Unit, inputDataCount:Long, inputControlCount:Long) extends CommittableRequest
+  final case class SendRequestOWP(
+      closure: () => Unit,
+      inputDataCount: Long,
+      inputControlCount: Long
+  ) extends CommittableRequest
 
   /** Identifier <-> ActorRef related messages
     */
@@ -54,7 +75,7 @@ object NetworkCommunicationActor {
 
   final case class MessageBecomesDeadLetter(message: NetworkMessage)
 
-  final case class UpdateCountForOutput(dataCount:Long, controlCount:Long)
+  final case class UpdateCountForOutput(dataCount: Long, controlCount: Long)
 
   final case object DisableCountCheck
 
@@ -159,9 +180,11 @@ class NetworkCommunicationActor(parentRef: ActorRef) extends Actor with LazyLogg
   def sendMessagesAndReceiveAcks: Receive = {
     case req: CommittableRequest =>
       //println(s"receive send request for $dataCount, $controlCount. From log writer: $dataCountFromLogWriter, $controlCountFromLogWriter")
-      if(countCheckEnabled && (req.inputDataCount > dataCountFromLogWriter || req.inputControlCount > controlCountFromLogWriter)){
+      if (
+        countCheckEnabled && (req.inputDataCount > dataCountFromLogWriter || req.inputControlCount > controlCountFromLogWriter)
+      ) {
         delayedRequests.enqueue(req)
-      }else{
+      } else {
         handleRequest(req)
       }
     case UpdateCountForOutput(dc, cc) =>
@@ -169,10 +192,12 @@ class NetworkCommunicationActor(parentRef: ActorRef) extends Actor with LazyLogg
       dataCountFromLogWriter = dc
       controlCountFromLogWriter = cc
       var cont = delayedRequests.nonEmpty
-      while(cont){
-        if(delayedRequests.head.inputDataCount > dc || delayedRequests.head.inputControlCount > cc){
+      while (cont) {
+        if (
+          delayedRequests.head.inputDataCount > dc || delayedRequests.head.inputControlCount > cc
+        ) {
           cont = false
-        }else{
+        } else {
           val req = delayedRequests.dequeue()
           handleRequest(req)
           cont = delayedRequests.nonEmpty
@@ -229,7 +254,7 @@ class NetworkCommunicationActor(parentRef: ActorRef) extends Actor with LazyLogg
   }
 
   @inline
-  private[this] def handleRequest(request:CommittableRequest): Unit = {
+  private[this] def handleRequest(request: CommittableRequest): Unit = {
     request match {
       case SendRequest(id, msg, _, _) =>
         if (idToActorRefs.contains(id)) {

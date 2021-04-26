@@ -3,7 +3,10 @@ package edu.uci.ics.amber.engine.architecture.control.utils
 import akka.actor.ActorRef
 import com.softwaremill.macwire.wire
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkAck, NetworkMessage}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  NetworkAck,
+  NetworkMessage
+}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
 import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
@@ -23,8 +26,10 @@ class TrivialControlTester(id: ActorVirtualIdentity, parentNetworkCommunicationA
     wire[TesterAsyncRPCHandlerInitializer]
 
   val logStorage = new EmptyLogStorage(id.toString)
-  lazy val logWriter:ParallelLogWriter = new ParallelLogWriter(logStorage, self, networkCommunicationActor)
-  override val controlLogManager: ControlLogManager = new ControlLogManager(logStorage,logWriter,controlInputPort)
+  lazy val logWriter: ParallelLogWriter =
+    new ParallelLogWriter(logStorage, self, networkCommunicationActor)
+  override val controlLogManager: ControlLogManager =
+    new ControlLogManager(logStorage, logWriter, controlInputPort)
 
   override def receive: Receive = {
     disallowActorRefRelatedMessages orElse {

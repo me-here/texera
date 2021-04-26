@@ -1,6 +1,13 @@
 package edu.uci.ics.amber.engine.recovery
 
-import edu.uci.ics.amber.engine.common.ambermessage.{DPCursor, DataBatchSequence, FromSender, LogRecord, LogWriterPayload, WorkflowControlMessage}
+import edu.uci.ics.amber.engine.common.ambermessage.{
+  DPCursor,
+  DataBatchSequence,
+  FromSender,
+  LogRecord,
+  LogWriterPayload,
+  WorkflowControlMessage
+}
 import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
 
 import scala.collection.mutable
@@ -30,11 +37,11 @@ class InMemoryLogStorage(logName: String) extends LogStorage(logName) {
     InMemoryLogStorage.getLogOf(logName).enqueue(record)
   }
 
-  override def writeDataLogRecord(from:VirtualIdentity, seq:Long): Unit = {
+  override def writeDataLogRecord(from: VirtualIdentity, seq: Long): Unit = {
     InMemoryLogStorage.getLogOf(logName).enqueue(FromSender(from, seq))
   }
 
-  override def writeDPLogRecord(idx:Long): Unit = {
+  override def writeDPLogRecord(idx: Long): Unit = {
     InMemoryLogStorage.getLogOf(logName).enqueue(DPCursor(idx))
   }
 
