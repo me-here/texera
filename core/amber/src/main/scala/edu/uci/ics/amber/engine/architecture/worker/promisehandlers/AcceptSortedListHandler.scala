@@ -6,6 +6,7 @@ import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.operators.sort.SortOpLocalExec
+import collection.JavaConverters._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -25,7 +26,7 @@ trait AcceptSortedListHandler {
         .getOperatorExecutor()
         .asInstanceOf[SortOpLocalExec]
         .receivedFromFreeWorker
-        .appendAll(cmd.sortedList)
+        .enqueue(cmd.sortedList: _*)
     } catch {
       case exception: Exception =>
         println(

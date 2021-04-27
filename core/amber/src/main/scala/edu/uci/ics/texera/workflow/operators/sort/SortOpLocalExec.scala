@@ -8,8 +8,12 @@ import edu.uci.ics.texera.workflow.common.operators.OperatorExecutor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, Schema}
 
+import java.util
+import java.util.Comparator
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.JavaConverters._
+import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 
 class SortOpLocalExec(
     val sortAttributeName: String,
@@ -19,16 +23,19 @@ class SortOpLocalExec(
     val numWorkers: Int
 ) extends OperatorExecutor {
 
-  var sortedTuples: ArrayBuffer[Tuple] = _
+  // var sortedTuples: ArrayBuffer[Tuple] = _
+  var sortedTuples: mutable.PriorityQueue[Tuple] = _
 
-  // For free workers receiving data of skewed workers
-  var tuplesFromSkewedWorker: ArrayBuffer[Tuple] = _
+  /** For free workers receiving data of skewed workers * */
+  //var tuplesFromSkewedWorker: ArrayBuffer[Tuple] = _
+  var tuplesFromSkewedWorker: mutable.PriorityQueue[Tuple] = _
   @volatile var skewedWorkerIdentity: ActorVirtualIdentity = null
 
-  // For skewed worker whose data is sent to free workers
+  /** For skewed worker whose data is sent to free workers * */
   @volatile var sentTuplesToFree: Boolean = false
   @volatile var receivedTuplesFromFree: Boolean = false
-  var receivedFromFreeWorker: ArrayBuffer[Tuple] = _
+  //var receivedFromFreeWorker: ArrayBuffer[Tuple] = _
+  var receivedFromFreeWorker: mutable.PriorityQueue[Tuple] = _
 
   val jump: Int =
     ((rangeMax - rangeMin) / numWorkers).toInt + 1
@@ -41,38 +48,34 @@ class SortOpLocalExec(
     var count = 1
     var curr = new ArrayBuffer[Tuple]
 
-    if (tuplesFromSkewedWorker.length % Constants.sortingFrequency != 0) {
-      tuplesFromSkewedWorker.sortWith(
-        _.getField(sortAttributeName).asInstanceOf[Float] > _.getField(sortAttributeName)
-          .asInstanceOf[Float]
-      )
-    }
-
-    for (value <- tuplesFromSkewedWorker) {
-      curr.append(value)
+    val it = tuplesFromSkewedWorker.toIterator
+    while (it.hasNext) {
+      curr.append(it.next())
       if (count % 4000 == 0) {
         sendingLists.append(curr)
         curr = new ArrayBuffer[Tuple]
       }
       count += 1
     }
+//    for (value <- tuplesFromSkewedWorker) {
+//      curr.append(value)
+//      if (count % 4000 == 0) {
+//        sendingLists.append(curr)
+//        curr = new ArrayBuffer[Tuple]
+//      }
+//      count += 1
+//    }
     if (!curr.isEmpty) sendingLists.append(curr)
     sendingLists
   }
 
-  def addTupleToSortedList(tuple: Tuple, sortedList: ArrayBuffer[Tuple]): Unit = {
-    if (sortedList.length == 0) {
-      sortedList.append(tuple)
-      return
-    }
+  def addTupleToSortedList(tuple: Tuple, sortedList: mutable.PriorityQueue[Tuple]): Unit = {
+    sortedList.enqueue(tuple)
 
-    sortedList.append(tuple)
-    if (sortedList.length % Constants.sortingFrequency == 0) {
-      sortedList.sortWith(
-        _.getField(sortAttributeName).asInstanceOf[Float] > _.getField(sortAttributeName)
-          .asInstanceOf[Float]
-      )
-    }
+//    if (sortedList.length == 0) {
+//      sortedList.append(tuple)
+//      return
+//    }
 
 //    var currIdx: Int = sortedList.length - 1
 //    var lastElem: Tuple = null
@@ -116,13 +119,6 @@ class SortOpLocalExec(
         }
         Iterator()
       case Right(_) =>
-        if (sortedTuples.length % Constants.sortingFrequency != 0) {
-          sortedTuples.sortWith(
-            _.getField(sortAttributeName).asInstanceOf[Float] > _.getField(sortAttributeName)
-              .asInstanceOf[Float]
-          )
-          println(s"\t SORTED OUTPUT is ${sortedTuples.mkString(",")}")
-        }
         if (!sentTuplesToFree) {
           println(s"\t PRODUCED ${sortedTuples.size}")
           sortedTuples.toIterator
@@ -131,38 +127,28 @@ class SortOpLocalExec(
 
           // merge the two sorted lists
           new Iterator[Tuple] {
-            var ownListIdx = 0
-            var gottenListIdx = 0
             override def hasNext: Boolean = {
-              (ownListIdx < sortedTuples.size || gottenListIdx < receivedFromFreeWorker.size)
+              (sortedTuples.size > 0 || receivedFromFreeWorker.size > 0)
             }
 
             override def next(): Tuple = {
-              if (ownListIdx < sortedTuples.size && gottenListIdx < receivedFromFreeWorker.size) {
+              if (sortedTuples.size > 0 && receivedFromFreeWorker.size > 0) {
                 if (
-                  sortedTuples(ownListIdx)
+                  sortedTuples.head
                     .getField(sortAttributeName)
-                    .asInstanceOf[Float] < receivedFromFreeWorker(gottenListIdx)
+                    .asInstanceOf[Float] < receivedFromFreeWorker.head
                     .getField(sortAttributeName)
                     .asInstanceOf[Float]
                 ) {
 
-                  val ret = sortedTuples(ownListIdx)
-                  ownListIdx += 1
-                  ret
+                  return sortedTuples.dequeue()
                 } else {
-                  val ret = receivedFromFreeWorker(gottenListIdx)
-                  gottenListIdx += 1
-                  ret
+                  return receivedFromFreeWorker.dequeue()
                 }
-              } else if (ownListIdx < sortedTuples.size) {
-                val ret = sortedTuples(ownListIdx)
-                ownListIdx += 1
-                ret
+              } else if (sortedTuples.size > 0) {
+                return sortedTuples.dequeue()
               } else {
-                val ret = receivedFromFreeWorker(gottenListIdx)
-                gottenListIdx += 1
-                ret
+                return receivedFromFreeWorker.dequeue()
               }
             }
           }
@@ -171,9 +157,28 @@ class SortOpLocalExec(
   }
 
   override def open(): Unit = {
-    sortedTuples = new ArrayBuffer[Tuple]()
-    tuplesFromSkewedWorker = new ArrayBuffer[Tuple]()
-    receivedFromFreeWorker = new ArrayBuffer[Tuple]()
+    // sortedTuples = new ArrayBuffer[Tuple]()
+    sortedTuples = mutable.PriorityQueue()(
+      Ordering.by[Tuple, Float](
+        _.getField(sortAttributeName)
+          .asInstanceOf[Float]
+      )
+    )
+
+    tuplesFromSkewedWorker = mutable.PriorityQueue()(
+      Ordering.by[Tuple, Float](
+        _.getField(sortAttributeName)
+          .asInstanceOf[Float]
+      )
+    )
+
+    receivedFromFreeWorker = mutable.PriorityQueue()(
+      Ordering.by[Tuple, Float](
+        _.getField(sortAttributeName)
+          .asInstanceOf[Float]
+      )
+    )
+    // receivedFromFreeWorker = new ArrayBuffer[Tuple]()
   }
 
   override def close(): Unit = {
@@ -181,4 +186,5 @@ class SortOpLocalExec(
     tuplesFromSkewedWorker.clear()
     receivedFromFreeWorker.clear()
   }
+
 }
