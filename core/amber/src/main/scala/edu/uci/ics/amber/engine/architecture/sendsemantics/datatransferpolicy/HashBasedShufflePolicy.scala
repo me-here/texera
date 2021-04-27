@@ -88,9 +88,10 @@ class HashBasedShufflePolicy(
     })
     assert(defaultBucket != -1)
     println(
-      s"\tAdd receiver to bucket received. Already sent out ${defaultRecId}:${receiverToTotalSent(
-        defaultRecId
-      )};;;${newRecId}:${receiverToTotalSent(newRecId)}"
+      s"\tAdd receiver to bucket received. Already sent out ${defaultRecId}:${receiverToTotalSent.getOrElse(
+        defaultRecId,
+        0
+      )};;;${newRecId}:${receiverToTotalSent.getOrElse(newRecId, 0)}"
     )
     if (!bucketsToReceivers(defaultBucket).contains(newRecId)) {
       bucketsToReceivers(defaultBucket).append(newRecId)
