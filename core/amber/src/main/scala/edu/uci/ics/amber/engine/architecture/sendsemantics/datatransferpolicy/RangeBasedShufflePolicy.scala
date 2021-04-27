@@ -114,9 +114,10 @@ class RangeBasedShufflePolicy(
     }
     assert(idxToRemove != -1)
     println(
-      s"\tRemove receiver from bucket received. Already sent out ${defaultRecId}:${receiverToTotalSent(
-        defaultRecId
-      )};;;${recIdToRemove}:${receiverToTotalSent(recIdToRemove)}"
+      s"\tRemove receiver from bucket received. Already sent out ${defaultRecId}:${receiverToTotalSent.getOrElse(
+        defaultRecId,
+        0
+      )};;;${recIdToRemove}:${receiverToTotalSent.getOrElse(recIdToRemove, 0)}"
     )
     bucketsToReceivers(defaultBucket).remove(idxToRemove)
     receiverToTotalSent.toMap
