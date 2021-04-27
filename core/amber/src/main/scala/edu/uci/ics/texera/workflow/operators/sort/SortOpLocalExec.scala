@@ -50,7 +50,7 @@ class SortOpLocalExec(
     val it = tuplesFromSkewedWorker.toIterator
     while (it.hasNext) {
       curr.append(it.next())
-      if (count % 10000 == 0) {
+      if (count % 4000 == 0) {
         sendingLists.append(curr)
         curr = new ArrayBuffer[Tuple]
       }
