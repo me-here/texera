@@ -26,7 +26,7 @@ trait AcceptSortedListHandler {
         .getOperatorExecutor()
         .asInstanceOf[SortOpLocalExec]
         .receivedFromFreeWorker
-        .enqueue(cmd.sortedList: _*)
+        .appendAll(cmd.sortedList)
     } catch {
       case exception: Exception =>
         println(

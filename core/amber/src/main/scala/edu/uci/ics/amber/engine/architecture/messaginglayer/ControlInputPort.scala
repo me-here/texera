@@ -68,9 +68,9 @@ class ControlInputPort(
     if (call.command.isInstanceOf[QueryStatistics]) {
       return
     }
-    logger.logInfo(
-      s"receive command: ${call.command} from ${sender.toString} (controlID: ${call.commandID})"
-    )
+//    logger.logInfo(
+//      s"receive command: ${call.command} from ${sender.toString} (controlID: ${call.commandID})"
+//    )
   }
 
   def logControlReply(ret: ReturnPayload, sender: VirtualIdentity): Unit = {

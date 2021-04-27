@@ -34,8 +34,7 @@ class SortOpLocalExec(
   /** For skewed worker whose data is sent to free workers * */
   @volatile var sentTuplesToFree: Boolean = false
   @volatile var receivedTuplesFromFree: Boolean = false
-  //var receivedFromFreeWorker: ArrayBuffer[Tuple] = _
-  var receivedFromFreeWorker: mutable.PriorityQueue[Tuple] = _
+  var receivedFromFreeWorker: ArrayBuffer[Tuple] = _
 
   val jump: Int =
     ((rangeMax - rangeMin) / numWorkers).toInt + 1
@@ -51,7 +50,7 @@ class SortOpLocalExec(
     val it = tuplesFromSkewedWorker.toIterator
     while (it.hasNext) {
       curr.append(it.next())
-      if (count % 4000 == 0) {
+      if (count % 10000 == 0) {
         sendingLists.append(curr)
         curr = new ArrayBuffer[Tuple]
       }
@@ -132,28 +131,33 @@ class SortOpLocalExec(
 
           // merge the two sorted lists
           new Iterator[Tuple] {
+            var receivedIdx = 0
             override def hasNext: Boolean = {
-              (sortedTuples.size > 0 || receivedFromFreeWorker.size > 0)
+              (sortedTuples.size > 0 || receivedIdx < receivedFromFreeWorker.size)
             }
 
             override def next(): Tuple = {
-              if (sortedTuples.size > 0 && receivedFromFreeWorker.size > 0) {
+              if (sortedTuples.size > 0 && receivedIdx < receivedFromFreeWorker.size) {
                 if (
                   sortedTuples.head
                     .getField(sortAttributeName)
-                    .asInstanceOf[Float] < receivedFromFreeWorker.head
+                    .asInstanceOf[Float] < receivedFromFreeWorker(receivedIdx)
                     .getField(sortAttributeName)
                     .asInstanceOf[Float]
                 ) {
 
                   return sortedTuples.dequeue()
                 } else {
-                  return receivedFromFreeWorker.dequeue()
+                  val ret = receivedFromFreeWorker(receivedIdx)
+                  receivedIdx += 1
+                  return ret
                 }
               } else if (sortedTuples.size > 0) {
                 return sortedTuples.dequeue()
               } else {
-                return receivedFromFreeWorker.dequeue()
+                val ret = receivedFromFreeWorker(receivedIdx)
+                receivedIdx += 1
+                return ret
               }
             }
           }
@@ -181,15 +185,7 @@ class SortOpLocalExec(
         .reverse
     )
 
-    receivedFromFreeWorker = mutable.PriorityQueue.empty[Tuple](
-      Ordering
-        .by[Tuple, Float](
-          _.getField(sortAttributeName)
-            .asInstanceOf[Float]
-        )
-        .reverse
-    )
-    // receivedFromFreeWorker = new ArrayBuffer[Tuple]()
+    receivedFromFreeWorker = new ArrayBuffer[Tuple]()
   }
 
   override def close(): Unit = {
