@@ -121,7 +121,12 @@ class SortOpLocalExec(
       case Right(_) =>
         if (!sentTuplesToFree) {
           println(s"\t PRODUCED ${sortedTuples.size}")
-          sortedTuples.toIterator
+          return new Iterator[Tuple] {
+            override def hasNext: Boolean = sortedTuples.size > 0
+
+            override def next(): Tuple = sortedTuples.dequeue()
+          }
+          //sortedTuples.toIterator
         } else {
           println(s"\t PRODUCED ${sortedTuples.size + receivedFromFreeWorker.size}")
 
@@ -158,25 +163,31 @@ class SortOpLocalExec(
 
   override def open(): Unit = {
     // sortedTuples = new ArrayBuffer[Tuple]()
-    sortedTuples = mutable.PriorityQueue()(
-      Ordering.by[Tuple, Float](
-        _.getField(sortAttributeName)
-          .asInstanceOf[Float]
-      )
+    sortedTuples = mutable.PriorityQueue.empty[Tuple](
+      Ordering
+        .by[Tuple, Float](
+          _.getField(sortAttributeName)
+            .asInstanceOf[Float]
+        )
+        .reverse
     )
 
-    tuplesFromSkewedWorker = mutable.PriorityQueue()(
-      Ordering.by[Tuple, Float](
-        _.getField(sortAttributeName)
-          .asInstanceOf[Float]
-      )
+    tuplesFromSkewedWorker = mutable.PriorityQueue.empty[Tuple](
+      Ordering
+        .by[Tuple, Float](
+          _.getField(sortAttributeName)
+            .asInstanceOf[Float]
+        )
+        .reverse
     )
 
-    receivedFromFreeWorker = mutable.PriorityQueue()(
-      Ordering.by[Tuple, Float](
-        _.getField(sortAttributeName)
-          .asInstanceOf[Float]
-      )
+    receivedFromFreeWorker = mutable.PriorityQueue.empty[Tuple](
+      Ordering
+        .by[Tuple, Float](
+          _.getField(sortAttributeName)
+            .asInstanceOf[Float]
+        )
+        .reverse
     )
     // receivedFromFreeWorker = new ArrayBuffer[Tuple]()
   }
