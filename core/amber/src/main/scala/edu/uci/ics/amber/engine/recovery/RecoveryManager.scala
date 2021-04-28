@@ -14,7 +14,7 @@ import scala.collection.mutable
 object RecoveryManager {
   def defaultLogStorage(
       id: ActorVirtualIdentity
-  ) = new EmptyLogStorage(id.toString)
+  ) = new HDFSLogStorage(id.toString)
 }
 
 class RecoveryManager(

@@ -57,9 +57,12 @@ class DataLogManager(logStorage: LogStorage, logWriter: ParallelLogWriter)
     }
   }
 
-  def persistDataSender(vid: VirtualIdentity, batchSize: Int, seq: Long): Unit = {
+  def persistDataSender(vid: VirtualIdentity, batchSize: Int, seq: Long): Boolean = {
     if (enableLogWrite) {
       logWriter.addLogRecord(DataBatchSequence(vid, batchSize, seq))
+      true
+    }else{
+      false
     }
   }
 

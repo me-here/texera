@@ -167,16 +167,22 @@ class WorkflowWorker(
         while (dataLogManager.hasNext) {
           val msg = dataLogManager.next()
           if (!dataLogManager.isRecovering) {
-            dataLogManager.persistDataSender(from, payload.size, seqNum)
-            enqueueDelayedAck(stashedDataAck, (sender, id))
+            if(dataLogManager.persistDataSender(from, payload.size, seqNum)){
+              enqueueDelayedAck(stashedDataAck, (sender, id))
+            }else{
+              sender ! NetworkAck(id)
+            }
           } else {
             sender ! NetworkAck(id)
           }
           dataInputPort.handleMessage(msg.from, msg.sequenceNumber, msg.payload)
         }
       } else {
-        dataLogManager.persistDataSender(from, payload.size, seqNum)
-        enqueueDelayedAck(stashedDataAck, (sender, id))
+        if(dataLogManager.persistDataSender(from, payload.size, seqNum)){
+          enqueueDelayedAck(stashedDataAck, (sender, id))
+        }else{
+          sender ! NetworkAck(id)
+        }
         dataInputPort.handleMessage(from, seqNum, payload)
       }
       processingTime += System.currentTimeMillis() - start

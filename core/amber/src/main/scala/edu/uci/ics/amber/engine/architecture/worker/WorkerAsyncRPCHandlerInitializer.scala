@@ -1,22 +1,13 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
 import akka.actor.ActorContext
-import edu.uci.ics.amber.engine.architecture.messaginglayer.{
-  BatchToTupleConverter,
-  ControlOutputPort,
-  DataOutputPort,
-  TupleToBatchConverter
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{BatchToTupleConverter, ControlOutputPort, DataOutputPort, TupleToBatchConverter}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers._
-import edu.uci.ics.amber.engine.common.rpc.{
-  AsyncRPCClient,
-  AsyncRPCHandlerInitializer,
-  AsyncRPCServer
-}
+import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCHandlerInitializer, AsyncRPCServer}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, WorkflowLogger}
-import edu.uci.ics.amber.engine.recovery.DataLogManager
+import edu.uci.ics.amber.engine.recovery.{DataLogManager, InputCounter}
 
 class WorkerAsyncRPCHandlerInitializer(
     val selfID: ActorVirtualIdentity,
@@ -31,6 +22,7 @@ class WorkerAsyncRPCHandlerInitializer(
     val stateManager: WorkerStateManager,
     val actorContext: ActorContext,
     val dataLogManager: DataLogManager,
+    val inputCounter: InputCounter,
     source: AsyncRPCClient,
     receiver: AsyncRPCServer
 ) extends AsyncRPCHandlerInitializer(source, receiver)

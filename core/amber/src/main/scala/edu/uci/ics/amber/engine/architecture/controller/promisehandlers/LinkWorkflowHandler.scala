@@ -24,9 +24,7 @@ trait LinkWorkflowHandler {
 
   registerHandler { (msg: LinkWorkflow, sender) =>
     {
-
       val numUpstreamSender = new mutable.HashMap[ActorVirtualIdentity, Int]().withDefaultValue(0)
-
       Future
         .collect(controller.workflow.getAllLinks.flatMap { link =>
           link.getPolicies.flatMap {
@@ -45,10 +43,7 @@ trait LinkWorkflowHandler {
             )
             .map { ret2 =>
               controller.workflow.getAllOperators.foreach(_.setAllWorkerState(Ready))
-              if (controller.eventListener.workflowStatusUpdateListener != null) {
-                controller.eventListener.workflowStatusUpdateListener
-                  .apply(WorkflowStatusUpdate(controller.workflow.getWorkflowStatus))
-              }
+              updateFrontendWorkflowStatus()
               // for testing, report ready state to parent
               controller.context.parent ! ControllerState.Ready
               controller.context.become(controller.running)

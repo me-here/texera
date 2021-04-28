@@ -48,13 +48,14 @@ class ParallelLogWriter(
         val buffer = new util.ArrayList[LogWriterPayload]()
         while (!isEnded) {
           logRecordQueue.drainTo(buffer)
-          val start = System.currentTimeMillis()
+          var start = 0L
           if (buffer.isEmpty) {
             // instead of using Thread.sleep(200),
             // we wait until 1 record has been pushed into the queue
             // then write this record and commit
             // during this process, we accumulate log records in the queue
             val logRecord = logRecordQueue.take()
+            start = System.currentTimeMillis()
             writeLogRecord(logRecord)
             storage.commit()
           } else {
@@ -62,6 +63,7 @@ class ParallelLogWriter(
               buffer.remove(buffer.size() - 1)
               isEnded = true
             }
+            start = System.currentTimeMillis()
             batchWrite(buffer)
             //println(s"writing ${buffer.size} logs at a time")
             buffer.clear()
@@ -98,7 +100,10 @@ class ParallelLogWriter(
       case clr: WorkflowControlMessage =>
         storage.writeControlLogRecord(clr)
         controlReceivedCounter += 1
-        if (isController) controlProcessedCounter += 1
+        if (isController) {
+          controlProcessedCounter += 1
+          //println(s"writing $clr")
+        }
       case DPCursor(idx) =>
         storage.writeDPLogRecord(idx)
         controlProcessedCounter += 1

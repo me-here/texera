@@ -154,6 +154,7 @@ class Controller(
       receiveCountUpdate orElse
       processRecoveryMessages orElse {
       case NetworkMessage(id, cmd @ WorkflowControlMessage(from, seqNum, payload)) =>
+        //logger.logInfo(s"received $cmd")
         controlLogManager.persistControlMessage(cmd)
         enqueueDelayedAck(stashedControlAck, (sender, id))
         controlInputPort.handleMessage(from, seqNum, payload)
@@ -167,6 +168,7 @@ class Controller(
       controlLogManager.persistControlMessage(
         WorkflowControlMessage(ActorVirtualIdentity.Client, -1, invocation)
       )
+      controlCount += 1 //we have to advance the count here since we don't ack
       asyncRPCServer.receive(invocation, ActorVirtualIdentity.Client)
   }
 
@@ -226,8 +228,10 @@ class Controller(
 
   final def receiveCountUpdate: Receive = {
     case UpdateCountForInput(dc, cc) =>
-      replyAcks(stashedControlAck, cc - controlCount)
-      controlCount = cc
+      if(controlCount < cc){
+        replyAcks(stashedControlAck, cc - controlCount)
+        controlCount = cc
+      }
   }
 
 }
