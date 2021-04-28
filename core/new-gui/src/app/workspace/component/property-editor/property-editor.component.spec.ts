@@ -40,7 +40,7 @@ import { NullTypeComponent } from 'src/app/common/formly/null.type';
 import { JSONSchema7 } from 'json-schema';
 import * as Ajv from 'ajv';
 import { cloneDeep } from 'lodash';
-import { assertType } from 'src/app/common/util/assert';
+import { nonNull } from 'src/app/common/util/assert';
 import { WorkflowUtilService } from '../../service/workflow-graph/util/workflow-util.service';
 import { NzMessageModule } from 'ng-zorro-antd/message';
 import { SchemaPropagationService } from '../../service/dynamic-schema/schema-propagation/schema-propagation.service';
@@ -454,9 +454,8 @@ describe('PropertyEditorComponent', () => {
       // check HTML form are displayed
       const jsonSchemaFormElement = fixture.debugElement.query(By.css('.texera-workspace-property-editor-form'));
       // check if the form has the all the json schema property names
-      Object.values((mockBreakpointSchema.jsonSchema.oneOf as any)[0].properties).forEach((property: unknown) => {
-        assertType<{ type: string, title: string }>(property);
-        expect((jsonSchemaFormElement.nativeElement as HTMLElement).innerHTML).toContain(property.title);
+      Object.values((mockBreakpointSchema.jsonSchema.oneOf as any)[0].properties).forEach((property: any) => {
+        expect((jsonSchemaFormElement.nativeElement as HTMLElement).innerHTML).toContain(nonNull(property.title));
       });
 
       discardPeriodicTasks();
@@ -490,9 +489,8 @@ describe('PropertyEditorComponent', () => {
       const jsonSchemaFormElement = fixture.debugElement.query(By.css('.texera-workspace-property-editor-form'));
 
       // check if the form has the all the json schema property names
-      Object.values((mockBreakpointSchema.jsonSchema.oneOf as any)[0].properties).forEach((property: unknown) => {
-        assertType<{ type: string, title: string }>(property);
-        expect((jsonSchemaFormElement.nativeElement as HTMLElement).innerHTML).toContain(property.title);
+      Object.values((mockBreakpointSchema.jsonSchema.oneOf as any)[0].properties).forEach((property: any) => {
+        expect((jsonSchemaFormElement.nativeElement as HTMLElement).innerHTML).toContain(nonNull(property.title));
       });
 
       discardPeriodicTasks();

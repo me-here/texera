@@ -5,7 +5,7 @@ import * as joint from 'jointjs';
 import * as jQuery from 'jquery';
 import { max, min } from 'lodash';
 import { Observable } from 'rxjs/Observable';
-import { assertType } from 'src/app/common/util/assert';
+import { nonNull } from 'src/app/common/util/assert';
 import { environment } from '../../../../environments/environment';
 import '../../../common/rxjs-operators';
 import { DragDropService } from '../../service/drag-drop/drag-drop.service';
@@ -222,8 +222,7 @@ export class WorkflowEditorComponent implements AfterViewInit {
         // so that it can be restored if the group is collapsed and expanded.
         if (parentGroup) {
           const operatorInfo = parentGroup.operators.get(operatorID);
-          assertType<OperatorInfo>(operatorInfo);
-          operatorInfo.statistics = status[operatorID];
+          nonNull(operatorInfo).statistics = status[operatorID];
         }
       });
     });
@@ -1001,7 +1000,6 @@ export class WorkflowEditorComponent implements AfterViewInit {
       this.saveGroupInfo(groupID);
 
       const copiedGroup = this.workflowActionService.getOperatorGroup().getGroup(groupID);
-      assertType<Group>(copiedGroup);
       // do no copy operators that would be copied along with their groups (to avoid double counting)
       copiedGroup.operators.forEach((operatorInfo, operatorID) => this.deleteOperatorInfo(operatorID));
     });
@@ -1096,7 +1094,7 @@ export class WorkflowEditorComponent implements AfterViewInit {
             });
 
             // add links from group to list of all links to be added
-            newGroup.links.forEach((linkInfo, operatorID) => {
+            newGroup.links.forEach((linkInfo: LinkInfo, operatorID: string) => {
               links.push(linkInfo.link);
             });
 
@@ -1146,12 +1144,9 @@ export class WorkflowEditorComponent implements AfterViewInit {
     }));
 
     const links = new Map<string, LinkInfo>(Array.from(group.links.values()).map(linkInfo => {
-      const sourceID = operatorMap.get(linkInfo.link.source.operatorID);
-      const targetID = operatorMap.get(linkInfo.link.target.operatorID);
-      assertType<string>(sourceID);
-      assertType<string>(targetID);
-
-      const newLinkInfo = {
+      const sourceID = nonNull(operatorMap.get(linkInfo.link.source.operatorID));
+      const targetID = nonNull(operatorMap.get(linkInfo.link.target.operatorID));
+      const newLinkInfo: LinkInfo = {
         link: {
           linkID: this.workflowUtilService.getLinkRandomUUID(),
           source: {

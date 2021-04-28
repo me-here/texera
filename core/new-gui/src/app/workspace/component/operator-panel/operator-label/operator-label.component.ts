@@ -5,7 +5,6 @@ import { Observable, of, Subject, Subscription, zip } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { OperatorSchema } from '../../../types/operator-schema.interface';
-import { assertType } from 'src/app/common/util/assert';
 
 /**
  * OperatorLabelComponent is one operator box in the operator panel.

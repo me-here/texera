@@ -1,9 +1,9 @@
-import { HttpClient, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpResponse, HttpResponseBase } from '@angular/common/http';
 import { TypeofExpr } from '@angular/compiler';
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { AppSettings } from 'src/app/common/app-setting';
-import { assertType } from 'src/app/common/util/assert';
+import { asType } from 'src/app/common/util/assert';
 import { UserService } from '../user.service';
 
 /**
@@ -93,109 +93,100 @@ export class DictionaryService {
 
   public get(key: string): Promise<string|object> {
     return this.http.get<string>(`${AppSettings.getApiEndpoint()}/${DictionaryService.USER_DICTIONARY_ENDPOINT}?key=${key}`)
-    .toPromise()
-    .then<string|object>(
-      result => {
-        try {
-          result = JSON.parse(result);
-          this.dictionaryEventSubject.next({type: EVENT_TYPE.GET, key: key, value: result});
-          return result;
-        } catch (e) {
-          if (e instanceof SyntaxError) { // result was not json
+      .toPromise()
+      .then<string|object>(
+        result => {
+          try {
+            result = JSON.parse(result);
             this.dictionaryEventSubject.next({type: EVENT_TYPE.GET, key: key, value: result});
             return result;
-          } else {
-            throw e;
+          } catch (e) {
+            if (e instanceof SyntaxError) { // result was not json
+              this.dictionaryEventSubject.next({type: EVENT_TYPE.GET, key: key, value: result});
+              return result;
+            } else {
+              throw e;
+            }
+          }
+        },
+        reason => {
+          switch (asType(reason, HttpErrorResponse).status) {
+            case 401:
+              this.dictionaryEventSubject.next({type: EVENT_TYPE.GET, key: key, value: undefined as any});
+              return undefined as any;
+            default:
+              this.dictionaryEventSubject.next({type: EVENT_TYPE.GET, key: key, value: undefined as any});
+              console.warn(reason);
+              return undefined as any;
           }
         }
-      },
-      reason => {
-        assertType<HttpResponse<object>>(reason);
-        switch (reason.status) {
-          case 401:
-            this.dictionaryEventSubject.next({type: EVENT_TYPE.GET, key: key, value: undefined as any});
-            return undefined as any;
-          default:
-            this.dictionaryEventSubject.next({type: EVENT_TYPE.GET, key: key, value: undefined as any});
-            console.warn(reason);
-            return undefined as any;
-        }
-      }
-    );
+      );
   }
 
   public set(key: string, value: string|object): Promise<boolean> {
     const strValue: String = (value instanceof String ? value : JSON.stringify(value));
 
     return this.http.post<string>(
-      `${AppSettings.getApiEndpoint()}/${DictionaryService.USER_DICTIONARY_ENDPOINT}?key=${key}`,
-      strValue,
-    )
-    .toPromise()
-    .then(
-      () => {
-        this.dictionaryEventSubject.next({type: EVENT_TYPE.SET, key: key, value: value});
-        return true;
-      },
-      reason => {
-        assertType<HttpResponse<object>>(reason);
-        switch (reason.status) {
-          case 401:
-            this.dictionaryEventSubject.next({type: EVENT_TYPE.SET, key: key, value: value});
-            return true;
-          default:
-            throw reason;
+      `${AppSettings.getApiEndpoint()}/${DictionaryService.USER_DICTIONARY_ENDPOINT}?key=${key}`, strValue)
+      .toPromise()
+      .then(
+        () => {
+          this.dictionaryEventSubject.next({type: EVENT_TYPE.SET, key: key, value: value});
+          return true;
+        },
+        reason => {
+          switch (asType(reason, HttpErrorResponse).status) {
+            case 401:
+              this.dictionaryEventSubject.next({type: EVENT_TYPE.SET, key: key, value: value});
+              return true;
+            default:
+              throw reason;
+          }
         }
-      }
-    );
+      );
   }
 
   public delete(key: string): Promise<boolean> {
-    return this.http.delete<string>(
-      `${AppSettings.getApiEndpoint()}/${DictionaryService.USER_DICTIONARY_ENDPOINT}?key=${key}`
-    )
-    .toPromise()
-    .then(
-      () => {
-        this.dictionaryEventSubject.next({type: EVENT_TYPE.DELETE, key: key});
-        return true;
-      },
-      reason => {
-        assertType<HttpResponse<object>>(reason);
-        switch (reason.status) {
-          case 401:
-            this.dictionaryEventSubject.next({type: EVENT_TYPE.DELETE, key: key});
-            return true;
-          default:
-            throw reason;
+    return this.http.delete<string>(`${AppSettings.getApiEndpoint()}/${DictionaryService.USER_DICTIONARY_ENDPOINT}?key=${key}`)
+      .toPromise()
+      .then(
+        () => {
+          this.dictionaryEventSubject.next({type: EVENT_TYPE.DELETE, key: key});
+          return true;
+        },
+        reason => {
+          switch (asType(reason, HttpErrorResponse).status) {
+            case 401:
+              this.dictionaryEventSubject.next({type: EVENT_TYPE.DELETE, key: key});
+              return true;
+            default:
+              throw reason;
+          }
         }
-      }
-    );
+      );
   }
 
   public getAll(): Promise<Readonly<UserDictionary>> {
     return this.http.get(`${AppSettings.getApiEndpoint()}/${DictionaryService.USER_DICTIONARY_ENDPOINT}`, {observe: 'response'})
-    .toPromise()
-    .then<UserDictionary>(
-      result => {
-        assertType<UserDictionary>(result.body);
-        const value = result.body;
-        this.dictionaryEventSubject.next({type: EVENT_TYPE.GET_ALL, value: value});
-        return value;
-      },
-      reason => {
-        assertType<HttpResponse<object>>(reason);
-        switch (reason.status) {
-          case 401:
-            this.dictionaryEventSubject.next({type: EVENT_TYPE.GET_ALL, value: {}});
-            return {} as any;
-          default:
-            this.dictionaryEventSubject.next({type: EVENT_TYPE.GET_ALL, value: {}});
-            console.warn(reason);
-            return {} as any;
+      .toPromise()
+      .then<UserDictionary>(
+        result => {
+          const value = result.body as UserDictionary;
+          this.dictionaryEventSubject.next({type: EVENT_TYPE.GET_ALL, value: value});
+          return value;
+        },
+        reason => {
+          switch (asType(reason, HttpErrorResponse).status) {
+            case 401:
+              this.dictionaryEventSubject.next({type: EVENT_TYPE.GET_ALL, value: {}});
+              return {} as any;
+            default:
+              this.dictionaryEventSubject.next({type: EVENT_TYPE.GET_ALL, value: {}});
+              console.warn(reason);
+              return {} as any;
+          }
         }
-      }
-    );
+      );
   }
 
   private initLocalDict() {
