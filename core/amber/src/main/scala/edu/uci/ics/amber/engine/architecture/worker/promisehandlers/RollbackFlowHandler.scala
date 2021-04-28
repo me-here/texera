@@ -18,6 +18,15 @@ trait RollbackFlowHandler {
 
   registerHandler { (cmd: RollbackFlow, sender) =>
     // workerStateManager.shouldBe(Running, Ready)
-    tupleToBatchConverter.rollbackFlow(cmd.skewedReceiverId, cmd.freeReceiverId)
+    var ret = Map[ActorVirtualIdentity, Long]()
+    try {
+      ret = tupleToBatchConverter.rollbackFlow(cmd.skewedReceiverId, cmd.freeReceiverId)
+    } catch {
+      case exception: Exception =>
+        println(
+          "Exception happened" + exception.getMessage() + " stacktrace " + exception.getStackTrace()
+        )
+    }
+    ret
   }
 }
