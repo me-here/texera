@@ -3,7 +3,6 @@ package edu.uci.ics.texera.web.resource
 import java.util.concurrent.atomic.AtomicInteger
 import akka.actor.{ActorRef, PoisonPill}
 import edu.uci.ics.amber.engine.architecture.controller.{Controller, ControllerEventListener}
-import edu.uci.ics.amber.engine.architecture.principal.PrincipalStatistics
 import edu.uci.ics.amber.engine.common.ambermessage.ControlMessage._
 import edu.uci.ics.amber.engine.common.ambermessage.ControllerMessage.AckedControllerInitialization
 import edu.uci.ics.amber.engine.common.ambertag.WorkflowTag
@@ -11,11 +10,10 @@ import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.texera.web.TexeraWebApplication
 import edu.uci.ics.texera.web.model.event._
 import edu.uci.ics.texera.web.model.request._
-import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource.{sessionJobs, sessionResults}
+import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource.{getDirtyPageIndices, sessionResults}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.workflow.{WorkflowCompiler, WorkflowInfo}
 import edu.uci.ics.texera.workflow.common.{Utils, WorkflowContext}
-import edu.uci.ics.texera.workflow.operators.sink.SimpleSinkOpDesc
 
 import javax.websocket._
 import javax.websocket.server.ServerEndpoint
@@ -28,6 +26,32 @@ object WorkflowWebsocketResource {
   val sessionMap = new mutable.HashMap[String, Session]
   val sessionJobs = new mutable.HashMap[String, (WorkflowCompiler, ActorRef)]
   val sessionResults = new mutable.HashMap[String, Map[String, List[ITuple]]]
+
+  /**
+    * Calculate which page in frontend need to be re-fetched
+    * @param beforeList data before status update event (i.e. unmodified sessionResults)
+    * @param afterList data after status update event
+    * @return list of indices of modified pages starting from 1
+    */
+  def getDirtyPageIndices(beforeList: List[ITuple], afterList: List[ITuple]): List[Int] = {
+    val pageSize = 10
+
+    var currentIndex = 1
+    var currentIndexPageCount = 0
+    val dirtyPageIndices = new mutable.HashSet[Int]()
+    for ((before, after) <- beforeList.zipAll(afterList, null, null)) {
+      if (before == null || after == null || !before.equals(after)) {
+        dirtyPageIndices.add(currentIndex)
+      }
+      currentIndexPageCount += 1
+      if (currentIndexPageCount == pageSize) {
+        currentIndexPageCount = 0
+        currentIndex += 1
+      }
+    }
+
+    dirtyPageIndices.toList
+  }
 }
 
 @ServerEndpoint("/wsapi/workflow-websocket")
@@ -190,6 +214,14 @@ class WorkflowWebsocketResource {
         WorkflowWebsocketResource.sessionJobs.remove(session.getId)
       },
       workflowStatusUpdateListener = statusUpdate => {
+
+        val sinkOpDirtyPageIndices = statusUpdate.operatorStatistics.filter(e => e._2.aggregatedOutputResults.isDefined).map(e => {
+          val beforeList = sessionResults.getOrElse(session.getId, Map.empty).getOrElse(e._1, List.empty)
+          val afterList = e._2.aggregatedOutputResults.get
+          val dirtyPageIndices = getDirtyPageIndices(beforeList, afterList)
+          (e._1, dirtyPageIndices)
+        })
+
         sessionResults.update(
           session.getId,
           statusUpdate.operatorStatistics
@@ -198,7 +230,7 @@ class WorkflowWebsocketResource {
         )
         send(
           session,
-          WorkflowStatusUpdateEvent.apply(statusUpdate.operatorStatistics, texeraWorkflowCompiler)
+          WorkflowStatusUpdateEvent.apply(statusUpdate.operatorStatistics, sinkOpDirtyPageIndices, texeraWorkflowCompiler)
         )
       },
       modifyLogicCompletedListener = _ => {

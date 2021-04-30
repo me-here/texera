@@ -91,7 +91,8 @@ export interface OperatorStatistics extends Readonly<{
   operatorState: OperatorState,
   aggregatedInputRowCount: number,
   aggregatedOutputRowCount: number,
-  aggregatedOutputResults?: ResultObject
+  aggregatedOutputResults?: ResultObject,
+  aggregatedOutputResultDirtyPageIndices?: Array<number>
 }> {}
 
 export interface WorkflowStatusUpdate extends Readonly<{

@@ -10,6 +10,7 @@ object OperatorStatistics {
   def apply(
       operatorID: String,
       principalStatistics: PrincipalStatistics,
+      dirtyPageIndices: Map[String, List[Int]],
       workflowCompiler: WorkflowCompiler
   ): OperatorStatistics = {
     OperatorStatistics(
@@ -37,7 +38,8 @@ object OperatorStatistics {
                 r.size
               )
           }
-        })
+        }),
+      dirtyPageIndices.get(operatorID)
     )
   }
 }
@@ -45,16 +47,18 @@ case class OperatorStatistics(
     @JsonScalaEnumeration(classOf[PrincipalStateType]) operatorState: PrincipalState,
     aggregatedInputRowCount: Long,
     aggregatedOutputRowCount: Long,
-    aggregatedOutputResults: Option[OperatorResult] // in case of a sink operator
+    aggregatedOutputResults: Option[OperatorResult], // in case of a sink operator
+    aggregatedOutputResultDirtyPageIndices: Option[List[Int]]
 )
 
 object WorkflowStatusUpdateEvent {
   def apply(
       principalStatistics: Map[String, PrincipalStatistics],
+      sinkOpDirtyPageIndices: Map[String, List[Int]],
       workflowCompiler: WorkflowCompiler
   ): WorkflowStatusUpdateEvent = {
     WorkflowStatusUpdateEvent(
-      principalStatistics.map(e => (e._1, OperatorStatistics.apply(e._1, e._2, workflowCompiler)))
+      principalStatistics.map(e => (e._1, OperatorStatistics.apply(e._1, e._2, sinkOpDirtyPageIndices, workflowCompiler)))
     )
   }
 }

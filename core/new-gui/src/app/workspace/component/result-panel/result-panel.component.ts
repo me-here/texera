@@ -90,8 +90,6 @@ export class ResultPanelComponent {
     ).subscribe(trigger => this.displayResultPanel());
 
     this.executeWorkflowService.getExecutionStateStream().subscribe(event => {
-      console.log(event.current.state);
-      console.log(event.current);
       if (event.current.state === ExecutionState.BreakpointTriggered) {
         const breakpointOperator = this.executeWorkflowService.getBreakpointTriggerInfo()?.operatorID;
         if (breakpointOperator) {
@@ -162,12 +160,13 @@ export class ResultPanelComponent {
       }
     });
 
-    this.workflowStatusService.getResultUpdateStream().auditTime(1000).subscribe(event => {
+    this.workflowStatusService.getResultUpdateStream().subscribe(_ => {
       if (!this.resultPanelOperatorID) {
         return;
       }
 
       const result = this.workflowStatusService.getCurrentResult()[this.resultPanelOperatorID];
+      const currentSinkStats = this.workflowStatusService.getCurrentStatus()[this.resultPanelOperatorID];
 
       // Don't update if the state is already in Completed
       //  because our result may conflict with the more recent result from WorkflowCompletedEvent
@@ -179,7 +178,15 @@ export class ResultPanelComponent {
         this.total = result.totalRowCount;
 
         // if there are new results and we need them
-        if (previousTotal !== this.total && this.currentResult.length < ResultPanelComponent.DEFAULT_PAGE_SIZE) {
+        if ((currentSinkStats.aggregatedOutputResultDirtyPageIndices ?? []).includes(this.currentPageIndex) ||
+        (previousTotal !== this.total && this.currentResult.length < ResultPanelComponent.DEFAULT_PAGE_SIZE)) {
+
+          if (this.total < previousTotal &&  // less row count
+            this.currentPageIndex == Math.ceil(previousTotal / ResultPanelComponent.DEFAULT_PAGE_SIZE) && // on the last page
+            Math.ceil(this.total / ResultPanelComponent.DEFAULT_PAGE_SIZE) < this.currentPageIndex) {  // less page
+              this.currentPageIndex = Math.ceil(this.total / ResultPanelComponent.DEFAULT_PAGE_SIZE);  // decrease page index
+          }
+
           this.workflowWebsocketService.send('ResultPaginationRequest', { pageSize: ResultPanelComponent.DEFAULT_PAGE_SIZE, pageIndex: this.currentPageIndex });
         } else {
           const resultPaginationInfo = {
@@ -392,8 +399,6 @@ export class ResultPanelComponent {
     let resultPaginationInfo = sessionGetObject<ResultPaginationInfo>(PAGINATION_INFO_STORAGE_KEY);
     if (resultPaginationInfo && !resultPaginationInfo.newWorkflowExecuted && resultPaginationInfo.operatorID === this.resultPanelOperatorID && this.executeWorkflowService.getExecutionState().state === ExecutionState.Completed) {
       this.isFrontPagination = false;
-      console.log('resultPaginationInfo.currentResult;');
-      console.log(resultPaginationInfo.currentResult);
       this.currentResult = resultPaginationInfo.currentResult;
       this.currentPageIndex = resultPaginationInfo.currentPageIndex;
       this.total = resultPaginationInfo.total;
@@ -406,8 +411,6 @@ export class ResultPanelComponent {
     }
     // creates a shallow copy of the readonly response.result,
     //  this copy will be has type object[] because MatTableDataSource's input needs to be object[]
-    console.log('resultData');
-    console.log(resultData);
     this.currentResult = resultData.slice();
 
     // When there is a result data from the backend,
