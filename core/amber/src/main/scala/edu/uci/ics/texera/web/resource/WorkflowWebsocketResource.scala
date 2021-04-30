@@ -10,7 +10,10 @@ import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.texera.web.TexeraWebApplication
 import edu.uci.ics.texera.web.model.event._
 import edu.uci.ics.texera.web.model.request._
-import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource.{getDirtyPageIndices, sessionResults}
+import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource.{
+  getDirtyPageIndices,
+  sessionResults
+}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.workflow.{WorkflowCompiler, WorkflowInfo}
 import edu.uci.ics.texera.workflow.common.{Utils, WorkflowContext}
@@ -215,12 +218,15 @@ class WorkflowWebsocketResource {
       },
       workflowStatusUpdateListener = statusUpdate => {
 
-        val sinkOpDirtyPageIndices = statusUpdate.operatorStatistics.filter(e => e._2.aggregatedOutputResults.isDefined).map(e => {
-          val beforeList = sessionResults.getOrElse(session.getId, Map.empty).getOrElse(e._1, List.empty)
-          val afterList = e._2.aggregatedOutputResults.get
-          val dirtyPageIndices = getDirtyPageIndices(beforeList, afterList)
-          (e._1, dirtyPageIndices)
-        })
+        val sinkOpDirtyPageIndices = statusUpdate.operatorStatistics
+          .filter(e => e._2.aggregatedOutputResults.isDefined)
+          .map(e => {
+            val beforeList =
+              sessionResults.getOrElse(session.getId, Map.empty).getOrElse(e._1, List.empty)
+            val afterList = e._2.aggregatedOutputResults.get
+            val dirtyPageIndices = getDirtyPageIndices(beforeList, afterList)
+            (e._1, dirtyPageIndices)
+          })
 
         sessionResults.update(
           session.getId,
@@ -230,7 +236,11 @@ class WorkflowWebsocketResource {
         )
         send(
           session,
-          WorkflowStatusUpdateEvent.apply(statusUpdate.operatorStatistics, sinkOpDirtyPageIndices, texeraWorkflowCompiler)
+          WorkflowStatusUpdateEvent.apply(
+            statusUpdate.operatorStatistics,
+            sinkOpDirtyPageIndices,
+            texeraWorkflowCompiler
+          )
         )
       },
       modifyLogicCompletedListener = _ => {

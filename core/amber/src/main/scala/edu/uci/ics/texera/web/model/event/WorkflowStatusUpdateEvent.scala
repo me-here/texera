@@ -58,7 +58,9 @@ object WorkflowStatusUpdateEvent {
       workflowCompiler: WorkflowCompiler
   ): WorkflowStatusUpdateEvent = {
     WorkflowStatusUpdateEvent(
-      principalStatistics.map(e => (e._1, OperatorStatistics.apply(e._1, e._2, sinkOpDirtyPageIndices, workflowCompiler)))
+      principalStatistics.map(e =>
+        (e._1, OperatorStatistics.apply(e._1, e._2, sinkOpDirtyPageIndices, workflowCompiler))
+      )
     )
   }
 }
