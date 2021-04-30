@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { FieldWrapper } from '@ngx-formly/core';
-import { cloneDeep, isEqual } from 'lodash';
+import { FieldWrapper, FormlyFieldConfig } from '@ngx-formly/core';
+import { cloneDeep, isEqual, merge } from 'lodash';
 import { Preset, PresetService } from 'src/app/workspace/service/preset/preset.service';
+import { asType } from '../../util/assert';
 
 export interface PresetKey {
   presetType: string;
@@ -16,12 +17,10 @@ styleUrls: ['./preset-wrapper.component.scss'],
 export class PresetWrapperComponent extends FieldWrapper implements OnInit {
 
   public searchResults: Preset[] = [];
-  public fieldKey: string = '';
   private searchTerm: string = '';
   private presetType: string = '';
   private saveTarget: string = '';
   private applyTarget: string = '';
-  private showAllResults = true;
 
   constructor( private presetService: PresetService ) { super(); }
 
@@ -35,13 +34,11 @@ export class PresetWrapperComponent extends FieldWrapper implements OnInit {
       throw Error(`form preset-wrapper field ${this.field} doesn't contain necessary .key and .templateOptions.presetKey attributes`);
     }
     const presetKey = <PresetKey> this.field.templateOptions.presetKey;
-
-    this.fieldKey = this.field.key;
     this.searchTerm = this.formControl.value !== null ? this.formControl.value : '';
     this.presetType = presetKey.presetType;
     this.saveTarget =  presetKey.saveTarget;
     this.applyTarget = presetKey.applyTarget;
-    this.setSearchResults(this.presetService.getPresets(this.presetType, this.saveTarget), this.searchTerm);
+    this.searchResults = this.getSearchResults(this.presetService.getPresets(this.presetType, this.saveTarget), this.searchTerm, true);
 
     this.handleSavePresets();
     this.handleFieldValueChanges();
@@ -51,22 +48,6 @@ export class PresetWrapperComponent extends FieldWrapper implements OnInit {
     this.presetService.applyPreset(this.presetType, this.applyTarget, preset);
   }
 
-  public handleDropdownVisibilityEvent(visible: boolean) {
-    console.log("handle drop", visible);
-    if (visible) {
-      this.showAllResults = true;
-      this.setSearchResults(this.presetService.getPresets(this.presetType, this.saveTarget), this.searchTerm);
-    }
-  }
-
-  public getEntryTitle(preset: Preset): string {
-    return preset[this.fieldKey].toString();
-  }
-
-  public getEntryDescription(preset: Preset): string {
-    return Object.keys(preset).filter(key => key !== this.fieldKey).map(key => preset[key]).join(', ');
-  }
-
   public deletePreset(preset: Preset) {
     const presets = cloneDeep(this.presetService.getPresets(this.presetType, this.saveTarget))
       .filter(oldPreset => !isEqual(oldPreset, preset));
@@ -74,13 +55,28 @@ export class PresetWrapperComponent extends FieldWrapper implements OnInit {
     this.presetService.savePresets(this.presetType, this.saveTarget, presets, `Deleted preset: ${this.getEntryTitle(preset)}`, 'error');
   }
 
-  public setSearchResults(presets: Readonly<Preset[]>, searchTerm: string) {
-    if (this.showAllResults) {
-      this.searchResults = presets.slice();
+  public getEntryTitle(preset: Preset): string {
+    return preset[asType(this.field.key, 'string')].toString();
+  }
+
+  public getEntryDescription(preset: Preset): string {
+    return Object.keys(preset).filter(key => key !== asType(this.field.key, 'string')).map(key => preset[key]).join(', ');
+  }
+
+  public getSearchResults(presets: Readonly<Preset[]>, searchTerm: string, showAllResults: boolean): Preset[] {
+    if (showAllResults) {
+      return presets.slice();
     } else {
-      this.searchResults = presets.filter(
-        preset => preset[this.fieldKey].toString().replace(/^\s+|\s+$/g, '').toLowerCase().startsWith(searchTerm.toLowerCase())
+      return presets.filter(
+        preset => this.getEntryTitle(preset)
+          .replace(/^\s+|\s+$/g, '').toLowerCase().startsWith(searchTerm.toLowerCase())
       );
+    }
+  }
+
+  public onDropdownVisibilityEvent(visible: boolean) {
+    if (visible) {
+      this.searchResults = this.getSearchResults(this.presetService.getPresets(this.presetType, this.saveTarget), this.searchTerm, true);
     }
   }
 
@@ -89,7 +85,7 @@ export class PresetWrapperComponent extends FieldWrapper implements OnInit {
       .filter((presets) => presets.type === this.presetType && presets.target === this.saveTarget)
       .subscribe({
         next: (saveEvent) => {
-          this.setSearchResults(saveEvent.presets, this.searchTerm);
+          this.searchResults = this.getSearchResults(saveEvent.presets, this.searchTerm, false);
         }
       });
   }
@@ -98,10 +94,23 @@ export class PresetWrapperComponent extends FieldWrapper implements OnInit {
     this.formControl.valueChanges.subscribe({
       next: (value: string | number | boolean ) => {
         this.searchTerm = value.toString();
-        this.showAllResults = false;
-        this.setSearchResults(this.presetService.getPresets(this.presetType, this.saveTarget), this.searchTerm);
+        this.searchResults = this.getSearchResults(this.presetService.getPresets(this.presetType, this.saveTarget), this.searchTerm, false);
       }
     });
+  }
+
+  public static setupFieldConfig( config: FormlyFieldConfig, presetType: string, saveTarget: string, applyTarget: string) {
+    const fieldConfig: FormlyFieldConfig = {
+      wrappers: ['form-field', 'preset-wrapper'], // wrap form field in default theme and then preset wrapper
+      templateOptions: {
+        presetKey: <PresetKey> {
+          presetType: presetType,
+          saveTarget: saveTarget,
+          applyTarget: applyTarget
+        }
+      }
+    };
+    merge(config, fieldConfig);
   }
 
 }

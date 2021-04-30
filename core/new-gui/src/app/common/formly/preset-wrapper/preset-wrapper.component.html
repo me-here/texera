@@ -3,7 +3,7 @@
   nzTrigger = "click"
   nzBackdrop = "false"
   [nzOverlayClassName]="searchResults.length == 0 ? 'preset-dropdown no-results' : 'preset-dropdown'"
-  (nzVisibleChange)="handleDropdownVisibilityEvent($event)">
+  (nzVisibleChange)="onDropdownVisibilityEvent($event)">
   <ng-container #fieldComponent></ng-container>
 </div>
 <nz-dropdown-menu #menu="nzDropdownMenu">
