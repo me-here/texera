@@ -36,18 +36,16 @@
     type="button" class="breakpointRemoveButton"
     (click)="confirmChangeOperatorLogic()">Confirm Change</button>
   </div>
-  <span
-    nz-popconfirm
+  <span nz-popconfirm class = "savePresetDialog"
     [nzPopconfirmOrigin]=property_editor
     nzPopconfirmPlacement="leftTop"
-    [nzPopconfirmVisible]='presetData.showPrompt'
+    [nzPopconfirmVisible]='presetContext.showPrompt'
     nzPopconfirmTitle="Create new operator preset?"
     nzOkText="save preset"
     nzCancelText="don't save"
-    (nzOnConfirm)='this.presetData.resolvePrompt(true)'
-    (nzOnCancel)='this.presetData.resolvePrompt(false)'
-    (nzPopconfirmVisibleChange)='$event ? null : this.presetData.resolvePrompt(false)'
-    >
+    (nzOnConfirm)='this.presetContext.resolvePrompt(true)'
+    (nzOnCancel)='this.presetContext.resolvePrompt(false)'
+    (nzPopconfirmVisibleChange)='$event ? null : this.presetContext.resolvePrompt(false)'>
     <a href="#" #promptSavePresetDialogButton><!-- intentionally empty and invisible button (spoofed click events trigger dialog) --></a>
   </span>
 </div>

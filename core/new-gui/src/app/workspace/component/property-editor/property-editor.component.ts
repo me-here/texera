@@ -3,10 +3,10 @@ import { FormGroup } from '@angular/forms';
 import { FormlyFieldConfig, FormlyFormOptions } from '@ngx-formly/core';
 import { FormlyJsonschema } from '@ngx-formly/core/json-schema';
 import * as Ajv from 'ajv';
-import { cloneDeep, isEqual } from 'lodash';
+import { cloneDeep, every, findIndex, isEqual, some, values} from 'lodash';
 import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
-import { PresetKey } from 'src/app/common/formly/preset-wrapper/preset-wrapper.component';
+import { PresetWrapperComponent } from 'src/app/common/formly/preset-wrapper/preset-wrapper.component';
 import '../../../common/rxjs-operators';
 import { isDefined } from '../../../common/util/predicate';
 import { DynamicSchemaService } from '../../service/dynamic-schema/dynamic-schema.service';
@@ -18,6 +18,7 @@ import { CustomJSONSchema7 } from '../../types/custom-json-schema.interface';
 import { ExecutionState } from '../../types/execute-workflow.interface';
 import { Breakpoint, OperatorPredicate } from '../../types/workflow-common.interface';
 import { SchemaPropagationService } from '../../service/dynamic-schema/schema-propagation/schema-propagation.service';
+import { isType, nonNull } from 'src/app/common/util/assert';
 
 type FormContext = {
   type: 'operator' | 'breakpoint',
@@ -93,13 +94,13 @@ export class PropertyEditorComponent {
   // show TypeInformation only when operator type is TypeCasting
   public showTypeCastingTypeInformation = false;
 
-  @ViewChild('promptSavePresetDialogButton') promptSaveDialogButton?: ElementRef;
-  public presetData = {
+  @ViewChild('promptSavePresetDialogButton') promptSaveDialogButton?: ElementRef<HTMLAnchorElement>;
+  public presetContext = {
     hasPresetFields: false,
     showPrompt: false,
     resolvePrompt: (ok: boolean) => { },
     promptResult: Promise.resolve(false),
-    originalPreset: <null|Preset>null,
+    originalPreset: <Preset|null> null,
   };
 
   // used to fill in default values in json schema to initialize new operator
@@ -197,38 +198,47 @@ export class PropertyEditorComponent {
   }
 
   public promptSavePreset(): Promise<boolean> {
-    console.log('prompt', this);
-    this.presetData.promptResult = new Promise<boolean>((_resolve) => {
-      this.presetData.resolvePrompt = _resolve;
+    // init presetContext for dialog to bind to
+    this.presetContext.promptResult = new Promise<boolean>((_resolve) => {
+      this.presetContext.resolvePrompt = _resolve;
     });
-    this.presetData.promptResult.then((value: boolean) => {
-      console.log('Resolve ', value);
-      this.presetData.showPrompt = false;
-      if (value) {
-        this.SaveOperatorPresets();
+
+    // show dialog
+    this.presetContext.showPrompt = true;
+    nonNull(this.promptSaveDialogButton).nativeElement.click();
+
+    // handle dialog results
+    this.presetContext.promptResult.then((save: boolean) => {
+      this.presetContext.showPrompt = false;
+      if (save === true) {
+        this.saveOperatorPresets();
       }
     });
-    this.presetData.showPrompt = true;
-    this.promptSaveDialogButton?.nativeElement.click();
-    return this.presetData.promptResult;
+
+    return this.presetContext.promptResult;
   }
 
-  public SaveOperatorPresets() {
+  public saveOperatorPresets() {
     if (this.currentOperatorID === undefined || this.formData === undefined) {
-      throw Error(`Attempted to save operator presets when formData is undefined and there is no current operator`);
+      throw Error(`Attempted to save operator presets when formData is undefined or there is no current operator`);
     }
     const operatorType = this.autocompleteService.getDynamicSchema(this.currentOperatorID).operatorType;
-    const newPreset = this.getPresetFromForm(operatorType, this.formData);
+    const newPreset = this.filterPresetFromForm(operatorType, this.formData);
     const presets = this.presetService.getPresets('operator', operatorType).slice(); // shallow copy
-    console.log('sv', Object.assign(this), newPreset);
 
-    if (this.presetData.originalPreset !== null && this.getPresetIndex(this.presetData.originalPreset, presets) !== -1 &&
-      this.presetService.isValidNewOperatorPreset(newPreset, this.currentOperatorID)) {
+    const preset_is_valid = newPreset !== null && this.presetService.isValidOperatorPreset(newPreset, this.currentOperatorID);
+    const preset_is_an_edit = this.presetContext.originalPreset !== null;
+    const preset_is_not_a_repeat = every(presets, preset => !isEqual(preset, newPreset));
 
-      presets[this.getPresetIndex(this.presetData.originalPreset, presets)] = newPreset;
+    if (!preset_is_valid) {
+      throw Error(`Attempted to save invalid preset ${newPreset}`);
+    } else if (!preset_is_not_a_repeat) {
+      throw Error(`Attempted to save preset ${newPreset} that already exists`);
+    } else if (preset_is_valid && preset_is_not_a_repeat && preset_is_an_edit) {
+      const oldPresetIndex = findIndex(presets, (preset) => isEqual(preset, this.presetContext.originalPreset));
+      presets[oldPresetIndex] = newPreset;
       this.presetService.savePresets('operator', operatorType, presets);
-
-    } else if (this.presetService.isValidNewOperatorPreset(newPreset, this.currentOperatorID)) {
+    } else if (preset_is_valid && preset_is_not_a_repeat && !preset_is_an_edit) {
       presets.push(newPreset);
       this.presetService.savePresets('operator', operatorType, presets);
     }
@@ -248,35 +258,27 @@ export class PropertyEditorComponent {
     this.formData = undefined;
     this.formlyFields = undefined;
     this.formTitle = undefined;
-    this.presetData.hasPresetFields = false;
-    this.presetData.originalPreset = null;
+    this.presetContext.hasPresetFields = false;
+    this.presetContext.originalPreset = null;
   }
 
   public async resetPropertyEditor() {
-    const form_is_dirty = this.formlyFields !== undefined && !this.formlyFields[0].formControl?.pristine;
-    const has_preset_fields = this.presetData.hasPresetFields;
-    const form_preset_is_valid = this.currentOperatorID !== undefined && has_preset_fields &&
-      this.presetService.isValidOperatorPreset(
-        this.getPresetFromForm(
+    const form_is_dirty = this.formlyFields !== undefined && this.formlyFields.some(field => field.formControl?.dirty);
+    const form_has_preset_fields = this.presetContext.hasPresetFields;
+    const form_preset_is_valid = this.currentOperatorID !== undefined && form_has_preset_fields &&
+      this.presetService.isValidNewOperatorPreset(
+        this.filterPresetFromForm(
           this.autocompleteService.getDynamicSchema(this.currentOperatorID).operatorType,
           this.formData),
         this.currentOperatorID);
+    const form_preset_is_an_edit = this.presetContext.originalPreset !== null;
 
-    const save_presets = has_preset_fields && form_is_dirty && form_preset_is_valid;
-    const form_has_new_preset = form_preset_is_valid && this.currentOperatorID !== undefined &&
-      this.getPresetIndex(
-        this.getPresetFromForm(this.autocompleteService.getDynamicSchema(this.currentOperatorID).operatorType, this.formData),
-        this.presetService.getPresets('operator', this.autocompleteService.getDynamicSchema(this.currentOperatorID).operatorType)) === -1 &&
-      this.presetData.originalPreset === null;
-
-    console.log('formd', save_presets, form_has_new_preset);
-
-    if (save_presets) {
-      if (form_has_new_preset) {
+    if (form_has_preset_fields && form_is_dirty && form_preset_is_valid) {
+      if (!form_preset_is_an_edit) {
         await this.promptSavePreset();
         this.clearPropertyEditor();
       } else {
-        this.SaveOperatorPresets();
+        this.saveOperatorPresets();
         this.clearPropertyEditor();
       }
     } else {
@@ -324,11 +326,17 @@ export class PropertyEditorComponent {
      * Prevent the form directly changes the value in the texera graph without going through workflow action service.
      */
     this.formData = cloneDeep(operator.operatorProperties);
-    if (this.presetData.hasPresetFields) {
-      const startingPreset = this.getPresetFromForm(operator.operatorType, this.formData);
-      if (this.getPresetIndex(startingPreset, this.presetService.getPresets('operator', operator.operatorType)) !== -1) {
-        this.presetData.originalPreset = startingPreset;
-      }
+
+    // if form has preset fields, setup presetContext
+    const form_has_preset_fields = Object.values(nonNull(currentOperatorSchema.jsonSchema.properties))
+      .some((property) => (property as CustomJSONSchema7)['enable-presets']);
+    if (form_has_preset_fields) {
+      const startingPreset = this.filterPresetFromForm(operator.operatorType, this.formData);
+      const presets = this.presetService.getPresets('operator', operator.operatorType);
+      const presetIndex = findIndex(presets, preset => isEqual(preset, startingPreset));
+
+      this.presetContext.hasPresetFields = true;
+      this.presetContext.originalPreset = presetIndex === -1 ? null : startingPreset;
     }
 
     // use ajv to initialize the default value to data according to schema, see https://ajv.js.org/#assigning-defaults
@@ -492,7 +500,7 @@ export class PropertyEditorComponent {
       next: (applyEvent) => {
         if ( this.currentOperatorID !== undefined && this.currentOperatorID === applyEvent.target &&
           this.presetService.isValidOperatorPreset(applyEvent.preset, this.currentOperatorID)) {
-          this.presetData.originalPreset = applyEvent.preset;
+          this.presetContext.originalPreset = applyEvent.preset;
         }
       }
     });
@@ -532,7 +540,6 @@ export class PropertyEditorComponent {
   }
 
   private setFormlyFormBinding(schema: CustomJSONSchema7, context?: FormContext) {
-
     // intercept JsonSchema -> FormlySchema process, adding custom options
     // this requires a one-to-one mapping.
     // for relational custom options, have to do it after FormlySchema is generated.
@@ -548,25 +555,8 @@ export class PropertyEditorComponent {
         context !== undefined &&
         context.type === 'operator' &&
         context.operator !== undefined &&
-        (mapSource as any)['enable-presets']  !== undefined) {
-
-        mappedField.wrappers = ['form-field', 'preset-wrapper']; // wrap form field in default theme and then preset wrapper
-        if (mappedField.templateOptions === undefined) {
-          mappedField.templateOptions = {
-            presetKey: <PresetKey> {
-              presetType: context.type,
-              saveTarget: context.operator.operatorType,
-              applyTarget: context.operator.operatorID
-            }
-          };
-        } else {
-          mappedField.templateOptions.presetKey = <PresetKey> {
-            presetType: context.type,
-            saveTarget: context.operator.operatorType,
-            applyTarget: context.operator.operatorID
-          };
-        }
-        this.presetData.hasPresetFields = true;
+        mapSource['enable-presets']  !== undefined) {
+        PresetWrapperComponent.setupFieldConfig(mappedField, context.type, context.operator.operatorType, context.operator.operatorID);
       }
       return mappedField;
     };
@@ -612,8 +602,8 @@ export class PropertyEditorComponent {
       attributes = this.schemaPropagationService.getOperatorInputSchema(this.currentOperatorID);
     }
     const timestampFieldNames = attributes?.flat().filter((attribute) => {
-      return attribute.attributeType === 'timestamp';
-    }).map(attribute => attribute.attributeName);
+      return nonNull(attribute).attributeType === 'timestamp';
+    }).map(attribute => nonNull(attribute).attributeName);
 
     if (timestampFieldNames) {
       const childField = this.getFieldByName(childName, fields);
@@ -644,25 +634,9 @@ export class PropertyEditorComponent {
     return fields.filter((field, _, __) => field.key === fieldName)[0];
   }
 
-  private getPresetFromForm(operatorType: string, formData: object): Preset {
-    const copy = cloneDeep(formData as Preset);
-    const presetSchema = PresetService.getOperatorPresetSchema(
-      this.operatorMetadataService.getOperatorSchema(operatorType).jsonSchema);
-    console.log(Object.assign({}, copy));
-    for (const key of Object.keys(copy)) {
-      if (!(key in (presetSchema.properties ?? {}))) {
-        delete copy[key];
-      }
-    }
-    return copy;
-  }
-
-  private getPresetIndex(preset: Preset, presets: Readonly<Preset[]>): number {
-    for (let i = 0; i < presets.length; i++) {
-      if (isEqual(presets[i], preset)) {
-        return i;
-      }
-    }
-    return -1;
+  private filterPresetFromForm(operatorType: string, formData: object): Preset {
+    return PresetService.filterOperatorPresetProperties(
+      this.operatorMetadataService.getOperatorSchema(operatorType).jsonSchema,
+      this.formData);
   }
 }
