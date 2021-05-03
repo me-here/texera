@@ -24,7 +24,7 @@ object Constants {
   // sort-skew research related
   val sortingFrequency: Int = 1000
   val lowerLimit: Float = 0f
-  val upperLimit: Float = 500000f
+  val upperLimit: Float = 600000f // 30gb
   val sortExperiment: Boolean = true
 
   type joinType = String
