@@ -1,6 +1,6 @@
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { BrowserModule, By } from '@angular/platform-browser';
-import { async, ComponentFixture, discardPeriodicTasks, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { async, ComponentFixture, discardPeriodicTasks, fakeAsync, flush, flushMicrotasks, TestBed, tick } from '@angular/core/testing';
 import { PropertyEditorComponent } from './property-editor.component';
 import { WorkflowActionService } from '../../service/workflow-graph/model/workflow-action.service';
 import { UndoRedoService } from '../../service/undo-redo/undo-redo.service';
@@ -15,6 +15,7 @@ import {
 import { configure } from 'rxjs-marbles';
 import {
   mockPoint,
+  mockPresetEnabledPredicate,
   mockResultPredicate,
   mockScanPredicate,
   mockScanResultLink,
@@ -39,12 +40,19 @@ import { MultiSchemaTypeComponent } from 'src/app/common/formly/multischema.type
 import { NullTypeComponent } from 'src/app/common/formly/null.type';
 import { JSONSchema7 } from 'json-schema';
 import * as Ajv from 'ajv';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, merge } from 'lodash';
 import { nonNull } from 'src/app/common/util/assert';
 import { WorkflowUtilService } from '../../service/workflow-graph/util/workflow-util.service';
 import { NzMessageModule } from 'ng-zorro-antd/message';
 import { SchemaPropagationService } from '../../service/dynamic-schema/schema-propagation/schema-propagation.service';
 import { LoggerConfig, NGXLogger, NGXLoggerHttpService, NGXMapperService } from 'ngx-logger';
+import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
+import { CustomNgMaterialModule } from 'src/app/common/custom-ng-material.module';
+import { NzMenuModule } from 'ng-zorro-antd/menu';
+import { PresetWrapperComponent } from 'src/app/common/formly/preset-wrapper/preset-wrapper.component';
+import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
+import { NzNoAnimationModule } from 'ng-zorro-antd/core/no-animation';
+import { PresetService } from '../../service/preset/preset.service';
 
 const {marbles} = configure({run: false});
 
@@ -65,7 +73,8 @@ describe('PropertyEditorComponent', () => {
         ArrayTypeComponent,
         ObjectTypeComponent,
         MultiSchemaTypeComponent,
-        NullTypeComponent
+        NullTypeComponent,
+        PresetWrapperComponent
       ],
       providers: [
         JointUIService,
@@ -87,7 +96,6 @@ describe('PropertyEditorComponent', () => {
       imports: [
         CommonModule,
         BrowserModule,
-        BrowserAnimationsModule,
         NgbModule,
         FormsModule,
         FormlyModule.forRoot(TEXERA_FORMLY_CONFIG),
@@ -95,9 +103,14 @@ describe('PropertyEditorComponent', () => {
         // FormlyNgZorroAntdModule,
         // use formly material module instead
         FormlyMaterialModule,
+        CustomNgMaterialModule,
         ReactiveFormsModule,
         HttpClientTestingModule,
         NzMessageModule,
+        NzMenuModule,
+        NzDropDownModule,
+        NzPopconfirmModule,
+        NoopAnimationsModule
       ]
     })
       .compileComponents();
@@ -123,7 +136,6 @@ describe('PropertyEditorComponent', () => {
    */
   it('should change the content of property editor from an empty panel correctly', fakeAsync(() => {
     const jointGraphWrapper = workflowActionService.getJointGraphWrapper();
-    console.log(workflowActionService.getTexeraGraph());
 
     // check if the changePropertyEditor called after the operator
     //  is highlighted has correctly updated the variables
@@ -279,7 +291,7 @@ describe('PropertyEditorComponent', () => {
 
     fixture.detectChanges();
 
-    // check if the clearPropertyEditor called after the operator
+    // check if the ResetPropertyEditor called after the operator
     //  is unhighlighted has correctly updated the variables
     expect(component.currentOperatorID).toBeFalsy();
     expect(component.formData).toBeFalsy();
@@ -425,6 +437,143 @@ describe('PropertyEditorComponent', () => {
     expect(emitEventCounter).toEqual(0);
 
   }));
+
+  describe('preset handling', () => {
+    let presetService: PresetService;
+    beforeEach(() => {
+      presetService = TestBed.inject(PresetService);
+    });
+
+    it('should prompt the user to save a preset', fakeAsync(() => {
+      const jointGraphWrapper = workflowActionService.getJointGraphWrapper();
+
+      workflowActionService.addOperator(mockPresetEnabledPredicate, mockPoint);
+      jointGraphWrapper.highlightOperators(mockPresetEnabledPredicate.operatorID);
+      component.promptSavePreset();
+      tick(1000);
+      expect(document.body.querySelector('.ant-popover')).toBeTruthy();
+    }));
+
+    it('should save preset and dismiss prompt if prompt is confirmed', fakeAsync(() => {
+      const jointGraphWrapper = workflowActionService.getJointGraphWrapper();
+      spyOn(component, 'saveOperatorPresets');
+
+      workflowActionService.addOperator(mockPresetEnabledPredicate, mockPoint);
+      jointGraphWrapper.highlightOperators(mockPresetEnabledPredicate.operatorID);
+      component.promptSavePreset();
+      tick(1000);
+
+      const dialog = nonNull(document.body.querySelector('.ant-popover'));
+      const submitBtn = nonNull(dialog.querySelector('.ant-btn-primary'));
+      submitBtn.dispatchEvent(new Event('click'));
+      fixture.detectChanges();
+      tick(1000);
+      fixture.detectChanges();
+      flush();
+      expect(component.saveOperatorPresets).toHaveBeenCalled();
+      expect(document.body.querySelector('.ant-popover')).toBeFalsy();
+    }));
+
+    it('should not save preset and dismiss prompt if prompt is rejected', fakeAsync(() => {
+      const jointGraphWrapper = workflowActionService.getJointGraphWrapper();
+      spyOn(component, 'saveOperatorPresets');
+
+      workflowActionService.addOperator(mockPresetEnabledPredicate, mockPoint);
+      jointGraphWrapper.highlightOperators(mockPresetEnabledPredicate.operatorID);
+      component.promptSavePreset();
+      tick(1000);
+
+      const dialog = nonNull(document.body.querySelector('.ant-popover'));
+      const cancelBtn = nonNull(dialog.querySelector('.ant-btn'));
+      cancelBtn.dispatchEvent(new Event('click'));
+      fixture.detectChanges();
+      tick(1000);
+      fixture.detectChanges();
+      flush();
+      expect(component.saveOperatorPresets).not.toHaveBeenCalled();
+      expect(document.body.querySelector('.ant-popover')).toBeFalsy();
+    }));
+
+    it('should not save operator presets if no preset is available', fakeAsync(() => {
+      expect(() => component.saveOperatorPresets()).toThrow();
+    }));
+
+    it('should not save operator presets if the preset is unchanged from original', fakeAsync(() => {
+      const preset = {presetProperty: 'testPresetProperty'};
+      const testPredicate = merge(cloneDeep(mockPresetEnabledPredicate), {operatorProperties: preset});
+      const getPresets = spyOn(presetService, 'getPresets').and.returnValue([preset]);
+
+      workflowActionService.addOperator(testPredicate, mockPoint);
+      tick(1000);
+      expect(component.presetContext.originalPreset).toBeTruthy();
+      getPresets.calls.reset();
+      expect(() => component.saveOperatorPresets()).toThrow();
+      expect(presetService.getPresets).toHaveBeenCalledOnceWith('operator', testPredicate.operatorType);
+    }));
+
+    it('should save an edited preset by replacing the original operator preset', fakeAsync(() => {
+      const oldPreset = {presetProperty: 'oldTestPresetProperty'};
+      const newPreset = {presetProperty: 'newTestPresetProperty'};
+      const testPredicate = merge(cloneDeep(mockPresetEnabledPredicate), {operatorProperties: oldPreset});
+      const getPresets = spyOn(presetService, 'getPresets').and.returnValue([oldPreset]);
+      spyOn(presetService, 'savePresets');
+
+      workflowActionService.addOperator(testPredicate, mockPoint);
+      tick(1000);
+      flush();
+      merge(component.formData, newPreset);
+      expect(component.presetContext.originalPreset).toBeTruthy();
+      getPresets.calls.reset();
+      expect(() => component.saveOperatorPresets()).not.toThrow();
+      expect(presetService.getPresets).toHaveBeenCalledOnceWith('operator', testPredicate.operatorType);
+      expect(presetService.savePresets).toHaveBeenCalledOnceWith('operator', testPredicate.operatorType, [newPreset]);
+    }));
+
+    it('should save and replace a preset if it was applied and then edited', fakeAsync(() => {
+      const oldPreset = {presetProperty: 'oldTestPresetProperty'};
+      const newPreset = {presetProperty: 'newTestPresetProperty'};
+      const testPredicate = cloneDeep(mockPresetEnabledPredicate);
+      const getPresets = spyOn(presetService, 'getPresets').and.returnValue([oldPreset]);
+      spyOn(presetService, 'savePresets');
+
+      workflowActionService.addOperator(testPredicate, mockPoint);
+      presetService.applyPreset('operator', testPredicate.operatorID, oldPreset);
+      tick(1000);
+      flush();
+      merge(component.formData, newPreset);
+      expect(component.presetContext.originalPreset).toBeTruthy();
+      getPresets.calls.reset();
+      expect(() => component.saveOperatorPresets()).not.toThrow();
+      expect(presetService.getPresets).toHaveBeenCalledOnceWith('operator', testPredicate.operatorType);
+      expect(presetService.savePresets).toHaveBeenCalledOnceWith('operator', testPredicate.operatorType, [newPreset]);
+    }));
+
+    it('should save a new preset by appending to the list of old presets', fakeAsync(() => {
+      const oldPreset = {presetProperty: 'oldTestPresetProperty'};
+      const newPreset = {presetProperty: 'newTestPresetProperty'};
+      const testPredicate = cloneDeep(mockPresetEnabledPredicate);
+      const getPresets = spyOn(presetService, 'getPresets').and.returnValue([oldPreset]);
+      spyOn(presetService, 'savePresets');
+
+      workflowActionService.addOperator(testPredicate, mockPoint);
+      tick(1000);
+      flush();
+      merge(component.formData, newPreset);
+      expect(component.presetContext.originalPreset).toBeNull();
+      getPresets.calls.reset();
+      expect(() => component.saveOperatorPresets()).not.toThrow();
+      expect(presetService.getPresets).toHaveBeenCalledOnceWith('operator', testPredicate.operatorType);
+      expect(presetService.savePresets).toHaveBeenCalledOnceWith('operator', testPredicate.operatorType, [oldPreset, newPreset]);
+    }));
+
+    it('should generate a form with preset wrappers', fakeAsync(() => {
+      workflowActionService.addOperator(mockPresetEnabledPredicate, mockPoint);
+      component.showOperatorPropertyEditor(mockPresetEnabledPredicate);
+      fixture.detectChanges();
+      tick(1000);
+      expect(fixture.debugElement.queryAll(By.css('.preset-field')).length).toEqual(1);
+    }));
+  });
 
   describe('when linkBreakpoint is enabled', () => {
     beforeAll(() => {
@@ -769,7 +918,5 @@ describe('PropertyEditorComponent', () => {
     //   // because the form change value is the same
     //   expect(emitEventCounter).toEqual(0);
     // }));
-
   });
-
 });
