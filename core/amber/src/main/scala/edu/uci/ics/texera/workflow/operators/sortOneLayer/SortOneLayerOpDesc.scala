@@ -37,7 +37,7 @@ class SortOneLayerOpDesc extends OperatorDescriptor {
 
   override def operatorInfo: OperatorInfo =
     OperatorInfo(
-      "Sort",
+      "Sort One Layer",
       "Sort data",
       OperatorGroupConstants.UTILITY_GROUP,
       inputPorts = List(InputPort("")),
