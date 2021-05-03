@@ -4,6 +4,7 @@
 package edu.uci.ics.texera.web.model.jooq.generated.tables;
 
 
+import edu.uci.ics.texera.web.model.jooq.generated.Indexes;
 import edu.uci.ics.texera.web.model.jooq.generated.Keys;
 import edu.uci.ics.texera.web.model.jooq.generated.TexeraDb;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.records.UserRecord;
@@ -33,7 +34,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class User extends TableImpl<UserRecord> {
 
-    private static final long serialVersionUID = 2077338662;
+    private static final long serialVersionUID = -1375933903;
 
     /**
      * The reference instance of <code>texera_db.user</code>
@@ -49,14 +50,14 @@ public class User extends TableImpl<UserRecord> {
     }
 
     /**
-     * The class holding records for this type
+     * The column <code>texera_db.user.name</code>.
      */
     public final TableField<UserRecord, String> NAME = createField(DSL.name("name"), org.jooq.impl.SQLDataType.VARCHAR(32).nullable(false), this, "");
 
     /**
-     * The column <code>texera_db.user.name</code>.
+     * The column <code>texera_db.user.uid</code>.
      */
-    public final TableField<UserRecord, String> NAME = createField(DSL.name("name"), SQLDataType.VARCHAR(32).nullable(false), this, "");
+    public final TableField<UserRecord, UInteger> UID = createField(DSL.name("uid"), org.jooq.impl.SQLDataType.INTEGERUNSIGNED.nullable(false).identity(true), this, "");
 
     /**
      * The column <code>texera_db.user.password</code>.
@@ -66,14 +67,8 @@ public class User extends TableImpl<UserRecord> {
     /**
      * Create a <code>texera_db.user</code> table reference
      */
-    public final TableField<UserRecord, UInteger> UID = createField(DSL.name("uid"), SQLDataType.INTEGERUNSIGNED.nullable(false).identity(true), this, "");
-
-    private User(Name alias, Table<UserRecord> aliased) {
-        this(alias, aliased, null);
-    }
-
-    private User(Name alias, Table<UserRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    public User() {
+        this(DSL.name("user"), null);
     }
 
     /**
@@ -90,11 +85,12 @@ public class User extends TableImpl<UserRecord> {
         this(alias, USER);
     }
 
-    /**
-     * Create a <code>texera_db.user</code> table reference
-     */
-    public User() {
-        this(DSL.name("user"), null);
+    private User(Name alias, Table<UserRecord> aliased) {
+        this(alias, aliased, null);
+    }
+
+    private User(Name alias, Table<UserRecord> aliased, Field<?>[] parameters) {
+        super(alias, null, aliased, parameters, DSL.comment(""));
     }
 
     public <O extends Record> User(Table<O> child, ForeignKey<O, UserRecord> key) {
@@ -107,8 +103,13 @@ public class User extends TableImpl<UserRecord> {
     }
 
     @Override
+    public List<Index> getIndexes() {
+        return Arrays.<Index>asList(Indexes.USER_NAME, Indexes.USER_PRIMARY);
+    }
+
+    @Override
     public Identity<UserRecord, UInteger> getIdentity() {
-        return (Identity<UserRecord, UInteger>) super.getIdentity();
+        return Keys.IDENTITY_USER;
     }
 
     @Override

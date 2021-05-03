@@ -4,11 +4,12 @@
 package edu.uci.ics.texera.web.model.jooq.generated.tables;
 
 
+import edu.uci.ics.texera.web.model.jooq.generated.Indexes;
 import edu.uci.ics.texera.web.model.jooq.generated.Keys;
 import edu.uci.ics.texera.web.model.jooq.generated.TexeraDb;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.records.WorkflowRecord;
 
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 
@@ -34,7 +35,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Workflow extends TableImpl<WorkflowRecord> {
 
-    private static final long serialVersionUID = 122439828;
+    private static final long serialVersionUID = -18598487;
 
     /**
      * The reference instance of <code>texera_db.workflow</code>
@@ -72,14 +73,13 @@ public class Workflow extends TableImpl<WorkflowRecord> {
     /**
      * The column <code>texera_db.workflow.last_modified_time</code>.
      */
-    public final TableField<WorkflowRecord, LocalDateTime> LAST_MODIFIED_TIME = createField(DSL.name("last_modified_time"), SQLDataType.LOCALDATETIME(0).nullable(false).defaultValue(DSL.field("CURRENT_TIMESTAMP", SQLDataType.LOCALDATETIME)), this, "");
+    public final TableField<WorkflowRecord, Timestamp> LAST_MODIFIED_TIME = createField(DSL.name("last_modified_time"), org.jooq.impl.SQLDataType.TIMESTAMP.nullable(false).defaultValue(org.jooq.impl.DSL.field("CURRENT_TIMESTAMP", org.jooq.impl.SQLDataType.TIMESTAMP)), this, "");
 
-    private Workflow(Name alias, Table<WorkflowRecord> aliased) {
-        this(alias, aliased, null);
-    }
-
-    private Workflow(Name alias, Table<WorkflowRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    /**
+     * Create a <code>texera_db.workflow</code> table reference
+     */
+    public Workflow() {
+        this(DSL.name("workflow"), null);
     }
 
     /**
@@ -96,11 +96,12 @@ public class Workflow extends TableImpl<WorkflowRecord> {
         this(alias, WORKFLOW);
     }
 
-    /**
-     * Create a <code>texera_db.workflow</code> table reference
-     */
-    public Workflow() {
-        this(DSL.name("workflow"), null);
+    private Workflow(Name alias, Table<WorkflowRecord> aliased) {
+        this(alias, aliased, null);
+    }
+
+    private Workflow(Name alias, Table<WorkflowRecord> aliased, Field<?>[] parameters) {
+        super(alias, null, aliased, parameters, DSL.comment(""));
     }
 
     public <O extends Record> Workflow(Table<O> child, ForeignKey<O, WorkflowRecord> key) {
@@ -113,8 +114,13 @@ public class Workflow extends TableImpl<WorkflowRecord> {
     }
 
     @Override
+    public List<Index> getIndexes() {
+        return Arrays.<Index>asList(Indexes.WORKFLOW_PRIMARY);
+    }
+
+    @Override
     public Identity<WorkflowRecord, UInteger> getIdentity() {
-        return (Identity<WorkflowRecord, UInteger>) super.getIdentity();
+        return Keys.IDENTITY_WORKFLOW;
     }
 
     @Override
@@ -158,7 +164,7 @@ public class Workflow extends TableImpl<WorkflowRecord> {
     // -------------------------------------------------------------------------
 
     @Override
-    public Row5<String, UInteger, String, LocalDateTime, LocalDateTime> fieldsRow() {
+    public Row5<String, UInteger, String, Timestamp, Timestamp> fieldsRow() {
         return (Row5) super.fieldsRow();
     }
 }

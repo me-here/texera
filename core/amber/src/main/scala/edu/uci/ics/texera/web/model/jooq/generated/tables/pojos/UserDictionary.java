@@ -16,7 +16,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class UserDictionary implements IUserDictionary {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1041426110;
 
     private UInteger uid;
     private String   key;
@@ -40,49 +40,31 @@ public class UserDictionary implements IUserDictionary {
         this.value = value;
     }
 
-    /**
-     * Getter for <code>texera_db.user_dictionary.uid</code>.
-     */
     @Override
     public UInteger getUid() {
         return this.uid;
     }
 
-    /**
-     * Setter for <code>texera_db.user_dictionary.uid</code>.
-     */
     @Override
     public void setUid(UInteger uid) {
         this.uid = uid;
     }
 
-    /**
-     * Getter for <code>texera_db.user_dictionary.key</code>.
-     */
     @Override
     public String getKey() {
         return this.key;
     }
 
-    /**
-     * Setter for <code>texera_db.user_dictionary.key</code>.
-     */
     @Override
     public void setKey(String key) {
         this.key = key;
     }
 
-    /**
-     * Getter for <code>texera_db.user_dictionary.value</code>.
-     */
     @Override
     public JSON getValue() {
         return this.value;
     }
 
-    /**
-     * Setter for <code>texera_db.user_dictionary.value</code>.
-     */
     @Override
     public void setValue(JSON value) {
         this.value = value;

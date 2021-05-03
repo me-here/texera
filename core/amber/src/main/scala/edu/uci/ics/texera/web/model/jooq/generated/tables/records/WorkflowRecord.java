@@ -23,7 +23,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class WorkflowRecord extends UpdatableRecordImpl<WorkflowRecord> implements Record5<String, UInteger, String, Timestamp, Timestamp>, IWorkflow {
 
-    private static final long serialVersionUID = 707274682;
+    private static final long serialVersionUID = -1021426305;
 
     /**
      * Setter for <code>texera_db.workflow.name</code>.
@@ -85,8 +85,8 @@ public class WorkflowRecord extends UpdatableRecordImpl<WorkflowRecord> implemen
      * Getter for <code>texera_db.workflow.creation_time</code>.
      */
     @Override
-    public LocalDateTime getCreationTime() {
-        return (LocalDateTime) get(3);
+    public Timestamp getCreationTime() {
+        return (Timestamp) get(3);
     }
 
     /**
@@ -101,8 +101,8 @@ public class WorkflowRecord extends UpdatableRecordImpl<WorkflowRecord> implemen
      * Getter for <code>texera_db.workflow.last_modified_time</code>.
      */
     @Override
-    public LocalDateTime getLastModifiedTime() {
-        return (LocalDateTime) get(4);
+    public Timestamp getLastModifiedTime() {
+        return (Timestamp) get(4);
     }
 
     // -------------------------------------------------------------------------
@@ -119,12 +119,12 @@ public class WorkflowRecord extends UpdatableRecordImpl<WorkflowRecord> implemen
     // -------------------------------------------------------------------------
 
     @Override
-    public Row5<String, UInteger, String, LocalDateTime, LocalDateTime> fieldsRow() {
+    public Row5<String, UInteger, String, Timestamp, Timestamp> fieldsRow() {
         return (Row5) super.fieldsRow();
     }
 
     @Override
-    public Row5<String, UInteger, String, LocalDateTime, LocalDateTime> valuesRow() {
+    public Row5<String, UInteger, String, Timestamp, Timestamp> valuesRow() {
         return (Row5) super.valuesRow();
     }
 
@@ -144,12 +144,12 @@ public class WorkflowRecord extends UpdatableRecordImpl<WorkflowRecord> implemen
     }
 
     @Override
-    public Field<LocalDateTime> field4() {
+    public Field<Timestamp> field4() {
         return Workflow.WORKFLOW.CREATION_TIME;
     }
 
     @Override
-    public Field<LocalDateTime> field5() {
+    public Field<Timestamp> field5() {
         return Workflow.WORKFLOW.LAST_MODIFIED_TIME;
     }
 
@@ -169,12 +169,12 @@ public class WorkflowRecord extends UpdatableRecordImpl<WorkflowRecord> implemen
     }
 
     @Override
-    public LocalDateTime component4() {
+    public Timestamp component4() {
         return getCreationTime();
     }
 
     @Override
-    public LocalDateTime component5() {
+    public Timestamp component5() {
         return getLastModifiedTime();
     }
 
@@ -194,12 +194,12 @@ public class WorkflowRecord extends UpdatableRecordImpl<WorkflowRecord> implemen
     }
 
     @Override
-    public LocalDateTime value4() {
+    public Timestamp value4() {
         return getCreationTime();
     }
 
     @Override
-    public LocalDateTime value5() {
+    public Timestamp value5() {
         return getLastModifiedTime();
     }
 
@@ -222,19 +222,19 @@ public class WorkflowRecord extends UpdatableRecordImpl<WorkflowRecord> implemen
     }
 
     @Override
-    public WorkflowRecord value4(LocalDateTime value) {
+    public WorkflowRecord value4(Timestamp value) {
         setCreationTime(value);
         return this;
     }
 
     @Override
-    public WorkflowRecord value5(LocalDateTime value) {
+    public WorkflowRecord value5(Timestamp value) {
         setLastModifiedTime(value);
         return this;
     }
 
     @Override
-    public WorkflowRecord values(String value1, UInteger value2, String value3, LocalDateTime value4, LocalDateTime value5) {
+    public WorkflowRecord values(String value1, UInteger value2, String value3, Timestamp value4, Timestamp value5) {
         value1(value1);
         value2(value2);
         value3(value3);

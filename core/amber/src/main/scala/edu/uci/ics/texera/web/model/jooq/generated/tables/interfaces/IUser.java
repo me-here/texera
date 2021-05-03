@@ -31,9 +31,9 @@ public interface IUser extends Serializable {
     public void setUid(UInteger value);
 
     /**
-     * Getter for <code>texera_db.user.name</code>.
+     * Getter for <code>texera_db.user.uid</code>.
      */
-    public String getName();
+    public UInteger getUid();
 
     /**
      * Setter for <code>texera_db.user.password</code>.
@@ -45,11 +45,6 @@ public interface IUser extends Serializable {
      */
     public String getPassword();
 
-    /**
-     * Getter for <code>texera_db.user.uid</code>.
-     */
-    public UInteger getUid();
-
     // -------------------------------------------------------------------------
     // FROM and INTO
     // -------------------------------------------------------------------------
@@ -57,10 +52,10 @@ public interface IUser extends Serializable {
     /**
      * Load data from another generated Record/POJO implementing the common interface IUser
      */
-    public void from(IUser from);
+    public void from(edu.uci.ics.texera.web.model.jooq.generated.tables.interfaces.IUser from);
 
     /**
      * Copy data into another generated Record/POJO implementing the common interface IUser
      */
-    public <E extends IUser> E into(E into);
+    public <E extends edu.uci.ics.texera.web.model.jooq.generated.tables.interfaces.IUser> E into(E into);
 }

@@ -18,7 +18,7 @@ public interface IKeywordDictionary extends Serializable {
     /**
      * Setter for <code>texera_db.keyword_dictionary.uid</code>.
      */
-    public void setKid(UInteger value);
+    public void setUid(UInteger value);
 
     /**
      * Getter for <code>texera_db.keyword_dictionary.uid</code>.
@@ -26,9 +26,9 @@ public interface IKeywordDictionary extends Serializable {
     public UInteger getUid();
 
     /**
-     * Setter for <code>texera_db.keyword_dictionary.name</code>.
+     * Setter for <code>texera_db.keyword_dictionary.kid</code>.
      */
-    public void setName(String value);
+    public void setKid(UInteger value);
 
     /**
      * Getter for <code>texera_db.keyword_dictionary.kid</code>.
@@ -36,9 +36,9 @@ public interface IKeywordDictionary extends Serializable {
     public UInteger getKid();
 
     /**
-     * Setter for <code>texera_db.keyword_dictionary.content</code>.
+     * Setter for <code>texera_db.keyword_dictionary.name</code>.
      */
-    public void setContent(byte[] value);
+    public void setName(String value);
 
     /**
      * Getter for <code>texera_db.keyword_dictionary.name</code>.
@@ -46,9 +46,9 @@ public interface IKeywordDictionary extends Serializable {
     public String getName();
 
     /**
-     * Setter for <code>texera_db.keyword_dictionary.description</code>.
+     * Setter for <code>texera_db.keyword_dictionary.content</code>.
      */
-    public void setDescription(String value);
+    public void setContent(byte... value);
 
     /**
      * Getter for <code>texera_db.keyword_dictionary.content</code>.
@@ -72,10 +72,10 @@ public interface IKeywordDictionary extends Serializable {
     /**
      * Load data from another generated Record/POJO implementing the common interface IKeywordDictionary
      */
-    public void from(IKeywordDictionary from);
+    public void from(edu.uci.ics.texera.web.model.jooq.generated.tables.interfaces.IKeywordDictionary from);
 
     /**
      * Copy data into another generated Record/POJO implementing the common interface IKeywordDictionary
      */
-    public <E extends IKeywordDictionary> E into(E into);
+    public <E extends edu.uci.ics.texera.web.model.jooq.generated.tables.interfaces.IKeywordDictionary> E into(E into);
 }

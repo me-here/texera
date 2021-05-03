@@ -22,7 +22,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class UserDictionaryRecord extends UpdatableRecordImpl<UserDictionaryRecord> implements Record3<UInteger, String, JSON>, IUserDictionary {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 463080146;
 
     /**
      * Setter for <code>texera_db.user_dictionary.uid</code>.
@@ -200,8 +200,8 @@ public class UserDictionaryRecord extends UpdatableRecordImpl<UserDictionaryReco
     public UserDictionaryRecord(UInteger uid, String key, JSON value) {
         super(UserDictionary.USER_DICTIONARY);
 
-        setUid(uid);
-        setKey(key);
-        setValue(value);
+        set(0, uid);
+        set(1, key);
+        set(2, value);
     }
 }

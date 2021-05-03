@@ -4,6 +4,7 @@
 package edu.uci.ics.texera.web.model.jooq.generated.tables;
 
 
+import edu.uci.ics.texera.web.model.jooq.generated.Indexes;
 import edu.uci.ics.texera.web.model.jooq.generated.Keys;
 import edu.uci.ics.texera.web.model.jooq.generated.TexeraDb;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.records.UserDictionaryRecord;
@@ -13,6 +14,7 @@ import java.util.List;
 
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Index;
 import org.jooq.JSON;
 import org.jooq.Name;
 import org.jooq.Record;
@@ -20,10 +22,8 @@ import org.jooq.Row3;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
-import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 import org.jooq.types.UInteger;
 
@@ -34,7 +34,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class UserDictionary extends TableImpl<UserDictionaryRecord> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1349315032;
 
     /**
      * The reference instance of <code>texera_db.user_dictionary</code>
@@ -52,24 +52,23 @@ public class UserDictionary extends TableImpl<UserDictionaryRecord> {
     /**
      * The column <code>texera_db.user_dictionary.uid</code>.
      */
-    public final TableField<UserDictionaryRecord, UInteger> UID = createField(DSL.name("uid"), SQLDataType.INTEGERUNSIGNED.nullable(false), this, "");
+    public final TableField<UserDictionaryRecord, UInteger> UID = createField(DSL.name("uid"), org.jooq.impl.SQLDataType.INTEGERUNSIGNED.nullable(false), this, "");
 
     /**
      * The column <code>texera_db.user_dictionary.key</code>.
      */
-    public final TableField<UserDictionaryRecord, String> KEY = createField(DSL.name("key"), SQLDataType.VARCHAR(128).nullable(false), this, "");
+    public final TableField<UserDictionaryRecord, String> KEY = createField(DSL.name("key"), org.jooq.impl.SQLDataType.VARCHAR(255).nullable(false), this, "");
 
     /**
      * The column <code>texera_db.user_dictionary.value</code>.
      */
-    public final TableField<UserDictionaryRecord, JSON> VALUE = createField(DSL.name("value"), SQLDataType.JSON.nullable(false), this, "");
+    public final TableField<UserDictionaryRecord, JSON> VALUE = createField(DSL.name("value"), org.jooq.impl.SQLDataType.JSON.nullable(false), this, "");
 
-    private UserDictionary(Name alias, Table<UserDictionaryRecord> aliased) {
-        this(alias, aliased, null);
-    }
-
-    private UserDictionary(Name alias, Table<UserDictionaryRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    /**
+     * Create a <code>texera_db.user_dictionary</code> table reference
+     */
+    public UserDictionary() {
+        this(DSL.name("user_dictionary"), null);
     }
 
     /**
@@ -86,11 +85,12 @@ public class UserDictionary extends TableImpl<UserDictionaryRecord> {
         this(alias, USER_DICTIONARY);
     }
 
-    /**
-     * Create a <code>texera_db.user_dictionary</code> table reference
-     */
-    public UserDictionary() {
-        this(DSL.name("user_dictionary"), null);
+    private UserDictionary(Name alias, Table<UserDictionaryRecord> aliased) {
+        this(alias, aliased, null);
+    }
+
+    private UserDictionary(Name alias, Table<UserDictionaryRecord> aliased, Field<?>[] parameters) {
+        super(alias, null, aliased, parameters, DSL.comment(""));
     }
 
     public <O extends Record> UserDictionary(Table<O> child, ForeignKey<O, UserDictionaryRecord> key) {
@@ -100,6 +100,11 @@ public class UserDictionary extends TableImpl<UserDictionaryRecord> {
     @Override
     public Schema getSchema() {
         return TexeraDb.TEXERA_DB;
+    }
+
+    @Override
+    public List<Index> getIndexes() {
+        return Arrays.<Index>asList(Indexes.USER_DICTIONARY_PRIMARY);
     }
 
     @Override

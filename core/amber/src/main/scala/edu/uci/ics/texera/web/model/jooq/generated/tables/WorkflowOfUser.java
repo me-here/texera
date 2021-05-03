@@ -33,7 +33,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class WorkflowOfUser extends TableImpl<WorkflowOfUserRecord> {
 
-    private static final long serialVersionUID = 344640591;
+    private static final long serialVersionUID = 1187907428;
 
     /**
      * The reference instance of <code>texera_db.workflow_of_user</code>
@@ -49,26 +49,20 @@ public class WorkflowOfUser extends TableImpl<WorkflowOfUserRecord> {
     }
 
     /**
-     * The class holding records for this type
+     * The column <code>texera_db.workflow_of_user.uid</code>.
      */
     public final TableField<WorkflowOfUserRecord, UInteger> UID = createField(DSL.name("uid"), org.jooq.impl.SQLDataType.INTEGERUNSIGNED.nullable(false), this, "");
 
     /**
-     * The column <code>texera_db.workflow_of_user.uid</code>.
-     */
-    public final TableField<WorkflowOfUserRecord, UInteger> UID = createField(DSL.name("uid"), SQLDataType.INTEGERUNSIGNED.nullable(false), this, "");
-
-    /**
      * The column <code>texera_db.workflow_of_user.wid</code>.
      */
-    public final TableField<WorkflowOfUserRecord, UInteger> WID = createField(DSL.name("wid"), SQLDataType.INTEGERUNSIGNED.nullable(false), this, "");
+    public final TableField<WorkflowOfUserRecord, UInteger> WID = createField(DSL.name("wid"), org.jooq.impl.SQLDataType.INTEGERUNSIGNED.nullable(false), this, "");
 
-    private WorkflowOfUser(Name alias, Table<WorkflowOfUserRecord> aliased) {
-        this(alias, aliased, null);
-    }
-
-    private WorkflowOfUser(Name alias, Table<WorkflowOfUserRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    /**
+     * Create a <code>texera_db.workflow_of_user</code> table reference
+     */
+    public WorkflowOfUser() {
+        this(DSL.name("workflow_of_user"), null);
     }
 
     /**
@@ -85,11 +79,12 @@ public class WorkflowOfUser extends TableImpl<WorkflowOfUserRecord> {
         this(alias, WORKFLOW_OF_USER);
     }
 
-    /**
-     * Create a <code>texera_db.workflow_of_user</code> table reference
-     */
-    public WorkflowOfUser() {
-        this(DSL.name("workflow_of_user"), null);
+    private WorkflowOfUser(Name alias, Table<WorkflowOfUserRecord> aliased) {
+        this(alias, aliased, null);
+    }
+
+    private WorkflowOfUser(Name alias, Table<WorkflowOfUserRecord> aliased, Field<?>[] parameters) {
+        super(alias, null, aliased, parameters, DSL.comment(""));
     }
 
     public <O extends Record> WorkflowOfUser(Table<O> child, ForeignKey<O, WorkflowOfUserRecord> key) {
@@ -103,7 +98,7 @@ public class WorkflowOfUser extends TableImpl<WorkflowOfUserRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.WORKFLOW_OF_USER_WID);
+        return Arrays.<Index>asList(Indexes.WORKFLOW_OF_USER_PRIMARY, Indexes.WORKFLOW_OF_USER_WID);
     }
 
     @Override

@@ -6,9 +6,7 @@ package edu.uci.ics.texera.web.model.jooq.generated.tables.pojos;
 
 import edu.uci.ics.texera.web.model.jooq.generated.tables.interfaces.IWorkflow;
 
-import java.time.LocalDateTime;
-
-import org.jooq.types.UInteger;
+import java.sql.Timestamp;
 
 import org.jooq.types.UInteger;
 
@@ -19,7 +17,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Workflow implements IWorkflow {
 
-    private static final long serialVersionUID = 2029320923;
+    private static final long serialVersionUID = -1716659515;
 
     private String    name;
     private UInteger  wid;
@@ -51,83 +49,53 @@ public class Workflow implements IWorkflow {
         this.lastModifiedTime = lastModifiedTime;
     }
 
-    /**
-     * Getter for <code>texera_db.workflow.name</code>.
-     */
     @Override
     public String getName() {
         return this.name;
     }
 
-    /**
-     * Setter for <code>texera_db.workflow.name</code>.
-     */
     @Override
     public void setName(String name) {
         this.name = name;
     }
 
-    /**
-     * Getter for <code>texera_db.workflow.wid</code>.
-     */
     @Override
     public UInteger getWid() {
         return this.wid;
     }
 
-    /**
-     * Setter for <code>texera_db.workflow.wid</code>.
-     */
     @Override
     public void setWid(UInteger wid) {
         this.wid = wid;
     }
 
-    /**
-     * Getter for <code>texera_db.workflow.content</code>.
-     */
     @Override
     public String getContent() {
         return this.content;
     }
 
-    /**
-     * Setter for <code>texera_db.workflow.content</code>.
-     */
     @Override
     public void setContent(String content) {
         this.content = content;
     }
 
-    /**
-     * Getter for <code>texera_db.workflow.creation_time</code>.
-     */
     @Override
-    public LocalDateTime getCreationTime() {
+    public Timestamp getCreationTime() {
         return this.creationTime;
     }
 
-    /**
-     * Setter for <code>texera_db.workflow.creation_time</code>.
-     */
     @Override
-    public void setCreationTime(LocalDateTime creationTime) {
+    public void setCreationTime(Timestamp creationTime) {
         this.creationTime = creationTime;
     }
 
-    /**
-     * Getter for <code>texera_db.workflow.last_modified_time</code>.
-     */
     @Override
-    public LocalDateTime getLastModifiedTime() {
+    public Timestamp getLastModifiedTime() {
         return this.lastModifiedTime;
     }
 
-    /**
-     * Setter for <code>texera_db.workflow.last_modified_time</code>.
-     */
     @Override
-    public void setLastModifiedTime(LocalDateTime lastModifiedTime) {
+    public void setLastModifiedTime(Timestamp lastModifiedTime) {
         this.lastModifiedTime = lastModifiedTime;
     }
 

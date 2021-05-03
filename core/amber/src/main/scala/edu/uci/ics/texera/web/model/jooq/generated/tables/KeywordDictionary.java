@@ -4,6 +4,7 @@
 package edu.uci.ics.texera.web.model.jooq.generated.tables;
 
 
+import edu.uci.ics.texera.web.model.jooq.generated.Indexes;
 import edu.uci.ics.texera.web.model.jooq.generated.Keys;
 import edu.uci.ics.texera.web.model.jooq.generated.TexeraDb;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.records.KeywordDictionaryRecord;
@@ -33,7 +34,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class KeywordDictionary extends TableImpl<KeywordDictionaryRecord> {
 
-    private static final long serialVersionUID = -1509040930;
+    private static final long serialVersionUID = -1063079191;
 
     /**
      * The reference instance of <code>texera_db.keyword_dictionary</code>
@@ -71,14 +72,13 @@ public class KeywordDictionary extends TableImpl<KeywordDictionaryRecord> {
     /**
      * The column <code>texera_db.keyword_dictionary.description</code>.
      */
-    public final TableField<KeywordDictionaryRecord, String> DESCRIPTION = createField(DSL.name("description"), SQLDataType.VARCHAR(512).nullable(false), this, "");
+    public final TableField<KeywordDictionaryRecord, String> DESCRIPTION = createField(DSL.name("description"), org.jooq.impl.SQLDataType.VARCHAR(512).nullable(false), this, "");
 
-    private KeywordDictionary(Name alias, Table<KeywordDictionaryRecord> aliased) {
-        this(alias, aliased, null);
-    }
-
-    private KeywordDictionary(Name alias, Table<KeywordDictionaryRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    /**
+     * Create a <code>texera_db.keyword_dictionary</code> table reference
+     */
+    public KeywordDictionary() {
+        this(DSL.name("keyword_dictionary"), null);
     }
 
     /**
@@ -95,11 +95,12 @@ public class KeywordDictionary extends TableImpl<KeywordDictionaryRecord> {
         this(alias, KEYWORD_DICTIONARY);
     }
 
-    /**
-     * Create a <code>texera_db.keyword_dictionary</code> table reference
-     */
-    public KeywordDictionary() {
-        this(DSL.name("keyword_dictionary"), null);
+    private KeywordDictionary(Name alias, Table<KeywordDictionaryRecord> aliased) {
+        this(alias, aliased, null);
+    }
+
+    private KeywordDictionary(Name alias, Table<KeywordDictionaryRecord> aliased, Field<?>[] parameters) {
+        super(alias, null, aliased, parameters, DSL.comment(""));
     }
 
     public <O extends Record> KeywordDictionary(Table<O> child, ForeignKey<O, KeywordDictionaryRecord> key) {
@@ -112,8 +113,13 @@ public class KeywordDictionary extends TableImpl<KeywordDictionaryRecord> {
     }
 
     @Override
+    public List<Index> getIndexes() {
+        return Arrays.<Index>asList(Indexes.KEYWORD_DICTIONARY_PRIMARY, Indexes.KEYWORD_DICTIONARY_UID);
+    }
+
+    @Override
     public Identity<KeywordDictionaryRecord, UInteger> getIdentity() {
-        return (Identity<KeywordDictionaryRecord, UInteger>) super.getIdentity();
+        return Keys.IDENTITY_KEYWORD_DICTIONARY;
     }
 
     @Override

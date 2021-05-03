@@ -7,17 +7,17 @@ package edu.uci.ics.texera.web.model.jooq.generated;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.File;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.KeywordDictionary;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.User;
+import edu.uci.ics.texera.web.model.jooq.generated.tables.UserDictionary;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.Workflow;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.WorkflowOfUser;
 
 import org.jooq.Index;
 import org.jooq.OrderField;
-import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
 
 
 /**
- * A class modelling indexes of tables in texera_db.
+ * A class modelling indexes of tables of the <code>texera_db</code> schema.
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Indexes {
@@ -32,6 +32,7 @@ public class Indexes {
     public static final Index KEYWORD_DICTIONARY_UID = Indexes0.KEYWORD_DICTIONARY_UID;
     public static final Index USER_NAME = Indexes0.USER_NAME;
     public static final Index USER_PRIMARY = Indexes0.USER_PRIMARY;
+    public static final Index USER_DICTIONARY_PRIMARY = Indexes0.USER_DICTIONARY_PRIMARY;
     public static final Index WORKFLOW_PRIMARY = Indexes0.WORKFLOW_PRIMARY;
     public static final Index WORKFLOW_OF_USER_PRIMARY = Indexes0.WORKFLOW_OF_USER_PRIMARY;
     public static final Index WORKFLOW_OF_USER_WID = Indexes0.WORKFLOW_OF_USER_WID;
@@ -47,6 +48,7 @@ public class Indexes {
         public static Index KEYWORD_DICTIONARY_UID = Internal.createIndex("uid", KeywordDictionary.KEYWORD_DICTIONARY, new OrderField[] { KeywordDictionary.KEYWORD_DICTIONARY.UID, KeywordDictionary.KEYWORD_DICTIONARY.NAME }, true);
         public static Index USER_NAME = Internal.createIndex("name", User.USER, new OrderField[] { User.USER.NAME }, true);
         public static Index USER_PRIMARY = Internal.createIndex("PRIMARY", User.USER, new OrderField[] { User.USER.UID }, true);
+        public static Index USER_DICTIONARY_PRIMARY = Internal.createIndex("PRIMARY", UserDictionary.USER_DICTIONARY, new OrderField[] { UserDictionary.USER_DICTIONARY.UID, UserDictionary.USER_DICTIONARY.KEY }, true);
         public static Index WORKFLOW_PRIMARY = Internal.createIndex("PRIMARY", Workflow.WORKFLOW, new OrderField[] { Workflow.WORKFLOW.WID }, true);
         public static Index WORKFLOW_OF_USER_PRIMARY = Internal.createIndex("PRIMARY", WorkflowOfUser.WORKFLOW_OF_USER, new OrderField[] { WorkflowOfUser.WORKFLOW_OF_USER.UID, WorkflowOfUser.WORKFLOW_OF_USER.WID }, true);
         public static Index WORKFLOW_OF_USER_WID = Internal.createIndex("wid", WorkflowOfUser.WORKFLOW_OF_USER, new OrderField[] { WorkflowOfUser.WORKFLOW_OF_USER.WID }, false);

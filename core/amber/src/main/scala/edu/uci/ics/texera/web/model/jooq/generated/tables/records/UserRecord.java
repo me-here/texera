@@ -21,7 +21,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class UserRecord extends UpdatableRecordImpl<UserRecord> implements Record3<String, UInteger, String>, IUser {
 
-    private static final long serialVersionUID = 495727651;
+    private static final long serialVersionUID = -439997418;
 
     /**
      * Setter for <code>texera_db.user.name</code>.

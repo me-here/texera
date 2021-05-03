@@ -4,6 +4,7 @@
 package edu.uci.ics.texera.web.model.jooq.generated.tables;
 
 
+import edu.uci.ics.texera.web.model.jooq.generated.Indexes;
 import edu.uci.ics.texera.web.model.jooq.generated.Keys;
 import edu.uci.ics.texera.web.model.jooq.generated.TexeraDb;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.records.FileRecord;
@@ -33,7 +34,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class File extends TableImpl<FileRecord> {
 
-    private static final long serialVersionUID = 709170345;
+    private static final long serialVersionUID = 1809064116;
 
     /**
      * The reference instance of <code>texera_db.file</code>
@@ -76,14 +77,13 @@ public class File extends TableImpl<FileRecord> {
     /**
      * The column <code>texera_db.file.description</code>.
      */
-    public final TableField<FileRecord, String> DESCRIPTION = createField(DSL.name("description"), SQLDataType.VARCHAR(512).nullable(false), this, "");
+    public final TableField<FileRecord, String> DESCRIPTION = createField(DSL.name("description"), org.jooq.impl.SQLDataType.VARCHAR(512).nullable(false), this, "");
 
-    private File(Name alias, Table<FileRecord> aliased) {
-        this(alias, aliased, null);
-    }
-
-    private File(Name alias, Table<FileRecord> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    /**
+     * Create a <code>texera_db.file</code> table reference
+     */
+    public File() {
+        this(DSL.name("file"), null);
     }
 
     /**
@@ -100,11 +100,12 @@ public class File extends TableImpl<FileRecord> {
         this(alias, FILE);
     }
 
-    /**
-     * Create a <code>texera_db.file</code> table reference
-     */
-    public File() {
-        this(DSL.name("file"), null);
+    private File(Name alias, Table<FileRecord> aliased) {
+        this(alias, aliased, null);
+    }
+
+    private File(Name alias, Table<FileRecord> aliased, Field<?>[] parameters) {
+        super(alias, null, aliased, parameters, DSL.comment(""));
     }
 
     public <O extends Record> File(Table<O> child, ForeignKey<O, FileRecord> key) {
@@ -117,8 +118,13 @@ public class File extends TableImpl<FileRecord> {
     }
 
     @Override
+    public List<Index> getIndexes() {
+        return Arrays.<Index>asList(Indexes.FILE_PRIMARY, Indexes.FILE_UID);
+    }
+
+    @Override
     public Identity<FileRecord, UInteger> getIdentity() {
-        return (Identity<FileRecord, UInteger>) super.getIdentity();
+        return Keys.IDENTITY_FILE;
     }
 
     @Override
