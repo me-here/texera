@@ -29,10 +29,7 @@
     "@angular/platform-browser": "^9.1.9",
     "@angular/platform-browser-dynamic": "^9.1.9",
     "@angular/router": "^9.1.9",
-    "@danmarshall/deckgl-typings": "^4.9.0",
-    "@deck.gl/core": "^8.4.13",
-    "@deck.gl/layers": "^8.4.13",
-    "@deck.gl/mapbox": "^8.4.13",
+    "@danmarshall/deckgl-typings": "^4.9.2",
     "@ng-bootstrap/ng-bootstrap": "^4.2.1",
     "@ngx-formly/bootstrap": "^5.10.13",
     "@ngx-formly/core": "^5.10.13",
@@ -48,7 +45,7 @@
     "core-js": "^2.5.0",
     "d3": "^6.5.0",
     "d3-cloud": "^1.2.5",
-    "deck.gl": "^8.4.13",
+    "deck.gl": "^8.4.14",
     "deep-map": "^2.0.0",
     "es6-weak-map": "^2.0.3",
     "font-awesome": "^4.7.0",
@@ -113,7 +110,7 @@
     "rxjs-marbles": "^5.0.6",
     "ts-node": "~4.1.0",
     "tslint": "~5.9.1",
-    "typescript": "^3.8.3",
+    "typescript": "~3.8.3",
     "webpack-bundle-analyzer": "^3.8.0"
   }
 }
