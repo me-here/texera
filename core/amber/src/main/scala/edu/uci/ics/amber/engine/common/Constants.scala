@@ -16,7 +16,7 @@ object Constants {
 
   // join-skew reserach related
   val gcpExp: Boolean = true
-  val onlyDetectSkew: Boolean = false
+  val onlyDetectSkew: Boolean = true
   val startDetection: FiniteDuration = 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
   val printResultsInConsole: Boolean = true
@@ -25,7 +25,7 @@ object Constants {
   val sortingFrequency: Int = 1000
   val lowerLimit: Float = 0f
   val upperLimit: Float = 500000f
-  val sortExperiment: Boolean = false
+  val sortExperiment: Boolean = true
 
   type joinType = String
 }
