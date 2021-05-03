@@ -537,6 +537,7 @@ describe('PropertyEditorComponent', () => {
       spyOn(presetService, 'savePresets');
 
       workflowActionService.addOperator(testPredicate, mockPoint);
+      tick(1000);
       presetService.applyPreset('operator', testPredicate.operatorID, oldPreset);
       tick(1000);
       flush();
