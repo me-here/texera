@@ -34,6 +34,7 @@ import java.util.UUID
 import edu.uci.ics.amber.engine.common.virtualidentity.OperatorIdentity
 import edu.uci.ics.texera.workflow.operators.hashJoinSpecial.HashJoinSpecialOpDesc
 import edu.uci.ics.texera.workflow.operators.hashJoinSpecial2.HashJoinSpecial2OpDesc
+import edu.uci.ics.texera.workflow.operators.hdfsFileSink.HdfsFileSinkOpDesc
 import edu.uci.ics.texera.workflow.operators.hdfsscan.HdfsScanOpDesc
 import edu.uci.ics.texera.workflow.operators.sort.SortOpDesc
 import edu.uci.ics.texera.workflow.operators.sortOneLayer.SortOneLayerOpDesc
@@ -73,7 +74,8 @@ import edu.uci.ics.texera.workflow.operators.sortOneLayer.SortOneLayerOpDesc
     ),
     new Type(value = classOf[HdfsScanOpDesc], name = "HdfsScan"),
     new Type(value = classOf[SortOpDesc], name = "Sort"),
-    new Type(value = classOf[SortOneLayerOpDesc], name = "SortOneLayer")
+    new Type(value = classOf[SortOneLayerOpDesc], name = "SortOneLayer"),
+    new Type(value = classOf[HdfsFileSinkOpDesc], name = "HdfsFileSink")
   )
 )
 abstract class OperatorDescriptor extends Serializable {
