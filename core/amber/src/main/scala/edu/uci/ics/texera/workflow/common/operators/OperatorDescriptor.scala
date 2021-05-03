@@ -36,6 +36,7 @@ import edu.uci.ics.texera.workflow.operators.hashJoinSpecial.HashJoinSpecialOpDe
 import edu.uci.ics.texera.workflow.operators.hashJoinSpecial2.HashJoinSpecial2OpDesc
 import edu.uci.ics.texera.workflow.operators.hdfsscan.HdfsScanOpDesc
 import edu.uci.ics.texera.workflow.operators.sort.SortOpDesc
+import edu.uci.ics.texera.workflow.operators.sortOneLayer.SortOneLayerOpDesc
 
 @JsonTypeInfo(
   use = JsonTypeInfo.Id.NAME,
@@ -71,7 +72,8 @@ import edu.uci.ics.texera.workflow.operators.sort.SortOpDesc
       name = "HashSpecialJoin2"
     ),
     new Type(value = classOf[HdfsScanOpDesc], name = "HdfsScan"),
-    new Type(value = classOf[SortOpDesc], name = "Sort")
+    new Type(value = classOf[SortOpDesc], name = "Sort"),
+    new Type(value = classOf[SortOneLayerOpDesc], name = "SortOneLayer")
   )
 )
 abstract class OperatorDescriptor extends Serializable {
