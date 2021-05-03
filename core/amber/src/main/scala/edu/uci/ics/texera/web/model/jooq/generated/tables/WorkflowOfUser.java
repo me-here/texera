@@ -21,10 +21,8 @@ import org.jooq.Row2;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
-import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 import org.jooq.types.UInteger;
 
@@ -35,7 +33,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class WorkflowOfUser extends TableImpl<WorkflowOfUserRecord> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 344640591;
 
     /**
      * The reference instance of <code>texera_db.workflow_of_user</code>
@@ -49,6 +47,11 @@ public class WorkflowOfUser extends TableImpl<WorkflowOfUserRecord> {
     public Class<WorkflowOfUserRecord> getRecordType() {
         return WorkflowOfUserRecord.class;
     }
+
+    /**
+     * The class holding records for this type
+     */
+    public final TableField<WorkflowOfUserRecord, UInteger> UID = createField(DSL.name("uid"), org.jooq.impl.SQLDataType.INTEGERUNSIGNED.nullable(false), this, "");
 
     /**
      * The column <code>texera_db.workflow_of_user.uid</code>.

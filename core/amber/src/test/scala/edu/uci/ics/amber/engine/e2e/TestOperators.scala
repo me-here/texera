@@ -6,27 +6,54 @@ import edu.uci.ics.texera.workflow.operators.aggregate.{
 }
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpDesc
 import edu.uci.ics.texera.workflow.operators.keywordSearch.KeywordSearchOpDesc
-import edu.uci.ics.texera.workflow.operators.scan.CSVScanSourceOpDesc
 import edu.uci.ics.texera.workflow.operators.sink.SimpleSinkOpDesc
-import edu.uci.ics.texera.workflow.operators.source.asterixdb.AsterixDBSourceOpDesc
-import edu.uci.ics.texera.workflow.operators.source.mysql.MySQLSourceOpDesc
+import edu.uci.ics.texera.workflow.operators.source.scan.csv.CSVScanSourceOpDesc
+import edu.uci.ics.texera.workflow.operators.source.scan.json.JSONLScanSourceOpDesc
+import edu.uci.ics.texera.workflow.operators.source.sql.asterixdb.AsterixDBSourceOpDesc
+import edu.uci.ics.texera.workflow.operators.source.sql.mysql.MySQLSourceOpDesc
 
 object TestOperators {
 
   def headerlessSmallCsvScanOpDesc(): CSVScanSourceOpDesc = {
-    getCsvScanOpDesc("src/test/resources/CountrySalesDataHeaderlessSmall.csv", header = false)
+    getCsvScanOpDesc("src/test/resources/country_sales_headerless_small.csv", header = false)
+  }
+
+  def headerlessSmallMultiLineDataCsvScanOpDesc(): CSVScanSourceOpDesc = {
+    getCsvScanOpDesc(
+      "src/test/resources/country_sales_headerless_small_multi_line.csv",
+      header = false,
+      multiLine = true
+    )
   }
 
   def smallCsvScanOpDesc(): CSVScanSourceOpDesc = {
-    getCsvScanOpDesc("src/test/resources/CountrySalesDataSmall.csv", header = true)
+    getCsvScanOpDesc("src/test/resources/country_sales_small.csv", header = true)
   }
 
-  def getCsvScanOpDesc(fileName: String, header: Boolean): CSVScanSourceOpDesc = {
+  def smallJSONLScanOpDesc(): JSONLScanSourceOpDesc = {
+    getJSONLScanOpDesc("src/test/resources/100.jsonl")
+  }
+
+  def mediumFlattenJSONLScanOpDesc(): JSONLScanSourceOpDesc = {
+    getJSONLScanOpDesc("src/test/resources/1000.jsonl", flatten = true)
+  }
+  def getCsvScanOpDesc(
+      fileName: String,
+      header: Boolean,
+      multiLine: Boolean = false
+  ): CSVScanSourceOpDesc = {
     val csvHeaderlessOp = new CSVScanSourceOpDesc()
-    csvHeaderlessOp.fileName = Option(fileName)
-    csvHeaderlessOp.delimiter = Option(",")
+    csvHeaderlessOp.fileName = Some(fileName)
+    csvHeaderlessOp.customDelimiter = Some(",")
     csvHeaderlessOp.hasHeader = header
     csvHeaderlessOp
+  }
+
+  def getJSONLScanOpDesc(fileName: String, flatten: Boolean = false): JSONLScanSourceOpDesc = {
+    val jsonlOp = new JSONLScanSourceOpDesc
+    jsonlOp.fileName = Some(fileName)
+    jsonlOp.flatten = flatten
+    jsonlOp
   }
 
   def joinOpDesc(buildAttrName: String, probeAttrName: String): HashJoinOpDesc[String] = {
@@ -37,7 +64,7 @@ object TestOperators {
   }
 
   def mediumCsvScanOpDesc(): CSVScanSourceOpDesc = {
-    getCsvScanOpDesc("src/test/resources/CountrySalesDataMedium.csv", header = true)
+    getCsvScanOpDesc("src/test/resources/country_sales_medium.csv", header = true)
   }
 
   def keywordSearchOpDesc(attribute: String, keywordToSearch: String): KeywordSearchOpDesc = {
@@ -75,7 +102,7 @@ object TestOperators {
     inMemoryMySQLSourceOpDesc.table = table
     inMemoryMySQLSourceOpDesc.username = username
     inMemoryMySQLSourceOpDesc.password = password
-    inMemoryMySQLSourceOpDesc.limit = Option(1000)
+    inMemoryMySQLSourceOpDesc.limit = Some(1000)
     inMemoryMySQLSourceOpDesc
   }
 
@@ -85,7 +112,7 @@ object TestOperators {
     asterixDBOp.port = "default"
     asterixDBOp.database = "twitter"
     asterixDBOp.table = "ds_tweet"
-    asterixDBOp.limit = Option(1000)
+    asterixDBOp.limit = Some(1000)
     asterixDBOp
   }
 

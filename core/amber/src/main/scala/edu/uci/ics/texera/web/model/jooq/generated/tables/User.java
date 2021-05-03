@@ -14,16 +14,15 @@ import java.util.List;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Identity;
+import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row2;
+import org.jooq.Row3;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
-import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 import org.jooq.types.UInteger;
 
@@ -34,7 +33,7 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class User extends TableImpl<UserRecord> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2077338662;
 
     /**
      * The reference instance of <code>texera_db.user</code>
@@ -50,12 +49,22 @@ public class User extends TableImpl<UserRecord> {
     }
 
     /**
+     * The class holding records for this type
+     */
+    public final TableField<UserRecord, String> NAME = createField(DSL.name("name"), org.jooq.impl.SQLDataType.VARCHAR(32).nullable(false), this, "");
+
+    /**
      * The column <code>texera_db.user.name</code>.
      */
     public final TableField<UserRecord, String> NAME = createField(DSL.name("name"), SQLDataType.VARCHAR(32).nullable(false), this, "");
 
     /**
-     * The column <code>texera_db.user.uid</code>.
+     * The column <code>texera_db.user.password</code>.
+     */
+    public final TableField<UserRecord, String> PASSWORD = createField(DSL.name("password"), org.jooq.impl.SQLDataType.VARCHAR(256).nullable(false), this, "");
+
+    /**
+     * Create a <code>texera_db.user</code> table reference
      */
     public final TableField<UserRecord, UInteger> UID = createField(DSL.name("uid"), SQLDataType.INTEGERUNSIGNED.nullable(false).identity(true), this, "");
 
@@ -139,11 +148,11 @@ public class User extends TableImpl<UserRecord> {
     }
 
     // -------------------------------------------------------------------------
-    // Row2 type methods
+    // Row3 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row2<String, UInteger> fieldsRow() {
-        return (Row2) super.fieldsRow();
+    public Row3<String, UInteger, String> fieldsRow() {
+        return (Row3) super.fieldsRow();
     }
 }

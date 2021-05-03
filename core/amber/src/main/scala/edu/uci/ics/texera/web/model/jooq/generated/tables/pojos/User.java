@@ -15,24 +15,28 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class User implements IUser {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -644617017;
 
     private String   name;
     private UInteger uid;
+    private String   password;
 
     public User() {}
 
     public User(IUser value) {
         this.name = value.getName();
         this.uid = value.getUid();
+        this.password = value.getPassword();
     }
 
     public User(
         String   name,
-        UInteger uid
+        UInteger uid,
+        String   password
     ) {
         this.name = name;
         this.uid = uid;
+        this.password = password;
     }
 
     /**
@@ -68,11 +72,22 @@ public class User implements IUser {
     }
 
     @Override
+    public String getPassword() {
+        return this.password;
+    }
+
+    @Override
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("User (");
 
         sb.append(name);
         sb.append(", ").append(uid);
+        sb.append(", ").append(password);
 
         sb.append(")");
         return sb.toString();
@@ -86,6 +101,7 @@ public class User implements IUser {
     public void from(IUser from) {
         setName(from.getName());
         setUid(from.getUid());
+        setPassword(from.getPassword());
     }
 
     @Override

@@ -18,7 +18,7 @@ public interface IKeywordDictionary extends Serializable {
     /**
      * Setter for <code>texera_db.keyword_dictionary.uid</code>.
      */
-    public void setUid(UInteger value);
+    public void setKid(UInteger value);
 
     /**
      * Getter for <code>texera_db.keyword_dictionary.uid</code>.
@@ -26,9 +26,9 @@ public interface IKeywordDictionary extends Serializable {
     public UInteger getUid();
 
     /**
-     * Setter for <code>texera_db.keyword_dictionary.kid</code>.
+     * Setter for <code>texera_db.keyword_dictionary.name</code>.
      */
-    public void setKid(UInteger value);
+    public void setName(String value);
 
     /**
      * Getter for <code>texera_db.keyword_dictionary.kid</code>.
@@ -36,9 +36,9 @@ public interface IKeywordDictionary extends Serializable {
     public UInteger getKid();
 
     /**
-     * Setter for <code>texera_db.keyword_dictionary.name</code>.
+     * Setter for <code>texera_db.keyword_dictionary.content</code>.
      */
-    public void setName(String value);
+    public void setContent(byte[] value);
 
     /**
      * Getter for <code>texera_db.keyword_dictionary.name</code>.
@@ -46,9 +46,9 @@ public interface IKeywordDictionary extends Serializable {
     public String getName();
 
     /**
-     * Setter for <code>texera_db.keyword_dictionary.content</code>.
+     * Setter for <code>texera_db.keyword_dictionary.description</code>.
      */
-    public void setContent(byte[] value);
+    public void setDescription(String value);
 
     /**
      * Getter for <code>texera_db.keyword_dictionary.content</code>.

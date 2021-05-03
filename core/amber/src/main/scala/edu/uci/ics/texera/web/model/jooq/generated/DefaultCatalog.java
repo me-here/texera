@@ -4,6 +4,7 @@
 package edu.uci.ics.texera.web.model.jooq.generated;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -17,7 +18,7 @@ import org.jooq.impl.CatalogImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class DefaultCatalog extends CatalogImpl {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -497220594;
 
     /**
      * The reference instance of <code>DEFAULT_CATALOG</code>

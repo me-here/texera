@@ -7,7 +7,7 @@ package edu.uci.ics.texera.web.model.jooq.generated.tables.daos;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.Workflow;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.records.WorkflowRecord;
 
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 import java.util.List;
 
 import org.jooq.Configuration;

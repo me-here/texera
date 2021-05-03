@@ -7,12 +7,10 @@ package edu.uci.ics.texera.web.model.jooq.generated;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.File;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.KeywordDictionary;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.User;
-import edu.uci.ics.texera.web.model.jooq.generated.tables.UserDictionary;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.Workflow;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.WorkflowOfUser;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.records.FileRecord;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.records.KeywordDictionaryRecord;
-import edu.uci.ics.texera.web.model.jooq.generated.tables.records.UserDictionaryRecord;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.records.UserRecord;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.records.WorkflowOfUserRecord;
 import edu.uci.ics.texera.web.model.jooq.generated.tables.records.WorkflowRecord;
@@ -25,8 +23,8 @@ import org.jooq.impl.Internal;
 
 
 /**
- * A class modelling foreign key relationships and constraints of tables in 
- * texera_db.
+ * A class modelling foreign key relationships and constraints of tables of 
+ * the <code>texera_db</code> schema.
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Keys {
