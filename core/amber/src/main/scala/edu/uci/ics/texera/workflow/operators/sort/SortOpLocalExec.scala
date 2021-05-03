@@ -101,6 +101,52 @@ class SortOpLocalExec(
 
   }
 
+  def outputOneList(ownList: mutable.PriorityQueue[Tuple]): Iterator[Tuple] = {
+    new Iterator[Tuple] {
+      override def hasNext: Boolean = ownList.size > 0
+
+      override def next(): Tuple = ownList.dequeue()
+    }
+  }
+
+  def outputMergedLists(
+      ownList: mutable.PriorityQueue[Tuple],
+      receivedList: ArrayBuffer[Tuple]
+  ): Iterator[Tuple] = {
+    // merge the two sorted lists
+    new Iterator[Tuple] {
+      var receivedIdx = 0
+      override def hasNext: Boolean = {
+        (ownList.size > 0 || receivedIdx < receivedList.size)
+      }
+
+      override def next(): Tuple = {
+        if (ownList.size > 0 && receivedIdx < receivedList.size) {
+          if (
+            ownList.head
+              .getField(sortAttributeName)
+              .asInstanceOf[Float] < receivedList(receivedIdx)
+              .getField(sortAttributeName)
+              .asInstanceOf[Float]
+          ) {
+
+            return ownList.dequeue()
+          } else {
+            val ret = receivedList(receivedIdx)
+            receivedIdx += 1
+            return ret
+          }
+        } else if (ownList.size > 0) {
+          return ownList.dequeue()
+        } else {
+          val ret = receivedList(receivedIdx)
+          receivedIdx += 1
+          return ret
+        }
+      }
+    }
+  }
+
   override def processTexeraTuple(
       tuple: Either[Tuple, InputExhausted],
       input: LinkIdentity
@@ -120,47 +166,10 @@ class SortOpLocalExec(
       case Right(_) =>
         if (!sentTuplesToFree) {
           println(s"\t PRODUCED ${sortedTuples.size}")
-          return new Iterator[Tuple] {
-            override def hasNext: Boolean = sortedTuples.size > 0
-
-            override def next(): Tuple = sortedTuples.dequeue()
-          }
-          //sortedTuples.toIterator
+          outputOneList(sortedTuples)
         } else {
           println(s"\t PRODUCED ${sortedTuples.size + receivedFromFreeWorker.size}")
-
-          // merge the two sorted lists
-          new Iterator[Tuple] {
-            var receivedIdx = 0
-            override def hasNext: Boolean = {
-              (sortedTuples.size > 0 || receivedIdx < receivedFromFreeWorker.size)
-            }
-
-            override def next(): Tuple = {
-              if (sortedTuples.size > 0 && receivedIdx < receivedFromFreeWorker.size) {
-                if (
-                  sortedTuples.head
-                    .getField(sortAttributeName)
-                    .asInstanceOf[Float] < receivedFromFreeWorker(receivedIdx)
-                    .getField(sortAttributeName)
-                    .asInstanceOf[Float]
-                ) {
-
-                  return sortedTuples.dequeue()
-                } else {
-                  val ret = receivedFromFreeWorker(receivedIdx)
-                  receivedIdx += 1
-                  return ret
-                }
-              } else if (sortedTuples.size > 0) {
-                return sortedTuples.dequeue()
-              } else {
-                val ret = receivedFromFreeWorker(receivedIdx)
-                receivedIdx += 1
-                return ret
-              }
-            }
-          }
+          outputMergedLists(sortedTuples, receivedFromFreeWorker)
         }
     }
   }
