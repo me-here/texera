@@ -180,6 +180,7 @@ class DataProcessor( // dependencies:
               // rightful owner
               val sortSendingFutures = new ArrayBuffer[Future[Unit]]()
               val listsToSend = operator.asInstanceOf[SortOpLocalExec].getSortedLists()
+              val stateTransferStartTime = System.nanoTime()
               listsToSend.foreach(list => {
                 sortSendingFutures.append(
                   asyncRPCClient.send(
@@ -192,14 +193,19 @@ class DataProcessor( // dependencies:
               })
               Future
                 .collect(sortSendingFutures)
-                .map(seq =>
+                .map(seq => {
+                  val stateTransferEndTime = System.nanoTime()
+                  println(s"Time taken to transfer sorted list to ${operator
+                    .asInstanceOf[SortOpLocalExec]
+                    .skewedWorkerIdentity
+                    .toString()} is ${(stateTransferEndTime - stateTransferStartTime) / 1e9d} s")
                   asyncRPCClient.send(
                     EntireSortedListSentNotification(),
                     operator
                       .asInstanceOf[SortOpLocalExec]
                       .skewedWorkerIdentity
                   )
-                )
+                })
             }
           }
           if (
