@@ -213,7 +213,7 @@ class WorkflowWebsocketResource {
         WorkflowWebsocketResource.sessionJobs.remove(session.getId)
       },
       workflowStatusUpdateListener = statusUpdate => {
-        send(session, WebWorkflowStatusUpdateEvent.apply(statusUpdate, texeraWorkflowCompiler))
+        send(session, WebWorkflowStatusUpdateEvent.apply(statusUpdate))
       },
       workflowResultUpdateListener = resultUpdate => {
         send(session, WebWorkflowResultUpdateEvent.apply(resultUpdate, texeraWorkflowCompiler))

@@ -9,6 +9,7 @@ import edu.uci.ics.texera.workflow.common.metadata.OperatorGroupConstants;
 import edu.uci.ics.texera.workflow.common.metadata.OperatorInfo;
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor;
 import edu.uci.ics.texera.workflow.common.tuple.schema.Schema;
+import scala.Option;
 import scala.collection.immutable.List;
 
 import static java.util.Collections.singletonList;
@@ -21,9 +22,12 @@ public class SimpleSinkOpDesc extends OperatorDescriptor {
     @JsonIgnore
     private IncrementalOutputMode outputMode = IncrementalOutputMode.SET_SNAPSHOT;
 
+    @JsonIgnore
+    private Option<String> chartType = Option.empty();
+
     @Override
     public OpExecConfig operatorExecutor() {
-        return new SimpleSinkOpExecConfig(this.operatorIdentifier(), outputMode);
+        return new SimpleSinkOpExecConfig(this.operatorIdentifier(), outputMode, this.chartType);
     }
 
     @Override
@@ -50,6 +54,16 @@ public class SimpleSinkOpDesc extends OperatorDescriptor {
     @JsonIgnore
     public void setOutputMode(IncrementalOutputMode outputMode) {
         this.outputMode = outputMode;
+    }
+
+    @JsonIgnore
+    public Option<String> getChartType() {
+        return this.chartType;
+    }
+
+    @JsonIgnore
+    public void setChartType(String chartType) {
+        this.chartType = Option.apply(chartType);
     }
 
 }

@@ -16,8 +16,7 @@ object WebOperatorStatistics {
 
   def apply(
       operatorID: String,
-      operatorStatistics: OperatorStatistics,
-      workflowCompiler: WorkflowCompiler
+      operatorStatistics: OperatorStatistics
   ): WebOperatorStatistics = {
     WebOperatorStatistics(
       operatorStatistics.operatorState,
@@ -38,13 +37,10 @@ case class WebOperatorStatistics(
 
 object WebWorkflowStatusUpdateEvent {
   def apply(
-      update: WorkflowStatusUpdate,
-      workflowCompiler: WorkflowCompiler
+      update: WorkflowStatusUpdate
   ): WebWorkflowStatusUpdateEvent = {
     WebWorkflowStatusUpdateEvent(
-      update.operatorStatistics.map(e =>
-        (e._1, WebOperatorStatistics.apply(e._1, e._2, workflowCompiler))
-      )
+      update.operatorStatistics.map(e => (e._1, WebOperatorStatistics.apply(e._1, e._2)))
     )
   }
 }

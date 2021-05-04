@@ -69,6 +69,7 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
       (upstream.head, sinkOp) match {
         case (viz: VisualizationOperator, sink: SimpleSinkOpDesc) =>
           sink.setOutputMode(viz.outputMode())
+          sink.setChartType(viz.chartType())
         case _ =>
       }
     })

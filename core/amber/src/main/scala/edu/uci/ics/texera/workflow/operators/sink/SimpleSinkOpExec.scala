@@ -9,7 +9,8 @@ import IncrementalOutputMode._
 
 import scala.collection.mutable
 
-class SimpleSinkOpExec(val outputMode: IncrementalOutputMode) extends ITupleSinkOperatorExecutor {
+class SimpleSinkOpExec(val outputMode: IncrementalOutputMode, val chartType: Option[String])
+    extends ITupleSinkOperatorExecutor {
 
   val results: mutable.ListBuffer[Tuple] = mutable.ListBuffer()
 

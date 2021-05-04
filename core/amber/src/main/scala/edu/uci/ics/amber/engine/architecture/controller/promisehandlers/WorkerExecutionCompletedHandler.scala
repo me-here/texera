@@ -50,13 +50,15 @@ trait WorkerExecutionCompletedHandler {
 
       // if operator is sink, additionally query result immediately one last time
       if (operator.isInstanceOf[SinkOpExecConfig]) {
-        // TODO: unify collect sink result (for final completion) and query results (for incremental update)
-        requests += send(CollectSinkResults(), sender).map(results =>
-          operator.acceptResultTuples(results)
-        )
         requests += execute(
           ControllerInitiateQueryResults(Option(List(sender))),
           ActorVirtualIdentity.Controller
+        )
+        // TODO: unify collect sink result (for final completion) and query results (for incremental update)
+        // TODO: this is a current hack to send QueryOperatorResult first, then send CollectSinkResult
+        //       because in SET_DELTA output mode, QueryOperatorResult should fetch and clear the result cache
+        requests += send(CollectSinkResults(), sender).map(results =>
+          operator.acceptResultTuples(results)
         )
       }
 

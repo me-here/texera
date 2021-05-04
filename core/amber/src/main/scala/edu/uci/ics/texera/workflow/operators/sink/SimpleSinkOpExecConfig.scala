@@ -18,13 +18,16 @@ import edu.uci.ics.texera.workflow.common.IncrementalOutputMode
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 
-class SimpleSinkOpExecConfig(tag: OperatorIdentity, outputMode: IncrementalOutputMode)
-    extends SinkOpExecConfig(tag) {
+class SimpleSinkOpExecConfig(
+    tag: OperatorIdentity,
+    outputMode: IncrementalOutputMode,
+    chartType: Option[String]
+) extends SinkOpExecConfig(tag) {
   override lazy val topology = new Topology(
     Array(
       new WorkerLayer(
         LayerIdentity(tag, "main"),
-        _ => new SimpleSinkOpExec(outputMode),
+        _ => new SimpleSinkOpExec(outputMode, chartType),
         1,
         ForceLocal(),
         RandomDeployment()
