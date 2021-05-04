@@ -31,7 +31,7 @@ class SortOpLocalExec(
 
   /** For free workers receiving data of skewed workers * */
   //var tuplesFromSkewedWorker: ArrayBuffer[Tuple] = _
-  var tuplesFromSkewedWorker: mutable.PriorityQueue[Float] = _
+  var tuplesFromSkewedWorker: mutable.PriorityQueue[Tuple] = _
   @volatile var skewedWorkerIdentity: ActorVirtualIdentity = null
 
   /** For skewed worker whose data is sent to free workers * */
@@ -52,7 +52,7 @@ class SortOpLocalExec(
 
     val it = tuplesFromSkewedWorker.toIterator
     while (it.hasNext) {
-      curr.append(it.next())
+      curr.append(it.next().getField(sortAttributeName).asInstanceOf[Float])
       if (count % Constants.eachTransferredListSize == 0) {
         sendingLists.append(curr)
         curr = new ArrayBuffer[Float]
@@ -71,19 +71,8 @@ class SortOpLocalExec(
     sendingLists
   }
 
-  def addFloatToSortedList(f: Float, sortedList: mutable.PriorityQueue[Float]): Unit = {
-    sortedList.enqueue(f)
-  }
-
   def addTupleToSortedList(tuple: Tuple, sortedList: mutable.PriorityQueue[Tuple]): Unit = {
-    val outputTuple = Tuple
-      .newBuilder()
-      .add(
-        outputSchema.getAttribute(sortAttributeName),
-        tuple.getField(sortAttributeName).asInstanceOf[Float]
-      )
-      .build()
-    sortedList.enqueue(outputTuple)
+    sortedList.enqueue(tuple)
 
 //    if (sortedList.length == 0) {
 //      sortedList.append(tuple)
@@ -119,7 +108,14 @@ class SortOpLocalExec(
     new Iterator[Tuple] {
       override def hasNext: Boolean = ownList.size > 0
 
-      override def next(): Tuple = ownList.dequeue()
+      override def next(): Tuple =
+        Tuple
+          .newBuilder()
+          .add(
+            outputSchema.getAttribute(sortAttributeName),
+            ownList.dequeue().getField(sortAttributeName).asInstanceOf[Float]
+          )
+          .build()
     }
   }
 
@@ -141,7 +137,13 @@ class SortOpLocalExec(
               .getField(sortAttributeName)
               .asInstanceOf[Float] < receivedList(receivedIdx)
           ) {
-            return ownList.dequeue()
+            return Tuple
+              .newBuilder()
+              .add(
+                outputSchema.getAttribute(sortAttributeName),
+                ownList.dequeue().getField(sortAttributeName).asInstanceOf[Float]
+              )
+              .build()
           } else {
             val ret = receivedList(receivedIdx)
             receivedIdx += 1
@@ -154,7 +156,13 @@ class SortOpLocalExec(
               .build()
           }
         } else if (ownList.size > 0) {
-          return ownList.dequeue()
+          return Tuple
+            .newBuilder()
+            .add(
+              outputSchema.getAttribute(sortAttributeName),
+              ownList.dequeue().getField(sortAttributeName).asInstanceOf[Float]
+            )
+            .build()
         } else {
           val ret = receivedList(receivedIdx)
           receivedIdx += 1
@@ -183,10 +191,7 @@ class SortOpLocalExec(
         ) {
           addTupleToSortedList(t, sortedTuples)
         } else {
-          addFloatToSortedList(
-            t.getField(sortAttributeName).asInstanceOf[Float],
-            tuplesFromSkewedWorker
-          )
+          addTupleToSortedList(t, tuplesFromSkewedWorker)
         }
         Iterator()
       case Right(_) =>
@@ -211,7 +216,14 @@ class SortOpLocalExec(
         .reverse
     )
 
-    tuplesFromSkewedWorker = mutable.PriorityQueue.empty[Float](Ordering[Float].reverse)
+    tuplesFromSkewedWorker = mutable.PriorityQueue.empty[Tuple](
+      Ordering
+        .by[Tuple, Float](
+          _.getField(sortAttributeName)
+            .asInstanceOf[Float]
+        )
+        .reverse
+    )
 
     receivedFromFreeWorker = new ArrayBuffer[Float]()
   }
