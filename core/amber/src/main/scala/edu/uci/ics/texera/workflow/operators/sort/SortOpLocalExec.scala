@@ -211,7 +211,7 @@ class SortOpLocalExec(
         .reverse
     )
 
-    tuplesFromSkewedWorker = mutable.PriorityQueue.empty[Float]
+    tuplesFromSkewedWorker = mutable.PriorityQueue.empty[Float](Ordering[Float].reverse)
 
     receivedFromFreeWorker = new ArrayBuffer[Float]()
   }
