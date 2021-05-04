@@ -71,7 +71,7 @@ class DataProcessingSpec
     val eventListener = ControllerEventListener()
     eventListener.workflowCompletedListener = evt => results = evt.result
     val controller = parent.childActorOf(
-      Controller.props(id, workflow, eventListener, 100)
+      Controller.props(id, workflow, eventListener)
     )
     parent.expectMsg(ControllerState.Ready)
     controller ! ControlInvocation(AsyncRPCClient.IgnoreReply, StartWorkflow())

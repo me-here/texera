@@ -10,7 +10,7 @@ import { UndoRedoService } from '../../service/undo-redo/undo-redo.service';
 import { WorkflowActionService } from '../../service/workflow-graph/model/workflow-action.service';
 import { WorkflowUtilService } from '../../service/workflow-graph/util/workflow-util.service';
 import { WorkflowStatusService } from '../../service/workflow-status/workflow-status.service';
-import { ResultObject } from '../../types/execute-workflow.interface';
+import { IncrementalOutputResult } from '../../types/execute-workflow.interface';
 import { ChartType } from '../../types/visualization.interface';
 import { VisualizationPanelComponent } from './visualization-panel.component';
 
@@ -19,8 +19,11 @@ describe('VisualizationPanelComponent', () => {
   let fixture: ComponentFixture<VisualizationPanelComponent>;
   let workflowStatusService: WorkflowStatusService;
 
-  const testData: Record<string, ResultObject> = {
-    'operator1': {operatorID: 'operator1', chartType: ChartType.BAR, table: [], totalRowCount: 0}
+  const testData: Record<string, IncrementalOutputResult> = {
+    'operator1': {
+      outputMode: 'SET_SNAPSHOT',
+      result: { operatorID: 'operator1', chartType: ChartType.BAR, table: [], totalRowCount: 0 }
+    }
   };
 
   beforeEach(async(() => {
@@ -36,7 +39,7 @@ describe('VisualizationPanelComponent', () => {
         WorkflowUtilService,
         UndoRedoService,
         WorkflowActionService,
-        {provide: OperatorMetadataService, useClass: StubOperatorMetadataService},
+        { provide: OperatorMetadataService, useClass: StubOperatorMetadataService },
         WorkflowStatusService,
         ExecuteWorkflowService
       ]
@@ -50,7 +53,7 @@ describe('VisualizationPanelComponent', () => {
     fixture.detectChanges();
 
     workflowStatusService = TestBed.get(WorkflowStatusService);
-    spyOn(workflowStatusService, 'getCurrentResult').and.returnValue(testData);
+    spyOn(workflowStatusService, 'getCurrentIncrementalResult').and.returnValue(testData);
   });
 
   it('should create', () => {

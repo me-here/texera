@@ -9,11 +9,37 @@ import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.operators.source.SourceOperatorDescriptor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.Schema
+import edu.uci.ics.texera.workflow.operators.sink.SimpleSinkOpDesc
+import edu.uci.ics.texera.workflow.operators.visualization.VisualizationOperator
 import org.jgrapht.graph.{DefaultEdge, DirectedAcyclicGraph}
 
 import scala.collection.mutable
 
+object WorkflowCompiler {
+
+  def isSink(operatorID: String, workflowCompiler: WorkflowCompiler): Boolean = {
+    val outLinks =
+      workflowCompiler.workflowInfo.links.filter(link => link.origin.operatorID == operatorID)
+    outLinks.isEmpty
+  }
+
+  def getUpstreamOperators(
+      operatorID: String,
+      workflowCompiler: WorkflowCompiler
+  ): List[OperatorDescriptor] = {
+    workflowCompiler.workflowInfo.links
+      .filter(link => link.destination.operatorID == operatorID)
+      .flatMap(link =>
+        workflowCompiler.workflowInfo.operators.filter(o => o.operatorID == link.origin.operatorID)
+      )
+      .toList
+  }
+
+}
+
 class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowContext) {
+
+  val workflow = new WorkflowDAG(workflowInfo)
 
   init()
 
@@ -36,6 +62,17 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
       .filter(pair => pair._2.nonEmpty)
 
   def amberWorkflow: Workflow = {
+    // pre-process: set output mode for sink based on the visualization operator before it
+    this.workflow.getSinkOperators.foreach(sinkOpId => {
+      val sinkOp = this.workflow.getOperator(sinkOpId)
+      val upstream = this.workflow.getUpstream(sinkOpId)
+      (upstream.head, sinkOp) match {
+        case (viz: VisualizationOperator, sink: SimpleSinkOpDesc) =>
+          sink.setOutputMode(viz.outputMode())
+        case _ =>
+      }
+    })
+
     val amberOperators: mutable.Map[OperatorIdentity, OpExecConfig] = mutable.Map()
     workflowInfo.operators.foreach(o => {
       val amberOperator: OpExecConfig = o.operatorExecutor
@@ -122,16 +159,6 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
   }
 
   def propagateWorkflowSchema(): Map[OperatorDescriptor, List[Option[Schema]]] = {
-    // construct the edu.uci.ics.texera.workflow DAG object using jGraphT
-    val workflowDag =
-      new DirectedAcyclicGraph[OperatorDescriptor, DefaultEdge](classOf[DefaultEdge])
-    this.workflowInfo.operators.foreach(op => workflowDag.addVertex(op))
-    this.workflowInfo.links.foreach(link => {
-      val origin = workflowInfo.operators.find(op => op.operatorID == link.origin.operatorID).get
-      val dest = workflowInfo.operators.find(op => op.operatorID == link.destination.operatorID).get
-      workflowDag.addEdge(origin, dest)
-    })
-
     // a map from an operator to the list of its input schema
     val inputSchemaMap =
       new mutable.HashMap[OperatorDescriptor, mutable.MutableList[Option[Schema]]]()
@@ -139,8 +166,9 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
 
     // propagate output schema following topological order
     // TODO: introduce the concept of port in TexeraOperatorDescriptor and propagate schema according to port
-    val topologicalOrderIterator = workflowDag.iterator()
-    topologicalOrderIterator.forEachRemaining(op => {
+    val topologicalOrderIterator = workflow.jgraphtDag.iterator()
+    topologicalOrderIterator.forEachRemaining(opID => {
+      val op = workflow.getOperator(opID)
       // infer output schema of this operator based on its input schema
       val outputSchema: Option[Schema] = {
         if (op.isInstanceOf[SourceOperatorDescriptor]) {

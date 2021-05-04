@@ -9,7 +9,7 @@ import { UndoRedoService } from '../../service/undo-redo/undo-redo.service';
 import { WorkflowActionService } from '../../service/workflow-graph/model/workflow-action.service';
 import { WorkflowUtilService } from '../../service/workflow-graph/util/workflow-util.service';
 import { WorkflowStatusService } from '../../service/workflow-status/workflow-status.service';
-import { ResultObject } from '../../types/execute-workflow.interface';
+import { IncrementalOutputResult } from '../../types/execute-workflow.interface';
 import { ChartType } from '../../types/visualization.interface';
 import { VisualizationPanelContentComponent } from './visualization-panel-content.component';
 
@@ -27,7 +27,7 @@ describe('VisualizationPanelContentComponent', () => {
         WorkflowUtilService,
         UndoRedoService,
         WorkflowActionService,
-        {provide: OperatorMetadataService, useClass: StubOperatorMetadataService},
+        { provide: OperatorMetadataService, useClass: StubOperatorMetadataService },
         WorkflowStatusService,
         ExecuteWorkflowService
       ]
@@ -47,11 +47,14 @@ describe('VisualizationPanelContentComponent', () => {
   });
 
   it('should draw the figure', () => {
-    const testData: Record<string, ResultObject> = {
-      'operator1': {operatorID: 'operator1', chartType: ChartType.PIE, table: [{'id': 1, 'data': 2}], totalRowCount: 1}
+    const testData: Record<string, IncrementalOutputResult> = {
+      'operator1': {
+        outputMode: 'SET_SNAPSHOT',
+        result: { operatorID: 'operator1', chartType: ChartType.PIE, table: [{ 'id': 1, 'data': 2 }], totalRowCount: 1 }
+      }
     };
     spyOn(component, 'generateChart');
-    spyOn(workflowStatusService, 'getCurrentResult').and.returnValue(testData);
+    spyOn(workflowStatusService, 'getCurrentIncrementalResult').and.returnValue(testData);
 
     component.operatorID = 'operator1';
     component.ngAfterViewInit();
@@ -60,14 +63,16 @@ describe('VisualizationPanelContentComponent', () => {
   });
 
   it('should draw the word cloud', () => {
-    const testData: Record<string, ResultObject> = {
+    const testData: Record<string, IncrementalOutputResult> = {
       'operator1': {
-        operatorID: 'operator1', chartType: ChartType.WORD_CLOUD,
-        table: [{'word': 'foo', 'count': 120}, {'word': 'bar', 'count': 100}], totalRowCount: 2
+        outputMode: 'SET_SNAPSHOT', result: {
+          operatorID: 'operator1', chartType: ChartType.WORD_CLOUD,
+          table: [{ 'word': 'foo', 'count': 120 }, { 'word': 'bar', 'count': 100 }], totalRowCount: 2
+        }
       }
     };
     spyOn(component, 'generateWordCloud');
-    spyOn(workflowStatusService, 'getCurrentResult').and.returnValue(testData);
+    spyOn(workflowStatusService, 'getCurrentIncrementalResult').and.returnValue(testData);
 
     component.operatorID = 'operator1';
     component.ngAfterViewInit();

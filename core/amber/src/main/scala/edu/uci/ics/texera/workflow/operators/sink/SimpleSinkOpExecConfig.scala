@@ -13,16 +13,18 @@ import edu.uci.ics.amber.engine.common.virtualidentity.{
   OperatorIdentity
 }
 import edu.uci.ics.amber.engine.operators.SinkOpExecConfig
+import edu.uci.ics.texera.workflow.common.IncrementalOutputMode
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 
-class SimpleSinkOpExecConfig(tag: OperatorIdentity) extends SinkOpExecConfig(tag) {
+class SimpleSinkOpExecConfig(tag: OperatorIdentity, outputMode: IncrementalOutputMode)
+    extends SinkOpExecConfig(tag) {
   override lazy val topology = new Topology(
     Array(
       new WorkerLayer(
         LayerIdentity(tag, "main"),
-        _ => new SimpleSinkOpExec(),
+        _ => new SimpleSinkOpExec(outputMode),
         1,
         ForceLocal(),
         RandomDeployment()

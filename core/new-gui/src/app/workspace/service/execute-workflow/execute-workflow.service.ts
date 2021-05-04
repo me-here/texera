@@ -80,7 +80,7 @@ export class ExecuteWorkflowService {
             break;
           } default: {
             // workflow status related event
-            if (event.type !== 'WebWorkflowStatusUpdateEvent') {
+            if (! (event.type === 'WebWorkflowStatusUpdateEvent' || event.type === 'WebWorkflowResultUpdateEvent')) {
               console.log(event);
             }
             const newState = this.handleExecutionEvent(event);

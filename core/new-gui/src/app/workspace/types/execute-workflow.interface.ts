@@ -88,15 +88,25 @@ export enum OperatorState {
   Recovering = 'Recovering',
 }
 
+export type IncrementalOutputMode = 'SET_SNAPSHOT' | 'SET_DELTA';
+
+export interface IncrementalOutputResult extends Readonly<{
+  outputMode: IncrementalOutputMode,
+  result: ResultObject
+}> { }
+
 export interface OperatorStatistics extends Readonly<{
   operatorState: OperatorState,
   aggregatedInputRowCount: number,
   aggregatedOutputRowCount: number,
-  aggregatedOutputResults: ResultObject | undefined | null // undefined/null if operator is not sink
 }> { }
 
 export interface WorkflowStatusUpdate extends Readonly<{
   operatorStatistics: Record<string, OperatorStatistics>
+}> { }
+
+export interface WorkflowResultUpdate extends Readonly<{
+  operatorResults: Record<string, IncrementalOutputResult>
 }> { }
 
 export enum ExecutionState {

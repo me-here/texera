@@ -6,6 +6,7 @@ import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaInt;
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle;
 import edu.uci.ics.amber.engine.common.Constants;
 import edu.uci.ics.amber.engine.operators.OpExecConfig;
+import edu.uci.ics.texera.workflow.common.IncrementalOutputMode;
 import edu.uci.ics.texera.workflow.common.metadata.InputPort;
 import edu.uci.ics.texera.workflow.common.metadata.OperatorGroupConstants;
 import edu.uci.ics.texera.workflow.common.metadata.OperatorInfo;
@@ -41,6 +42,11 @@ public class WordCloudOpDesc extends VisualizationOperator {
     @Override
     public String chartType() {
         return VisualizationConstants.WORD_CLOUD;
+    }
+
+    @Override
+    public IncrementalOutputMode outputMode() {
+        return IncrementalOutputMode.SET_SNAPSHOT;
     }
 
     @Override

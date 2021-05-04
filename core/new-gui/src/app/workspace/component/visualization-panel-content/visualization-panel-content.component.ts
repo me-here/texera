@@ -1,12 +1,12 @@
-import {AfterViewInit, Component, Input, OnDestroy} from '@angular/core';
+import { AfterViewInit, Component, Input, OnDestroy } from '@angular/core';
 import * as c3 from 'c3';
 import {Primitive, PrimitiveArray} from 'c3';
 import * as d3 from 'd3';
 import * as cloud from 'd3-cloud';
-import {WorkflowStatusService} from '../../service/workflow-status/workflow-status.service';
-import {ResultObject} from '../../types/execute-workflow.interface';
-import {ChartType, WordCloudTuple} from '../../types/visualization.interface';
-import {Subscription} from 'rxjs';
+import { WorkflowStatusService } from '../../service/workflow-status/workflow-status.service';
+import { ResultObject, IncrementalOutputMode, IncrementalOutputResult } from '../../types/execute-workflow.interface';
+import { ChartType, WordCloudTuple } from '../../types/visualization.interface';
+import { Subscription } from 'rxjs';
 import {environment} from 'src/environments/environment';
 import * as mapboxgl from 'mapbox-gl';
 import {MapboxLayer} from '@deck.gl/mapbox';
@@ -27,9 +27,7 @@ import {ScatterplotLayerProps} from '@deck.gl/layers/scatterplot-layer/scatterpl
   templateUrl: './visualization-panel-content.component.html',
   styleUrls: ['./visualization-panel-content.component.scss']
 })
-
 export class VisualizationPanelContentComponent implements AfterViewInit, OnDestroy {
-
   // this readonly variable must be the same as HTML element ID for visualization
   public static readonly CHART_ID = '#texera-result-chart-content';
   public static readonly CHART_CONTAINER = 'texera-result-chart-content';
@@ -64,14 +62,14 @@ export class VisualizationPanelContentComponent implements AfterViewInit, OnDest
 
   ngAfterViewInit() {
     // attempt to draw chart immediately
-    this.drawChart();
+    this.drawChartWithResultSnapshot();
 
     // setup an event lister that re-draws the chart content every (n) miliseconds
     // auditTime makes sure the first re-draw happens after (n) miliseconds has elapsed
     this.updateSubscription = this.workflowStatusService.getResultUpdateStream()
       .auditTime(VisualizationPanelContentComponent.UPDATE_INTERVAL_MS)
-      .subscribe(() => {
-        this.drawChart();
+      .subscribe(update => {
+        this.drawChartWithResultSnapshot();
       });
   }
 
@@ -90,17 +88,17 @@ export class VisualizationPanelContentComponent implements AfterViewInit, OnDest
     }
   }
 
-  drawChart() {
+  drawChartWithResultSnapshot() {
     if (!this.operatorID) {
       return;
     }
-    const result: ResultObject | undefined = this.workflowStatusService.getCurrentResult()[this.operatorID];
+    const result: IncrementalOutputResult = this.workflowStatusService.getCurrentIncrementalResult()[this.operatorID];
     if (!result) {
       return;
     }
 
-    this.data = result.table as object[];
-    this.chartType = result.chartType;
+    this.data = result.result.table as object[];
+    this.chartType = result.result.chartType;
 
     switch (this.chartType) {
       // correspond to WordCloudSink.java
@@ -185,7 +183,7 @@ export class VisualizationPanelContentComponent implements AfterViewInit, OnDest
 
     const layout = cloud()
       .size([VisualizationPanelContentComponent.WIDTH, VisualizationPanelContentComponent.HEIGHT])
-      .words(wordCloudTuples.map(t => ({text: t.word, size: d3Scale(t.count)})))
+      .words(wordCloudTuples.map(t => ({ text: t.word, size: d3Scale(t.count) })))
       .text(d => d.text ?? '')
       .padding(5)
       .rotate(() => 0)

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ExecutionState, OperatorState, OperatorStatistics, ResultObject } from '../../types/execute-workflow.interface';
+import { ExecutionState, OperatorState, OperatorStatistics, IncrementalOutputResult } from '../../types/execute-workflow.interface';
 import { ExecuteWorkflowService } from '../execute-workflow/execute-workflow.service';
 import { WorkflowActionService } from '../workflow-graph/model/workflow-action.service';
 import { WorkflowWebsocketService } from '../workflow-websocket/workflow-websocket.service';
@@ -14,8 +14,15 @@ export class WorkflowStatusService {
   private statusSubject = new Subject<Record<string, OperatorStatistics>>();
   private currentStatus: Record<string, OperatorStatistics> = {};
 
-  private resultSubject = new Subject<Record<string, ResultObject>>();
-  private currentResult: Record<string, ResultObject> = {};
+  private resultUpdateStream = new Subject<Record<string, IncrementalOutputResult>>();
+
+  // current incremental result
+  // for SET_SNAPSHOT output mode:  latested output snapshot
+  // for SET_DELTA    output mode:  accumulated delta
+  //                                delta no retraction   - same as snapshot
+  //                                delta with retraction - accumulated delta is not compacted
+  // When resultUpdateStream emits a new update event, the update is already applied on the result set
+  private currentIncrementalResult: Record<string, IncrementalOutputResult> = {};
 
   constructor(
     private workflowActionService: WorkflowActionService,
@@ -26,7 +33,11 @@ export class WorkflowStatusService {
       return;
     }
     this.getStatusUpdateStream().subscribe(event => this.currentStatus = event);
-    this.getResultUpdateStream().subscribe(event => this.currentResult = event);
+    this.getResultUpdateStream().subscribe(event => {
+      Object.entries(event).forEach(e => {
+        console.log(`operator ${e[0]} result update -  mode: ${e[1].outputMode}, count: ${e[1].result.table.length}`);
+      });
+    });
 
     this.workflowWebsocketService.websocketEvent().subscribe(event => {
       if (event.type !== 'WebWorkflowStatusUpdateEvent') {
@@ -36,24 +47,39 @@ export class WorkflowStatusService {
     });
 
     this.workflowWebsocketService.websocketEvent().subscribe(event => {
-      let resultArray: readonly ResultObject[] | undefined;
-      if (event.type === 'WebWorkflowStatusUpdateEvent') {
-        resultArray = Object.values(event.operatorStatistics).map(o => o.aggregatedOutputResults).filter((o): o is ResultObject => !!o);
-      } else if (event.type === 'WorkflowCompletedEvent') {
-        resultArray = event.result;
-      }
-
-      if (! resultArray) {
+      if (event.type !== 'WebWorkflowResultUpdateEvent') {
         return;
       }
 
-      const resultMap: Record<string, ResultObject> = {};
-      resultArray.forEach(r => {
-        resultMap[r.operatorID] = r;
+      // apply the update on the result set based on SET_SNAPSHOT and SET_DELTA semantics
+      Object.entries(event.operatorResults).forEach(e => {
+        const opID = e[0];
+        const resultUpdate = e[1];
+
+        if (resultUpdate.outputMode === 'SET_SNAPSHOT') {
+          this.currentIncrementalResult[opID] = resultUpdate;
+        } else if (resultUpdate.outputMode === 'SET_DELTA') {
+          const combinedResult = [];
+          combinedResult.push(this.currentIncrementalResult[opID]?.result.table ?? []);
+          combinedResult.push(resultUpdate.result.table);
+          let rowCount = 0;
+          rowCount += this.currentIncrementalResult[opID]?.result.totalRowCount ?? 0;
+          rowCount += resultUpdate.result.totalRowCount;
+          this.currentIncrementalResult[opID] = {
+            outputMode: resultUpdate.outputMode,
+            result: {
+              operatorID: resultUpdate.result.operatorID,
+              chartType: resultUpdate.result.chartType,
+              table: combinedResult,
+              totalRowCount: rowCount,
+            }
+          };
+        } else {
+          const _exhaustiveCheck: never = resultUpdate.outputMode;
+        }
       });
-      if (Object.keys(resultMap).length !== 0) {
-        this.resultSubject.next(resultMap);
-      }
+
+      this.resultUpdateStream.next(event.operatorResults);
     });
 
     this.executeWorkflowService.getExecutionStateStream().subscribe(event => {
@@ -64,7 +90,6 @@ export class WorkflowStatusService {
             operatorState: OperatorState.Initializing,
             aggregatedInputRowCount: 0,
             aggregatedOutputRowCount: 0,
-            aggregatedOutputResults: undefined
           };
         });
         this.statusSubject.next(initialStatistics);
@@ -80,12 +105,12 @@ export class WorkflowStatusService {
     return this.currentStatus;
   }
 
-  public getResultUpdateStream(): Observable<Record<string, ResultObject>> {
-    return this.resultSubject.asObservable();
+  public getResultUpdateStream(): Observable<Record<string, IncrementalOutputResult>> {
+    return this.resultUpdateStream.asObservable();
   }
 
-  public getCurrentResult(): Record<string, ResultObject> {
-    return this.currentResult;
+  public getCurrentIncrementalResult(): Record<string, IncrementalOutputResult> {
+    return this.currentIncrementalResult;
   }
 
 }

@@ -2,6 +2,7 @@ package edu.uci.ics.texera.workflow.operators.visualization.lineChart;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import edu.uci.ics.texera.workflow.common.IncrementalOutputMode;
 import edu.uci.ics.texera.workflow.common.metadata.InputPort;
 import edu.uci.ics.texera.workflow.common.metadata.OperatorGroupConstants;
 import edu.uci.ics.texera.workflow.common.metadata.OperatorInfo;
@@ -42,6 +43,11 @@ public class LineChartOpDesc extends VisualizationOperator {
     @Override
     public String chartType() {
         return lineChartEnum.getChartStyle();
+    }
+
+    @Override
+    public IncrementalOutputMode outputMode() {
+        return IncrementalOutputMode.SET_DELTA;
     }
 
     @Override

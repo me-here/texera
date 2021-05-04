@@ -2,7 +2,7 @@ package edu.uci.ics.amber.engine.common.rpc
 
 import com.twitter.util.{Future, Promise}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.ControlOutputPort
-import edu.uci.ics.amber.engine.architecture.worker.WorkerStatistics
+import edu.uci.ics.amber.engine.architecture.worker.{WorkerResult, WorkerStatistics}
 import edu.uci.ics.amber.engine.common.WorkflowLogger
 import edu.uci.ics.amber.engine.common.ambermessage.ControlPayload
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
@@ -83,7 +83,9 @@ class AsyncRPCClient(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
       return
     }
     if (ret.returnValue != null) {
-      if (ret.returnValue.isInstanceOf[WorkerStatistics]) {
+      if (
+        ret.returnValue.isInstanceOf[WorkerStatistics] || ret.returnValue.isInstanceOf[WorkerResult]
+      ) {
         return
       }
       logger.logInfo(
