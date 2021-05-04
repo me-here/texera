@@ -22,7 +22,7 @@ object Constants {
   val printResultsInConsole: Boolean = true
 
   // sort-skew research related
-  val eachTransferredListSize: Int = 100000
+  val eachTransferredListSize: Int = 1000000
   val lowerLimit: Float = 0f
   val upperLimit: Float = 600000f // 30gb
   val sortExperiment: Boolean = true
