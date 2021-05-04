@@ -3,6 +3,7 @@ package edu.uci.ics.texera.workflow.operators.visualization.scatterplot;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle;
+import edu.uci.ics.texera.workflow.common.IncrementalOutputMode;
 import edu.uci.ics.texera.workflow.common.metadata.InputPort;
 import edu.uci.ics.texera.workflow.common.metadata.OperatorGroupConstants;
 import edu.uci.ics.texera.workflow.common.metadata.OperatorInfo;
@@ -39,6 +40,11 @@ public class ScatterplotOpDesc extends VisualizationOperator {
     @Override
     public String chartType() {
         return VisualizationConstants.SCATTERPLOT;
+    }
+
+    @Override
+    public IncrementalOutputMode outputMode() {
+        return IncrementalOutputMode.SET_SNAPSHOT;
     }
 
     @Override
