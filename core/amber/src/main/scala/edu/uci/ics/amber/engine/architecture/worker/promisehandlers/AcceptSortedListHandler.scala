@@ -12,7 +12,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object AcceptSortedListHandler {
   final case class AcceptSortedList(
-      sortedList: ArrayBuffer[Tuple]
+      sortedList: ArrayBuffer[Float]
   ) extends ControlCommand[Unit]
 }
 
