@@ -292,7 +292,6 @@ export class VisualizationPanelContentComponent implements AfterViewInit, OnDest
 
   spatialScatterplot() {
     if (this.map === undefined) {
-      console.log('draw map');
       /* mapbox object with default configuration */
       this.map = new mapboxgl.Map({
         container: VisualizationPanelContentComponent.MAP_CONTAINER,
@@ -302,18 +301,14 @@ export class VisualizationPanelContentComponent implements AfterViewInit, OnDest
         maxZoom: 17,
         minZoom: 0
       });
-      this.map.once('load', () => {
-        console.log('draw layer after load');
-        this.addScatterLayer();
-      });
-    } else {
-      console.log('draw layer');
-    this.addScatterLayer();
+
     }
+    this.map.once('load', () => {
+      this.addScatterLayer();
+    });
   }
 
   addScatterLayer() {
-    console.log('layer ' + this.batchID);
     if (this.map !== undefined) {
       this.batchID++;
       const props: ScatterplotLayerProps<any> = {
