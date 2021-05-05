@@ -240,6 +240,12 @@ export class VisualizationPanelContentComponent implements AfterViewInit, OnDest
   }
 
   generateScatterplot() {
+    if (!this.data || !this.chartType) {
+      return;
+    }
+    if (this.data?.length < 1) {
+      return;
+    }
     // first check if geometric or not
     if (this.data?.some(r => r.hasOwnProperty('longitude')) || this.data?.some(r => r.hasOwnProperty('latitude'))) {
       this.spatialScatterplot();
@@ -249,9 +255,6 @@ export class VisualizationPanelContentComponent implements AfterViewInit, OnDest
   }
 
   simpleScatterplot() {
-    if (!this.data || !this.chartType) {
-      return;
-    }
     if (this.c3ChartElement) {
       this.c3ChartElement.destroy();
     }
