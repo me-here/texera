@@ -50,9 +50,8 @@ class SortOpLocalExec(
     var count = 1
     var curr = new ArrayBuffer[Float]
 
-    val it = tuplesFromSkewedWorker.toIterator
-    while (it.hasNext) {
-      curr.append(it.next().getField(sortAttributeName).asInstanceOf[Float])
+    while (tuplesFromSkewedWorker.size > 0) {
+      curr.append(tuplesFromSkewedWorker.dequeue().getField(sortAttributeName).asInstanceOf[Float])
       if (count % Constants.eachTransferredListSize == 0) {
         sendingLists.append(curr)
         curr = new ArrayBuffer[Float]
