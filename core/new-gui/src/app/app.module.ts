@@ -28,6 +28,7 @@ import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzMessageModule } from 'ng-zorro-antd/message';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
+import { NzBadgeModule } from 'ng-zorro-antd/badge';
 import { FileUploadModule } from 'ng2-file-upload';
 import { NgxAceModule } from 'ngx-ace-icy';
 import { NgxJsonViewerModule } from 'ngx-json-viewer';
@@ -165,6 +166,7 @@ registerLocaleData(en);
     NzPopconfirmModule,
     NzEmptyModule,
     NzMessageModule,
+    NzBadgeModule,
     NgxAceModule,
     MatDialogModule
   ],
