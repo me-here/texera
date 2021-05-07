@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, Input, OnDestroy } from '@angular/core';
+import {AfterViewInit, Component, Input, OnChanges, OnDestroy} from '@angular/core';
 import * as c3 from 'c3';
 import {Primitive, PrimitiveArray} from 'c3';
 import * as d3 from 'd3';
@@ -27,7 +27,7 @@ import {ScatterplotLayerProps} from '@deck.gl/layers/scatterplot-layer/scatterpl
   templateUrl: './visualization-panel-content.component.html',
   styleUrls: ['./visualization-panel-content.component.scss']
 })
-export class VisualizationPanelContentComponent implements AfterViewInit, OnDestroy {
+export class VisualizationPanelContentComponent implements OnChanges, AfterViewInit, OnDestroy {
   // this readonly variable must be the same as HTML element ID for visualization
   public static readonly CHART_ID = '#texera-result-chart-content';
   public static readonly CHART_CONTAINER = 'texera-result-chart-content';
@@ -60,10 +60,13 @@ export class VisualizationPanelContentComponent implements AfterViewInit, OnDest
   ) {
   }
 
+  ngOnChanges() {
+    this.initMap();
+  }
+
   ngAfterViewInit() {
     // attempt to draw chart immediately
     this.drawChartWithResultSnapshot();
-
     // setup an event lister that re-draws the chart content every (n) miliseconds
     // auditTime makes sure the first re-draw happens after (n) miliseconds has elapsed
     this.updateSubscription = this.workflowStatusService.getResultUpdateStream()
@@ -292,22 +295,24 @@ export class VisualizationPanelContentComponent implements AfterViewInit, OnDest
 
   spatialScatterplot() {
     if (this.map === undefined) {
-      /* mapbox object with default configuration */
-      this.map = new mapboxgl.Map({
-        container: VisualizationPanelContentComponent.MAP_CONTAINER,
-        style: 'mapbox://styles/mapbox/light-v9',
-        center: [-96.35, 39.5],
-        zoom: 3,
-        maxZoom: 17,
-        minZoom: 0
-      });
-
+      this.initMap();
     }
-    this.map.once('load', () => {
+    this.map?.once('styledata', () => {
       this.addScatterLayer();
     });
   }
 
+  initMap() {
+    /* mapbox object with default configuration */
+    this.map = new mapboxgl.Map({
+      container: VisualizationPanelContentComponent.MAP_CONTAINER,
+      style: 'mapbox://styles/mapbox/light-v9',
+      center: [-96.35, 39.5],
+      zoom: 3,
+      maxZoom: 17,
+      minZoom: 0
+    });
+  }
   addScatterLayer() {
     if (this.map !== undefined) {
       this.batchID++;

@@ -39,6 +39,8 @@ public class ScatterplotOpDesc extends VisualizationOperator {
 
     @Override
     public String chartType() {
+        if(isGeometric)
+            return VisualizationConstants.SPATIAL_SCATTERPLOT;
         return VisualizationConstants.SCATTERPLOT;
     }
 

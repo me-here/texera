@@ -1,2 +1,8 @@
-<button  *ngIf="displayVisualizationPanel" nz-button (click)="onClickVisualize()">Visualize</button>
+<meta charset="utf-8">
+<!-- this id should be identical to VisualizationPanelContentComponent.CHART_ID -->
+<div [hidden]="!displayVisualizationPanel"  id="texera-result-chart-content">
+</div>
 
+<!-- this id should be identical to VisualizationPanelContentComponent.MAP_CONTAINER -->
+<div [hidden]="!displayMap"  class = "map-container" id="texera-result-map-container">
+</div>
