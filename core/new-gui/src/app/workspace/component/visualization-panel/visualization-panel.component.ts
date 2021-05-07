@@ -48,19 +48,19 @@ export class VisualizationPanelComponent implements OnInit, OnChanges {
   private d3ChartElement: d3.Selection<SVGGElement, unknown, HTMLElement, any> | undefined;
   private c3ChartElement: c3.ChartAPI | undefined;
   private map: mapboxgl.Map | undefined;
-  private result: IncrementalOutputResult | undefined;
+  // private result: IncrementalOutputResult | undefined;
 
   constructor(
     private workflowStatusService: WorkflowStatusService,
     private executeWorkflowService: ExecuteWorkflowService,
   ) {
     this.workflowStatusService.getResultUpdateStream().subscribe(event => {
-      this.displayMap = false;
-      this.displayVisualizationPanel = false;
-      if (!this.operatorID) {
-        return;
-      }
-      this.result  = this.workflowStatusService.getCurrentIncrementalResult()[this.operatorID];
+      // this.displayMap = false;
+      // this.displayVisualizationPanel = false;
+      // if (!this.operatorID) {
+      //   return;
+      // }
+      // this.result  = this.workflowStatusService.getCurrentIncrementalResult()[this.operatorID];
       this.updateDisplayVisualizationPanel();
       this.drawChartWithResultSnapshot();
     });
@@ -102,9 +102,10 @@ export class VisualizationPanelComponent implements OnInit, OnChanges {
       return;
     }
 
+    const result  = this.workflowStatusService.getCurrentIncrementalResult()[this.operatorID];
 
-    if (this.result?.result.chartType !== undefined) {
-      if (this.result?.result.chartType === 'spatial scatterplot') {
+    if (result?.result.chartType !== undefined) {
+      if (result?.result.chartType === 'spatial scatterplot') {
         this.displayMap = true;
       } else {
         this.displayVisualizationPanel = true;
@@ -113,13 +114,17 @@ export class VisualizationPanelComponent implements OnInit, OnChanges {
   }
 
   drawChartWithResultSnapshot() {
+    if (!this.operatorID) {
+      return;
+    }
+    const result  = this.workflowStatusService.getCurrentIncrementalResult()[this.operatorID];
 
-    if (!this.result) {
+    if (!result) {
       return;
     }
 
-    this.data = this.result.result.table[1] as object[];
-    this.chartType = this.result.result.chartType;
+    this.data = result.result.table[1] as object[];
+    this.chartType = result.result.chartType;
     if (!this.data || !this.chartType) {
       return;
     }
