@@ -36,8 +36,10 @@ object StartWorkflowHandler {
 trait StartWorkflowHandler {
   this: ControllerAsyncRPCHandlerInitializer =>
 
-  registerHandler { (msg: StartWorkflow, sender) =>
-    {
+  registerHandler { (msg: StartWorkflow, sender) => {
+    if (controller.workflow.started) {
+      Future(CommandCompleted())
+    } else {
       execute(LinkWorkflow(), ActorVirtualIdentity.Controller).flatMap { ret =>
         val startedLayers = mutable.HashSet[WorkerLayer]()
         Future
@@ -57,11 +59,13 @@ trait StartWorkflowHandler {
               .toSeq
           )
           .map { ret =>
+            controller.workflow.started = true
             controller.context.parent ! ControllerState.Running // for testing
             enableStatusUpdate()
             CommandCompleted()
           }
       }
     }
+  }
   }
 }

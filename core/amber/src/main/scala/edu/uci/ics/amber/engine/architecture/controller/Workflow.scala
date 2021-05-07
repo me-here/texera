@@ -43,6 +43,8 @@ class Workflow(
   }
   private val idToLink = new mutable.HashMap[LinkIdentity, LinkStrategy]()
 
+  var started = false
+
   def getSources(operator: OperatorIdentity): Set[OperatorIdentity] = {
     var result = Set[OperatorIdentity]()
     var current = Set[OperatorIdentity](operator)
