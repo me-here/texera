@@ -48,14 +48,21 @@ export class VisualizationPanelComponent implements OnInit, OnChanges {
   private d3ChartElement: d3.Selection<SVGGElement, unknown, HTMLElement, any> | undefined;
   private c3ChartElement: c3.ChartAPI | undefined;
   private map: mapboxgl.Map | undefined;
+  private result: IncrementalOutputResult | undefined;
 
   constructor(
     private workflowStatusService: WorkflowStatusService,
     private executeWorkflowService: ExecuteWorkflowService,
   ) {
     this.workflowStatusService.getResultUpdateStream().subscribe(event => {
+      this.displayMap = false;
+      this.displayVisualizationPanel = false;
+      if (!this.operatorID) {
+        return;
+      }
+      this.result  = this.workflowStatusService.getCurrentIncrementalResult()[this.operatorID];
       this.updateDisplayVisualizationPanel();
-      this.drawChartWithResultSnapshot(); // todo check if snapshot or delta
+      this.drawChartWithResultSnapshot();
     });
     this.executeWorkflowService.getExecutionStateStream().subscribe(event => {
       if (event.current.state === ExecutionState.WaitingToRun) {
@@ -95,10 +102,9 @@ export class VisualizationPanelComponent implements OnInit, OnChanges {
       return;
     }
 
-    const result: IncrementalOutputResult | undefined = this.workflowStatusService.getCurrentIncrementalResult()[this.operatorID];
 
-    if (result?.result.chartType !== undefined) {
-      if (result?.result.chartType === 'spatial scatterplot') {
+    if (this.result?.result.chartType !== undefined) {
+      if (this.result?.result.chartType === 'spatial scatterplot') {
         this.displayMap = true;
       } else {
         this.displayVisualizationPanel = true;
@@ -107,16 +113,13 @@ export class VisualizationPanelComponent implements OnInit, OnChanges {
   }
 
   drawChartWithResultSnapshot() {
-    if (!this.operatorID) {
-      return;
-    }
-    const result: IncrementalOutputResult = this.workflowStatusService.getCurrentIncrementalResult()[this.operatorID];
-    if (!result) {
+
+    if (!this.result) {
       return;
     }
 
-    this.data = result.result.table as object[];
-    this.chartType = result.result.chartType;
+    this.data = this.result.result.table[1] as object[];
+    this.chartType = this.result.result.chartType;
     if (!this.data || !this.chartType) {
       return;
     }
@@ -270,9 +273,25 @@ export class VisualizationPanelComponent implements OnInit, OnChanges {
   }
 
   simpleScatterplot() {
-    // if (this.c3ChartElement) {
-    //   this.c3ChartElement.destroy();
-    // }
+    if (this.c3ChartElement !== undefined) {
+      this.updateSimpleScatterPlot();
+    } else {
+      this.initSimpleScatterPlot();
+    }
+  }
+  updateSimpleScatterPlot() {
+    const result = this.data as Array<Record<string, Primitive>>;
+    const xLabel: string = Object.keys(result[0])[0];
+    const yLabel: string = Object.keys(result[0])[1];
+    this.c3ChartElement?.load({
+      json: result,
+      keys: {
+        x: xLabel,
+        value: [yLabel]
+      }
+    });
+  }
+  initSimpleScatterPlot() {
     const result = this.data as Array<Record<string, Primitive>>;
     const xLabel: string = Object.keys(result[0])[0];
     const yLabel: string = Object.keys(result[0])[1];
