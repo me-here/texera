@@ -3,6 +3,7 @@ package edu.uci.ics.amber.clustering
 import akka.actor.{Actor, ActorLogging, ActorRef, Address, ExtendedActorSystem}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.NetworkMessage
 import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.common.ambermessage.TriggerRecovery
 
@@ -53,24 +54,6 @@ class ClusterListener extends Actor with ActorLogging {
       )
       log.info("dataset: " + Constants.dataset + " numWorkers: " + Constants.defaultNumWorkers)
     case UnreachableMember(member) =>
-      if (
-        context.system
-          .asInstanceOf[ExtendedActorSystem]
-          .provider
-          .getDefaultAddress == member.address
-      ) {
-        if (Constants.masterNodeAddr != null) {
-          availableNodeAddresses.remove(self.path.address)
-          Constants.dataset -= Constants.dataVolumePerNode
-          Constants.defaultNumWorkers -= Constants.numWorkerPerNode
-        }
-      } else {
-        if (Constants.masterNodeAddr != member.address.host.get) {
-          availableNodeAddresses.remove(member.address)
-          Constants.dataset -= Constants.dataVolumePerNode
-          Constants.defaultNumWorkers -= Constants.numWorkerPerNode
-        }
-      }
       log.info("Member detected as unreachable: {}", member)
     case MemberRemoved(member, previousStatus) =>
       if (
@@ -94,10 +77,11 @@ class ClusterListener extends Actor with ActorLogging {
       log.info("Member is Removed: {} after {}", member.address, previousStatus)
       // trigger recovery on that node
       ClusterRuntimeInfo.controllers.foreach { x =>
-        x ! TriggerRecovery(member.address)
+        x ! NetworkMessage(0, TriggerRecovery(member.address))
       }
     case _: MemberEvent                            => // ignore
     case ClusterListener.GetAvailableNodeAddresses => sender ! availableNodeAddresses.toArray
+    case other                                     => //skip
   }
 
 }

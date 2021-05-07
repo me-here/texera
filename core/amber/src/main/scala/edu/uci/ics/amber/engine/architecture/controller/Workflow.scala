@@ -111,7 +111,7 @@ class Workflow(
 
   def cleanupResults(): Unit = {
     operators.values.foreach { op =>
-      op.results = null
+      op.results = List.empty
     }
   }
 

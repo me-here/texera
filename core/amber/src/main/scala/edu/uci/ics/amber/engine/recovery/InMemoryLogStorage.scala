@@ -1,6 +1,7 @@
 package edu.uci.ics.amber.engine.recovery
 
 import edu.uci.ics.amber.engine.common.ambermessage.{
+  ControlLogPayload,
   DPCursor,
   DataBatchSequence,
   FromSender,
@@ -33,12 +34,12 @@ object InMemoryLogStorage {
 
 class InMemoryLogStorage(logName: String) extends LogStorage(logName) {
 
-  override def writeControlLogRecord(record: WorkflowControlMessage): Unit = {
+  override def writeControlLogRecord(record: ControlLogPayload): Unit = {
     InMemoryLogStorage.getLogOf(logName).enqueue(record)
   }
 
-  override def writeDataLogRecord(from: VirtualIdentity, seq: Long): Unit = {
-    InMemoryLogStorage.getLogOf(logName).enqueue(FromSender(from, seq))
+  override def writeDataLogRecord(from: VirtualIdentity): Unit = {
+    InMemoryLogStorage.getLogOf(logName).enqueue(FromSender(from))
   }
 
   override def writeDPLogRecord(idx: Long): Unit = {

@@ -13,7 +13,11 @@ import edu.uci.ics.amber.engine.common.ambermessage.ControlPayload
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCServer}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Completed
+import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{
+  Completed,
+  Ready,
+  Running
+}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.{
   ActorVirtualIdentity,
@@ -24,6 +28,7 @@ import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 import java.util.concurrent.{ExecutorService, Executors, Future}
 
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionStartedHandler.WorkerStateUpdated
 import edu.uci.ics.amber.engine.recovery.{DPLogManager, InputCounter}
 
 import scala.collection.mutable
@@ -154,12 +159,14 @@ class DataProcessor( // dependencies:
             inputCounter.enable()
           }
         case InputTuple(tuple) =>
+          transitStateToRunningFromReady()
           inputCounter.advanceDataInputCount()
           currentInputTuple = Left(tuple)
           handleInputTuple()
         case SenderChangeMarker(link) =>
           currentInputLink = link
         case EndMarker =>
+          transitStateToRunningFromReady()
           if (currentInputLink != null) {
             inputCounter.advanceDataInputCount()
           }
@@ -169,6 +176,7 @@ class DataProcessor( // dependencies:
             asyncRPCClient.send(LinkCompleted(currentInputLink), ActorVirtualIdentity.Controller)
           }
         case EndOfAllMarker =>
+          transitStateToRunningFromReady()
           // end of processing, break DP loop
           isCompleted = true
           batchProducer.emitEndOfUpstream()
@@ -181,6 +189,7 @@ class DataProcessor( // dependencies:
     logger.logInfo(
       s"${operator.toString} completed in ${(System.currentTimeMillis() - startTime) / 1000f}"
     )
+    dataCursor += 1 //increment data cursor to distinguish control messages before/after completion
     asyncRPCClient.send(WorkerExecutionCompleted(), ActorVirtualIdentity.Controller)
     stateManager.transitTo(Completed)
     disableDataQueue()
@@ -244,12 +253,12 @@ class DataProcessor( // dependencies:
     if (advanceDataCursor) {
       dataCursor += 1
     }
-    while (!isControlQueueEmpty) {
-      val control = getElement.asInstanceOf[ControlElement]
-      handleControlElement(control)
-    }
     if (dpLogManager.isRecovering) {
       replayControlCommands()
+    }
+    while (!isControlQueueEmpty || pauseManager.isPaused) {
+      val control = getElement.asInstanceOf[ControlElement]
+      handleControlElement(control)
     }
   }
 
@@ -282,6 +291,12 @@ class DataProcessor( // dependencies:
       processControlCommand(elem.cmd, elem.from)
       dpLogManager.advanceCursor()
     }
+    if (!dpLogManager.isRecovering && controlRecoveryQueue.nonEmpty) {
+      controlRecoveryQueue.foreach { elem =>
+        processControlCommand(elem.cmd, elem.from)
+      }
+      controlRecoveryQueue.clear()
+    }
   }
 
   private[this] def processControlCommand(cmd: ControlPayload, from: VirtualIdentity): Unit = {
@@ -304,6 +319,16 @@ class DataProcessor( // dependencies:
   private[this] def persistCurrentDataCursorIfRecoveryCompleted(): Unit = {
     if (!dpLogManager.isRecovering) {
       dpLogManager.persistCurrentDataCursor(dataCursor)
+    }
+  }
+
+  private def transitStateToRunningFromReady(): Unit = {
+    if (stateManager.getCurrentState == Ready) {
+      stateManager.transitTo(Running)
+      asyncRPCClient.send(
+        WorkerStateUpdated(stateManager.getCurrentState),
+        ActorVirtualIdentity.Controller
+      )
     }
   }
 

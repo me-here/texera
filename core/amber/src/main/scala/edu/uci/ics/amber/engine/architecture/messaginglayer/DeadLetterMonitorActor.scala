@@ -12,7 +12,8 @@ class DeadLetterMonitorActor extends Actor {
       d.message match {
         case networkMessage: NetworkMessage =>
           // d.sender is the NetworkSenderActor
-          d.sender ! MessageBecomesDeadLetter(networkMessage)
+          // println(s"message: ${networkMessage.internalMessage} failed")
+          d.sender ! MessageBecomesDeadLetter(networkMessage, d.recipient)
         case other =>
         // skip for now
       }

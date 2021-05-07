@@ -21,15 +21,19 @@ class TrivialControlTester(id: ActorVirtualIdentity, parentNetworkCommunicationA
     extends WorkflowActor(id, false, parentNetworkCommunicationActorRef) {
 
   lazy val controlInputPort: NetworkInputPort[ControlPayload] =
-    new NetworkInputPort[ControlPayload](this.logger, this.handleControlPayloadWithTryCatch)
+    new NetworkInputPort[ControlPayload](
+      this.logger,
+      networkControlAckManager,
+      this.handleControlPayloadWithTryCatch
+    )
   override val rpcHandlerInitializer: AsyncRPCHandlerInitializer =
     wire[TesterAsyncRPCHandlerInitializer]
 
   val logStorage = new EmptyLogStorage(id.toString)
   lazy val logWriter: ParallelLogWriter =
-    new ParallelLogWriter(logStorage, self, networkCommunicationActor)
+    new ParallelLogWriter(logStorage, self, networkCommunicationActor, networkControlAckManager)
   override val controlLogManager: ControlLogManager =
-    new ControlLogManager(logStorage, logWriter, controlInputPort)
+    new ControlLogManager(logStorage, logWriter, controlInputPort, networkControlAckManager, null)
 
   override def receive: Receive = {
     disallowActorRefRelatedMessages orElse {
@@ -39,6 +43,8 @@ class TrivialControlTester(id: ActorVirtualIdentity, parentNetworkCommunicationA
           ) =>
         logger.logInfo(s"received ${internalMessage}")
         this.controlInputPort.handleMessage(
+          sender,
+          id,
           from,
           sequenceNumber,
           payload
@@ -49,6 +55,8 @@ class TrivialControlTester(id: ActorVirtualIdentity, parentNetworkCommunicationA
   }
 
   def handleControlPayloadWithTryCatch(
+      actorRef: ActorRef,
+      id: Long,
       from: VirtualIdentity,
       controlPayload: ControlPayload
   ): Unit = {

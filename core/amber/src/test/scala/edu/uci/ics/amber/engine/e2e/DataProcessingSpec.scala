@@ -5,18 +5,6 @@ import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import akka.util.Timeout
 import ch.vorburger.mariadb4j.DB
 import edu.uci.ics.amber.clustering.SingleNodeListener
-import edu.uci.ics.amber.engine.architecture.controller.{
-  Controller,
-  ControllerEventListener,
-  ControllerState,
-  Workflow
-}
-import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.StartWorkflowHandler.StartWorkflow
-import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient
-import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
-import edu.uci.ics.amber.engine.common.tuple.ITuple
-import edu.uci.ics.amber.engine.common.virtualidentity.WorkflowIdentity
-import edu.uci.ics.texera.workflow.common.WorkflowContext
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.AttributeType
@@ -24,6 +12,7 @@ import edu.uci.ics.texera.workflow.common.workflow._
 import edu.uci.ics.texera.workflow.operators.aggregate.AggregationFunction
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.flatspec.AnyFlatSpecLike
+import edu.uci.ics.amber.engine.e2e.Utils._
 
 import java.sql.PreparedStatement
 import scala.collection.mutable
@@ -47,38 +36,6 @@ class DataProcessingSpec
   }
   override def afterAll: Unit = {
     TestKit.shutdownActorSystem(system)
-  }
-
-  def buildWorkflow(
-      operators: mutable.MutableList[OperatorDescriptor],
-      links: mutable.MutableList[OperatorLink]
-  ): (WorkflowIdentity, Workflow) = {
-    val context = new WorkflowContext
-    context.jobID = "workflow-test"
-
-    val texeraWorkflowCompiler = new WorkflowCompiler(
-      WorkflowInfo(operators, links, mutable.MutableList[BreakpointInfo]()),
-      context
-    )
-    val workflow = texeraWorkflowCompiler.amberWorkflow
-    val workflowTag = WorkflowIdentity("workflow-test")
-    (workflowTag, workflow)
-  }
-
-  def executeWorkflow(id: WorkflowIdentity, workflow: Workflow): Map[String, List[ITuple]] = {
-    val parent = TestProbe()
-    var results: Map[String, List[ITuple]] = null
-    val eventListener = ControllerEventListener()
-    eventListener.workflowCompletedListener = evt => results = evt.result
-    val controller = parent.childActorOf(
-      Controller.props(id, workflow, eventListener, 100)
-    )
-    parent.expectMsg(ControllerState.Ready)
-    controller ! ControlInvocation(AsyncRPCClient.IgnoreReply, StartWorkflow())
-    parent.expectMsg(ControllerState.Running)
-    parent.expectMsg(1.minute, ControllerState.Completed)
-    parent.ref ! PoisonPill
-    results
   }
 
   def initializeInMemoryMySQLInstance(): (String, String, String, String, String, String) = {
@@ -141,8 +98,8 @@ class DataProcessingSpec
         )
       )
     )
-    val results = executeWorkflow(id, workflow)(sink.operatorID)
-
+    val resultMap = executeWorkflow(id, workflow)
+    val results = resultMap(sink.operatorID)
     assert(results.size == 100)
 
     for (result <- results) {
@@ -169,8 +126,8 @@ class DataProcessingSpec
         )
       )
     )
-    val results = executeWorkflow(id, workflow)(sink.operatorID)
-
+    val resultMap = executeWorkflow(id, workflow)
+    val results = resultMap(sink.operatorID)
     assert(results.size == 1000)
 
     for (result <- results) {

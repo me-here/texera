@@ -1,34 +1,14 @@
 package edu.uci.ics.amber.engine.architecture.messaginglayer
 
-import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
+import akka.actor.ActorRef
 
 import scala.collection.mutable
-import scala.reflect.ClassTag
-
-object OrderingEnforcer {
-  def reorderMessage[V](
-      seqMap: mutable.AnyRefMap[VirtualIdentity, OrderingEnforcer[V]],
-      sender: VirtualIdentity,
-      seq: Long,
-      payload: V
-  ): Option[Iterable[V]] = {
-    val entry = seqMap.getOrElseUpdate(sender, new OrderingEnforcer[V]())
-    if (entry.isDuplicated(seq)) {
-      None
-    } else if (entry.isAhead(seq)) {
-      entry.stash(seq, payload)
-      None
-    } else {
-      Some(entry.enforceFIFO(seq, payload))
-    }
-  }
-}
 
 /* The abstracted FIFO/exactly-once logic */
 class OrderingEnforcer[T] {
 
   var current = 0L
-  val ofoMap = new mutable.LongMap[T]
+  val ofoMap = new mutable.LongMap[(ActorRef, Long, T)]
 
   def isDuplicated(sequenceNumber: Long): Boolean = {
     if (sequenceNumber == -1) return false
@@ -40,12 +20,12 @@ class OrderingEnforcer[T] {
     sequenceNumber > current
   }
 
-  def stash(sequenceNumber: Long, data: T): Unit = {
-    ofoMap(sequenceNumber) = data
+  def stash(sender: ActorRef, id: Long, sequenceNumber: Long, data: T): Unit = {
+    ofoMap(sequenceNumber) = (sender, id, data)
   }
 
-  def enforceFIFO(sequenceNumber: Long, data: T): List[T] = {
-    val res = mutable.ArrayBuffer[T](data)
+  def enforceFIFO(sender: ActorRef, id: Long, data: T): List[(ActorRef, Long, T)] = {
+    val res = mutable.ArrayBuffer[(ActorRef, Long, T)]((sender, id, data))
     current += 1
     while (ofoMap.contains(current)) {
       res.append(ofoMap(current))

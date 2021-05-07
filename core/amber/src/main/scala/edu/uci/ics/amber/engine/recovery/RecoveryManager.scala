@@ -14,7 +14,7 @@ import scala.collection.mutable
 object RecoveryManager {
   def defaultLogStorage(
       id: ActorVirtualIdentity
-  ) = new HDFSLogStorage(id.toString)
+  ) = new LocalDiskLogStorage(id.toString)
 }
 
 class RecoveryManager(
@@ -26,18 +26,19 @@ class RecoveryManager(
   private val isRecovering = mutable.HashSet[ActorVirtualIdentity]()
 
   def recoverWorkerOnNode(crashedNode: Address, replaceNode: Address): Unit = {
-    workflow.getAllWorkersOnNode(crashedNode).foreach {
-      recoverWorkerChain(_, replaceNode)
-    }
+    val allWorkerOnCrashedNode = workflow.getAllWorkersOnNode(crashedNode)
+    allWorkerOnCrashedNode.foreach(
+      recoverWorker(_, replaceNode)
+    ) // migrate all worker to another node
+    allWorkerOnCrashedNode.foreach(
+      rollbackUpstreamWorkers
+    ) // rollback all upstream worker on their node
   }
 
-  def recoverWorkerChain(id: ActorVirtualIdentity, newNode: Address): Unit = {
-    if (!isRecovering.contains(id)) {
-      recoverWorker(id, newNode)
-      val upstreamWorkersToReplay =
-        workflow.getUpstreamWorkers(id).filter(x => !isRecovering.contains(x))
-      upstreamWorkersToReplay.foreach(recoverWorker(_))
-    }
+  def rollbackUpstreamWorkers(id: ActorVirtualIdentity): Unit = {
+    val upstreamWorkersToReplay =
+      workflow.getUpstreamWorkers(id).filter(x => !isRecovering.contains(x))
+    upstreamWorkersToReplay.foreach(recoverWorker(_))
   }
 
   def setRecoverCompleted(id: ActorVirtualIdentity): Unit = {
@@ -46,7 +47,7 @@ class RecoveryManager(
     }
   }
 
-  private def recoverWorker(id: ActorVirtualIdentity, onNode: Address = null): Unit = {
+  def recoverWorker(id: ActorVirtualIdentity, onNode: Address = null): Unit = {
     workflow
       .getWorkerLayer(id)
       .killAndReBuild(

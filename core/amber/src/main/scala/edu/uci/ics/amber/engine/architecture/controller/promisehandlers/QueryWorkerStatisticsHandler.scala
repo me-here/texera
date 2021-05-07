@@ -25,12 +25,12 @@ trait QueryWorkerStatisticsHandler {
           send(QueryStatistics(), worker).map { stats =>
             // update worker stats
             controller.workflow.getOperator(worker).getWorker(worker).stats = stats
+            // controller.logger.logInfo(s"update $worker stats to $stats")
+            // update frontend status
+            updateFrontendWorkflowStatus()
           }
         }.toSeq)
-        .map { ret =>
-          // update frontend status
-          updateFrontendWorkflowStatus()
-        }
+        .unit
     }
   }
 }

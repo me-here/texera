@@ -122,3 +122,4 @@ libraryDependencies += "ch.vorburger.mariaDB4j" % "mariaDB4j" % "2.4.0" % Test
 
 // https://www.scalatest.org/getting_started_with_fun_suite
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.5" % "test"
+

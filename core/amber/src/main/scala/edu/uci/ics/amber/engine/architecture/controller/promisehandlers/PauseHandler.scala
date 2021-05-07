@@ -40,6 +40,8 @@ trait PauseHandler {
 
   registerHandler { (msg: PauseWorkflow, sender) =>
     {
+      val startTime = System.currentTimeMillis()
+
       Future
         .collect(controller.workflow.getAllOperators.map { operator =>
           // create a buffer for the current input tuple
@@ -52,13 +54,14 @@ trait PauseHandler {
                 // pause message has no effect on completed or paused workers
                 .map { worker =>
                   // send a pause message
-                  send(PauseWorker(), worker).map { ret =>
+                  send(PauseWorker(), worker).flatMap { ret =>
                     operator.getWorker(worker).state = ret
                     send(QueryStatistics(), worker)
                       .join(send(QueryCurrentInputTuple(), worker))
                       // get the stats and current input tuple from the worker
                       .map {
                         case (stats, tuple) =>
+                          controller.logger.logInfo(s"set $worker stat to $stats")
                           operator.getWorker(worker).stats = stats
                           buffer.append((tuple, worker))
                       }
@@ -80,7 +83,11 @@ trait PauseHandler {
           updateFrontendWorkflowStatus()
           // send paused to frontend
           if (controller.eventListener.workflowPausedListener != null) {
-            sendToOWP(() => controller.eventListener.workflowPausedListener.apply(WorkflowPaused()))
+            sendToOWP(() => {
+              controller.eventListener.workflowPausedListener.apply(WorkflowPaused())
+              controller.logger
+                .logInfo("paused in " + (System.currentTimeMillis() - startTime) + " ms")
+            })
           }
           disableStatusUpdate() // to be enabled in resume
           controller.context.parent ! ControllerState.Paused // for testing

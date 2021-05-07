@@ -1,6 +1,10 @@
 package edu.uci.ics.amber.engine.recovery
 
-import edu.uci.ics.amber.engine.architecture.messaginglayer.BatchToTupleConverter
+import akka.actor.ActorRef
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{
+  BatchToTupleConverter,
+  NetworkAckManager
+}
 import edu.uci.ics.amber.engine.common.ambermessage.{
   DataBatchSequence,
   DataPayload,
@@ -11,65 +15,79 @@ import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
 
 import scala.collection.mutable
 
-object DataLogManager {}
+class DataLogManager(
+    logStorage: LogStorage,
+    logWriter: ParallelLogWriter,
+    networkAckManager: NetworkAckManager,
+    handler: (VirtualIdentity, DataPayload) => Unit
+) extends RecoveryComponent {
 
-class DataLogManager(logStorage: LogStorage, logWriter: ParallelLogWriter)
-    extends RecoveryComponent {
-
-  private val persistedDataOrder: mutable.Queue[FromSender] =
+  private val persistedDataOrder: mutable.Queue[VirtualIdentity] =
     logStorage.getLogs
       .collect {
-        case msg: FromSender => msg
+        case msg: FromSender => msg.virtualId
       }
       .to[mutable.Queue]
 
-  private val stashedMessages = mutable.HashMap[FromSender, WorkflowDataMessage]()
-  private var nextMessage: WorkflowDataMessage = _
-  private val remainingMessages = mutable.Queue[WorkflowDataMessage]()
+  private val stashedMessages =
+    mutable.HashMap[VirtualIdentity, mutable.Queue[(ActorRef, Long, DataPayload)]]()
   private var enableLogWrite = true
 
   checkIfCompleted()
 
-  def feedInMessage(message: WorkflowDataMessage): Unit = {
-    val from = FromSender(message.from, message.sequenceNumber)
-    stashedMessages(from) = message
-  }
-
-  def hasNext: Boolean = {
-    checkIfCompleted()
-    if (isRecovering) {
-      val from = persistedDataOrder.head
-      if (stashedMessages.contains(from)) {
-        nextMessage = stashedMessages(from)
+  def handleMessage(
+      sender: ActorRef,
+      id: Long,
+      from: VirtualIdentity,
+      message: DataPayload
+  ): Unit = {
+    if (!isRecovering) {
+      persistDataSender(sender, id, from, message.size)
+      handler(from, message)
+    } else {
+      if (!stashedMessages.contains(from)) {
+        stashedMessages(from) = mutable.Queue[(ActorRef, Long, DataPayload)]()
+      }
+      stashedMessages(from).enqueue((sender, id, message))
+      var persisted = persistedDataOrder.head
+      while (
+        isRecovering && stashedMessages.contains(persisted) && stashedMessages(persisted).nonEmpty
+      ) {
+        val (orderedSender, orderedID, orderedMsg) = stashedMessages(persisted).dequeue()
+        networkAckManager.advanceSeq(persisted, 1)
+        networkAckManager.ackDirectly(orderedSender, orderedID)
+        handler(persisted, orderedMsg)
         persistedDataOrder.dequeue()
+        if (persistedDataOrder.nonEmpty) {
+          persisted = persistedDataOrder.head
+        }
+        checkIfCompleted()
       }
     }
-    nextMessage != null || remainingMessages.nonEmpty
   }
 
-  def next(): WorkflowDataMessage = {
-    if (nextMessage != null) {
-      val ret = nextMessage
-      nextMessage = null
-      ret
-    } else {
-      remainingMessages.dequeue()
-    }
-  }
-
-  def persistDataSender(vid: VirtualIdentity, batchSize: Int, seq: Long): Boolean = {
+  def persistDataSender(sender: ActorRef, id: Long, vid: VirtualIdentity, batchSize: Int): Unit = {
     if (enableLogWrite) {
-      logWriter.addLogRecord(DataBatchSequence(vid, batchSize, seq))
-      true
-    }else{
-      false
+      networkAckManager.enqueueDelayedAck(sender, id)
+      logWriter.addLogRecord(DataBatchSequence(vid, batchSize))
+    } else {
+      networkAckManager.advanceSeq(vid, 1)
+      networkAckManager.ackDirectly(sender, id)
     }
   }
 
   private[this] def checkIfCompleted(): Unit = {
     if (persistedDataOrder.isEmpty && isRecovering) {
-      stashedMessages.values.foreach(msg => remainingMessages.enqueue(msg))
       setRecoveryCompleted()
+      stashedMessages.foreach {
+        case (from, queue) =>
+          queue.foreach {
+            case (sender, id, msg) =>
+              persistDataSender(sender, id, from, msg.size)
+              handler(from, msg)
+          }
+      }
+      stashedMessages.clear()
     }
   }
 

@@ -27,12 +27,12 @@ trait LinkWorkflowHandler {
       val numUpstreamSender = new mutable.HashMap[ActorVirtualIdentity, Int]().withDefaultValue(0)
       Future
         .collect(controller.workflow.getAllLinks.flatMap { link =>
+          link.getMappingFromDownstreamToUpstream.foreach {
+            case (id, iterable) => numUpstreamSender(id) += iterable.size
+          }
           link.getPolicies.flatMap {
             case (from, policy, tos) =>
               // send messages to sender worker
-              link.getMappingFromDownstreamToUpstream.foreach {
-                case (id, iterable) => numUpstreamSender(id) += iterable.size
-              }
               Seq(send(AddOutputPolicy(policy), from))
           }
         }.toSeq)
@@ -44,10 +44,6 @@ trait LinkWorkflowHandler {
             .map { ret2 =>
               controller.workflow.getAllOperators.foreach(_.setAllWorkerState(Ready))
               updateFrontendWorkflowStatus()
-              // for testing, report ready state to parent
-              controller.context.parent ! ControllerState.Ready
-              controller.context.become(controller.running)
-              controller.unstashAll()
               CommandCompleted()
             }
         }

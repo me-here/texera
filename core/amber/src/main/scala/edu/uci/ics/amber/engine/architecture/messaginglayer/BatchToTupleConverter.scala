@@ -63,13 +63,11 @@ class BatchToTupleConverter(
       case InputLinking(link) =>
         registerInput(from, link)
       case DataFrame(payload) =>
-        transitStateToRunningFromReady()
         checkLinkChange(inputMap(from))
         payload.foreach { i =>
           workerInternalQueue.appendElement(InputTuple(i))
         }
       case EndOfUpstream() =>
-        transitStateToRunningFromReady()
         val link = inputMap(from)
         checkLinkChange(link)
         upstreamMap(link).remove(from)
@@ -90,13 +88,4 @@ class BatchToTupleConverter(
     }
   }
 
-  private def transitStateToRunningFromReady(): Unit = {
-    if (workerStateManager.getCurrentState == Ready) {
-      workerStateManager.transitTo(Running)
-      asyncRPCClient.send(
-        WorkerStateUpdated(workerStateManager.getCurrentState),
-        ActorVirtualIdentity.Controller
-      )
-    }
-  }
 }

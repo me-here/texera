@@ -12,10 +12,11 @@ import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunication
 }
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{
   ControlOutputPort,
+  NetworkAckManager,
   NetworkCommunicationActor
 }
 import edu.uci.ics.amber.engine.common.WorkflowLogger
-import edu.uci.ics.amber.engine.common.ambermessage.{UpdateCountForInput, WorkflowControlMessage}
+import edu.uci.ics.amber.engine.common.ambermessage.WorkflowControlMessage
 import edu.uci.ics.amber.engine.common.rpc.{
   AsyncRPCClient,
   AsyncRPCHandlerInitializer,
@@ -29,9 +30,6 @@ import edu.uci.ics.amber.engine.recovery.{
   LogStorage
 }
 import edu.uci.ics.amber.error.WorkflowRuntimeError
-import edu.uci.ics.amber.error.ErrorUtils.safely
-
-import scala.collection.mutable
 
 abstract class WorkflowActor(
     val identifier: ActorVirtualIdentity,
@@ -51,10 +49,15 @@ abstract class WorkflowActor(
 
   val networkCommunicationActor: NetworkSenderActorRef = NetworkSenderActorRef(
     context.actorOf(
-      NetworkCommunicationActor.props(parentNetworkCommunicationActorRef, countCheckEnabled)
+      NetworkCommunicationActor.props(
+        parentNetworkCommunicationActorRef,
+        countCheckEnabled,
+        identifier
+      )
     )
   )
 
+  lazy val networkControlAckManager: NetworkAckManager = wire[NetworkAckManager]
   lazy val inputCounter: InputCounter = wire[InputCounter]
   lazy val controlOutputPort: ControlOutputPort = wire[ControlOutputPort]
   lazy val asyncRPCClient: AsyncRPCClient = wire[AsyncRPCClient]
@@ -63,9 +66,6 @@ abstract class WorkflowActor(
   // because it should be initialized with the actor itself
   val rpcHandlerInitializer: AsyncRPCHandlerInitializer
   val controlLogManager: ControlLogManager
-
-  var controlCount = 0L
-  val stashedControlAck = new mutable.Queue[(ActorRef, Long)]()
 
   def disallowActorRefRelatedMessages: Receive = {
     case GetActorRef(id, replyTo) =>
@@ -105,24 +105,6 @@ abstract class WorkflowActor(
 
   override def postStop(): Unit = {
     logger.logInfo("workflow actor stopped!")
-  }
-
-  final def replyAcks(queue: mutable.Queue[(ActorRef, Long)], count: Long): Unit = {
-    for (_ <- 0L until count) {
-      val (senderRef, messageID) = queue.dequeue()
-      senderRef ! NetworkAck(messageID)
-    }
-  }
-
-  final def enqueueDelayedAck(
-      queue: mutable.Queue[(ActorRef, Long)],
-      elem: (ActorRef, Long)
-  ): Unit = {
-    if (countCheckEnabled) {
-      queue.enqueue(elem)
-    } else {
-      elem._1 ! NetworkAck(elem._2)
-    }
   }
 
 }

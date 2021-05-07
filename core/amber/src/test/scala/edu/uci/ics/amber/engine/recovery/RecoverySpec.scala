@@ -5,7 +5,7 @@ import java.io.File
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props}
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
 import akka.util.Timeout
-import edu.uci.ics.amber.clustering.SingleNodeListener
+import edu.uci.ics.amber.clustering.{ClusterRuntimeInfo, SingleNodeListener}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
   NetworkAck,
   NetworkMessage,
@@ -18,6 +18,7 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatist
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.StartHandler.StartWorker
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, ISourceOperatorExecutor, InputExhausted}
 import edu.uci.ics.amber.engine.common.ambermessage.{
+  ControlLogPayload,
   ControlPayload,
   DPCursor,
   DataBatchSequence,
@@ -25,6 +26,8 @@ import edu.uci.ics.amber.engine.common.ambermessage.{
   EndOfUpstream,
   FromSender,
   InputLinking,
+  TriggerRecovery,
+  TriggerRecoveryOnWorker,
   WorkflowControlMessage,
   WorkflowDataMessage,
   WorkflowFIFOMessage,
@@ -37,21 +40,45 @@ import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.Work
 import edu.uci.ics.amber.engine.common.virtualidentity.{
   ActorVirtualIdentity,
   LayerIdentity,
-  LinkIdentity
+  LinkIdentity,
+  WorkflowIdentity
 }
+import edu.uci.ics.amber.engine.e2e.TestOperators
+import edu.uci.ics.amber.engine.e2e.Utils._
+import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
+import edu.uci.ics.texera.workflow.common.workflow.{OperatorLink, OperatorPort}
 import org.apache.commons.io.FileUtils
-import org.apache.hadoop.fs.{FileSystem, Path}
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.flatspec.AnyFlatSpecLike
+import com.twitter.util
+import com.twitter.util.Promise
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.PauseHandler.PauseWorkflow
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.ResumeHandler.ResumeWorkflow
+import edu.uci.ics.amber.engine.architecture.controller.{
+  Controller,
+  ControllerEventListener,
+  ControllerState,
+  Workflow
+}
+import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient
+import edu.uci.ics.amber.engine.operators.OpExecConfig
+import edu.uci.ics.texera.workflow.common.operators.aggregate.AggregateOpExecConfig
+import edu.uci.ics.texera.workflow.operators.aggregate.{
+  AggregationFunction,
+  SpecializedAverageOpDesc
+}
+import org.apache.commons.lang3.SerializationUtils
 
 import scala.collection.mutable
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
+import scala.util.Random
 
 class RecoverySpec
     extends TestKit(ActorSystem("RecoverySpec"))
     with ImplicitSender
     with AnyFlatSpecLike
+    with BeforeAndAfterEach
     with BeforeAndAfterAll {
 
   implicit val timeout: Timeout = Timeout(5.seconds)
@@ -69,10 +96,22 @@ class RecoverySpec
     deleteFolderSafely("./logs")
     system.actorOf(Props[SingleNodeListener], "cluster-info")
   }
+
   override def afterAll: Unit = {
     deleteFolderSafely("./logs")
     TestKit.shutdownActorSystem(system)
   }
+
+  override def beforeEach: Unit = {
+    deleteFolderSafely("./logs")
+    ClusterRuntimeInfo.workerStates.clear()
+    ClusterRuntimeInfo.senderStates.clear()
+  }
+
+  override def afterEach: Unit = {
+    deleteFolderSafely("./logs")
+  }
+
   val receiverID = WorkerActorVirtualIdentity("receiver")
   val fakeLink: LinkIdentity =
     LinkIdentity(
@@ -286,7 +325,7 @@ class RecoverySpec
     }
     Thread.sleep(10000)
     val logStorage2 = new LocalDiskLogStorage(id.toString)
-    assert(logStorage2.getLogs.count(p => p.isInstanceOf[WorkflowControlMessage]) == 2)
+    assert(logStorage2.getLogs.count(p => p.isInstanceOf[ControlLogPayload]) == 2)
     assert(logStorage2.getLogs.count(p => p.isInstanceOf[FromSender]) == 8)
     assert(logStorage2.getLogs.count(p => p.isInstanceOf[DPCursor]) == 2)
     logStorage.clear()
@@ -394,6 +433,208 @@ class RecoverySpec
     assert(receivedControl.size == 8)
     sourceLogStorage.clear()
     dummyLogStorage.clear()
+  }
+
+  def executeSimpleCountWorkflowAsync()
+      : (WorkflowIdentity, Workflow, util.Future[Map[String, List[ITuple]]], ActorRef) = {
+    val csvOpDesc = TestOperators.mediumCsvScanOpDesc()
+    val groupByOpDesc =
+      TestOperators.aggregateAndGroupByDesc("Country", AggregationFunction.COUNT, List.empty)
+    val sink = TestOperators.sinkOpDesc()
+    val (id, workflow) = buildWorkflow(
+      mutable.MutableList[OperatorDescriptor](csvOpDesc, groupByOpDesc, sink),
+      mutable.MutableList[OperatorLink](
+        OperatorLink(
+          OperatorPort(csvOpDesc.operatorID, 0),
+          OperatorPort(groupByOpDesc.operatorID, 0)
+        ),
+        OperatorLink(
+          OperatorPort(groupByOpDesc.operatorID, 0),
+          OperatorPort(sink.operatorID, 0)
+        )
+      )
+    )
+    val (_, resultFuture, controller) = executeWorkflowAsync(id, workflow)
+    (id, workflow, resultFuture, controller)
+  }
+
+  "simple workflow" should "recover with node crash" in {
+    val (_, _, resultFuture, controller) = executeSimpleCountWorkflowAsync()
+    Thread.sleep(200)
+    controller ! NetworkMessage(0, TriggerRecovery(controller.path.address))
+    val result = util.Await.result(resultFuture)
+    assert(result.head._2.head.get(0) == 100000)
+  }
+
+  "simple workflow" should "recover with controller crash" in {
+    val (id, workflow, _, controller) = executeSimpleCountWorkflowAsync()
+    Thread.sleep(200)
+    controller ! PoisonPill
+    val parent = TestProbe()
+    val resultFuture: Promise[Map[String, List[ITuple]]] = new Promise()
+    val eventListener = ControllerEventListener()
+    eventListener.workflowCompletedListener = evt => resultFuture.setValue(evt.result)
+    parent.childActorOf(
+      Controller.props(id, workflow, eventListener, 100)
+    )
+    val result = util.Await.result(resultFuture)
+    assert(result.head._2.head.get(0) == 100000)
+  }
+
+  "simple workflow" should "recover with source worker crash" in {
+    val (_, workflow, resultFuture, controller) = executeSimpleCountWorkflowAsync()
+    Thread.sleep(200)
+    controller ! NetworkMessage(
+      0,
+      TriggerRecoveryOnWorker(workflow.getStartOperators.head.topology.layers.head.identifiers.head)
+    )
+    val result = util.Await.result(resultFuture)
+    assert(result.head._2.head.get(0) == 100000)
+  }
+
+  "simple workflow" should "recover with aggregation worker crash" in {
+    val (_, workflow, resultFuture, controller) = executeSimpleCountWorkflowAsync()
+    Thread.sleep(200)
+    val aggregateOpExec =
+      workflow.getAllOperators.filter(_.isInstanceOf[AggregateOpExecConfig[_]]).head
+    controller ! NetworkMessage(
+      0,
+      TriggerRecoveryOnWorker(aggregateOpExec.topology.layers.head.identifiers.head)
+    )
+    val result = util.Await.result(resultFuture)
+    assert(result.head._2.head.get(0) == 100000)
+  }
+
+  "simple workflow" should "recover with sink worker crash" in {
+    val (_, workflow, resultFuture, controller) = executeSimpleCountWorkflowAsync()
+    Thread.sleep(200)
+    controller ! NetworkMessage(
+      0,
+      TriggerRecoveryOnWorker(workflow.getEndOperators.head.topology.layers.head.identifiers.head)
+    )
+    val result = util.Await.result(resultFuture)
+    assert(result.head._2.head.get(0) == 100000)
+  }
+
+  def executeJoinCountWorkflowAsync(): (
+      WorkflowIdentity,
+      Workflow,
+      TestProbe,
+      util.Future[Map[String, List[ITuple]]],
+      ActorRef
+  ) = {
+    val smallCsvOpDesc = TestOperators.smallCsvScanOpDesc()
+    val mediumCsvOpDesc = TestOperators.mediumCsvScanOpDesc()
+    val joinOpDesc = TestOperators.joinOpDesc("Region", "Region")
+    val groupByOpDesc =
+      TestOperators.aggregateAndGroupByDesc("Country", AggregationFunction.COUNT, List.empty)
+    val sink = TestOperators.sinkOpDesc()
+    val (id, workflow) = buildWorkflow(
+      mutable.MutableList[OperatorDescriptor](
+        smallCsvOpDesc,
+        mediumCsvOpDesc,
+        joinOpDesc,
+        groupByOpDesc,
+        sink
+      ),
+      mutable.MutableList[OperatorLink](
+        OperatorLink(
+          OperatorPort(smallCsvOpDesc.operatorID, 0),
+          OperatorPort(joinOpDesc.operatorID, 0)
+        ),
+        OperatorLink(
+          OperatorPort(mediumCsvOpDesc.operatorID, 0),
+          OperatorPort(joinOpDesc.operatorID, 1)
+        ),
+        OperatorLink(
+          OperatorPort(joinOpDesc.operatorID, 0),
+          OperatorPort(groupByOpDesc.operatorID, 0)
+        ),
+        OperatorLink(
+          OperatorPort(groupByOpDesc.operatorID, 0),
+          OperatorPort(sink.operatorID, 0)
+        )
+      )
+    )
+    val (testProbe, resultFuture, controller) = executeWorkflowAsync(id, workflow)
+    (id, workflow, testProbe, resultFuture, controller)
+  }
+
+  "join workflow" should "recover with node crash" in {
+    val (_, _, _, resultFuture, controller) = executeJoinCountWorkflowAsync()
+    Thread.sleep(10000)
+    controller ! NetworkMessage(0, TriggerRecovery(controller.path.address))
+    val result = util.Await.result(resultFuture)
+    assert(result.head._2.head.get(0) == 1962554)
+  }
+
+  "join workflow" should "recover multiple times" in {
+    val (_, _, _, resultFuture, controller) = executeJoinCountWorkflowAsync()
+    (1 to 5).foreach { i =>
+      Thread.sleep(i * 2000)
+      controller ! NetworkMessage(0, TriggerRecovery(controller.path.address))
+    }
+    val result = util.Await.result(resultFuture)
+    assert(result.head._2.head.get(0) == 1962554)
+  }
+
+  "join workflow" should "recover with controller crash" in {
+    val (id, workflow, _, _, controller) = executeJoinCountWorkflowAsync()
+    Thread.sleep(10000)
+    controller ! PoisonPill
+    val parent = TestProbe()
+    val resultFuture: Promise[Map[String, List[ITuple]]] = new Promise()
+    val eventListener = ControllerEventListener()
+    eventListener.workflowCompletedListener = evt => resultFuture.setValue(evt.result)
+    parent.childActorOf(
+      Controller.props(id, workflow, eventListener, 100)
+    )
+    val result = util.Await.result(resultFuture)
+    assert(result.head._2.head.get(0) == 1962554)
+  }
+
+  "join workflow" should "recover to exactly same pause state if whole system crashed" in {
+    val (id, workflow, testProbe, _, controller) = executeJoinCountWorkflowAsync()
+    Thread.sleep(10000)
+    controller ! ControlInvocation(AsyncRPCClient.IgnoreReply, PauseWorkflow())
+    testProbe.expectMsg(ControllerState.Paused)
+    val stats = workflow.getWorkflowStatus
+    controller ! PoisonPill
+    val parent = TestProbe()
+    val resultFuture: Promise[Map[String, List[ITuple]]] = new Promise()
+    val eventListener = ControllerEventListener()
+    eventListener.workflowCompletedListener = evt => resultFuture.setValue(evt.result)
+    parent.childActorOf(
+      Controller.props(id, workflow, eventListener, 100)
+    )
+    parent.expectMsg(ControllerState.Running)
+    parent.expectMsg(ControllerState.Paused)
+    Thread.sleep(5000)
+    val recoveredStats = workflow.getWorkflowStatus
+    assert(stats == recoveredStats)
+  }
+
+  "join workflow" should "be able to pause, resume and complete if worker crashes randomly" in {
+    val (id, workflow, testProbe, resultFuture, controller) = executeJoinCountWorkflowAsync()
+    val random = new Random()
+    val allWorkers = workflow.getAllWorkers.toArray
+    Future {
+      (1 to 5).foreach { i =>
+        Thread.sleep(5000)
+        controller ! NetworkMessage(
+          0,
+          TriggerRecoveryOnWorker(allWorkers(random.nextInt(allWorkers.length)))
+        )
+      }
+    }
+    (1 to 5).foreach { i =>
+      Thread.sleep(2000)
+      controller ! ControlInvocation(AsyncRPCClient.IgnoreReply, PauseWorkflow())
+      Thread.sleep(5000)
+      controller ! ControlInvocation(AsyncRPCClient.IgnoreReply, ResumeWorkflow())
+    }
+    val result = util.Await.result(resultFuture)
+    assert(result.head._2.head.get(0) == 1962554)
   }
 
 }

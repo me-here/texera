@@ -25,6 +25,7 @@ trait KillWorkflowHandler {
       // kill the controller by sending poison pill
       // the workers and network communication actors will also be killed
       // the dp thread will be shut down when the workers kill themselves
+      Thread.sleep(500) //hack: wait for network communication actor send the result to frontend
       controller.context.self ! PoisonPill
       CommandCompleted()
     }

@@ -31,7 +31,7 @@ class WorkerLayer(
     val deployStrategy: DeployStrategy
 ) extends Serializable {
 
-  private val workers = mutable.HashMap[ActorVirtualIdentity, WorkerInfo]()
+  private val workers = mutable.LinkedHashMap[ActorVirtualIdentity, WorkerInfo]()
   @transient
   private val workerRefs = mutable.HashMap[ActorVirtualIdentity, (Int, ActorRef)]()
   private val inLinks = mutable.HashSet[LinkIdentity]()
@@ -112,11 +112,13 @@ class WorkerLayer(
         .withDeploy(Deploy(scope = RemoteScope(onNode)))
     )
     parentNetworkCommunicationActorRef ! RegisterActorRef(workerID, ref)
-    workers(workerID) = WorkerInfo(
-      workerID,
-      Uninitialized,
-      WorkerStatistics(Uninitialized, 0, 0, Option.empty)
-    )
+    if (!workers.contains(workerID)) {
+      workers(workerID) = WorkerInfo(
+        workerID,
+        Uninitialized,
+        WorkerStatistics(Uninitialized, 0, 0, Option.empty)
+      )
+    }
     workerRefs(workerID) = (index, ref)
   }
 

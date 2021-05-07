@@ -54,9 +54,7 @@ abstract class FileScanSourceOpDesc extends ScanSourceOpDesc {
     if (delimiter.isEmpty) return null
     val reader = new BufferedReader(getFileInputStreamReader)
     var headerLine: Option[String] = None
-    if (hasHeader) {
-      headerLine = Some(reader.readLine())
-    }
+    headerLine = Some(reader.readLine())
     val headers: Array[String] = headerLine.get.split(delimiter.get)
 
     // TODO: real CSV may contain multi-line values. Need to handle multi-line values correctly.

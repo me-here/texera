@@ -5,31 +5,40 @@ import java.util.concurrent.{ExecutorService, Executors, Future, LinkedBlockingQ
 
 import akka.actor.ActorRef
 import com.google.common.collect.Queues
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkAckManager
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
   NetworkSenderActorRef,
   UpdateCountForOutput
 }
 import edu.uci.ics.amber.engine.common.ambermessage.{
+  ControlLogPayload,
   DPCursor,
   DataBatchSequence,
   LogWriterPayload,
   ShutdownWriter,
-  UpdateCountForInput,
   WorkflowControlMessage
 }
+import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
+
+import scala.collection.mutable
 
 class ParallelLogWriter(
     storage: LogStorage,
     mainActor: ActorRef,
     networkCommunicationActor: NetworkSenderActorRef,
+    networkControlAckManager: NetworkAckManager,
+    networkDataAckManager: NetworkAckManager = null,
     isController: Boolean = false
 ) {
 
-  private var dataReceivedCounter = 0L
   private var dataProcessedCounter = 0L
   private var controlProcessedCounter = 0L
-  private var controlReceivedCounter = 0L
   private var logTime = 0L
+
+  private var loggedControlCounter = 0
+  private var loggedDataCounter = 0
+  private val loggedControlSeqDelta = mutable.HashMap[VirtualIdentity, Long]().withDefaultValue(0L)
+  private val loggedDataSeqDelta = mutable.HashMap[VirtualIdentity, Long]().withDefaultValue(0L)
 
   def addLogRecord(logRecord: LogWriterPayload): Unit = {
     if (!storage.isInstanceOf[EmptyLogStorage]) {
@@ -74,8 +83,13 @@ class ParallelLogWriter(
             dataProcessedCounter,
             controlProcessedCounter
           )
-          // notify main actor for counter update
-          mainActor ! UpdateCountForInput(dataReceivedCounter, controlReceivedCounter)
+          //
+          releaseAcks(networkControlAckManager, loggedControlCounter, loggedControlSeqDelta)
+          loggedControlCounter = 0
+          if (networkDataAckManager != null) {
+            releaseAcks(networkDataAckManager, loggedDataCounter, loggedDataSeqDelta)
+            loggedDataCounter = 0
+          }
         }
         storage.release()
       }
@@ -95,11 +109,27 @@ class ParallelLogWriter(
     storage.commit()
   }
 
+  private def releaseAcks(
+      ackManager: NetworkAckManager,
+      loggedCounter: Int,
+      loggedSeqDelta: mutable.Map[VirtualIdentity, Long]
+  ): Unit = {
+    try {
+      ackManager.releaseAcks(loggedCounter)
+      loggedSeqDelta.foreach(pair => ackManager.advanceSeq(pair._1, pair._2))
+      loggedSeqDelta.clear()
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+    }
+  }
+
   private def writeLogRecord(record: LogWriterPayload): Unit = {
     record match {
-      case clr: WorkflowControlMessage =>
+      case clr: ControlLogPayload =>
         storage.writeControlLogRecord(clr)
-        controlReceivedCounter += 1
+        loggedControlCounter += 1
+        loggedControlSeqDelta(clr.virtualId) += 1
         if (isController) {
           controlProcessedCounter += 1
           //println(s"writing $clr")
@@ -107,10 +137,13 @@ class ParallelLogWriter(
       case DPCursor(idx) =>
         storage.writeDPLogRecord(idx)
         controlProcessedCounter += 1
-      case DataBatchSequence(id, batchSize, seq) =>
-        storage.writeDataLogRecord(id, seq)
+      case DataBatchSequence(id, batchSize) =>
+        storage.writeDataLogRecord(id)
         dataProcessedCounter += batchSize
-        dataReceivedCounter += 1
+        if (networkDataAckManager != null) {
+          loggedDataCounter += 1
+          loggedDataSeqDelta(id) += 1
+        }
       case ShutdownWriter =>
       //skip
     }

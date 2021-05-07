@@ -20,11 +20,12 @@ import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunication
 }
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
 import edu.uci.ics.amber.engine.common.ambermessage.{
+  ControlLogPayload,
   ControlPayload,
   RecoveryCompleted,
   RecoveryMessage,
   TriggerRecovery,
-  UpdateCountForInput,
+  TriggerRecoveryOnWorker,
   WorkflowControlMessage
 }
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
@@ -63,7 +64,7 @@ object Controller {
         id,
         workflow,
         eventListener,
-        Option.apply(statusUpdateInterval),
+        Option.apply(1000),
         controlLogStorage,
         parentNetworkCommunicationActorRef
       )
@@ -92,17 +93,35 @@ class Controller(
   workflow.build(availableNodes, networkCommunicationActor, context)
 
   ClusterRuntimeInfo.controllers.add(self)
+  ClusterRuntimeInfo.controllerState = this
   val startTime = System.nanoTime()
 
   val rpcHandlerInitializer = new ControllerAsyncRPCHandlerInitializer(this)
-  val controlLogManager: ControlLogManager = wire[ControlLogManager]
+  val controlLogManager: ControlLogManager = new ControlLogManager(
+    logStorage,
+    logWriter,
+    controlInputPort,
+    networkControlAckManager,
+    this.handleControlPayloadAfterLog
+  )
   val recoveryManager = wire[RecoveryManager]
 
   lazy val logWriter: ParallelLogWriter =
-    new ParallelLogWriter(logStorage, self, networkCommunicationActor, true)
+    new ParallelLogWriter(
+      logStorage,
+      self,
+      networkCommunicationActor,
+      networkControlAckManager,
+      null,
+      true
+    )
 
   lazy val controlInputPort: NetworkInputPort[ControlPayload] =
-    new NetworkInputPort[ControlPayload](this.logger, this.handleControlPayloadWithTryCatch)
+    new NetworkInputPort[ControlPayload](
+      this.logger,
+      networkControlAckManager,
+      this.handleControlPayloadAfterFIFO
+    )
 
   private def errorLogAction(err: WorkflowRuntimeError): Unit = {
     eventListener.workflowExecutionErrorListener.apply(ErrorOccurred(err))
@@ -114,8 +133,8 @@ class Controller(
 
   controlLogManager.onComplete(() => {
     inputCounter.enable()
-    // activate all links
-    controlOutputPort.sendTo(ActorVirtualIdentity.Self, ControlInvocation(-1, LinkWorkflow()))
+    // for testing, report ready state to parent
+    context.parent ! ControllerState.Ready
   })
 
   def availableNodes: Array[Address] =
@@ -123,41 +142,38 @@ class Controller(
       .result(context.actorSelection("/user/cluster-info") ? GetAvailableNodeAddresses, 5.seconds)
       .asInstanceOf[Array[Address]]
 
-  override def receive: Receive = initializing
+  override def receive: Receive = running
 
-  def initializing: Receive = {
-    processRecoveryMessages orElse
-      receiveCountUpdate orElse {
-      case NetworkMessage(
-            id,
-            cmd @ WorkflowControlMessage(from, seqNum, payload: ReturnPayload)
-          ) =>
-        //process reply messages
-        controlLogManager.persistControlMessage(cmd)
-        enqueueDelayedAck(stashedControlAck, (sender, id))
-        controlInputPort.handleMessage(from, seqNum, payload)
-      case NetworkMessage(
-            id,
-            cmd @ WorkflowControlMessage(ActorVirtualIdentity.Controller, seqNum, payload)
-          ) =>
-        //process control messages from self
-        controlLogManager.persistControlMessage(cmd)
-        enqueueDelayedAck(stashedControlAck, (sender, id))
-        controlInputPort.handleMessage(ActorVirtualIdentity.Controller, seqNum, payload)
-      case _ =>
-        stash() //prevent other messages to be executed until initialized
-    }
-  }
+//  def initializing: Receive = {
+//    processRecoveryMessages orElse
+//      receiveCountUpdate orElse {
+//      case NetworkMessage(
+//            id,
+//            cmd @ WorkflowControlMessage(from, seqNum, payload: ReturnPayload)
+//          ) =>
+//        //process reply messages
+//        controlLogManager.persistControlMessage(cmd)
+//        enqueueDelayedAck(stashedControlAck, (sender, id))
+//        controlInputPort.handleMessage(from, seqNum, payload)
+//      case NetworkMessage(
+//            id,
+//            cmd @ WorkflowControlMessage(ActorVirtualIdentity.Controller, seqNum, payload)
+//          ) =>
+//        //process control messages from self
+//        controlLogManager.persistControlMessage(cmd)
+//        enqueueDelayedAck(stashedControlAck, (sender, id))
+//        controlInputPort.handleMessage(ActorVirtualIdentity.Controller, seqNum, payload)
+//      case _ =>
+//        stash() //prevent other messages to be executed until initialized
+//    }
+//  }
 
   def running: Receive = {
     acceptDirectInvocations orElse
-      receiveCountUpdate orElse
       processRecoveryMessages orElse {
       case NetworkMessage(id, cmd @ WorkflowControlMessage(from, seqNum, payload)) =>
         //logger.logInfo(s"received $cmd")
-        controlLogManager.persistControlMessage(cmd)
-        enqueueDelayedAck(stashedControlAck, (sender, id))
-        controlInputPort.handleMessage(from, seqNum, payload)
+        controlInputPort.handleMessage(sender, id, from, seqNum, payload)
       case other =>
         logger.logInfo(s"unhandled message: $other")
     }
@@ -165,10 +181,8 @@ class Controller(
 
   def acceptDirectInvocations: Receive = {
     case invocation: ControlInvocation =>
-      controlLogManager.persistControlMessage(
-        WorkflowControlMessage(ActorVirtualIdentity.Client, -1, invocation)
-      )
-      controlCount += 1 //we have to advance the count here since we don't ack
+      networkControlAckManager.enqueuePlaceholderAck()
+      controlLogManager.persistControlMessage(ActorVirtualIdentity.Client, invocation)
       asyncRPCServer.receive(invocation, ActorVirtualIdentity.Client)
   }
 
@@ -184,7 +198,18 @@ class Controller(
     super.postStop()
   }
 
-  def handleControlPayloadWithTryCatch(
+  def handleControlPayloadAfterFIFO(
+      sender: ActorRef,
+      id: Long,
+      from: VirtualIdentity,
+      controlPayload: ControlPayload
+  ): Unit = {
+    networkControlAckManager.enqueueDelayedAck(sender, id)
+    controlLogManager.persistControlMessage(from, controlPayload)
+    handleControlPayloadAfterLog(from, controlPayload)
+  }
+
+  def handleControlPayloadAfterLog(
       from: VirtualIdentity,
       controlPayload: ControlPayload
   ): Unit = {
@@ -222,16 +247,12 @@ class Controller(
           val targetNode = availableNodes.head
           recoveryManager.recoverWorkerOnNode(addr, targetNode)
         case RecoveryCompleted(id) =>
+          logger.logInfo(s"$id completed recovery!!")
           recoveryManager.setRecoverCompleted(id)
+        case TriggerRecoveryOnWorker(id) =>
+          val targetNode = availableNodes.head
+          recoveryManager.recoverWorker(id, targetNode)
+          recoveryManager.rollbackUpstreamWorkers(id)
       }
   }
-
-  final def receiveCountUpdate: Receive = {
-    case UpdateCountForInput(dc, cc) =>
-      if(controlCount < cc){
-        replyAcks(stashedControlAck, cc - controlCount)
-        controlCount = cc
-      }
-  }
-
 }

@@ -2,6 +2,7 @@ package edu.uci.ics.amber.engine.architecture.messaginglayer
 
 import akka.actor.{Actor, ActorRef, Cancellable, Props}
 import com.typesafe.scalalogging.LazyLogging
+import edu.uci.ics.amber.clustering.ClusterRuntimeInfo
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
   CommittableRequest,
   GetActorRef,
@@ -72,21 +73,32 @@ object NetworkCommunicationActor {
 
   final case class ResendMessages()
 
-  final case class MessageBecomesDeadLetter(message: NetworkMessage)
+  final case class MessageBecomesDeadLetter(message: NetworkMessage, deadActorRef: ActorRef)
 
   final case class UpdateCountForOutput(dataCount: Long, controlCount: Long)
 
-  def props(parentSender: ActorRef, countCheckEnabled: Boolean): Props =
-    Props(new NetworkCommunicationActor(parentSender, countCheckEnabled))
+  def props(
+      parentSender: ActorRef,
+      countCheckEnabled: Boolean,
+      vid: ActorVirtualIdentity = null
+  ): Props =
+    Props(new NetworkCommunicationActor(parentSender, countCheckEnabled, vid))
 }
 
 /** This actor handles the transformation from identifier to actorRef
   * and also sends message to other actors. This is the most outer part of
   * the messaging layer.
   */
-class NetworkCommunicationActor(parentRef: ActorRef, val countCheckEnabled: Boolean)
-    extends Actor
+class NetworkCommunicationActor(
+    parentRef: ActorRef,
+    val countCheckEnabled: Boolean,
+    vid: ActorVirtualIdentity
+) extends Actor
     with LazyLogging {
+
+  if (vid != null) {
+    ClusterRuntimeInfo.senderStates(vid) = this
+  }
 
   val idToActorRefs = new mutable.HashMap[ActorVirtualIdentity, ActorRef]()
   val idToCongestionControls = new mutable.HashMap[ActorVirtualIdentity, CongestionControl]()
@@ -110,8 +122,8 @@ class NetworkCommunicationActor(parentRef: ActorRef, val countCheckEnabled: Bool
 
   //register timer for resending messages
   val resendHandle: Cancellable = context.system.scheduler.schedule(
-    30.seconds,
-    30.seconds,
+    1000.seconds,
+    1000.seconds,
     self,
     ResendMessages
   )(context.dispatcher)
@@ -140,6 +152,7 @@ class NetworkCommunicationActor(parentRef: ActorRef, val countCheckEnabled: Bool
       }
     case RegisterActorRef(actorID, ref) =>
       registerActorRef(actorID, ref)
+
   }
 
   /** This method forward a message by using tell pattern
@@ -168,15 +181,27 @@ class NetworkCommunicationActor(parentRef: ActorRef, val countCheckEnabled: Bool
   def registerActorRef(actorID: ActorVirtualIdentity, ref: ActorRef): Unit = {
     idToActorRefs(actorID) = ref
     if (messageStash.contains(actorID)) {
+      // first time registering
       val stash = messageStash(actorID)
       while (stash.nonEmpty) {
         forwardMessage(actorID, stash.dequeue())
       }
+    } else if (idToCongestionControls.contains(actorID)) {
+      // if actor has recovered, resend message to new ref
+      val congestionControlUnit = idToCongestionControls(actorID)
+      congestionControlUnit.getInTransitMessages.foreach { msg =>
+        congestionControlUnit.markMessageInTransit(msg)
+        ref ! msg
+      }
+      logger.info(
+        s"$vid: resend ${congestionControlUnit.getInTransitMessages.size} messages to $actorID (a.k.a $ref)"
+      )
     }
   }
 
   def sendMessagesAndReceiveAcks: Receive = {
     case req: CommittableRequest =>
+      //println(s"received request: $req but we have $dataCountFromLogWriter and $controlCountFromLogWriter")
       if (
         countCheckEnabled && (req.inputDataCount > dataCountFromLogWriter || req.inputControlCount > controlCountFromLogWriter)
       ) {
@@ -185,7 +210,6 @@ class NetworkCommunicationActor(parentRef: ActorRef, val countCheckEnabled: Bool
         handleRequest(req)
       }
     case UpdateCountForOutput(dc, cc) =>
-      //println(s"updated count from log writer: $dc, $cc")
       dataCountFromLogWriter = dc
       controlCountFromLogWriter = cc
       var cont = delayedRequests.nonEmpty
@@ -201,12 +225,15 @@ class NetworkCommunicationActor(parentRef: ActorRef, val countCheckEnabled: Bool
         }
       }
     case NetworkAck(id) =>
-      val actorID = messageIDToIdentity(id)
-      val congestionControl = idToCongestionControls(actorID)
-      congestionControl.ack(id)
-      congestionControl.getBufferedMessagesToSend.foreach { msg =>
-        congestionControl.markMessageInTransit(msg)
-        sendOrGetActorRef(actorID, msg)
+      if (messageIDToIdentity.contains(id)) {
+        val actorID = messageIDToIdentity(id)
+        val congestionControl = idToCongestionControls(actorID)
+        congestionControl.ack(id)
+        messageIDToIdentity.remove(id)
+        congestionControl.getBufferedMessagesToSend.foreach { msg =>
+          congestionControl.markMessageInTransit(msg)
+          sendOrGetActorRef(actorID, msg)
+        }
       }
     case ResendMessages =>
       queriedActorVirtualIdentities.clear()
@@ -216,14 +243,22 @@ class NetworkCommunicationActor(parentRef: ActorRef, val countCheckEnabled: Bool
             sendOrGetActorRef(actorID, msg)
           }
       }
-    case MessageBecomesDeadLetter(msg) =>
+    case MessageBecomesDeadLetter(msg, deadActorRef) =>
       // only remove the mapping from id to actorRef
       // to trigger discover mechanism
-      val actorID = messageIDToIdentity(msg.messageID)
-      logger.warn(s"actor for $actorID might have crashed or failed")
-      idToActorRefs.remove(actorID)
-      if (parentRef != null) {
-        getActorRefMappingFromParent(actorID)
+      if (messageIDToIdentity.contains(msg.messageID)) {
+        val actorID = messageIDToIdentity(msg.messageID)
+        if (idToActorRefs.contains(actorID)) {
+          if (idToActorRefs(actorID) == deadActorRef) {
+            logger.warn(s"actor for $actorID might have crashed or failed")
+            idToActorRefs.remove(actorID)
+            if (parentRef != null) {
+              getActorRefMappingFromParent(actorID)
+            }
+          } else {
+            sendOrGetActorRef(actorID, msg)
+          }
+        }
       }
   }
 
@@ -235,15 +270,13 @@ class NetworkCommunicationActor(parentRef: ActorRef, val countCheckEnabled: Bool
       idToActorRefs(actorID) ! msg
     } else {
       // otherwise, we ask the parent for the actorRef.
-      if (parentRef != null) {
-        getActorRefMappingFromParent(actorID)
-      }
+      getActorRefMappingFromParent(actorID)
     }
   }
 
   @inline
   private[this] def getActorRefMappingFromParent(actorID: ActorVirtualIdentity): Unit = {
-    if (!queriedActorVirtualIdentities.contains(actorID)) {
+    if (parentRef != null && !queriedActorVirtualIdentities.contains(actorID)) {
       parentRef ! GetActorRef(actorID, Set(self))
       queriedActorVirtualIdentities.add(actorID)
     }
@@ -253,6 +286,7 @@ class NetworkCommunicationActor(parentRef: ActorRef, val countCheckEnabled: Bool
   private[this] def handleRequest(request: CommittableRequest): Unit = {
     request match {
       case SendRequest(id, msg, _, _) =>
+        //println("sent: "+msg+" to "+id)
         if (idToActorRefs.contains(id)) {
           forwardMessage(id, msg)
         } else {

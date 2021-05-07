@@ -3,6 +3,7 @@ package edu.uci.ics.amber.engine.architecture.worker
 import akka.actor.{ActorRef, Props}
 import akka.util.Timeout
 import com.softwaremill.macwire.wire
+import edu.uci.ics.amber.clustering.ClusterRuntimeInfo
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionStartedHandler.WorkerStateUpdated
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
@@ -14,6 +15,7 @@ import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunication
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{
   BatchToTupleConverter,
   DataOutputPort,
+  NetworkAckManager,
   NetworkInputPort,
   TupleToBatchConverter
 }
@@ -24,7 +26,6 @@ import edu.uci.ics.amber.engine.common.ambermessage.{
   DataPayload,
   RecoveryCompleted,
   ShutdownWriter,
-  UpdateCountForInput,
   WorkflowControlMessage,
   WorkflowDataMessage
 }
@@ -92,27 +93,48 @@ class WorkflowWorker(
   workerStateManager.assertState(Uninitialized)
   workerStateManager.transitTo(Ready)
 
-  lazy val logWriter: ParallelLogWriter =
-    new ParallelLogWriter(logStorage, self, networkCommunicationActor)
+  ClusterRuntimeInfo.workerStates(identifier) = this
 
-  lazy val dataLogManager: DataLogManager = wire[DataLogManager]
+  lazy val logWriter: ParallelLogWriter =
+    new ParallelLogWriter(
+      logStorage,
+      self,
+      networkCommunicationActor,
+      networkControlAckManager,
+      networkDataAckManager
+    )
+
+  lazy val dataLogManager: DataLogManager =
+    new DataLogManager(logStorage, logWriter, networkDataAckManager, this.handleDataPayloadAfterLog)
   lazy val dpLogManager: DPLogManager = wire[DPLogManager]
-  val controlLogManager: ControlLogManager = wire[ControlLogManager]
+  val controlLogManager: ControlLogManager = new ControlLogManager(
+    logStorage,
+    logWriter,
+    controlInputPort,
+    networkControlAckManager,
+    this.handleControlPayloadAfterLog
+  )
 
   lazy val pauseManager: PauseManager = wire[PauseManager]
   lazy val dataProcessor: DataProcessor = wire[DataProcessor]
   lazy val dataInputPort: NetworkInputPort[DataPayload] =
-    new NetworkInputPort[DataPayload](this.logger, this.handleDataPayload)
+    new NetworkInputPort[DataPayload](
+      this.logger,
+      networkDataAckManager,
+      this.handleDataPayloadAfterFIFO
+    )
   lazy val controlInputPort: NetworkInputPort[ControlPayload] =
-    new NetworkInputPort[ControlPayload](this.logger, this.handleControlPayload)
+    new NetworkInputPort[ControlPayload](
+      this.logger,
+      networkControlAckManager,
+      this.handleControlPayloadAfterFIFO
+    )
   lazy val dataOutputPort: DataOutputPort = wire[DataOutputPort]
   lazy val batchProducer: TupleToBatchConverter = wire[TupleToBatchConverter]
   lazy val tupleProducer: BatchToTupleConverter = wire[BatchToTupleConverter]
   lazy val breakpointManager: BreakpointManager = wire[BreakpointManager]
-
+  lazy val networkDataAckManager: NetworkAckManager = wire[NetworkAckManager]
   var processingTime = 0L
-  var dataCount = 0L
-  val stashedDataAck = new mutable.Queue[(ActorRef, Long)]()
 
   if (parentNetworkCommunicationActorRef != null) {
     parentNetworkCommunicationActorRef ! RegisterActorRef(identifier, self)
@@ -142,7 +164,6 @@ class WorkflowWorker(
   def receiveAndProcessMessages: Receive = {
     disallowActorRefRelatedMessages orElse
       receiveDataMessages orElse
-      receiveCountUpdate orElse
       receiveControlMessages orElse {
       case other =>
         logger.logError(
@@ -151,63 +172,51 @@ class WorkflowWorker(
     }
   }
 
-  final def receiveCountUpdate: Receive = {
-    case UpdateCountForInput(dc, cc) =>
-      replyAcks(stashedControlAck, cc - controlCount)
-      replyAcks(stashedDataAck, dc - dataCount)
-      dataCount = dc
-      controlCount = cc
-  }
-
   final def receiveDataMessages: Receive = {
-    case NetworkMessage(id, dataMsg @ WorkflowDataMessage(from, seqNum, payload)) =>
-      val start = System.currentTimeMillis()
-      if (dataLogManager.isRecovering) {
-        dataLogManager.feedInMessage(dataMsg)
-        while (dataLogManager.hasNext) {
-          val msg = dataLogManager.next()
-          if (!dataLogManager.isRecovering) {
-            if(dataLogManager.persistDataSender(from, payload.size, seqNum)){
-              enqueueDelayedAck(stashedDataAck, (sender, id))
-            }else{
-              sender ! NetworkAck(id)
-            }
-          } else {
-            sender ! NetworkAck(id)
-          }
-          dataInputPort.handleMessage(msg.from, msg.sequenceNumber, msg.payload)
-        }
-      } else {
-        if(dataLogManager.persistDataSender(from, payload.size, seqNum)){
-          enqueueDelayedAck(stashedDataAck, (sender, id))
-        }else{
-          sender ! NetworkAck(id)
-        }
-        dataInputPort.handleMessage(from, seqNum, payload)
-      }
-      processingTime += System.currentTimeMillis() - start
+    case NetworkMessage(id, WorkflowDataMessage(from, seqNum, payload)) =>
+      dataInputPort.handleMessage(sender, id, from, seqNum, payload)
   }
 
   def receiveControlMessages: Receive = {
     case NetworkMessage(id, cmd @ WorkflowControlMessage(from, seqNum, payload)) =>
-      val start = System.currentTimeMillis()
-      controlLogManager.persistControlMessage(cmd)
-      enqueueDelayedAck(stashedControlAck, (sender, id))
       try {
         // use control input port to pass control messages
-        controlInputPort.handleMessage(from, seqNum, payload)
+        controlInputPort.handleMessage(sender, id, from, seqNum, payload)
       } catch safely {
         case e =>
           logger.logError(WorkflowRuntimeError(e, identifier.toString))
       }
-      processingTime += System.currentTimeMillis() - start
   }
 
-  final def handleDataPayload(from: VirtualIdentity, dataPayload: DataPayload): Unit = {
+  final def handleDataPayloadAfterFIFO(
+      currentSender: ActorRef,
+      currentID: Long,
+      from: VirtualIdentity,
+      dataPayload: DataPayload
+  ): Unit = {
+    dataLogManager.handleMessage(currentSender, currentID, from, dataPayload)
+  }
+
+  final def handleDataPayloadAfterLog(from: VirtualIdentity, dataPayload: DataPayload): Unit = {
     tupleProducer.processDataPayload(from, dataPayload)
   }
 
-  final def handleControlPayload(from: VirtualIdentity, controlPayload: ControlPayload): Unit = {
+  final def handleControlPayloadAfterFIFO(
+      sender: ActorRef,
+      id: Long,
+      from: VirtualIdentity,
+      controlPayload: ControlPayload
+  ): Unit = {
+    networkControlAckManager.enqueueDelayedAck(sender, id)
+    controlLogManager.persistControlMessage(from, controlPayload)
+    //logger.logInfo(s"received control $controlPayload")
+    handleControlPayloadAfterLog(from, controlPayload)
+  }
+
+  final def handleControlPayloadAfterLog(
+      from: VirtualIdentity,
+      controlPayload: ControlPayload
+  ): Unit = {
     // let dp thread process it
     assert(from.isInstanceOf[ActorVirtualIdentity])
     controlPayload match {

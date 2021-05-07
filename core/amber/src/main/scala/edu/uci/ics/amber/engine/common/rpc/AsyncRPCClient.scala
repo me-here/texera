@@ -91,11 +91,13 @@ class AsyncRPCClient(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
         return
       }
       logger.logInfo(
-        s"receive reply: ${ret.returnValue.getClass.getSimpleName} from ${sender.toString} (controlID: ${ret.originalCommandID})"
+        s"receive reply: ${ret.returnValue.getClass.getSimpleName} from ${sender.toString} (controlID: ${ret.originalCommandID}) unfulfilled: [${unfulfilledPromises.keys
+          .mkString(",")}]"
       )
     } else {
       logger.logInfo(
-        s"receive reply: null from ${sender.toString} (controlID: ${ret.originalCommandID})"
+        s"receive reply: null from ${sender.toString} (controlID: ${ret.originalCommandID}) unfulfilled: [${unfulfilledPromises.keys
+          .mkString(",")}]"
       )
     }
   }

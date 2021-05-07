@@ -1,6 +1,7 @@
 package edu.uci.ics.amber.engine.architecture.controller.promisehandlers
 
 import com.twitter.util.Future
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LinkWorkflowHandler.LinkWorkflow
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.QueryWorkerStatisticsHandler.QueryWorkerStatistics
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.StartWorkflowHandler.StartWorkflow
 import edu.uci.ics.amber.engine.architecture.controller.{
@@ -13,7 +14,11 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.StartHandler
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Running
-import edu.uci.ics.amber.engine.common.virtualidentity.{LayerIdentity, OperatorIdentity}
+import edu.uci.ics.amber.engine.common.virtualidentity.{
+  ActorVirtualIdentity,
+  LayerIdentity,
+  OperatorIdentity
+}
 import edu.uci.ics.amber.engine.operators.OpExecConfig
 
 import scala.collection.mutable
@@ -33,28 +38,30 @@ trait StartWorkflowHandler {
 
   registerHandler { (msg: StartWorkflow, sender) =>
     {
-      val startedLayers = mutable.HashSet[WorkerLayer]()
-      Future
-        .collect(
-          controller.workflow.getSourceLayers
-            // get all startable layers
-            .filter(layer => layer.canStart)
-            .flatMap { layer =>
-              startedLayers.add(layer)
-              layer.identifiers.map { worker =>
-                send(StartWorker(), worker).map { ret =>
-                  // update worker state
-                  controller.workflow.getWorkerInfo(worker).state = ret
+      execute(LinkWorkflow(), ActorVirtualIdentity.Controller).flatMap { ret =>
+        val startedLayers = mutable.HashSet[WorkerLayer]()
+        Future
+          .collect(
+            controller.workflow.getSourceLayers
+              // get all startable layers
+              .filter(layer => layer.canStart)
+              .flatMap { layer =>
+                startedLayers.add(layer)
+                layer.identifiers.map { worker =>
+                  send(StartWorker(), worker).map { ret =>
+                    // update worker state
+                    controller.workflow.getWorkerInfo(worker).state = ret
+                  }
                 }
               }
-            }
-            .toSeq
-        )
-        .map { ret =>
-          controller.context.parent ! ControllerState.Running // for testing
-          enableStatusUpdate()
-          CommandCompleted()
-        }
+              .toSeq
+          )
+          .map { ret =>
+            controller.context.parent ! ControllerState.Running // for testing
+            enableStatusUpdate()
+            CommandCompleted()
+          }
+      }
     }
   }
 }
