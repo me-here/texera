@@ -210,7 +210,7 @@ class UDFServer(pyarrow.flight.FlightServerBase):
         file_handler.setFormatter(formatter)
         logger.info(f"Attaching a FileHandler to logger, file path: {file_path}")
         logger.addHandler(file_handler)
-        self.logger.info(f"Logger FileHandler is now attached, previous logs are in StreamHandler only.")
+        logger.info(f"Logger FileHandler is now attached, previous logs are in StreamHandler only.")
 
 
 if __name__ == '__main__':
