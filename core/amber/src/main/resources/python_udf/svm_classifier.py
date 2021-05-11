@@ -1,3 +1,4 @@
+import logging
 import pickle
 
 import pandas
@@ -7,6 +8,7 @@ from mock_data import df_from_mysql
 
 
 class SVMClassifier(texera_udf_operator_base.TexeraMapOperator):
+    logger = logging.getLogger("PythonUDF.SVMClassifier")
 
     def __init__(self):
         super(SVMClassifier, self).__init__(self.predict)
@@ -14,6 +16,7 @@ class SVMClassifier(texera_udf_operator_base.TexeraMapOperator):
         self._vc = None
         self._clf = None
 
+    @texera_udf_operator_base.exception(logger)
     def open(self, *args):
         super(SVMClassifier, self).open(*args)
         self._model_file_path = args[-1]

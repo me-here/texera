@@ -131,6 +131,7 @@ class UDFServer(pyarrow.flight.FlightServerBase):
                 # execute and output data
                 for index, row in input_dataframe.iterrows():
                     self.udf_op.accept(row)
+
                 self._output_data()
                 result_buffer = json.dumps({'status': 'Success'})
             except:

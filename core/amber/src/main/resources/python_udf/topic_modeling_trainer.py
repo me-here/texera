@@ -10,6 +10,7 @@ import texera_udf_operator_base
 class TopicModeling(texera_udf_operator_base.TexeraBlockingUnsupervisedTrainerOperator):
     logger = logging.getLogger("PythonUDF.TopicModelingTrainer")
 
+    @texera_udf_operator_base.exception(logger)
     def open(self, *args):
         super(TopicModeling, self).open(*args)
 
@@ -22,11 +23,13 @@ class TopicModeling(texera_udf_operator_base.TexeraBlockingUnsupervisedTrainerOp
         self.logger.debug(f"getting args {args}")
         self.logger.debug(f"parsed training args {self._train_args}")
 
-    # override accept to accept rows as lists
+    @texera_udf_operator_base.exception(logger)
     def accept(self, row: pandas.Series, nth_child: int = 0) -> None:
+        # override accept to accept rows as lists
         self._data.append(row[0].strip().split())
 
     @staticmethod
+    @texera_udf_operator_base.exception(logger)
     def train(data, *args, **kwargs):
         TopicModeling.logger.debug(f"start training, args:{args}, kwargs:{kwargs}")
 
@@ -51,6 +54,7 @@ class TopicModeling(texera_udf_operator_base.TexeraBlockingUnsupervisedTrainerOp
 
         return lda_model
 
+    @texera_udf_operator_base.exception(logger)
     def report(self, model):
         self.logger.debug(f"reporting trained results")
         for id, topic in model.print_topics(num_topics=self._train_args["num_topics"]):

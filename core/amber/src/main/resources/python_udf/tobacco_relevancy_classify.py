@@ -1,3 +1,4 @@
+import logging
 import pickle
 
 import pandas
@@ -51,6 +52,7 @@ class TobaccoClassifier(object):
 
 
 class TobaccoRelevancyOperator(texera_udf_operator_base.TexeraMapOperator):
+    logger = logging.getLogger("PythonUDF.TobaccoRelevancyOperator")
 
     def __init__(self):
         super(TobaccoRelevancyOperator, self).__init__(self.predict)
@@ -58,6 +60,7 @@ class TobaccoRelevancyOperator(texera_udf_operator_base.TexeraMapOperator):
         self._classifier_model_path = None
         self._classifier = None
 
+    @texera_udf_operator_base.exception(logger)
     def open(self, *args):
         super(TobaccoRelevancyOperator, self).open(*args)
         self._cv_model_path = args[2]
