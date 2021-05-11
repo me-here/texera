@@ -210,8 +210,6 @@ class UDFServer(pyarrow.flight.FlightServerBase):
         file_path = Path(log_dir).joinpath(file_name)
         file_handler = logging.FileHandler(file_path)
 
-        formatter = logging.Formatter("%(levelname)s: %(asctime)s - %(name)s - %(process)s - %(message)s")
-
         # hacky way to parse for log level
         log_level = eval(f"logging.{args[1]}")
 
@@ -229,7 +227,7 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
 
     stream_handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter("%(levelname)s: %(asctime)s - %(name)s - %(process)s - %(message)s")
 
     stream_handler.setLevel(logging.INFO)
     stream_handler.setFormatter(formatter)
