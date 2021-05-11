@@ -52,6 +52,7 @@ class TopicModeling(texera_udf_operator_base.TexeraBlockingUnsupervisedTrainerOp
         return lda_model
 
     def report(self, model):
+        self.logger.debug(f"reporting trained results")
         for id, topic in model.print_topics(num_topics=self._train_args["num_topics"]):
             self._result_tuples.append(pandas.Series({"output": topic}))
 
