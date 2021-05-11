@@ -19,7 +19,7 @@ import texera_udf_operator_base
 
 
 class UDFServer(pyarrow.flight.FlightServerBase):
-    logger = logging.getLogger("PythonUDF.pyarrow_flight_server")
+    logger = logging.getLogger("PythonUDF.UDFServer")
 
     def __init__(self, udf_op, host: str = "localhost", location=None, tls_certificates=None, auth_handler=None):
         super(UDFServer, self).__init__(location, auth_handler, tls_certificates)
