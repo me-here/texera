@@ -171,8 +171,7 @@ class UDFServer(pyarrow.flight.FlightServerBase):
             output_data_list.append(self.udf_op.next())
         output_dataframe = pandas.DataFrame.from_records(output_data_list)
         # send output data to Java
-        output_key = self._descriptor_to_key(self._to_descriptor(b'fromPython'))
-        self.flights[output_key] = pyarrow.Table.from_pandas(output_dataframe)
+        self._send_flight("fromPython", output_dataframe)
 
     def _get_flight(self, channel: str) -> pandas.DataFrame:
         self.logger.debug(f"transforming flight {channel.__repr__()}")
@@ -183,6 +182,12 @@ class UDFServer(pyarrow.flight.FlightServerBase):
     def _remove_flight(self, channel: str) -> None:
         self.logger.debug(f"removing flight {channel.__repr__()}")
         self.flights.pop(self._descriptor_to_key(self._to_descriptor(channel.encode())))
+
+    def _send_flight(self, channel: str, output_dataframe: pandas.DataFrame) -> None:
+        output_key = self._descriptor_to_key(self._to_descriptor(channel.encode()))
+        self.logger.debug(f"prepared {len(output_dataframe)} rows in this flight")
+        self.logger.debug(f"sending flight {channel.__repr__()}")
+        self.flights[output_key] = pyarrow.Table.from_pandas(output_dataframe)
 
     @staticmethod
     def _response(message: bytes):
