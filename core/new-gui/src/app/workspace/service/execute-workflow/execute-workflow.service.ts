@@ -35,7 +35,7 @@ export const DOWNLOAD_WORKFLOW_ENDPOINT = 'download/result';
 export const PAUSE_WORKFLOW_ENDPOINT = 'pause';
 export const RESUME_WORKFLOW_ENDPOINT = 'resume';
 
-export const EXECUTION_TIMEOUT = 3000;
+export const EXECUTION_TIMEOUT = 3000000;
 
 /**
  * ExecuteWorkflowService sends the current workflow data to the backend
