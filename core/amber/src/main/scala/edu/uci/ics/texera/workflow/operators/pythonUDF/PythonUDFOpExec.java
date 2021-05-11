@@ -532,17 +532,22 @@ public class PythonUDFOpExec implements OperatorExecutor {
     }
 
     private void sendConf() {
-        String pythonLogDir = WebUtils.config().getString("python.logDir");
+
+        Schema confSchema = new Schema(Collections.singletonList(new Attribute("conf", AttributeType.STRING)));
+        Queue<Tuple> confTuples = new LinkedList<>();
+
+        String pythonLogDir = WebUtils.config().getString("python.log.dir");
 
         // by default, if configuration omitted, output logs to /tmp/
         if (pythonLogDir.isEmpty()) {
             pythonLogDir = "/tmp/";
         }
-
-        Schema confSchema = new Schema(Collections.singletonList(new Attribute("conf", AttributeType.STRING)));
-        Queue<Tuple> confTuples = new LinkedList<>();
-
         confTuples.add(new Tuple(confSchema, Collections.singletonList(pythonLogDir)));
+
+
+        String pythonLogLevel = WebUtils.config().getString("python.log.level");
+
+        confTuples.add(new Tuple(confSchema, Collections.singletonList(pythonLogLevel)));
         writeArrowStream(flightClient, confTuples, convertAmber2ArrowSchema(confSchema), Channel.CONF, batchSize);
 
     }
