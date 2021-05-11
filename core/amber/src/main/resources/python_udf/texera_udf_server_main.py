@@ -1,9 +1,11 @@
 import ast
 import importlib.util
 import json
+import logging
 import sys
 import threading
 import traceback
+from pathlib import Path
 from typing import Dict
 
 import pandas
@@ -15,6 +17,8 @@ import texera_udf_operator_base
 
 
 class UDFServer(pyarrow.flight.FlightServerBase):
+    logger = logging.getLogger(__name__)
+
     def __init__(self, udf_op, host: str = "localhost", location=None, tls_certificates=None, auth_handler=None):
         super(UDFServer, self).__init__(location, auth_handler, tls_certificates)
         self.flights: Dict = {}
@@ -104,9 +108,15 @@ class UDFServer(pyarrow.flight.FlightServerBase):
             # to check the status of the server to see if it is running.
             yield self._response(b'Flight Server is up and running!')
         elif action.type == "open":
+
+            # set up user configurations
+            user_conf_table = self.flights[self._descriptor_to_key(self._accept(b'conf'))]
+            self._configure(*user_conf_table.to_pydict()['conf'])
+
             # open UDF
             user_args_table = self.flights[self._descriptor_to_key(self._accept(b'args'))]
             self.udf_op.open(*user_args_table.to_pydict()['args'])
+
             yield self._response(b'Success!')
         elif action.type == "compute":
             # execute UDF
@@ -170,8 +180,40 @@ class UDFServer(pyarrow.flight.FlightServerBase):
     def _accept(channel: bytes):
         return pyarrow.flight.FlightDescriptor.for_path(channel)
 
+    def _configure(self, *args):
+        self._setup_logger(*args)
+
+    def _setup_logger(self, *args):
+        # TODO: make it kwargs
+        # create a file handler
+        log_dir = args[0]
+
+        file_name = "random.name.log"
+
+        file_handler = logging.FileHandler(Path(log_dir).joinpath(file_name))
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(formatter)
+        self.logger.addHandler(file_handler)
+        # create a logging format
+        self.logger.info("this is from server")
+        # add the handlers to the logger
+
 
 if __name__ == '__main__':
+
+    # configure root logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    stream_handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    stream_handler.setLevel(logging.INFO)
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
     _, port, UDF_operator_script_path, *__ = sys.argv
     # Dynamically import operator from user-defined script.
 
