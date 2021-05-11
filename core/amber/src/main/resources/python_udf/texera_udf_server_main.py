@@ -2,9 +2,11 @@ import ast
 import importlib.util
 import json
 import logging
+import os
 import sys
 import threading
 import traceback
+from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
@@ -17,7 +19,7 @@ import texera_udf_operator_base
 
 
 class UDFServer(pyarrow.flight.FlightServerBase):
-    logger = logging.getLogger("pyarrow_flight_server")
+    logger = logging.getLogger("PythonUDF.pyarrow_flight_server")
 
     def __init__(self, udf_op, host: str = "localhost", location=None, tls_certificates=None, auth_handler=None):
         super(UDFServer, self).__init__(location, auth_handler, tls_certificates)
@@ -196,17 +198,19 @@ class UDFServer(pyarrow.flight.FlightServerBase):
     def _setup_logger(self, *args):
         # TODO: make it kwargs
         # create a file handler
+
         log_dir = args[0]
-        file_name = "random.name.log"
+        file_name = f"{datetime.utcnow().isoformat()}-{os.getpid()}"
         file_path = Path(log_dir).joinpath(file_name)
         file_handler = logging.FileHandler(file_path)
 
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter("%(levelname)s: %(asctime)s - %(name)s - %(process)s - %(message)s")
 
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
+        logger.info(f"Attaching a FileHandler to logger, file path: {file_path}")
         logger.addHandler(file_handler)
-        self.logger.info(f"Logger FileHandler now attached, log outputting to {file_path}")
+        self.logger.info(f"Logger FileHandler is now attached, previous logs are in StreamHandler only.")
 
 
 if __name__ == '__main__':
