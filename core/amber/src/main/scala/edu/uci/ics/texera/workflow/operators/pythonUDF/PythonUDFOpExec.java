@@ -91,6 +91,7 @@ public class PythonUDFOpExec implements OperatorExecutor {
             closeAndThrow(client, e);
         }
     }
+
     private final String PYTHON = WebUtils.config().getString("python.path").trim();
     private String pythonScriptPath;
     private final String pythonScriptText;
@@ -498,22 +499,9 @@ public class PythonUDFOpExec implements OperatorExecutor {
             Location flightServerURL = startFlightServer();
             connectToServer(flightServerURL);
 
-            // Send user args to Server.
-            List<String> userArgs = new ArrayList<>();
-            if (inputColumns != null) userArgs.addAll(inputColumns);
-            if (arguments != null) userArgs.addAll(arguments);
-            if (outputColumns != null) {
-                for (Attribute a : outputColumns) userArgs.add(a.getName());
-            }
-            if (outerFilePaths != null) userArgs.addAll(outerFilePaths);
+            sendArgs();
+            sendConf();
 
-            Schema argsSchema = new Schema(Collections.singletonList(new Attribute("args", AttributeType.STRING)));
-            Queue<Tuple> argsTuples = new LinkedList<>();
-            for (String arg : userArgs) {
-                argsTuples.add(new Tuple(argsSchema, Collections.singletonList(arg)));
-            }
-
-            writeArrowStream(flightClient, argsTuples, convertAmber2ArrowSchema(argsSchema), Channel.ARGS, batchSize);
             communicate(flightClient, MSG.OPEN);
         } catch (IOException | InterruptedException | RuntimeException e) {
             cleanTerminationWithThrow(e);
@@ -521,6 +509,41 @@ public class PythonUDFOpExec implements OperatorExecutor {
 
         // Finally, delete the temp file because it has been loaded in Python.
         if (isDynamic) safeDeleteTempFile(pythonScriptPath);
+
+    }
+
+    private void sendArgs() {
+        // Send user args to Server.
+        List<String> userArgs = new ArrayList<>();
+        if (inputColumns != null) userArgs.addAll(inputColumns);
+        if (arguments != null) userArgs.addAll(arguments);
+        if (outputColumns != null) {
+            for (Attribute a : outputColumns) userArgs.add(a.getName());
+        }
+        if (outerFilePaths != null) userArgs.addAll(outerFilePaths);
+
+        Schema argsSchema = new Schema(Collections.singletonList(new Attribute("args", AttributeType.STRING)));
+        Queue<Tuple> argsTuples = new LinkedList<>();
+        for (String arg : userArgs) {
+            argsTuples.add(new Tuple(argsSchema, Collections.singletonList(arg)));
+        }
+
+        writeArrowStream(flightClient, argsTuples, convertAmber2ArrowSchema(argsSchema), Channel.ARGS, batchSize);
+    }
+
+    private void sendConf() {
+        String pythonLogDir = WebUtils.config().getString("python.logDir");
+
+        // by default, if configuration omitted, output logs to /tmp/
+        if (pythonLogDir.isEmpty()) {
+            pythonLogDir = "/tmp/";
+        }
+
+        Schema confSchema = new Schema(Collections.singletonList(new Attribute("conf", AttributeType.STRING)));
+        Queue<Tuple> confTuples = new LinkedList<>();
+
+        confTuples.add(new Tuple(confSchema, Collections.singletonList(pythonLogDir)));
+        writeArrowStream(flightClient, confTuples, convertAmber2ArrowSchema(confSchema), Channel.CONF, batchSize);
 
     }
 
@@ -551,7 +574,9 @@ public class PythonUDFOpExec implements OperatorExecutor {
     enum Channel {
         TO_PYTHON("toPython"),
         FROM_PYTHON("fromPython"),
-        ARGS("args");
+        ARGS("args"),
+        CONF("conf");
+
         String name;
 
         Channel(String name) {
