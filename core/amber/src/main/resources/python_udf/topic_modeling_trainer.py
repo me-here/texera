@@ -1,3 +1,5 @@
+import logging
+
 import gensim
 import gensim.corpora as corpora
 import pandas
@@ -6,6 +8,7 @@ import texera_udf_operator_base
 
 
 class TopicModeling(texera_udf_operator_base.TexeraBlockingUnsupervisedTrainerOperator):
+    logger = logging.getLogger("PythonUDF.TopicModelingTrainer")
 
     def open(self, *args):
         super(TopicModeling, self).open(*args)
@@ -16,12 +19,17 @@ class TopicModeling(texera_udf_operator_base.TexeraBlockingUnsupervisedTrainerOp
         else:
             self._train_args = {"num_topics": 5}
 
+        self.logger.debug(f"getting args {args}")
+        self.logger.debug(f"parsed training args {self._train_args}")
+
     # override accept to accept rows as lists
     def accept(self, row: pandas.Series, nth_child: int = 0) -> None:
         self._data.append(row[0].strip().split())
 
     @staticmethod
     def train(data, *args, **kwargs):
+        TopicModeling.logger.debug(f"start training, args:{args}, kwargs:{kwargs}")
+
         # Create Dictionary
         id2word = corpora.Dictionary(data)
 
@@ -50,7 +58,7 @@ class TopicModeling(texera_udf_operator_base.TexeraBlockingUnsupervisedTrainerOp
 
 operator_instance = TopicModeling()
 if __name__ == '__main__':
-    '''
+    """
     The following lines can be put in the file and name it tokenized.txt:
 
     yes unfortunately use tobacco wrap
@@ -59,7 +67,7 @@ if __name__ == '__main__':
     dutch backwoods hemp wrap
     damn need wrap hemparillo cali fire please
 
-    '''
+    """
 
     file1 = open("tokenized.txt", "r+")
     df = file1.readlines()
