@@ -2,34 +2,24 @@ package edu.uci.ics.amber.engine.architecture.controller
 
 import akka.actor.{ActorContext, Address}
 import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.{WorkerInfo, WorkerLayer}
-import edu.uci.ics.amber.engine.architecture.linksemantics.{
-  AllToOne,
-  FullRoundRobin,
-  HashBasedShuffle,
-  LinkStrategy,
-  OneToOne
-}
+import edu.uci.ics.amber.engine.architecture.linksemantics.{AllToOne, FullRoundRobin, HashBasedShuffle, LinkStrategy, OneToOne}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.NetworkSenderActorRef
 import edu.uci.ics.amber.engine.architecture.principal.OperatorState.Completed
 import edu.uci.ics.amber.engine.architecture.principal.OperatorStatistics
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.WorkerActorVirtualIdentity
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  LayerIdentity,
-  LinkIdentity,
-  OperatorIdentity
-}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LayerIdentity, LinkIdentity, OperatorIdentity}
 import edu.uci.ics.amber.engine.common.{AmberUtils, Constants}
-import edu.uci.ics.amber.engine.operators.{OpExecConfig, SinkOpExecConfig}
+import edu.uci.ics.amber.engine.operators.{FusedOpExecConfig, OpExecConfig, SinkOpExecConfig}
 
 import scala.collection.mutable
 
 class Workflow(
     operators: mutable.Map[OperatorIdentity, OpExecConfig],
-    outLinks: Map[OperatorIdentity, Set[OperatorIdentity]]
+    outLinks: mutable.Map[OperatorIdentity, Set[OperatorIdentity]]
 ) {
+
   private val inLinks: Map[OperatorIdentity, Set[OperatorIdentity]] =
-    AmberUtils.reverseMultimap(outLinks)
+    AmberUtils.reverseMultimap(outLinks.toMap)
 
   private val sourceOperators: Iterable[OperatorIdentity] =
     operators.keys.filter(!inLinks.contains(_))
@@ -63,8 +53,11 @@ class Workflow(
   }
 
   def getWorkflowStatus: Map[String, OperatorStatistics] = {
-    operators.map { op =>
-      (op._1.operator, op._2.getOperatorStatistics)
+    operators.flatMap{
+      case (id, op:FusedOpExecConfig) =>
+        op.getFusedOperatorStats
+      case other =>
+        Iterable((other._1.operator, other._2.getOperatorStatistics))
     }.toMap
   }
 

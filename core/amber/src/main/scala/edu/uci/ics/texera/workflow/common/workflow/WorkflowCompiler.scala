@@ -2,8 +2,10 @@ package edu.uci.ics.texera.workflow.common.workflow
 
 import akka.actor.ActorRef
 import edu.uci.ics.amber.engine.architecture.controller.Workflow
+import edu.uci.ics.amber.engine.architecture.linksemantics.OneToOne
+import edu.uci.ics.amber.engine.common.{FusedOperatorExecutor, ISourceOperatorExecutor}
 import edu.uci.ics.amber.engine.common.virtualidentity.{LinkIdentity, OperatorIdentity}
-import edu.uci.ics.amber.engine.operators.OpExecConfig
+import edu.uci.ics.amber.engine.operators.{FusedOpExecConfig, OpExecConfig}
 import edu.uci.ics.texera.workflow.common.{ConstraintViolation, WorkflowContext}
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.operators.source.SourceOperatorDescriptor
@@ -56,15 +58,68 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
       amberOperators(dest).setInputToOrdinalMapping(layerLink, link.destination.portOrdinal)
     })
 
-    val outLinksImmutableValue: mutable.Map[OperatorIdentity, Set[OperatorIdentity]] =
+    //operator fusion:
+    val allDests = outLinks.values.flatten.toSet
+    val frontier = amberOperators.filter(x => !allDests.contains(x._1))
+    while(frontier.nonEmpty){
+      var current = frontier.head
+      frontier.remove(current._1)
+      //try to fuse:
+      val result = dfsFusion(amberOperators, current, outLinks)
+      if(result.length > 1){
+        // create fused operator
+        try{
+          val fused = new FusedOpExecConfig(result.map(amberOperators.apply):_*)
+          //remove all operators which are being fused
+          result.foreach(amberOperators.remove)
+          //modify out link
+          if(outLinks.contains(result.last)){
+            outLinks(fused.id) = outLinks(result.last)
+          }
+          result.foreach(outLinks.remove)
+          //modify in link
+          outLinks.foreach{
+            case (k, v) if v.contains(result.head) => {
+              v.remove(result.head)
+              v.add(fused.id)
+            }
+            case other => //skip
+          }
+          //add fused operator
+          amberOperators.put(fused.id, fused)
+          current = (fused.id, fused)
+        }catch{
+          case e:Exception =>
+          // failed
+        }
+      }
+      if(outLinks.contains(current._1)) {
+        outLinks(current._1).foreach(x => frontier
+        .put(x, amberOperators(x)))
+      }
+    }
+
+    val outLinksMutableValue: mutable.Map[OperatorIdentity, Set[OperatorIdentity]] =
       mutable.Map()
     outLinks.foreach(entry => {
-      outLinksImmutableValue.update(entry._1, entry._2.toSet)
+      outLinksMutableValue.update(entry._1, entry._2.toSet)
     })
-    val outLinksImmutable: Map[OperatorIdentity, Set[OperatorIdentity]] =
-      outLinksImmutableValue.toMap
 
-    new Workflow(amberOperators, outLinksImmutable)
+    new Workflow(amberOperators, outLinksMutableValue)
+  }
+
+  private def dfsFusion(amberOperators:mutable.Map[OperatorIdentity, OpExecConfig], current:(OperatorIdentity, OpExecConfig), links:mutable.Map[OperatorIdentity, mutable.Set[OperatorIdentity]]):Array[OperatorIdentity] = {
+    if(!links.contains(current._1) || links(current._1).size != 1){
+      Array.empty
+    }else if(current._2.requiredShuffle){
+      Array.empty
+    }else if(current._2.topology.links.exists(!_.isInstanceOf[OneToOne])) {
+      Array.empty
+    }else{
+      val opKey = links(current._1).head
+      val opExecConfig = amberOperators(opKey)
+      Array(current._1)++dfsFusion(amberOperators, (opKey, opExecConfig), links)
+    }
   }
 
   def initializeBreakpoint(controller: ActorRef): Unit = {

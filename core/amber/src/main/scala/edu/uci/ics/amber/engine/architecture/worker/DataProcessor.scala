@@ -8,22 +8,14 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LocalOpe
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
 import edu.uci.ics.amber.engine.architecture.messaginglayer.TupleToBatchConverter
 import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue._
-import edu.uci.ics.amber.engine.common.{IOperatorExecutor, InputExhausted, WorkflowLogger}
+import edu.uci.ics.amber.engine.common.{FusedOperatorExecutor, IOperatorExecutor, InputExhausted, WorkflowLogger}
 import edu.uci.ics.amber.engine.common.ambermessage.ControlPayload
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCServer}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{
-  Completed,
-  Ready,
-  Running
-}
+import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{Completed, Ready, Running}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  LinkIdentity,
-  VirtualIdentity
-}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity, VirtualIdentity}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 import java.util.concurrent.{ExecutorService, Executors, Future}
@@ -81,7 +73,12 @@ class DataProcessor( // dependencies:
   /** provide API for actor to get stats of this operator
     * @return (input tuple count, output tuple count)
     */
-  def collectStatistics(): (Long, Long) = (inputTupleCount, outputTupleCount)
+  def collectStatistics(): Array[(Long, Long)] = {
+    operator match {
+      case op: FusedOperatorExecutor => op.getOperatorStatistics
+      case other => Array((inputTupleCount, outputTupleCount))
+    }
+  }
 
   /** provide API for actor to get current input tuple of this operator
     * @return current input tuple if it exists
