@@ -32,7 +32,7 @@ import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, Re
 import edu.uci.ics.amber.engine.recovery.{
   ControlLogManager,
   EmptyLogStorage,
-  InputCounter,
+  ExecutionStepCursor,
   LogStorage,
   ParallelLogWriter,
   RecoveryManager
@@ -80,7 +80,7 @@ class Controller(
     parentNetworkCommunicationActorRef: ActorRef
 ) extends WorkflowActor(
       ActorVirtualIdentity.Controller,
-      !logStorage.isInstanceOf[EmptyLogStorage],
+      logStorage,
       parentNetworkCommunicationActorRef
     ) {
   implicit val ec: ExecutionContext = context.dispatcher
@@ -109,11 +109,8 @@ class Controller(
   lazy val logWriter: ParallelLogWriter =
     new ParallelLogWriter(
       logStorage,
-      self,
       networkCommunicationActor,
-      networkControlAckManager,
-      null,
-      true
+      networkControlAckManager
     )
 
   lazy val controlInputPort: NetworkInputPort[ControlPayload] =
@@ -132,7 +129,6 @@ class Controller(
   var statusUpdateAskHandle: Cancellable = _
 
   controlLogManager.onComplete(() => {
-    inputCounter.enable()
     // for testing, report ready state to parent
     context.parent ! ControllerState.Ready
   })
@@ -213,7 +209,7 @@ class Controller(
       from: VirtualIdentity,
       controlPayload: ControlPayload
   ): Unit = {
-    inputCounter.advanceControlInputCount()
+    stepCursor.increment()
     try {
       controlPayload match {
         // use control input port to pass control messages

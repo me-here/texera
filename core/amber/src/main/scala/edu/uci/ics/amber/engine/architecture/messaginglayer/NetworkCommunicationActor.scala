@@ -3,21 +3,11 @@ package edu.uci.ics.amber.engine.architecture.messaginglayer
 import akka.actor.{Actor, ActorRef, Cancellable, Props}
 import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.amber.clustering.ClusterRuntimeInfo
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  CommittableRequest,
-  GetActorRef,
-  MessageBecomesDeadLetter,
-  NetworkAck,
-  NetworkMessage,
-  RegisterActorRef,
-  ResendMessages,
-  SendRequest,
-  SendRequestOWP,
-  UpdateCountForOutput
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{CommittableRequest, GetActorRef, MessageBecomesDeadLetter, NetworkAck, NetworkMessage, RegisterActorRef, ResendMessages, SendRequest, SendRequestOWP, UpdateCursorForOutput}
 import edu.uci.ics.amber.engine.common.amberexception.WorkflowRuntimeException
-import edu.uci.ics.amber.engine.common.ambermessage.WorkflowMessage
+import edu.uci.ics.amber.engine.common.ambermessage.{UpdateStepCursor, WorkflowMessage}
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
+import edu.uci.ics.amber.engine.recovery.ParallelLogWriter
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
 import scala.collection.mutable
@@ -37,21 +27,18 @@ object NetworkCommunicationActor {
   }
 
   sealed trait CommittableRequest {
-    val inputDataCount: Long
-    val inputControlCount: Long
+    val stepCursor: Long
   }
 
   final case class SendRequest(
-      id: ActorVirtualIdentity,
-      message: WorkflowMessage,
-      inputDataCount: Long,
-      inputControlCount: Long
+                                id: ActorVirtualIdentity,
+                                message: WorkflowMessage,
+                                stepCursor: Long
   ) extends CommittableRequest
 
   final case class SendRequestOWP(
-      closure: () => Unit,
-      inputDataCount: Long,
-      inputControlCount: Long
+                                   closure: () => Unit,
+                                   stepCursor: Long
   ) extends CommittableRequest
 
   /** Identifier <-> ActorRef related messages
@@ -75,14 +62,15 @@ object NetworkCommunicationActor {
 
   final case class MessageBecomesDeadLetter(message: NetworkMessage, deadActorRef: ActorRef)
 
-  final case class UpdateCountForOutput(dataCount: Long, controlCount: Long)
+  final case class UpdateCursorForOutput(cursor: Long)
 
   def props(
       parentSender: ActorRef,
       countCheckEnabled: Boolean,
+      initialCursor: Long = 0L,
       vid: ActorVirtualIdentity = null
   ): Props =
-    Props(new NetworkCommunicationActor(parentSender, countCheckEnabled, vid))
+    Props(new NetworkCommunicationActor(parentSender, countCheckEnabled, initialCursor, vid))
 }
 
 /** This actor handles the transformation from identifier to actorRef
@@ -92,6 +80,7 @@ object NetworkCommunicationActor {
 class NetworkCommunicationActor(
     parentRef: ActorRef,
     val countCheckEnabled: Boolean,
+    initialCursor:Long,
     vid: ActorVirtualIdentity
 ) extends Actor
     with LazyLogging {
@@ -113,8 +102,7 @@ class NetworkCommunicationActor(
   var networkMessageID = 0L
   val messageIDToIdentity = new mutable.LongMap[ActorVirtualIdentity]
 
-  var dataCountFromLogWriter = 0L
-  var controlCountFromLogWriter = 0L
+  var cursorFromLogWriter = initialCursor
   val delayedRequests = new mutable.Queue[CommittableRequest]()
 
   //add parent actor into idMap
@@ -122,8 +110,8 @@ class NetworkCommunicationActor(
 
   //register timer for resending messages
   val resendHandle: Cancellable = context.system.scheduler.schedule(
-    1000.seconds,
-    1000.seconds,
+    30.seconds,
+    30.seconds,
     self,
     ResendMessages
   )(context.dispatcher)
@@ -201,21 +189,17 @@ class NetworkCommunicationActor(
 
   def sendMessagesAndReceiveAcks: Receive = {
     case req: CommittableRequest =>
-      //println(s"received request: $req but we have $dataCountFromLogWriter and $controlCountFromLogWriter")
-      if (
-        countCheckEnabled && (req.inputDataCount > dataCountFromLogWriter || req.inputControlCount > controlCountFromLogWriter)
-      ) {
+      if (countCheckEnabled && req.stepCursor > cursorFromLogWriter) {
         delayedRequests.enqueue(req)
       } else {
         handleRequest(req)
       }
-    case UpdateCountForOutput(dc, cc) =>
-      dataCountFromLogWriter = dc
-      controlCountFromLogWriter = cc
+    case UpdateCursorForOutput(cursor) =>
+      cursorFromLogWriter = cursor
       var cont = delayedRequests.nonEmpty
       while (cont) {
         if (
-          delayedRequests.head.inputDataCount > dc || delayedRequests.head.inputControlCount > cc
+          delayedRequests.head.stepCursor > cursor
         ) {
           cont = false
         } else {
@@ -285,7 +269,7 @@ class NetworkCommunicationActor(
   @inline
   private[this] def handleRequest(request: CommittableRequest): Unit = {
     request match {
-      case SendRequest(id, msg, _, _) =>
+      case SendRequest(id, msg, _) =>
         //println("sent: "+msg+" to "+id)
         if (idToActorRefs.contains(id)) {
           forwardMessage(id, msg)
@@ -294,7 +278,7 @@ class NetworkCommunicationActor(
           stash.enqueue(msg)
           getActorRefMappingFromParent(id)
         }
-      case SendRequestOWP(closure, _, _) =>
+      case SendRequestOWP(closure, _) =>
         closure()
     }
   }

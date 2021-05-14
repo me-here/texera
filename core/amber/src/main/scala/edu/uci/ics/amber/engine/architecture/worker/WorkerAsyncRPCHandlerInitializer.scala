@@ -7,24 +7,24 @@ import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCHandlerIniti
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, WorkflowLogger}
-import edu.uci.ics.amber.engine.recovery.{DataLogManager, InputCounter}
+import edu.uci.ics.amber.engine.recovery.{DataLogManager, ExecutionStepCursor}
 
 class WorkerAsyncRPCHandlerInitializer(
-    val selfID: ActorVirtualIdentity,
-    val controlOutputPort: ControlOutputPort,
-    val dataOutputPort: DataOutputPort,
-    val tupleToBatchConverter: TupleToBatchConverter,
-    val batchToTupleConverter: BatchToTupleConverter,
-    val pauseManager: PauseManager,
-    val dataProcessor: DataProcessor,
-    val operator: IOperatorExecutor,
-    val breakpointManager: BreakpointManager,
-    val stateManager: WorkerStateManager,
-    val actorContext: ActorContext,
-    val dataLogManager: DataLogManager,
-    val inputCounter: InputCounter,
-    source: AsyncRPCClient,
-    receiver: AsyncRPCServer
+                                        val selfID: ActorVirtualIdentity,
+                                        val controlOutputPort: ControlOutputPort,
+                                        val dataOutputPort: DataOutputPort,
+                                        val tupleToBatchConverter: TupleToBatchConverter,
+                                        val batchToTupleConverter: BatchToTupleConverter,
+                                        val pauseManager: PauseManager,
+                                        val dataProcessor: DataProcessor,
+                                        val operator: IOperatorExecutor,
+                                        val breakpointManager: BreakpointManager,
+                                        val stateManager: WorkerStateManager,
+                                        val actorContext: ActorContext,
+                                        val dataLogManager: DataLogManager,
+                                        val inputCounter: ExecutionStepCursor,
+                                        source: AsyncRPCClient,
+                                        receiver: AsyncRPCServer
 ) extends AsyncRPCHandlerInitializer(source, receiver)
     with PauseHandler
     with AddOutputPolicyHandler

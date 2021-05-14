@@ -18,7 +18,7 @@ import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.recovery.{ControlLogManager, EmptyLogStorage, ParallelLogWriter}
 
 class TrivialControlTester(id: ActorVirtualIdentity, parentNetworkCommunicationActorRef: ActorRef)
-    extends WorkflowActor(id, false, parentNetworkCommunicationActorRef) {
+    extends WorkflowActor(id, new EmptyLogStorage(""), parentNetworkCommunicationActorRef) {
 
   lazy val controlInputPort: NetworkInputPort[ControlPayload] =
     new NetworkInputPort[ControlPayload](
@@ -31,7 +31,7 @@ class TrivialControlTester(id: ActorVirtualIdentity, parentNetworkCommunicationA
 
   val logStorage = new EmptyLogStorage(id.toString)
   lazy val logWriter: ParallelLogWriter =
-    new ParallelLogWriter(logStorage, self, networkCommunicationActor, networkControlAckManager)
+    new ParallelLogWriter(logStorage, networkCommunicationActor, networkControlAckManager)
   override val controlLogManager: ControlLogManager =
     new ControlLogManager(logStorage, logWriter, controlInputPort, networkControlAckManager, null)
 

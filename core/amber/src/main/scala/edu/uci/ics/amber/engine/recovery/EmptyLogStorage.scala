@@ -2,7 +2,7 @@ package edu.uci.ics.amber.engine.recovery
 import edu.uci.ics.amber.engine.common.ambermessage.{
   ControlLogPayload,
   DPCursor,
-  DataBatchSequence,
+  FromSender,
   LogRecord,
   LogWriterPayload,
   WorkflowControlMessage
@@ -15,13 +15,11 @@ class EmptyLogStorage(id: String) extends LogStorage(id) {
 
   override def release(): Unit = {}
 
-  override def writeControlLogRecord(record: ControlLogPayload): Unit = {}
+  override def write(record: LogRecord): Unit = {}
 
   override def commit(): Unit = {}
 
   override def getLogs: Iterable[LogRecord] = Iterable.empty
 
-  override def writeDataLogRecord(from: VirtualIdentity): Unit = {}
-
-  override def writeDPLogRecord(cursor: Long): Unit = {}
+  override def getStepCursor:Long = 0L
 }

@@ -5,22 +5,9 @@ import java.nio.ByteBuffer
 import java.nio.file.Files
 
 import com.twitter.chill.akka.AkkaSerializer
-import edu.uci.ics.amber.engine.common.ambermessage.{
-  ControlLogPayload,
-  DPCursor,
-  DataBatchSequence,
-  FromSender,
-  LogRecord,
-  LogWriterPayload,
-  WorkflowControlMessage
-}
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlLogPayload, DPCursor, FromSender, LogRecord, LogWriterPayload, UpdateStepCursor}
 import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
-import edu.uci.ics.amber.engine.recovery.FileLogStorage.{
-  ByteArrayReader,
-  ByteArrayWriter,
-  VirtualIdentityMapping,
-  globalSerializer
-}
+import edu.uci.ics.amber.engine.recovery.FileLogStorage.{ByteArrayReader, ByteArrayWriter, VirtualIdentityMapping, globalSerializer}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import org.apache.hadoop.fs.Syncable
 
@@ -86,6 +73,14 @@ abstract class FileLogStorage(logName: String) extends LogStorage(logName) {
   private val vidMapping = mutable.HashMap[VirtualIdentity, Int]()
   private var count = 0
   private val loadedLogs = mutable.ArrayBuffer.empty[LogRecord]
+  private var stepCursor:Long = 0L
+
+  override def getStepCursor: Long = {
+    if(loadedLogs.isEmpty){
+      getLogs
+    }
+    stepCursor
+  }
 
   override def getLogs: Iterable[LogRecord] = {
     createDirectories()
@@ -103,8 +98,9 @@ abstract class FileLogStorage(logName: String) extends LogStorage(logName) {
           val binary = input.read()
           val message = globalSerializer.fromBinary(binary)
           message match {
-            case cursor: java.lang.Long =>
-              loadedLogs.append(DPCursor(cursor))
+            case cursor: DPCursor =>
+              stepCursor = cursor.idx
+              loadedLogs.append(cursor)
             case VirtualIdentityMapping(vid, id) =>
               mapping(id) = vid
               loadedLogs.append(FromSender(vid))
@@ -112,6 +108,8 @@ abstract class FileLogStorage(logName: String) extends LogStorage(logName) {
               loadedLogs.append(FromSender(mapping(vidRef)))
             case ctrl: ControlLogPayload =>
               loadedLogs.append(ctrl)
+            case payload: UpdateStepCursor =>
+              stepCursor = payload.cursor
             case other =>
               throw new RuntimeException(
                 "cannot deserialize log: " + (binary.map(_.toChar)).mkString
@@ -128,21 +126,20 @@ abstract class FileLogStorage(logName: String) extends LogStorage(logName) {
     }
   }
 
-  override def writeControlLogRecord(record: ControlLogPayload): Unit =
-    output.write(globalSerializer.toBinary(record))
-
-  override def writeDataLogRecord(from: VirtualIdentity): Unit = {
-    if (vidMapping.contains(from)) {
-      output.write(globalSerializer.toBinary(java.lang.Integer.valueOf(vidMapping(from))))
-    } else {
-      vidMapping(from) = count
-      output.write(globalSerializer.toBinary(VirtualIdentityMapping(from, count)))
-      count += 1
+  override def write(record: LogRecord): Unit = {
+    record match{
+      case FromSender(virtualId) =>
+        if (vidMapping.contains(virtualId)) {
+          output.write(globalSerializer.toBinary(java.lang.Integer.valueOf(vidMapping(virtualId))))
+        } else {
+          vidMapping(virtualId) = count
+          output.write(globalSerializer.toBinary(VirtualIdentityMapping(virtualId, count)))
+          count += 1
+        }
+      case _ =>
+        output.write(globalSerializer.toBinary(record))
     }
   }
-
-  override def writeDPLogRecord(cursor: Long): Unit =
-    output.write(globalSerializer.toBinary(java.lang.Long.valueOf(cursor)))
 
   override def commit(): Unit = {
     output.flush()

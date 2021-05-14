@@ -6,33 +6,21 @@ import java.util.concurrent.{ExecutorService, Executors, Future, LinkedBlockingQ
 import akka.actor.ActorRef
 import com.google.common.collect.Queues
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkAckManager
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  NetworkSenderActorRef,
-  UpdateCountForOutput
-}
-import edu.uci.ics.amber.engine.common.ambermessage.{
-  ControlLogPayload,
-  DPCursor,
-  DataBatchSequence,
-  LogWriterPayload,
-  ShutdownWriter,
-  WorkflowControlMessage
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkSenderActorRef, UpdateCursorForOutput}
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlLogPayload, DPCursor, FromSender, LogWriterPayload, UpdateStepCursor, ShutdownWriter, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
 
 import scala.collection.mutable
 
 class ParallelLogWriter(
     storage: LogStorage,
-    mainActor: ActorRef,
     networkCommunicationActor: NetworkSenderActorRef,
     networkControlAckManager: NetworkAckManager,
-    networkDataAckManager: NetworkAckManager = null,
-    isController: Boolean = false
+    networkDataAckManager: NetworkAckManager = null
 ) {
 
-  private var dataProcessedCounter = 0L
-  private var controlProcessedCounter = 0L
+  private var persistedStepCursor = storage.getStepCursor
+  private var cursorUpdated = false
   private var logTime = 0L
 
   private var loggedControlCounter = 0
@@ -65,7 +53,9 @@ class ParallelLogWriter(
             // during this process, we accumulate log records in the queue
             val logRecord = logRecordQueue.take()
             start = System.currentTimeMillis()
+            cursorUpdated = false //invalidate flag
             writeLogRecord(logRecord)
+            persistStepCursor()
             storage.commit()
           } else {
             if (buffer.get(buffer.size() - 1) == ShutdownWriter) {
@@ -73,17 +63,15 @@ class ParallelLogWriter(
               isEnded = true
             }
             start = System.currentTimeMillis()
+            cursorUpdated = false // invalidate flag
             batchWrite(buffer)
+            persistStepCursor()
             //println(s"writing ${buffer.size} logs at a time")
             buffer.clear()
           }
           logTime += System.currentTimeMillis() - start
           // notify network actor for counter update
-          networkCommunicationActor ! UpdateCountForOutput(
-            dataProcessedCounter,
-            controlProcessedCounter
-          )
-          //
+          networkCommunicationActor ! UpdateCursorForOutput(persistedStepCursor)
           releaseAcks(networkControlAckManager, loggedControlCounter, loggedControlSeqDelta)
           loggedControlCounter = 0
           if (networkDataAckManager != null) {
@@ -127,25 +115,32 @@ class ParallelLogWriter(
   private def writeLogRecord(record: LogWriterPayload): Unit = {
     record match {
       case clr: ControlLogPayload =>
-        storage.writeControlLogRecord(clr)
+        storage.write(clr)
         loggedControlCounter += 1
         loggedControlSeqDelta(clr.virtualId) += 1
-        if (isController) {
-          controlProcessedCounter += 1
-          //println(s"writing $clr")
-        }
-      case DPCursor(idx) =>
-        storage.writeDPLogRecord(idx)
-        controlProcessedCounter += 1
-      case DataBatchSequence(id, batchSize) =>
-        storage.writeDataLogRecord(id)
-        dataProcessedCounter += batchSize
+      case cursor: DPCursor =>
+        persistedStepCursor = cursor.idx
+        storage.write(cursor)
+      case record @ FromSender(id) =>
+        storage.write(record)
         if (networkDataAckManager != null) {
           loggedDataCounter += 1
           loggedDataSeqDelta(id) += 1
         }
+      case UpdateStepCursor(cursor) =>
+        //only write the last step cursor of batched log entries
+        if(cursor > persistedStepCursor){
+          cursorUpdated = true
+          persistedStepCursor = cursor
+        }
       case ShutdownWriter =>
       //skip
+    }
+  }
+
+  private def persistStepCursor(): Unit ={
+    if(cursorUpdated){
+      storage.write(UpdateStepCursor(persistedStepCursor))
     }
   }
 

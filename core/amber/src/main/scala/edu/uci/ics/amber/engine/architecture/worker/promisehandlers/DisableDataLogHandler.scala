@@ -14,7 +14,6 @@ trait DisableDataLogHandler {
   registerHandler { (msg: DisableDataLog, sender) =>
     {
       dataLogManager.disable()
-      inputCounter.disableDataCount()
     }
   }
 }

@@ -6,43 +6,19 @@ import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props}
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
 import akka.util.Timeout
 import edu.uci.ics.amber.clustering.{ClusterRuntimeInfo, SingleNodeListener}
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  NetworkAck,
-  NetworkMessage,
-  RegisterActorRef
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkAck, NetworkMessage, RegisterActorRef}
 import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.OneToOnePolicy
 import edu.uci.ics.amber.engine.architecture.worker.WorkflowWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.StartHandler.StartWorker
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, ISourceOperatorExecutor, InputExhausted}
-import edu.uci.ics.amber.engine.common.ambermessage.{
-  ControlLogPayload,
-  ControlPayload,
-  DPCursor,
-  DataBatchSequence,
-  DataFrame,
-  EndOfUpstream,
-  FromSender,
-  InputLinking,
-  TriggerRecovery,
-  TriggerRecoveryOnWorker,
-  WorkflowControlMessage,
-  WorkflowDataMessage,
-  WorkflowFIFOMessage,
-  WorkflowMessage
-}
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlLogPayload, ControlPayload, DPCursor, DataFrame, EndOfUpstream, FromSender, InputLinking, TriggerRecovery, TriggerRecoveryOnWorker, WorkflowControlMessage, WorkflowDataMessage, WorkflowFIFOMessage, WorkflowMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.WorkerActorVirtualIdentity
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  LayerIdentity,
-  LinkIdentity,
-  WorkflowIdentity
-}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LayerIdentity, LinkIdentity, WorkflowIdentity}
 import edu.uci.ics.amber.engine.e2e.TestOperators
 import edu.uci.ics.amber.engine.e2e.Utils._
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
@@ -54,19 +30,12 @@ import com.twitter.util
 import com.twitter.util.Promise
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.PauseHandler.PauseWorkflow
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.ResumeHandler.ResumeWorkflow
-import edu.uci.ics.amber.engine.architecture.controller.{
-  Controller,
-  ControllerEventListener,
-  ControllerState,
-  Workflow
-}
+import edu.uci.ics.amber.engine.architecture.controller.{Controller, ControllerEventListener, ControllerState, Workflow}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient
 import edu.uci.ics.amber.engine.operators.OpExecConfig
 import edu.uci.ics.texera.workflow.common.operators.aggregate.AggregateOpExecConfig
-import edu.uci.ics.texera.workflow.operators.aggregate.{
-  AggregationFunction,
-  SpecializedAverageOpDesc
-}
+import edu.uci.ics.texera.workflow.operators.aggregate.{AggregationFunction, SpecializedAverageOpDesc}
+import lbmq.LinkedBlockingMultiQueue
 import org.apache.commons.lang3.SerializationUtils
 
 import scala.collection.mutable
@@ -474,6 +443,7 @@ class RecoverySpec
     val resultFuture: Promise[Map[String, List[ITuple]]] = new Promise()
     val eventListener = ControllerEventListener()
     eventListener.workflowCompletedListener = evt => resultFuture.setValue(evt.result)
+    workflow.started = false
     parent.childActorOf(
       Controller.props(id, workflow, eventListener, 100)
     )
@@ -586,6 +556,7 @@ class RecoverySpec
     val resultFuture: Promise[Map[String, List[ITuple]]] = new Promise()
     val eventListener = ControllerEventListener()
     eventListener.workflowCompletedListener = evt => resultFuture.setValue(evt.result)
+    workflow.started = false
     parent.childActorOf(
       Controller.props(id, workflow, eventListener, 100)
     )
@@ -604,6 +575,7 @@ class RecoverySpec
     val resultFuture: Promise[Map[String, List[ITuple]]] = new Promise()
     val eventListener = ControllerEventListener()
     eventListener.workflowCompletedListener = evt => resultFuture.setValue(evt.result)
+    workflow.started = false
     parent.childActorOf(
       Controller.props(id, workflow, eventListener, 100)
     )
@@ -636,5 +608,9 @@ class RecoverySpec
     val result = util.Await.result(resultFuture)
     assert(result.head._2.head.get(0) == 1962554)
   }
+
+
+
+
 
 }

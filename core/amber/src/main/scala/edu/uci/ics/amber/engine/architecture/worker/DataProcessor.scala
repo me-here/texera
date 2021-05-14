@@ -2,7 +2,6 @@ package edu.uci.ics.amber.engine.architecture.worker
 
 import java.util.concurrent.{CompletableFuture, Executors, LinkedBlockingDeque}
 
-import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LinkCompletedHandler.LinkCompleted
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LocalOperatorExceptionHandler.LocalOperatorException
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
@@ -29,22 +28,19 @@ import edu.uci.ics.amber.error.WorkflowRuntimeError
 import java.util.concurrent.{ExecutorService, Executors, Future}
 
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionStartedHandler.WorkerStateUpdated
-import edu.uci.ics.amber.engine.recovery.{DPLogManager, InputCounter}
-
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+import edu.uci.ics.amber.engine.recovery.{DPLogManager, ExecutionStepCursor}
 
 class DataProcessor( // dependencies:
-    logger: WorkflowLogger, // logger of the worker actor
-    operator: IOperatorExecutor, // core logic
-    asyncRPCClient: AsyncRPCClient, // to send controls
-    batchProducer: TupleToBatchConverter, // to send output tuples
-    pauseManager: PauseManager, // to pause/resume
-    breakpointManager: BreakpointManager, // to evaluate breakpoints
-    stateManager: WorkerStateManager,
-    asyncRPCServer: AsyncRPCServer,
-    dpLogManager: DPLogManager,
-    inputCounter: InputCounter
+                     logger: WorkflowLogger, // logger of the worker actor
+                     operator: IOperatorExecutor, // core logic
+                     asyncRPCClient: AsyncRPCClient, // to send controls
+                     batchProducer: TupleToBatchConverter, // to send output tuples
+                     pauseManager: PauseManager, // to pause/resume
+                     breakpointManager: BreakpointManager, // to evaluate breakpoints
+                     stateManager: WorkerStateManager,
+                     asyncRPCServer: AsyncRPCServer,
+                     dpLogManager: DPLogManager,
+                     stepCursor: ExecutionStepCursor
 ) extends WorkerInternalQueue {
   // dp thread stats:
   private var inputTupleCount = 0L
@@ -52,9 +48,6 @@ class DataProcessor( // dependencies:
   private var currentInputTuple: Either[ITuple, InputExhausted] = _
   private var currentInputLink: LinkIdentity = _
   private var currentOutputIterator: Iterator[ITuple] = _
-  private var isCompleted = false
-  private var dataCursor = 0L
-  private val controlRecoveryQueue = mutable.Queue[ControlElement]()
   private var startTime = 0L
   private var processingTime = 0L
 
@@ -149,27 +142,22 @@ class DataProcessor( // dependencies:
   @throws[Exception]
   private[this] def runDPThreadMainLogic(): Unit = {
     // main DP loop
-    while (!isCompleted) {
+    if (dpLogManager.isRecovering) {
+      replayControlCommands()
+    }
+    while (true) {
       // take the next data element from internal queue, blocks if not available.
       val elem = getElement
       val start = System.currentTimeMillis()
       elem match {
-        case EnableInputCounter =>
-          dpLogManager.onComplete { () =>
-            inputCounter.enable()
-          }
         case InputTuple(tuple) =>
           transitStateToRunningFromReady()
-          inputCounter.advanceDataInputCount()
           currentInputTuple = Left(tuple)
           handleInputTuple()
         case SenderChangeMarker(link) =>
           currentInputLink = link
         case EndMarker =>
           transitStateToRunningFromReady()
-          if (currentInputLink != null) {
-            inputCounter.advanceDataInputCount()
-          }
           currentInputTuple = Right(InputExhausted())
           handleInputTuple()
           if (currentInputLink != null) {
@@ -177,23 +165,20 @@ class DataProcessor( // dependencies:
           }
         case EndOfAllMarker =>
           transitStateToRunningFromReady()
-          // end of processing, break DP loop
-          isCompleted = true
           batchProducer.emitEndOfUpstream()
+          // Send Completed signal to worker actor.
+          logger.logInfo(
+            s"${operator.toString} completed in ${(System.currentTimeMillis() - startTime) / 1000f}"
+          )
+          stepCursor.increment() //increment step cursor to distinguish control messages before/after completion
+          asyncRPCClient.send(WorkerExecutionCompleted(), ActorVirtualIdentity.Controller)
+          stateManager.transitTo(Completed)
+          replayControlCommands()
         case ctrl: ControlElement =>
           handleControlElement(ctrl)
       }
       processingTime += System.currentTimeMillis() - start
     }
-    // Send Completed signal to worker actor.
-    logger.logInfo(
-      s"${operator.toString} completed in ${(System.currentTimeMillis() - startTime) / 1000f}"
-    )
-    dataCursor += 1 //increment data cursor to distinguish control messages before/after completion
-    asyncRPCClient.send(WorkerExecutionCompleted(), ActorVirtualIdentity.Controller)
-    stateManager.transitTo(Completed)
-    disableDataQueue()
-    takeControlElementsAfterCompletion()
   }
 
   private[this] def handleOperatorException(e: Throwable): Unit = {
@@ -247,12 +232,8 @@ class DataProcessor( // dependencies:
     }
   }
 
-  private[this] def takeControlElementsDuringExecution(
-      advanceDataCursor: Boolean = true
-  ): Unit = {
-    if (advanceDataCursor) {
-      dataCursor += 1
-    }
+  private[this] def takeControlElementsDuringExecution(): Unit = {
+    stepCursor.increment()
     if (dpLogManager.isRecovering) {
       replayControlCommands()
     }
@@ -262,45 +243,23 @@ class DataProcessor( // dependencies:
     }
   }
 
-  private[this] def takeControlElementsAfterCompletion(): Unit = {
-    while (true) {
-      if (dpLogManager.isRecovering) {
-        replayControlCommands()
-      }
-      val control = getElement.asInstanceOf[ControlElement]
-      val start = System.currentTimeMillis()
-      handleControlElement(control)
-      processingTime += System.currentTimeMillis() - start
-    }
-  }
-
   private[this] def handleControlElement(control: ControlElement): Unit = {
-    if (dpLogManager.isRecovering) {
-      replayControlCommands(control)
-    } else {
-      processControlCommand(control.cmd, control.from)
-    }
+    processControlCommand(control.cmd, control.from)
   }
 
-  private[this] def replayControlCommands(control: ControlElement = null): Unit = {
-    if (control != null) {
-      controlRecoveryQueue.enqueue(control)
-    }
-    while (dpLogManager.isCurrentCorrelated(dataCursor) && controlRecoveryQueue.nonEmpty) {
-      val elem = controlRecoveryQueue.dequeue()
+  private[this] def replayControlCommands(): Unit = {
+    enableControlQueue()
+    while (dpLogManager.isCurrentCorrelated(stepCursor.getCursor)) {
+      val elem = getElement.asInstanceOf[ControlElement]
       processControlCommand(elem.cmd, elem.from)
       dpLogManager.advanceCursor()
     }
-    if (!dpLogManager.isRecovering && controlRecoveryQueue.nonEmpty) {
-      controlRecoveryQueue.foreach { elem =>
-        processControlCommand(elem.cmd, elem.from)
-      }
-      controlRecoveryQueue.clear()
+    if(dpLogManager.isRecovering){
+      disableControlQueue()
     }
   }
 
   private[this] def processControlCommand(cmd: ControlPayload, from: VirtualIdentity): Unit = {
-    inputCounter.advanceControlInputCount()
     cmd match {
       case ShutdownDPThread() =>
         shutdown()
@@ -318,7 +277,7 @@ class DataProcessor( // dependencies:
 
   private[this] def persistCurrentDataCursorIfRecoveryCompleted(): Unit = {
     if (!dpLogManager.isRecovering) {
-      dpLogManager.persistCurrentDataCursor(dataCursor)
+      dpLogManager.persistCurrentDataCursor(stepCursor.getCursor)
     }
   }
 

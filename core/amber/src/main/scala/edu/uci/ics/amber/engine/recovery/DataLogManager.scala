@@ -6,10 +6,8 @@ import edu.uci.ics.amber.engine.architecture.messaginglayer.{
   NetworkAckManager
 }
 import edu.uci.ics.amber.engine.common.ambermessage.{
-  DataBatchSequence,
-  DataPayload,
   FromSender,
-  WorkflowDataMessage
+  DataPayload
 }
 import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
 
@@ -42,7 +40,7 @@ class DataLogManager(
       message: DataPayload
   ): Unit = {
     if (!isRecovering) {
-      persistDataSender(sender, id, from, message.size)
+      persistDataSender(sender, id, from)
       handler(from, message)
     } else {
       if (!stashedMessages.contains(from)) {
@@ -66,10 +64,10 @@ class DataLogManager(
     }
   }
 
-  def persistDataSender(sender: ActorRef, id: Long, vid: VirtualIdentity, batchSize: Int): Unit = {
+  def persistDataSender(sender: ActorRef, id: Long, vid: VirtualIdentity): Unit = {
     if (enableLogWrite) {
       networkAckManager.enqueueDelayedAck(sender, id)
-      logWriter.addLogRecord(DataBatchSequence(vid, batchSize))
+      logWriter.addLogRecord(FromSender(vid))
     } else {
       networkAckManager.advanceSeq(vid, 1)
       networkAckManager.ackDirectly(sender, id)
@@ -83,7 +81,7 @@ class DataLogManager(
         case (from, queue) =>
           queue.foreach {
             case (sender, id, msg) =>
-              persistDataSender(sender, id, from, msg.size)
+              persistDataSender(sender, id, from)
               handler(from, msg)
           }
       }

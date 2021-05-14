@@ -1,15 +1,6 @@
 package edu.uci.ics.amber.engine.recovery
 
-import edu.uci.ics.amber.engine.common.ambermessage.{
-  ControlLogPayload,
-  DPCursor,
-  DataBatchSequence,
-  FromSender,
-  LogRecord,
-  LogWriterPayload,
-  WorkflowControlMessage
-}
-import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
+import edu.uci.ics.amber.engine.common.ambermessage.{DPCursor, LogRecord, UpdateStepCursor}
 
 import scala.collection.mutable
 
@@ -34,16 +25,8 @@ object InMemoryLogStorage {
 
 class InMemoryLogStorage(logName: String) extends LogStorage(logName) {
 
-  override def writeControlLogRecord(record: ControlLogPayload): Unit = {
+  override def write(record:LogRecord): Unit = {
     InMemoryLogStorage.getLogOf(logName).enqueue(record)
-  }
-
-  override def writeDataLogRecord(from: VirtualIdentity): Unit = {
-    InMemoryLogStorage.getLogOf(logName).enqueue(FromSender(from))
-  }
-
-  override def writeDPLogRecord(idx: Long): Unit = {
-    InMemoryLogStorage.getLogOf(logName).enqueue(DPCursor(idx))
   }
 
   override def commit(): Unit = {}
@@ -51,6 +34,11 @@ class InMemoryLogStorage(logName: String) extends LogStorage(logName) {
   override def getLogs: Iterable[LogRecord] = {
     InMemoryLogStorage.getLogOf(logName)
   }
+
+  override def getStepCursor:Long = getLogs.collect{
+    case DPCursor(idx) => idx
+    case UpdateStepCursor(cursor) => cursor
+  }.last
 
   override def clear(): Unit = {
     InMemoryLogStorage.clearLogOf(logName)

@@ -2,16 +2,11 @@ package edu.uci.ics.amber.engine.architecture.messaginglayer
 
 import java.util.concurrent.atomic.AtomicLong
 
-import edu.uci.ics.amber.engine.common.ambermessage.WorkflowControlMessage
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  NetworkSenderActorRef,
-  SendRequest,
-  SendRequestOWP
-}
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, UpdateStepCursor, WorkflowControlMessage}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkSenderActorRef, SendRequest, SendRequestOWP}
 import edu.uci.ics.amber.engine.common.WorkflowLogger
-import edu.uci.ics.amber.engine.common.ambermessage.ControlPayload
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
-import edu.uci.ics.amber.engine.recovery.InputCounter
+import edu.uci.ics.amber.engine.recovery.{ExecutionStepCursor, ParallelLogWriter}
 
 import scala.collection.mutable
 
@@ -20,9 +15,10 @@ import scala.collection.mutable
   * where the actor is and without determining the sequence number.
   */
 class ControlOutputPort(
-    selfID: ActorVirtualIdentity,
-    networkSenderActor: NetworkSenderActorRef,
-    inputCounter: InputCounter
+                         selfID: ActorVirtualIdentity,
+                         networkSenderActor: NetworkSenderActorRef,
+                         stepCursor: ExecutionStepCursor,
+                         logWriter: ParallelLogWriter
 ) {
 
   protected val logger: WorkflowLogger = WorkflowLogger("ControlOutputPort")
@@ -37,19 +33,19 @@ class ControlOutputPort(
     }
     val seqNum = idToSequenceNums.getOrElseUpdate(receiverId, new AtomicLong()).getAndIncrement()
     val msg = WorkflowControlMessage(selfID, seqNum, payload)
+    logWriter.addLogRecord(UpdateStepCursor(stepCursor.getCursor))
     networkSenderActor ! SendRequest(
       to,
       msg,
-      inputCounter.getDataInputCount,
-      inputCounter.getControlInputCount
+      stepCursor.getCursor
     )
   }
 
   def sendToOWP(closure: () => Unit): Unit = {
+    logWriter.addLogRecord(UpdateStepCursor(stepCursor.getCursor))
     networkSenderActor ! SendRequestOWP(
       closure,
-      inputCounter.getDataInputCount,
-      inputCounter.getControlInputCount
+      stepCursor.getCursor
     )
   }
 

@@ -29,13 +29,14 @@ final case class TriggerRecovery(nodeAddr: Address) extends RecoveryMessage
 final case class RecoveryCompleted(id: ActorVirtualIdentity) extends RecoveryMessage
 final case class TriggerRecoveryOnWorker(id: ActorVirtualIdentity) extends RecoveryMessage
 
-case class DataBatchSequence(virtualId: VirtualIdentity, batchSize: Int) extends LogWriterPayload
+sealed trait LogRecord
+
+case class FromSender(virtualId: VirtualIdentity) extends LogWriterPayload with LogRecord
+
+case class UpdateStepCursor(cursor:Long) extends LogWriterPayload with LogRecord
 
 case class ControlLogPayload(virtualId: VirtualIdentity, payload: ControlPayload)
     extends LogWriterPayload
     with LogRecord
 case class DPCursor(idx: Long) extends LogWriterPayload with LogRecord
 case object ShutdownWriter extends LogWriterPayload
-
-sealed trait LogRecord
-case class FromSender(virtualId: VirtualIdentity) extends LogRecord

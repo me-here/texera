@@ -28,7 +28,6 @@ object WorkerInternalQueue {
   case object EndMarker extends InternalQueueElement
   case object EndOfAllMarker extends InternalQueueElement
   case class ControlElement(cmd: ControlPayload, from: VirtualIdentity) extends InternalQueueElement
-  case object EnableInputCounter extends InternalQueueElement
 
   final val DATA_QUEUE = 1
   final val CONTROL_QUEUE = 0
@@ -40,14 +39,14 @@ object WorkerInternalQueue {
   */
 trait WorkerInternalQueue {
 
-  private val lbmq = new LinkedBlockingMultiQueue[Int, InternalQueueElement]()
+  val lbmq = new LinkedBlockingMultiQueue[Int, InternalQueueElement]()
 
   lbmq.addSubQueue(DATA_QUEUE, DATA_QUEUE)
   lbmq.addSubQueue(CONTROL_QUEUE, CONTROL_QUEUE)
 
-  private val dataQueue = lbmq.getSubQueue(DATA_QUEUE)
+  val dataQueue = lbmq.getSubQueue(DATA_QUEUE)
 
-  private val controlQueue = lbmq.getSubQueue(CONTROL_QUEUE)
+  val controlQueue = lbmq.getSubQueue(CONTROL_QUEUE)
 
   def appendElement(elem: InternalQueueElement): Unit = {
     dataQueue.add(elem)
@@ -59,10 +58,14 @@ trait WorkerInternalQueue {
 
   def getElement: InternalQueueElement = lbmq.take()
 
-  def disableDataQueue(): Unit = dataQueue.enable(false)
+  def disableDataQueue(): Unit = if(dataQueue.isEnabled)dataQueue.enable(false)
 
-  def enableDataQueue(): Unit = dataQueue.enable(true)
+  def enableDataQueue(): Unit = if(!dataQueue.isEnabled)dataQueue.enable(true)
 
-  def isControlQueueEmpty: Boolean = controlQueue.isEmpty
+  def enableControlQueue(): Unit = if(!controlQueue.isEnabled)controlQueue.enable(true)
+
+  def disableControlQueue(): Unit = if(controlQueue.isEnabled)controlQueue.enable(false)
+
+  def isControlQueueEmpty: Boolean = !controlQueue.isEnabled || controlQueue.isEmpty
 
 }

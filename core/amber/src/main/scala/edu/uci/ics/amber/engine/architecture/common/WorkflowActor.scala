@@ -3,42 +3,24 @@ package edu.uci.ics.amber.engine.architecture.common
 import akka.actor.{Actor, ActorRef, Stash}
 import com.softwaremill.macwire.wire
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.FatalErrorHandler.FatalError
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  GetActorRef,
-  NetworkAck,
-  NetworkMessage,
-  NetworkSenderActorRef,
-  RegisterActorRef
-}
-import edu.uci.ics.amber.engine.architecture.messaginglayer.{
-  ControlOutputPort,
-  NetworkAckManager,
-  NetworkCommunicationActor
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{GetActorRef, NetworkAck, NetworkMessage, NetworkSenderActorRef, RegisterActorRef}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{ControlOutputPort, NetworkAckManager, NetworkCommunicationActor}
 import edu.uci.ics.amber.engine.common.WorkflowLogger
 import edu.uci.ics.amber.engine.common.ambermessage.WorkflowControlMessage
-import edu.uci.ics.amber.engine.common.rpc.{
-  AsyncRPCClient,
-  AsyncRPCHandlerInitializer,
-  AsyncRPCServer
-}
+import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCHandlerInitializer, AsyncRPCServer}
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
-import edu.uci.ics.amber.engine.recovery.{
-  ControlLogManager,
-  EmptyLogStorage,
-  InputCounter,
-  LogStorage
-}
+import edu.uci.ics.amber.engine.recovery.{ControlLogManager, EmptyLogStorage, ExecutionStepCursor, LogStorage, ParallelLogWriter}
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
 abstract class WorkflowActor(
     val identifier: ActorVirtualIdentity,
-    val countCheckEnabled: Boolean,
+    storage: LogStorage,
     parentNetworkCommunicationActorRef: ActorRef
 ) extends Actor
     with Stash {
 
   val logger: WorkflowLogger = WorkflowLogger(s"$identifier")
+  val logEnabled:Boolean = !storage.isInstanceOf[EmptyLogStorage]
 
   logger.setErrorLogAction(err => {
     asyncRPCClient.send(
@@ -51,14 +33,16 @@ abstract class WorkflowActor(
     context.actorOf(
       NetworkCommunicationActor.props(
         parentNetworkCommunicationActorRef,
-        countCheckEnabled,
+        logEnabled,
+        storage.getStepCursor,
         identifier
       )
     )
   )
 
+  val logWriter: ParallelLogWriter
   lazy val networkControlAckManager: NetworkAckManager = wire[NetworkAckManager]
-  lazy val inputCounter: InputCounter = wire[InputCounter]
+  lazy val stepCursor: ExecutionStepCursor = wire[ExecutionStepCursor]
   lazy val controlOutputPort: ControlOutputPort = wire[ControlOutputPort]
   lazy val asyncRPCClient: AsyncRPCClient = wire[AsyncRPCClient]
   lazy val asyncRPCServer: AsyncRPCServer = wire[AsyncRPCServer]

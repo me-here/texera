@@ -19,7 +19,6 @@ import edu.uci.ics.amber.engine.architecture.messaginglayer.{
   NetworkInputPort,
   TupleToBatchConverter
 }
-import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue.EnableInputCounter
 import edu.uci.ics.amber.engine.common.IOperatorExecutor
 import edu.uci.ics.amber.engine.common.ambermessage.{
   ControlPayload,
@@ -39,7 +38,7 @@ import edu.uci.ics.amber.engine.recovery.{
   DPLogManager,
   DataLogManager,
   EmptyLogStorage,
-  InputCounter,
+  ExecutionStepCursor,
   LogStorage,
   ParallelLogWriter
 }
@@ -79,7 +78,7 @@ class WorkflowWorker(
     logStorage: LogStorage
 ) extends WorkflowActor(
       identifier,
-      !logStorage.isInstanceOf[EmptyLogStorage],
+      logStorage,
       parentNetworkCommunicationActorRef
     ) {
   implicit val ec: ExecutionContext = context.dispatcher
@@ -98,7 +97,6 @@ class WorkflowWorker(
   lazy val logWriter: ParallelLogWriter =
     new ParallelLogWriter(
       logStorage,
-      self,
       networkCommunicationActor,
       networkControlAckManager,
       networkDataAckManager
@@ -141,12 +139,10 @@ class WorkflowWorker(
   }
 
   dataLogManager.onComplete(() => {
-    dataProcessor.appendElement(EnableInputCounter)
     networkCommunicationActor ! SendRequest(
       ActorVirtualIdentity.Controller,
       RecoveryCompleted(identifier),
-      0,
-      0
+      0L
     )
     context.become(receiveAndProcessMessages)
     unstashAll()

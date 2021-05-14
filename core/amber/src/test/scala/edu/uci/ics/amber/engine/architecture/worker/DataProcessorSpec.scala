@@ -35,7 +35,7 @@ import edu.uci.ics.amber.engine.recovery.{
   DPLogManager,
   DataLogManager,
   InMemoryLogStorage,
-  InputCounter,
+  ExecutionStepCursor,
   LogStorage,
   ParallelLogWriter
 }
@@ -57,7 +57,7 @@ class DataProcessorSpec extends AnyFlatSpec with MockFactory with BeforeAndAfter
   lazy val controlOutputPort: ControlOutputPort = mock[ControlOutputPort]
   lazy val logStorage: LogStorage = new InMemoryLogStorage("testDPLog")
   lazy val logWriter: ParallelLogWriter = mock[ParallelLogWriter]
-  lazy val inputCounter: InputCounter = wire[InputCounter]
+  lazy val inputCounter: ExecutionStepCursor = wire[ExecutionStepCursor]
   lazy val replayManager: DPLogManager = wire[DPLogManager]
   val id = WorkerActorVirtualIdentity("testDPActor")
   val linkID: LinkIdentity =

@@ -3,7 +3,7 @@ package edu.uci.ics.amber.engine.recovery
 import edu.uci.ics.amber.engine.common.ambermessage.{
   ControlLogPayload,
   DPCursor,
-  DataBatchSequence,
+  FromSender,
   LogRecord,
   LogWriterPayload,
   WorkflowControlMessage
@@ -13,11 +13,9 @@ import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
 abstract class LogStorage(val id: String) extends Serializable {
 
   // for persist:
-  def writeControlLogRecord(record: ControlLogPayload)
+  def write(record:LogRecord)
 
-  def writeDataLogRecord(from: VirtualIdentity)
-
-  def writeDPLogRecord(cursor: Long)
+  def getStepCursor:Long
 
   // commit all record before last commit
   def commit()
