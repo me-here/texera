@@ -1,8 +1,10 @@
 import logging
 
+# Use gensim 3.8.3
 import gensim
 import gensim.corpora as corpora
 import pandas
+import os
 
 import texera_udf_operator_base
 
@@ -15,11 +17,18 @@ class TopicModeling(texera_udf_operator_base.TexeraBlockingUnsupervisedTrainerOp
         super(TopicModeling, self).open(*args)
 
         # TODO: _train_args from user input args
-        if len(args) >= 2:
-            self._train_args = {"num_topics": int(args[1])}
+        if len(args) >= 3:
+            MALLET_HOME = str(args[1])
+            NUM_TOPICS = int(args[2])
         else:
-            self.logger.exception("Not enough arguments in topic modeling operator.")
-            raise RuntimeError("Not enough arguments in topic modeling operator.")
+            self.logger.exception("Not enough arguments in topic modeling operator")
+            raise RuntimeError("Not enough arguments in topic modeling operator")
+
+        MALLET_PATH = MALLET_HOME+"/bin/mallet"
+        RANDOM_SEED = 41
+        os.environ['MALLET_HOME'] = MALLET_HOME
+
+        self._train_args = {"mallet_path":MALLET_PATH, "random_seed":RANDOM_SEED, "num_topics":NUM_TOPICS}
 
         self.logger.debug(f"getting args {args}")
         self.logger.debug(f"parsed training args {self._train_args}")
@@ -43,17 +52,9 @@ class TopicModeling(texera_udf_operator_base.TexeraBlockingUnsupervisedTrainerOp
         # Term Document Frequency
         corpus = [id2word.doc2bow(text1) for text1 in texts]
 
-        lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
-                                                    id2word=id2word,
-                                                    num_topics=kwargs["num_topics"],
-                                                    random_state=100,
-                                                    update_every=1,
-                                                    chunksize=100,
-                                                    passes=10,
-                                                    alpha='auto',
-                                                    per_word_topics=True)
+        lda_mallet_model = gensim.models.wrappers.LdaMallet(kwargs["mallet_path"], corpus=corpus, num_topics=kwargs["num_topics"], id2word=id2word, random_seed = kwargs["random_seed"])
 
-        return lda_model
+        return lda_mallet_model
 
     @texera_udf_operator_base.exception(logger)
     def report(self, model):
