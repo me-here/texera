@@ -16,14 +16,14 @@ object Constants {
 
   // join-skew reserach related
   val gcpExp: Boolean = true
-  val onlyDetectSkew: Boolean = true
+  val onlyDetectSkew: Boolean = false
   val startDetection: FiniteDuration = 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
   val printResultsInConsole: Boolean = true
 
   // sort-skew research related
   val eachTransferredListSize: Int = 100000
-  val skewToFreeTransferRatio: Int = 2
+  val skewToFreeTransferRatio: Int = 1
   val lowerLimit: Float = 0f
   val upperLimit: Float = 600000f // 30gb
   val sortExperiment: Boolean = true
