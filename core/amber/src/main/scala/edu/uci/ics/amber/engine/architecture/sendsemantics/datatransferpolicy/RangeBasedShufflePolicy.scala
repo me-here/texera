@@ -1,5 +1,6 @@
 package edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy
 
+import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.common.ambermessage.{DataFrame, DataPayload, EndOfUpstream}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
@@ -94,6 +95,11 @@ class RangeBasedShufflePolicy(
       )};;;${newRecId}:${receiverToTotalSent.getOrElse(newRecId, 0)}"
     )
     if (!bucketsToReceivers(defaultBucket).contains(newRecId)) {
+      for (i <- 1 to Constants.skewToFreeTransferRatio - 1) {
+        // adding defaultRecId multiple times in bucket to simulate Constants.skewToFreeTransferRatio:1
+        // data transfer ratio between skewed and free worker
+        bucketsToReceivers(defaultBucket).append(defaultRecId)
+      }
       bucketsToReceivers(defaultBucket).append(newRecId)
     }
     receiverToTotalSent.toMap
@@ -120,6 +126,17 @@ class RangeBasedShufflePolicy(
       )};;;${recIdToRemove}:${receiverToTotalSent.getOrElse(recIdToRemove, 0)}"
     )
     bucketsToReceivers(defaultBucket).remove(idxToRemove)
+    if (idxToRemove > 1) {
+      // this is a hack. Currently, we have only one free worker per skewed worker. So, we add only one free worker in a
+      // bucket. To ensure that the load gets shared Constants.skewToFreeTransferRatio:1 between skewed and free worker
+      // we put the default worker Constants.skewToFreeTransferRatio times in the bucket, in @addReceiverToBucket .
+      // Now we should remove it.
+      for (i <- 1 to Constants.skewToFreeTransferRatio - 1) {
+        if (bucketsToReceivers(defaultBucket).size >= 2) {
+          bucketsToReceivers(defaultBucket).remove(bucketsToReceivers(defaultBucket).size - 1)
+        }
+      }
+    }
     receiverToTotalSent.toMap
   }
 
