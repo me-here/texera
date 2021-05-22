@@ -16,7 +16,7 @@ object Constants {
 
   // join-skew reserach related
   val gcpExp: Boolean = true
-  val onlyDetectSkew: Boolean = false
+  val onlyDetectSkew: Boolean = true
   val startDetection: FiniteDuration = 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
   val printResultsInConsole: Boolean = true
