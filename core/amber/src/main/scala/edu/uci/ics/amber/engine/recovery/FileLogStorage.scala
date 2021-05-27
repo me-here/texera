@@ -145,10 +145,6 @@ abstract class FileLogStorage(logName: String) extends LogStorage(logName) {
     output.flush()
   }
 
-  def persistRecord(elem: LogWriterPayload): Unit = {
-    output.write(globalSerializer.toBinary(elem))
-  }
-
   override def clear(): Unit = {
     if (fileExists) {
       deleteFile()
