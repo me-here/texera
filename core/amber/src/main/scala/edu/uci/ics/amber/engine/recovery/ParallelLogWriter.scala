@@ -66,6 +66,7 @@ class ParallelLogWriter(
             cursorUpdated = false // invalidate flag
             batchWrite(buffer)
             persistStepCursor()
+            storage.commit()
             //println(s"writing ${buffer.size} logs at a time")
             buffer.clear()
           }
@@ -94,7 +95,6 @@ class ParallelLogWriter(
 
   private def batchWrite(buffer: util.ArrayList[LogWriterPayload]): Unit = {
     buffer.stream().forEach(writeLogRecord)
-    storage.commit()
   }
 
   private def releaseAcks(
