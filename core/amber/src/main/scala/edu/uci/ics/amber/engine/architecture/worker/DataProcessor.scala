@@ -14,10 +14,11 @@ import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Comple
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.{
   ActorVirtualIdentity,
-  LinkIdentity,
-  VirtualIdentity
+  LinkIdentity
 }
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, InputExhausted, WorkflowLogger}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
+import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
@@ -149,7 +150,7 @@ class DataProcessor( // dependencies:
           currentInputTuple = Right(InputExhausted())
           handleInputTuple()
           if (currentInputLink != null) {
-            asyncRPCClient.send(LinkCompleted(currentInputLink), ActorVirtualIdentity.Controller)
+            asyncRPCClient.send(LinkCompleted(currentInputLink), CONTROLLER)
           }
         case EndOfAllMarker =>
           // end of processing, break DP loop
@@ -161,7 +162,7 @@ class DataProcessor( // dependencies:
     }
     // Send Completed signal to worker actor.
     logger.logInfo(s"${operator.toString} completed")
-    asyncRPCClient.send(WorkerExecutionCompleted(), ActorVirtualIdentity.Controller)
+    asyncRPCClient.send(WorkerExecutionCompleted(), CONTROLLER)
     stateManager.transitTo(Completed)
     disableDataQueue()
     processControlCommandsAfterCompletion()
@@ -171,12 +172,12 @@ class DataProcessor( // dependencies:
     if (currentInputTuple.isLeft) {
       asyncRPCClient.send(
         LocalOperatorException(currentInputTuple.left.get, e),
-        ActorVirtualIdentity.Controller
+        CONTROLLER
       )
     } else {
       asyncRPCClient.send(
         LocalOperatorException(ITuple("input exhausted"), e),
-        ActorVirtualIdentity.Controller
+        CONTROLLER
       )
     }
     logger.logWarning(e.getLocalizedMessage + "\n" + e.getStackTrace.mkString("\n"))
@@ -229,11 +230,11 @@ class DataProcessor( // dependencies:
     processControlCommand(control.cmd, control.from)
   }
 
-  private[this] def processControlCommand(cmd: ControlPayload, from: VirtualIdentity): Unit = {
+  private[this] def processControlCommand(cmd: ControlPayload, from: ActorVirtualIdentity): Unit = {
     cmd match {
       case invocation: ControlInvocation =>
         asyncRPCServer.logControlInvocation(invocation, from)
-        asyncRPCServer.receive(invocation, from.asInstanceOf[ActorVirtualIdentity])
+        asyncRPCServer.receive(invocation, from)
       case ret: ReturnPayload =>
         asyncRPCClient.logControlReply(ret, from)
         asyncRPCClient.fulfillPromise(ret)
