@@ -5,11 +5,9 @@ import edu.uci.ics.amber.engine.architecture.deploysemantics.deploymentfilter.Us
 import edu.uci.ics.amber.engine.architecture.deploysemantics.deploystrategy.RoundRobinDeployment
 import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
 import edu.uci.ics.amber.engine.common.Constants
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  LayerIdentity,
-  OperatorIdentity
-}
+import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
+import edu.uci.ics.amber.engine.common.virtualidentity.OperatorIdentity
+import edu.uci.ics.amber.engine.common.virtualidentity.util.makeLayer
 import edu.uci.ics.amber.engine.operators.OpExecConfig
 
 class HtmlVizOpExecConfig(id: OperatorIdentity, htmlContentAttrName: String)
@@ -19,7 +17,7 @@ class HtmlVizOpExecConfig(id: OperatorIdentity, htmlContentAttrName: String)
     new Topology(
       Array(
         new WorkerLayer(
-          LayerIdentity(id, "main"),
+          makeLayer(id, "main"),
           _ => new HtmlVizOpExec(htmlContentAttrName),
           Constants.defaultNumWorkers,
           UseAll(),
