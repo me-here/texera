@@ -76,7 +76,9 @@ import { PropertyEditorComponent } from './workspace/component/property-editor/p
 import { TypecastingDisplayComponent } from './workspace/component/property-editor/typecasting-display/typecasting-display.component';
 import { ResultPanelToggleComponent } from './workspace/component/result-panel-toggle/result-panel-toggle.component';
 import { ResultPanelComponent, RowModalComponent } from './workspace/component/result-panel/result-panel.component';
-import { VisualizationPanelContentComponent } from './workspace/component/visualization-panel-content/visualization-panel-content.component';
+import {
+  VisualizationPanelContentComponent
+} from './workspace/component/visualization-panel-content/visualization-panel-content.component';
 import { VisualizationPanelComponent } from './workspace/component/visualization-panel/visualization-panel.component';
 import { WorkflowEditorComponent } from './workspace/component/workflow-editor/workflow-editor.component';
 import { WorkspaceComponent } from './workspace/component/workspace.component';
@@ -132,12 +134,11 @@ registerLocaleData(en);
     AppRoutingModule,
     HttpClientModule,
     MatTooltipModule,
-    NgxJsonViewerModule,
     CustomNgMaterialModule,
     BrowserAnimationsModule,
     NgbModule,
     NgbPopoverModule,
-    RouterModule.forRoot([], { relativeLinkResolution: 'legacy' }),
+    RouterModule.forRoot([]),
     TourNgBootstrapModule.forRoot(),
     FileUploadModule,
     FormsModule,
@@ -166,6 +167,7 @@ registerLocaleData(en);
     NzSpaceModule,
     NzBadgeModule,
     NgxAceModule,
+    NgxJsonViewerModule,
     MatDialogModule
   ],
   entryComponents: [

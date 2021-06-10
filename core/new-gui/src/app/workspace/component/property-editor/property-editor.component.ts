@@ -477,8 +477,8 @@ export class PropertyEditorComponent {
       attributes = this.schemaPropagationService.getOperatorInputSchema(this.currentOperatorID);
     }
     const timestampFieldNames = attributes?.flat().filter((attribute) => {
-      return attribute.attributeType === 'timestamp';
-    }).map(attribute => attribute.attributeName);
+      return attribute?.attributeType === 'timestamp';
+    }).map(attribute => attribute?.attributeName);
 
     if (timestampFieldNames) {
       const childField = this.getFieldByName(childName, fields);
