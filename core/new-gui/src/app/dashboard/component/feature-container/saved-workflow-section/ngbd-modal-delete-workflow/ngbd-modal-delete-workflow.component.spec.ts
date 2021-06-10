@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { MatDialogModule } from '@angular/material/dialog';
 
@@ -24,7 +24,7 @@ describe('NgbdModalDeleteProjectComponent', () => {
     lastModifiedTime: '2018-01-17T06:26:50Z',
   };
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [NgbdModalDeleteWorkflowComponent],
       providers: [

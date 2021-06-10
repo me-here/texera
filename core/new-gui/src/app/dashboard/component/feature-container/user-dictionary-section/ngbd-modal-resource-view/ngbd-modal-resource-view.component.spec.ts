@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { NgbModule, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { FormsModule } from '@angular/forms';
@@ -13,7 +13,7 @@ describe('NgbdModalResourceViewComponent', () => {
   let component: NgbdModalResourceViewComponent;
   let fixture: ComponentFixture<NgbdModalResourceViewComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [NgbdModalResourceViewComponent],
       providers: [

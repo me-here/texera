@@ -1,5 +1,5 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { ExecuteWorkflowService } from '../../service/execute-workflow/execute-workflow.service';
@@ -23,7 +23,7 @@ describe('VisualizationPanelComponent', () => {
     'operator1': {operatorID: 'operator1', chartType: ChartType.BAR, table: [], totalRowCount: 0}
   };
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       imports: [
         NzModalModule,

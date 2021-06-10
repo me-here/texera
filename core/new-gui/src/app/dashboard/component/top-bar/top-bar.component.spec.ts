@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { TopBarComponent } from './top-bar.component';
 import { UserIconComponent } from './user-icon/user-icon.component';
@@ -12,7 +12,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 describe('TopBarComponent', () => {
   let component: TopBarComponent;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [TopBarComponent, UserIconComponent],
       providers: [

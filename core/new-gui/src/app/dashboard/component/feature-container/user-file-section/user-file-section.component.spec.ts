@@ -1,4 +1,4 @@
-import { async, ComponentFixture, TestBed, inject } from '@angular/core/testing';
+import { ComponentFixture, TestBed, inject, waitForAsync } from '@angular/core/testing';
 
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { CustomNgMaterialModule } from '../../../../common/custom-ng-material.module';
@@ -14,7 +14,7 @@ describe('UserFileSectionComponent', () => {
   let component: UserFileSectionComponent;
   let fixture: ComponentFixture<UserFileSectionComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [UserFileSectionComponent],
       providers: [

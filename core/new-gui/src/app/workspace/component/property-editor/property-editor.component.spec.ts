@@ -1,6 +1,6 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { BrowserModule, By } from '@angular/platform-browser';
-import { async, ComponentFixture, discardPeriodicTasks, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, discardPeriodicTasks, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { PropertyEditorComponent } from './property-editor.component';
 import { WorkflowActionService } from '../../service/workflow-graph/model/workflow-action.service';
 import { UndoRedoService } from '../../service/undo-redo/undo-redo.service';
@@ -57,7 +57,7 @@ describe('PropertyEditorComponent', () => {
   let schemaPropagationService: SchemaPropagationService;
   environment.schemaPropagationEnabled = true;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [
         PropertyEditorComponent,
