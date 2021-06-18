@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+package edu.uci.ics.amber.engine.architecture.worker;
+
+message Pause{}
+message Resume{}
+
+message ControlCommand {
+  oneof sealed_value {
+    Pause pause = 1;
+    Resume resume = 2;
+
+  }
+
+}
+
