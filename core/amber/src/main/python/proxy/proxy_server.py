@@ -1,19 +1,19 @@
+import time
+
 import argparse
 import threading
-import time
 from functools import wraps
 from inspect import signature
-from typing import Iterator, Tuple, Dict
-
 from loguru import logger
 from pyarrow import py_buffer, Table
 from pyarrow.flight import Action, FlightDescriptor, FlightServerBase, ServerCallContext, Result
 from pyarrow.ipc import RecordBatchReader, RecordBatchStreamWriter
+from typing import Iterator, Tuple, Dict
 
 from .common import deserialize_arguments
 
 
-class RPCServer(FlightServerBase):
+class ProxyServer(FlightServerBase):
     @staticmethod
     def ack(original_func=None, msg="ack"):
         """
@@ -55,7 +55,7 @@ class RPCServer(FlightServerBase):
 
     def __init__(self, scheme: str = "grpc+tcp", host: str = "localhost", port: int = 5005):
         location = f"{scheme}://{host}:{port}"
-        super(RPCServer, self).__init__(location)
+        super(ProxyServer, self).__init__(location)
         logger.debug("Serving on " + location)
 
         self.host = host
@@ -68,7 +68,7 @@ class RPCServer(FlightServerBase):
 
         # register shutdown, this is the default action for client to terminate server.
         self.register("shutdown",
-                      RPCServer.ack(msg="Bye bye!")
+                      ProxyServer.ack(msg="Bye bye!")
                       (lambda: threading.Thread(target=self._shutdown).start()),
                       description="Shut down this server.")
 
@@ -113,24 +113,31 @@ class RPCServer(FlightServerBase):
                         action.body: the procedure arguments in bytes
         :return: yield the encoded result back to client.
         """
-
+        logger.debug(f"python getting a call on {action.type}, {type(action.type)}")
         # get procedure by name
-        procedure, _ = self._procedures.get(action.type)
-        if not procedure:
-            raise KeyError("Unknown action {!r}".format(action.type))
 
-        # parse arguments for the procedure
-        arguments = deserialize_arguments(action.body.to_pybytes())
-        logger.debug(f"calling {action.type} with args {arguments} along with context {context}")
-
-        # invoke the procedure
-        result = procedure(*arguments["args"], **arguments["kwargs"])
-
-        # serialize the result
-        if isinstance(result, bytes):
-            encoded = result
+        if action.type == "control":
+            logger.debug("getting control!!!")
+            workflow_control_message = self.deserialize_control(action.body)
+            self.process_control(workflow_control_message)
+            encoded = "ack"
         else:
-            encoded = str(result).encode('utf-8')
+            procedure, _ = self._procedures.get(action.type)
+            if not procedure:
+                raise KeyError("Unknown action {!r}".format(action.type))
+
+            # parse arguments for the procedure
+            arguments = deserialize_arguments(action.body.to_pybytes())
+            logger.debug(f"received call {action.type} with args {arguments} along with context {context}")
+
+            # invoke the procedure
+            result = procedure(*arguments["args"], **arguments["kwargs"])
+
+            # serialize the result
+            if isinstance(result, bytes):
+                encoded = result
+            else:
+                encoded = str(result).encode('utf-8')
 
         yield Result(py_buffer(encoded))
 
@@ -164,6 +171,10 @@ class RPCServer(FlightServerBase):
 
         self.process_data = handler
 
+    def register_control_handler(self, handler: callable, deserializer: callable) -> None:
+        self.process_control = handler
+        self.deserialize_control = deserializer
+
     ##################
     # helper methods #
     ##################
@@ -184,7 +195,7 @@ def main():
     args = parser.parse_args()
     scheme = "grpc+tcp"
 
-    server = RPCServer(scheme, args.host, args.port)
+    server = ProxyServer(scheme, args.host, args.port)
     server.serve()
 
 

@@ -30,6 +30,7 @@ import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager._
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.util.{CONTROLLER, SELF}
 import edu.uci.ics.amber.error.WorkflowRuntimeError
+import edu.uci.ics.texera.workflow.operators.pythonUDF.PythonUDFOpExec
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
@@ -40,8 +41,15 @@ object WorkflowWorker {
       id: ActorVirtualIdentity,
       op: IOperatorExecutor,
       parentNetworkCommunicationActorRef: ActorRef
-  ): Props =
-    Props(new WorkflowWorker(id, op, parentNetworkCommunicationActorRef))
+  ): Props = {
+    if (op.isInstanceOf[PythonUDFOpExec]) {
+      Props(new PythonWorkflowWorker(id, op, parentNetworkCommunicationActorRef))
+    } else {
+      Props(new WorkflowWorker(id, op, parentNetworkCommunicationActorRef))
+    }
+
+  }
+
 }
 
 class WorkflowWorker(

@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 
-from worker.models.control_payload import ControlPayload
-from worker.models.generated.virtualidentity_pb2 import LinkIdentity, ActorVirtualIdentity
+from edu.uci.ics.amber.engine.common.ambermessage2_pb2 import ControlPayload
+from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import ActorVirtualIdentity, LinkIdentity
+
+
 from worker.models.tuple import ITuple
 from worker.util.stable_priority_queue import StablePriorityQueue, QueueElement
 

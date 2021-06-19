@@ -4,8 +4,9 @@ from typing import Iterable, Union
 
 import pytest
 
+from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import LinkIdentity
 from worker import DPThread, Tuple
-from worker.models.generated.virtualidentity_pb2 import LinkIdentity
+
 from worker.models.internal_queue import InputTuple, SenderChangeMarker, EndMarker, EndOfAllMarker
 from worker.models.tuple import InputExhausted
 from worker.udf import UDFOperator

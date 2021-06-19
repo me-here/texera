@@ -1,15 +1,14 @@
 import typing
+from edu.uci.ics.amber.engine.common.ambermessage2_pb2 import ControlInvocation
+from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import LinkIdentity, ActorVirtualIdentity
+from loguru import logger
 from queue import Queue
 from typing import Iterable, Union
-
-from loguru import logger
-
-from worker.models.control_payload import ControlPayload
-from worker.models.generated.virtualidentity_pb2 import LinkIdentity, ActorVirtualIdentity
 
 from worker.models.internal_queue import InputTuple, ControlElement, SenderChangeMarker, EndMarker, EndOfAllMarker
 from worker.models.tuple import ITuple, InputExhausted, Tuple
 from worker.udf.udf_operator import UDFOperator
+from worker.util.proto_helper import get_oneof
 from worker.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
 
 
@@ -38,7 +37,7 @@ class DPThread(StoppableQueueBlockingThread):
 
     def main_loop(self) -> None:
         next_entry = self.interruptible_get()
-        logger.debug(f"getting {next_entry}")
+        logger.debug(f"getting an entry {next_entry}")
         if isinstance(next_entry, InputTuple):
             self._current_input_tuple = next_entry.tuple
             self.handle_input_tuple()
@@ -59,9 +58,25 @@ class DPThread(StoppableQueueBlockingThread):
         else:
             raise TypeError(f"unknown InternalQueueElement {next_entry}")
 
-    @staticmethod
-    def process_control_command(cmd: ControlPayload, from_: ActorVirtualIdentity):
-        logger.info(f"processing one control {cmd} from {from_}")
+    def process_control_command(self, cmd: ControlInvocation, from_: ActorVirtualIdentity):
+        logger.info(f"processing one control")
+        control_invocation = get_oneof(cmd, ControlInvocation)
+        if control_invocation:
+            logger.debug("it's control invocation")
+            logger.info(f"{type(getattr(cmd, 'controlInvocation').command)}")
+
+            if control_invocation.command.WhichOneof('sealed_value') == "addOutputPolicy":
+                logger.debug("it's AddOutputPolicy")
+                self._output_queue.put(ControlElement(cmd, from_))
+
+    #      cmd match {
+    #       case invocation: ControlInvocation =>
+    #         asyncRPCServer.logControlInvocation(invocation, from)
+    #         asyncRPCServer.receive(invocation, from)
+    #       case ret: ReturnPayload =>
+    #         asyncRPCClient.logControlReply(ret, from)
+    #         asyncRPCClient.fulfillPromise(ret)
+    #     }
 
     def handle_input_tuple(self):
         results: Iterable[ITuple] = self.process_tuple(self._current_input_tuple, self._current_input_link)
@@ -76,4 +91,5 @@ class DPThread(StoppableQueueBlockingThread):
 
     def process_tuple(self, tuple_: Union[ITuple, InputExhausted], link: LinkIdentity) -> Iterable[ITuple]:
         typing.cast(tuple_, Union[Tuple, InputExhausted])
+        logger.debug(f"processing a tuple {tuple_}")
         return self._udf_operator.process_texera_tuple(tuple_, link)

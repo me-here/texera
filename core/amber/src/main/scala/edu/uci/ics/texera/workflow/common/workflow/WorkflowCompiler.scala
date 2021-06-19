@@ -4,13 +4,14 @@ import akka.actor.ActorRef
 import edu.uci.ics.amber.engine.architecture.controller.Workflow
 import edu.uci.ics.amber.engine.common.virtualidentity.{LinkIdentity, OperatorIdentity}
 import edu.uci.ics.amber.engine.operators.OpExecConfig
-import edu.uci.ics.texera.workflow.common.{ConstraintViolation, WorkflowContext}
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.operators.source.SourceOperatorDescriptor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.{OperatorSchemaInfo, Schema}
 import edu.uci.ics.texera.workflow.operators.sink.SimpleSinkOpDesc
 import edu.uci.ics.texera.workflow.operators.visualization.VisualizationOperator
+import edu.uci.ics.texera.workflow.common.tuple.schema.Schema
+import edu.uci.ics.texera.workflow.common.{ConstraintViolation, WorkflowContext}
 import org.jgrapht.graph.{DefaultEdge, DirectedAcyclicGraph}
 
 import scala.collection.mutable
@@ -95,8 +96,8 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
       destSet.add(dest)
       outLinks.update(origin, destSet)
       val layerLink = LinkIdentity(
-        amberOperators(origin).topology.layers.last.id,
-        amberOperators(dest).topology.layers.head.id
+        Option(amberOperators(origin).topology.layers.last.id),
+        Option(amberOperators(dest).topology.layers.head.id)
       )
       amberOperators(dest).setInputToOrdinalMapping(layerLink, link.destination.portOrdinal)
     })

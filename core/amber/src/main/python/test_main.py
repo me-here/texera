@@ -5,7 +5,7 @@ from loguru import logger
 from pandas import DataFrame
 from pyarrow import Table
 
-from python_rpc import RPCClient, RPCServer
+from proxy import ProxyClient, ProxyServer
 from worker import Tuple
 from worker.data_processor import DataProcessor
 from worker.udf.udf_operator import UDFOperator
@@ -17,7 +17,7 @@ if __name__ == '__main__':
             return [row]
 
 
-    server = RPCServer(port=5006)
+    server = ProxyServer(port=5006)
     server.register_data_handler(lambda x: print(x.to_pandas()))
     with server:
         data_processor = DataProcessor(host="localhost", input_port=5005, output_port=5006, udf_operator=EchoOperator())
@@ -30,7 +30,7 @@ if __name__ == '__main__':
         }, columns=['Brand', 'Price'])
         table = Table.from_pandas(df_to_sent)
 
-        client = RPCClient(port=5005)
+        client = ProxyClient(port=5005)
         # send the pyarrow table to server as a flight
         client.send_data(table)
         time.sleep(2)

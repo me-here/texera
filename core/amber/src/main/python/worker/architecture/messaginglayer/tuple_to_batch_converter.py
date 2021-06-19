@@ -1,8 +1,10 @@
 from collections import OrderedDict
+
+from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import ActorVirtualIdentity, LinkIdentity
+from loguru import logger
 from typing import Iterable, Tuple
 
 from worker.architecture.sendsemantics.data_sending_policy import DataSendingPolicy
-from worker.models.generated.virtualidentity_pb2 import ActorVirtualIdentity, LinkIdentity
 from worker.models.payload import DataPayload
 from worker.models.tuple import ITuple
 
@@ -18,6 +20,7 @@ class TupleToBatchConverter:
         :param policy:
         :return:
         """
+        logger.debug(f"adding one policy {policy}")
         self._policies.update({policy.policy_tag: policy})
 
     def tuple_to_batch(self, tuple_: ITuple) -> Iterable[Tuple[ActorVirtualIdentity, DataPayload]]:

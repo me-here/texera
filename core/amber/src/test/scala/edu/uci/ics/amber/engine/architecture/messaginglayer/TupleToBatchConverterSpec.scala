@@ -4,12 +4,7 @@ import com.softwaremill.macwire.wire
 import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.OneToOnePolicy
 import edu.uci.ics.amber.engine.common.ambermessage.{DataFrame, EndOfUpstream}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  LayerIdentity,
-  LinkIdentity,
-  WorkerActorVirtualIdentity
-}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LayerIdentity, LinkIdentity, WorkerActorVirtualIdentity}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 
@@ -27,7 +22,7 @@ class TupleToBatchConverterSpec extends AnyFlatSpec with MockFactory {
       (mockDataOutputPort.sendTo _).expects(fakeID, DataFrame(tuples.slice(20, 21)))
       (mockDataOutputPort.sendTo _).expects(fakeID, EndOfUpstream())
     }
-    val fakeLink = LinkIdentity(LayerIdentity("", "", ""), LayerIdentity("", "", ""))
+    val fakeLink = LinkIdentity(Option(LayerIdentity("", "", "")), Option(LayerIdentity("", "", "")))
     val fakeReceiver = Array[ActorVirtualIdentity](fakeID)
 
     batchProducer.addPolicy(new OneToOnePolicy(fakeLink, 10, fakeReceiver))

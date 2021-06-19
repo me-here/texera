@@ -4,10 +4,10 @@ from pyarrow.flight import Action, FlightCallOptions, FlightClient
 from pyarrow.flight import FlightDescriptor
 
 from .common import serialize_arguments
-from .rpc_server import RPCServer
+from .proxy_server import ProxyServer
 
 
-class RPCClient(FlightClient):
+class ProxyClient(FlightClient):
 
     def __init__(self, scheme: str = "grpc+tcp", host: str = "localhost", port: int = 5005, timeout=1,
                  *args, **kwargs):
@@ -58,7 +58,7 @@ class RPCClient(FlightClient):
 
 
 if __name__ == '__main__':
-    with RPCServer() as server:
+    with ProxyServer() as server:
         server.register("hello", lambda: "what")
-        client = RPCClient()
+        client = ProxyClient()
         print(client.call("hello"))

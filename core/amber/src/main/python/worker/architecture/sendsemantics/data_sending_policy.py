@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import List, Optional, Tuple
 
-from worker.models.generated.virtualidentity_pb2 import LinkIdentity, ActorVirtualIdentity
+from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import ActorVirtualIdentity, LinkIdentity
 from worker.models.payload import DataPayload, DataFrame
 from worker.models.tuple import ITuple
 

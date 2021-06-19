@@ -2,25 +2,16 @@ package edu.uci.ics.amber.engine.architecture.messaginglayer
 
 import com.softwaremill.macwire.wire
 import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue
-import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue.{
-  EndMarker,
-  EndOfAllMarker,
-  InputTuple,
-  SenderChangeMarker
-}
+import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue.{EndMarker, EndOfAllMarker, InputTuple, SenderChangeMarker}
 import edu.uci.ics.amber.engine.common.ambermessage.{DataFrame, EndOfUpstream}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  LayerIdentity,
-  LinkIdentity,
-  WorkerActorVirtualIdentity
-}
+import edu.uci.ics.amber.engine.common.virtualidentity.{LayerIdentity, LinkIdentity, WorkerActorVirtualIdentity}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 
 class BatchToTupleConverterSpec extends AnyFlatSpec with MockFactory {
   val linkID1 = LinkIdentity(null, null)
-  val linkID2 = LinkIdentity(LayerIdentity("", "", ""), null)
+  val linkID2 = LinkIdentity(Option(LayerIdentity("", "", "")), null)
   private val mockInternalQueue = mock[WorkerInternalQueue]
   private val fakeID = WorkerActorVirtualIdentity("testReceiver")
   "tuple producer" should "break batch into tuples and output" in {

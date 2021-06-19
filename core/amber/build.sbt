@@ -131,3 +131,9 @@ libraryDependencies += "com.github.redouane59.twitter" % "twittered" % "1.23"
 Compile / PB.targets := Seq(
   scalapb.gen() -> (Compile / sourceDirectory).value / "scalapb"
 )
+
+// (optional) If you need scalapb/scalapb.proto or anything from
+// google/protobuf/*.proto
+libraryDependencies ++= Seq(
+  "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
+)

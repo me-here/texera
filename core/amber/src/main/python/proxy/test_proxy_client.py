@@ -6,8 +6,8 @@ from pandas import DataFrame
 from pyarrow import Table, ArrowNotImplementedError
 from pyarrow.flight import FlightServerError
 
-from .rpc_client import RPCClient
-from .rpc_server import RPCServer
+from .proxy_client import ProxyClient
+from .proxy_server import ProxyServer
 
 
 class TestRPCClient:
@@ -18,21 +18,21 @@ class TestRPCClient:
 
     @pytest.fixture
     def server(self):
-        yield RPCServer()
+        yield ProxyServer()
 
     @pytest.fixture
     def server_with_dp(self, data_queue):
-        server = RPCServer()
+        server = ProxyServer()
         server.register_data_handler(lambda batch: list(map(data_queue.put, map(lambda t: t[1], batch.to_pandas().iterrows()))))
         yield server
 
     @pytest.fixture
     def client(self):
-        yield RPCClient()
+        yield ProxyClient()
 
     def test_client_can_connect_to_server(self, server):
         with server:
-            RPCClient()
+            ProxyClient()
 
     def test_client_can_shutdown_server(self, server, client):
         with server:
@@ -64,7 +64,7 @@ class TestRPCClient:
                     return "hello-class"
 
             server.register("hello-class", HelloClass())
-            client = RPCClient()
+            client = ProxyClient()
             assert len(client.list_actions()) == 2
             assert client.call("hello-class") == b'hello-class'
             assert client.call("shutdown") == b'Bye bye!'
@@ -87,7 +87,7 @@ class TestRPCClient:
 
     def test_client_can_call_registered_lambdas_with_args_and_ack(self, server, client):
         with server:
-            server.register("add", RPCServer.ack()(lambda a, b: a + b))
+            server.register("add", ProxyServer.ack()(lambda a, b: a + b))
             assert len(client.list_actions()) == 2
             assert client.call("add", a=5, b=4) == b'ack'
             assert client.call("add", 1.1, 2.3) == b'ack'
@@ -96,7 +96,7 @@ class TestRPCClient:
 
     def test_client_can_call_registered_lambdas_with_args_and_other_ack(self, server, client):
         class Extend:
-            @RPCServer.ack(msg="extended!")
+            @ProxyServer.ack(msg="extended!")
             def __call__(self, a: List, b: Iterable):
                 a.extend(b)
                 return a

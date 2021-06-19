@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+
+package edu.uci.ics.amber.engine.common;
+import "google/protobuf/any.proto";
+import "edu/uci/ics/amber/engine/common/virtualidentity.proto";
+import "edu/uci/ics/amber/engine/architecture/worker/promisehandler2.proto";
+
+message DataPayload{}
+
+message ControlInvocation{
+  int64 commandID = 1;
+  edu.uci.ics.amber.engine.architecture.worker.ControlCommand command = 2;
+}
+message ControlPayload{
+  oneof sealed_value{
+    ControlInvocation controlInvocation = 1;
+  }
+}
+
+message ReturnPayload {
+  int64 originalCommandID = 1;
+  google.protobuf.Any returnValue = 2;
+}
+
+
+message WorkflowDataMessage {
+  edu.uci.ics.amber.engine.common.ActorVirtualIdentity from = 1;
+  int64 sequenceNumber = 2;
+  DataPayload payload = 3;
+}
+
+message WorkflowControlMessage {
+  edu.uci.ics.amber.engine.common.ActorVirtualIdentity from = 1;
+  int64 sequenceNumber = 2;
+  ControlPayload payload = 3;
+}
+
+
+// sealed trait WorkflowMessage
+message WorkflowMessage {
+  oneof sealed_value {
+    WorkflowDataMessage workflowDataMessage = 1;
+    WorkflowControlMessage workflowControlMessage = 2;
+  }
+}
+
+
