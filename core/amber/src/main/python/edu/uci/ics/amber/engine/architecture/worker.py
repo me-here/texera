@@ -34,3 +34,4 @@ class ControlCommand(betterproto.Message):
     add_output_policy: "AddOutputPolicy" = betterproto.message_field(
         3, group="sealed_value"
     )
+    start_worker: "StartWorker" = betterproto.message_field(4, group="sealed_value")

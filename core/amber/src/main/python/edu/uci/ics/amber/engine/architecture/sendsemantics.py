@@ -9,16 +9,6 @@ from .edu.uci.ics.amber.engine import common
 
 
 @dataclass
-class Pause(betterproto.Message):
-    pass
-
-
-@dataclass
-class Resume(betterproto.Message):
-    pass
-
-
-@dataclass
 class DataSendingPolicy(betterproto.Message):
     policy_tag: common.LinkIdentity = betterproto.message_field(1)
     batch_size: int = betterproto.int32_field(2)

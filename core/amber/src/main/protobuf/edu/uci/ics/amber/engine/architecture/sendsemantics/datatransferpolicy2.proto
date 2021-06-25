@@ -2,8 +2,7 @@ syntax = "proto3";
 
 package edu.uci.ics.amber.engine.architecture.sendsemantics;
 import "edu/uci/ics/amber/engine/common/virtualidentity.proto";
-message Pause{}
-message Resume{}
+
 message DataSendingPolicy{
   edu.uci.ics.amber.engine.common.LinkIdentity policyTag = 1;
   int32 batchSize = 2;

@@ -14,6 +14,7 @@ message ControlCommand {
     Pause pause = 1;
     Resume resume = 2;
     AddOutputPolicy addOutputPolicy = 3;
+    StartWorker startWorker = 4;
   }
 
 }
