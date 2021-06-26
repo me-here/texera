@@ -1,10 +1,9 @@
+import pytest
 from time import sleep
 
-import pytest
-
-from worker.models.internal_queue import InternalQueue
-from worker.threads.network_receiver import NetworkReceiver
-from worker.threads.network_sender import NetworkSender
+from core.models.internal_queue import InternalQueue
+from core.threads.network_receiver import NetworkReceiver
+from core.threads.network_sender import NetworkSender
 
 
 class TestNetworkSender:

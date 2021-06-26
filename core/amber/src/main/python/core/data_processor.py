@@ -1,9 +1,9 @@
-from worker import DPThread
-from worker.models.internal_queue import InternalQueue
-from worker.threads.network_receiver import NetworkReceiver
-from worker.threads.network_sender import NetworkSender
-from worker.udf.udf_operator import UDFOperator
-from worker.util.stoppable_thread import StoppableThread
+from core import DPThread
+from core.models.internal_queue import InternalQueue
+from core.threads.network_receiver import NetworkReceiver
+from core.threads.network_sender import NetworkSender
+from core.udf.udf_operator import UDFOperator
+from core.util.stoppable_thread import StoppableThread
 
 
 class DataProcessor(StoppableThread):

@@ -1,14 +1,13 @@
 import time
-from typing import Iterable
-
 from loguru import logger
 from pandas import DataFrame
 from pyarrow import Table
+from typing import Iterable
 
+from core import Tuple
+from core.data_processor import DataProcessor
+from core.udf.udf_operator import UDFOperator
 from proxy import ProxyClient, ProxyServer
-from worker import Tuple
-from worker.data_processor import DataProcessor
-from worker.udf.udf_operator import UDFOperator
 
 if __name__ == '__main__':
     class EchoOperator(UDFOperator):

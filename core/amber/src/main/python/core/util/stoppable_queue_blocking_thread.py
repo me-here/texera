@@ -1,9 +1,8 @@
+from loguru import logger
 from queue import Queue
 
-from loguru import logger
-
-from worker.util.stable_priority_queue import QueueControl
-from worker.util.stoppable_thread import StoppableThread
+from core.util.stable_priority_queue import QueueControl
+from core.util.stoppable_thread import StoppableThread
 
 
 class StoppableQueueBlockingThread(StoppableThread):

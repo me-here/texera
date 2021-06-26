@@ -4,9 +4,21 @@ package edu.uci.ics.amber.engine.architecture.sendsemantics;
 import "edu/uci/ics/amber/engine/common/virtualidentity.proto";
 
 message DataSendingPolicy{
+  oneof sealed_value{
+    OneToOnePolicy oneToOnePolicy = 1;
+    RoundRobinPolicy roundRobinPolicy = 2;
+  }
+}
+
+message OneToOnePolicy{
   edu.uci.ics.amber.engine.common.LinkIdentity policyTag = 1;
   int32 batchSize = 2;
   repeated edu.uci.ics.amber.engine.common.ActorVirtualIdentity receivers = 3;
 }
 
+message RoundRobinPolicy{
+  edu.uci.ics.amber.engine.common.LinkIdentity policyTag = 1;
+  int32 batchSize = 2;
+  repeated edu.uci.ics.amber.engine.common.ActorVirtualIdentity receivers = 3;
+}
 

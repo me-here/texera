@@ -1,12 +1,11 @@
 import sys
+from loguru import logger
 from typing import Iterable, Union
 
-from loguru import logger
-
-from worker import Tuple
-from worker.data_processor import DataProcessor
-from worker.models.tuple import InputExhausted
-from worker.udf import UDFOperator
+from core import Tuple
+from core.data_processor import DataProcessor
+from core.models.tuple import InputExhausted
+from core.udf import UDFOperator
 
 
 class EchoOperator(UDFOperator):

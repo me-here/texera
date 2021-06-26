@@ -1,10 +1,10 @@
-from edu.uci.ics.amber.engine.common.ambermessage2_pb2 import WorkflowControlMessage
 from loguru import logger
 from pyarrow import Table
 
+from core.models.internal_queue import InternalQueue, InputTuple, ControlElement
+from core.util import StoppableThread
+from edu.uci.ics.amber.engine.common import WorkflowControlMessage
 from proxy import ProxyServer
-from worker.models.internal_queue import InternalQueue, InputTuple, ControlElement
-from worker.util import StoppableThread
 
 
 class NetworkReceiver(StoppableThread):
@@ -21,15 +21,15 @@ class NetworkReceiver(StoppableThread):
 
         def control_handler(workflow_control_message: WorkflowControlMessage):
             shared_queue.put(
-                ControlElement(workflow_control_message.payload, getattr(workflow_control_message, "from")))
+                ControlElement(workflow_control_message.payload, workflow_control_message.from_))
 
         def control_deserializer(message: bytes) -> WorkflowControlMessage:
-            workflow_control_message = WorkflowControlMessage()
-            workflow_control_message.ParseFromString(message)
+            workflow_control_message = WorkflowControlMessage().parse(message)
+            logger.info(f"serialized to \n{workflow_control_message}")
             return workflow_control_message
 
         # def control_serializer(workflow_control_message: WorkflowControlMessage) -> bytes:
-        #     return workflow_control_message.SerializeToString()
+        #     return workflow_control_message.SerializeToString()·
 
         self._rpc_server.register_control_handler(control_handler, control_deserializer)
 

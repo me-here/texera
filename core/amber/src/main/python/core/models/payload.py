@@ -1,6 +1,6 @@
 from typing import List
 
-from worker.models.tuple import ITuple
+from core.models.tuple import ITuple
 
 
 class DataPayload:

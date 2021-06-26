@@ -1,8 +1,8 @@
 from abc import ABC
 from typing import Union, Iterable
 
-from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import LinkIdentity
-from worker.models.tuple import Tuple, InputExhausted
+from core.models.tuple import Tuple, InputExhausted
+from edu.uci.ics.amber.engine.common import LinkIdentity
 
 
 class UDFOperator(ABC):

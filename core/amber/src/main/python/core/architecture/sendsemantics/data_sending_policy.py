@@ -1,9 +1,9 @@
 from abc import ABC
 from typing import List, Optional, Tuple
 
-from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import ActorVirtualIdentity, LinkIdentity
-from worker.models.payload import DataPayload, DataFrame
-from worker.models.tuple import ITuple
+from core.models.payload import DataPayload, DataFrame
+from core.models.tuple import ITuple
+from edu.uci.ics.amber.engine.common import LinkIdentity, ActorVirtualIdentity
 
 
 class DataSendingPolicy(ABC):

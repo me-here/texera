@@ -1,11 +1,8 @@
 from dataclasses import dataclass
 
-from edu.uci.ics.amber.engine.common.ambermessage2_pb2 import ControlPayload
-from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import ActorVirtualIdentity, LinkIdentity
-
-
-from worker.models.tuple import ITuple
-from worker.util.stable_priority_queue import StablePriorityQueue, QueueElement
+from core.models.tuple import ITuple
+from core.util.stable_priority_queue import StablePriorityQueue, QueueElement
+from edu.uci.ics.amber.engine.common import ControlPayload, ActorVirtualIdentity, LinkIdentity
 
 
 class InternalQueue(StablePriorityQueue):

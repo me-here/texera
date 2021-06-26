@@ -4,30 +4,28 @@
 import betterproto
 from dataclasses import dataclass
 
-from .edu.uci.ics.amber.engine.architecture import sendsemantics
 
-
-@dataclass
+@dataclass(eq=False, repr=False)
 class Pause(betterproto.Message):
     pass
 
 
-@dataclass
+@dataclass(eq=False, repr=False)
 class Resume(betterproto.Message):
     pass
 
 
-@dataclass
+@dataclass(eq=False, repr=False)
 class StartWorker(betterproto.Message):
     pass
 
 
-@dataclass
+@dataclass(eq=False, repr=False)
 class AddOutputPolicy(betterproto.Message):
-    policy: sendsemantics.DataSendingPolicy = betterproto.message_field(1)
+    policy: "_sendsemantics__.DataSendingPolicy" = betterproto.message_field(1)
 
 
-@dataclass
+@dataclass(eq=False, repr=False)
 class ControlCommand(betterproto.Message):
     pause: "Pause" = betterproto.message_field(1, group="sealed_value")
     resume: "Resume" = betterproto.message_field(2, group="sealed_value")
@@ -35,3 +33,6 @@ class ControlCommand(betterproto.Message):
         3, group="sealed_value"
     )
     start_worker: "StartWorker" = betterproto.message_field(4, group="sealed_value")
+
+
+from .. import sendsemantics as _sendsemantics__

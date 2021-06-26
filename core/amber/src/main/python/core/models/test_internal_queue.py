@@ -1,11 +1,12 @@
 import pytest
-
 from edu.uci.ics.amber.engine.common.ambermessage2_pb2 import ControlPayload
 from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import ActorVirtualIdentity, LinkIdentity
-from worker import Tuple
-from worker.models.internal_queue import InternalQueue, InputTuple, ControlElement, SenderChangeMarker, EndMarker, EndOfAllMarker
-from worker.models.tuple import InputExhausted
-from worker.util.stable_priority_queue import PrioritizedItem
+
+from core import Tuple
+from core.models.internal_queue import InternalQueue, InputTuple, ControlElement, SenderChangeMarker, EndMarker, \
+    EndOfAllMarker
+from core.models.tuple import InputExhausted
+from core.util.stable_priority_queue import PrioritizedItem
 
 
 class TestInternalQueue:

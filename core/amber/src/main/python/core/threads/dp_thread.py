@@ -1,15 +1,16 @@
 import typing
-from edu.uci.ics.amber.engine.common.ambermessage2_pb2 import ControlInvocation
-from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import LinkIdentity, ActorVirtualIdentity
 from loguru import logger
 from queue import Queue
 from typing import Iterable, Union
 
-from worker.models.internal_queue import InputTuple, ControlElement, SenderChangeMarker, EndMarker, EndOfAllMarker
-from worker.models.tuple import ITuple, InputExhausted, Tuple
-from worker.udf.udf_operator import UDFOperator
-from worker.util.proto_helper import get_oneof
-from worker.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
+from core.models.internal_queue import InputTuple, ControlElement, SenderChangeMarker, EndMarker, EndOfAllMarker
+from core.models.tuple import ITuple, InputExhausted, Tuple
+from core.udf.udf_operator import UDFOperator
+from core.util.proto_helper import get_oneof
+from core.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
+from edu.uci.ics.amber.engine.architecture.worker import AddOutputPolicy
+from edu.uci.ics.amber.engine.common import ControlInvocation, ControlPayload
+from edu.uci.ics.amber.engine.common import LinkIdentity, ActorVirtualIdentity
 
 
 class BatchProducer:
@@ -27,7 +28,7 @@ class DPThread(StoppableQueueBlockingThread):
         self._current_input_link: LinkIdentity
         self.output_tuple_count: int = 0
         self.input_tuple_count: int = 0
-        self._batch_producer = BatchProducer()
+
 
     def before_loop(self) -> None:
         self._udf_operator.open()
@@ -58,14 +59,14 @@ class DPThread(StoppableQueueBlockingThread):
         else:
             raise TypeError(f"unknown InternalQueueElement {next_entry}")
 
-    def process_control_command(self, cmd: ControlInvocation, from_: ActorVirtualIdentity):
+    def process_control_command(self, cmd: ControlPayload, from_: ActorVirtualIdentity):
         logger.info(f"processing one control")
-        control_invocation = get_oneof(cmd, ControlInvocation)
-        if control_invocation:
+        # cmd.
+        payload = get_oneof(cmd)
+        if isinstance(payload, ControlInvocation):
             logger.debug("it's control invocation")
-            logger.info(f"{type(getattr(cmd, 'controlInvocation').command)}")
-
-            if control_invocation.command.WhichOneof('sealed_value') == "addOutputPolicy":
+            command = get_oneof(payload.command)
+            if isinstance(command, AddOutputPolicy):
                 logger.debug("it's AddOutputPolicy")
                 self._output_queue.put(ControlElement(cmd, from_))
 

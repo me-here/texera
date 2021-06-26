@@ -1,15 +1,13 @@
+import pytest
+from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import LinkIdentity
 from queue import Queue
 from time import sleep
 from typing import Iterable, Union
 
-import pytest
-
-from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import LinkIdentity
-from worker import DPThread, Tuple
-
-from worker.models.internal_queue import InputTuple, SenderChangeMarker, EndMarker, EndOfAllMarker
-from worker.models.tuple import InputExhausted
-from worker.udf import UDFOperator
+from core import DPThread, Tuple
+from core.models.internal_queue import InputTuple, SenderChangeMarker, EndMarker, EndOfAllMarker
+from core.models.tuple import InputExhausted
+from core.udf import UDFOperator
 
 
 class TestDpTread:

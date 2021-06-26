@@ -4,12 +4,7 @@ import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.NetworkMessage
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
 import edu.uci.ics.amber.engine.common.IOperatorExecutor
-import edu.uci.ics.amber.engine.common.ambermessage.{
-  ControlPayload,
-  DataPayload,
-  WorkflowControlMessage,
-  WorkflowDataMessage
-}
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload, WorkflowControlMessage, WorkflowDataMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCHandlerInitializer
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
@@ -18,7 +13,7 @@ import edu.uci.ics.texera.web.WebUtils
 
 import java.io.IOException
 import java.net.ServerSocket
-import java.util.concurrent.{Executors, ExecutorService, Future}
+import java.util.concurrent.{ExecutorService, Executors, Future}
 
 class PythonWorkflowWorker(
     identifier: ActorVirtualIdentity,
@@ -47,10 +42,8 @@ class PythonWorkflowWorker(
     disallowActorRefRelatedMessages orElse {
       case NetworkMessage(id, WorkflowDataMessage(from, seqNum, payload)) =>
         dataInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
-        logger.logInfo("getting a data message")
       case NetworkMessage(id, WorkflowControlMessage(from, seqNum, payload)) =>
         controlInputPort.handleMessage(this.sender(), id, from, seqNum, payload)
-        logger.logInfo("getting a control message")
       case other =>
         logger.logError(
           WorkflowRuntimeError(s"unhandled message: $other", identifier.toString, Map.empty)
@@ -68,7 +61,7 @@ class PythonWorkflowWorker(
       from: ActorVirtualIdentity,
       controlPayload: ControlPayload
   ): Unit = {
-    logger.logInfo("handling a controlPayload" + controlPayload.toString)
+
     controlPayload match {
       case controlCommand @ (ControlInvocation(_, _) | ReturnPayload(_, _)) =>
         pythonRPCClient.enqueueCommand(controlCommand, from)
@@ -111,7 +104,7 @@ class PythonWorkflowWorker(
   override def postStop(): Unit = {
     // shutdown dp thread by sending a command
     pythonServerProcess.destroyForcibly()
-    logger.logInfo("python worker stopped!")
+    logger.logInfo("python core stopped!")
   }
 
   /**

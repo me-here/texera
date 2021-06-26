@@ -1,11 +1,10 @@
-from asyncio import sleep
-
 import pytest
-
-from async_rpc.async_rpc_server import AsyncRPCServer
+from asyncio import sleep
 from edu.uci.ics.amber.engine.architecture.worker.promisehandler2_pb2 import ControlCommand, Pause
 from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import ActorVirtualIdentity
-from worker.architecture.handlers.handler import Handler
+
+from async_rpc.async_rpc_server import AsyncRPCServer
+from core.architecture.handlers.handler import Handler
 
 
 class TestAsyncRPCServer:

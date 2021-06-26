@@ -1,7 +1,6 @@
-import time
-
 import argparse
 import threading
+import time
 from functools import wraps
 from inspect import signature
 from loguru import logger
@@ -118,9 +117,9 @@ class ProxyServer(FlightServerBase):
 
         if action.type == "control":
             logger.debug("getting control!!!")
-            workflow_control_message = self.deserialize_control(action.body)
+            workflow_control_message = self.deserialize_control(action.body.to_pybytes())
             self.process_control(workflow_control_message)
-            encoded = "ack"
+            encoded = b"ack"
         else:
             procedure, _ = self._procedures.get(action.type)
             if not procedure:

@@ -1,17 +1,17 @@
-from edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2_pb2 import DataSendingPolicy
-from edu.uci.ics.amber.engine.architecture.worker.promisehandler2_pb2 import AddOutputPolicy
-from edu.uci.ics.amber.engine.common.ambermessage2_pb2 import ControlInvocation
-from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import ActorVirtualIdentity
 from loguru import logger
 from pandas import DataFrame
 from pyarrow import Table
 
+from core.architecture.messaginglayer.tuple_to_batch_converter import TupleToBatchConverter
+from core.models.internal_queue import InternalQueue, InputTuple, ControlElement
+from core.models.payload import DataPayload
+from core.models.tuple import ITuple
+from core.util.proto_helper import get_oneof
+from core.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
+from edu.uci.ics.amber.engine.architecture.sendsemantics import DataSendingPolicy
+from edu.uci.ics.amber.engine.architecture.worker import AddOutputPolicy
+from edu.uci.ics.amber.engine.common import ControlInvocation, ActorVirtualIdentity
 from proxy import ProxyClient
-from worker.architecture.messaginglayer.tuple_to_batch_converter import TupleToBatchConverter
-from worker.models.internal_queue import InternalQueue, InputTuple, ControlElement
-from worker.models.payload import DataPayload
-from worker.models.tuple import ITuple
-from worker.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
 
 
 class NetworkSender(StoppableQueueBlockingThread):
@@ -28,11 +28,16 @@ class NetworkSender(StoppableQueueBlockingThread):
         next_entry = self.interruptible_get()
         logger.debug(f"received a message")
         if isinstance(next_entry, InputTuple):
+            logger.debug(f"received a InputTuple")
             self.pass_tuple_to_downstream(next_entry.tuple)
         elif isinstance(next_entry, ControlElement):
-            if isinstance(next_entry.cmd, ControlInvocation):
-                if isinstance(next_entry.cmd.command, AddOutputPolicy):
-                    self.add_policy(next_entry.cmd.policy)
+            logger.debug(f"received a ControlElement")
+            payload = get_oneof(next_entry.cmd)
+            if isinstance(payload, ControlInvocation):
+                logger.debug("it's control invocation")
+                command = get_oneof(payload.command)
+                if isinstance(command, AddOutputPolicy):
+                    self.add_policy(command.policy)
 
     def pass_tuple_to_downstream(self, tuple_: ITuple):
         for to, batch in self._tuple_to_batch_converter.tuple_to_batch(tuple_):

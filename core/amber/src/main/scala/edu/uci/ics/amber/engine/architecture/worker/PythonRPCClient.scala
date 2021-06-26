@@ -1,5 +1,5 @@
 package edu.uci.ics.amber.engine.architecture.worker
-import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.DataSendingPolicy
+import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.{DataSendingPolicy, OneToOnePolicy, RoundRobinPolicy}
 import edu.uci.ics.amber.engine.architecture.worker.PythonRPCClient.communicate
 import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{ControlElement, DataElement}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
@@ -48,10 +48,21 @@ case class PythonRPCClient(portNumber: Int)
   private var flightClient: FlightClient = null
   private var globalInputSchema: Schema = null
 
+  def sendBatch(dataPayload: DataPayload, from: ActorVirtualIdentity): Any = {
+    enqueueData(DataElement(dataPayload, from))
+  }
+
+  override def run(): Unit = {
+    connect()
+    mainLoop()
+  }
+
   def connect(): Unit = {
     var connected = false
     var tryCount = 0
-    while ({ !connected && tryCount < MAX_TRY_COUNT }) try {
+    while ( {
+      !connected && tryCount < MAX_TRY_COUNT
+    }) try {
       println("trying to connect to " + location)
       flightClient = FlightClient.builder(allocator, location).build()
       connected =
@@ -68,36 +79,6 @@ case class PythonRPCClient(portNumber: Int)
       throw new RuntimeException(
         "Exceeded try limit of " + MAX_TRY_COUNT + " when connecting to Flight Server!"
       )
-  }
-
-  def sendBatch(dataPayload: DataPayload, from: ActorVirtualIdentity): Any = {
-    enqueueData(DataElement(dataPayload, from))
-  }
-
-  def sendControl(cmd: ControlPayload, from: ActorVirtualIdentity): Unit = {
-    cmd match {
-      case ControlInvocation(commandID: Long, command: ControlCommand[_]) => {
-        command match {
-          case AddOutputPolicy(policy: DataSendingPolicy) => {}
-            val protobufPolicy =
-              edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2
-                  .DataSendingPolicy(Option(policy.policyTag), policy.batchSize, policy.receivers)
-            val protobufCommand = edu.uci.ics.amber.engine.architecture.worker.promisehandler2
-                .AddOutputPolicy(Option(protobufPolicy))
-            val protobufControlInvocation = edu.uci.ics.amber.engine.common.ambermessage2
-              .ControlInvocation(commandID = commandID, command = protobufCommand)
-
-            val controlMessage =
-              edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage(
-                from = from,
-                sequenceNumber = 0L,
-                payload = protobufControlInvocation
-              )
-            val action: Action = new Action("control", controlMessage.toByteArray)
-            flightClient.doAction(action)
-        }
-      }
-    }
   }
 
   def mainLoop(): Unit = {
@@ -120,9 +101,40 @@ case class PythonRPCClient(portNumber: Int)
 
   }
 
-  override def run(): Unit = {
-    connect()
-    mainLoop()
+  def sendControl(cmd: ControlPayload, from: ActorVirtualIdentity): Unit = {
+    cmd match {
+      case ControlInvocation(commandID: Long, command: ControlCommand[_]) => {
+        var protobufPolicy: edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2.DataSendingPolicy = null
+        command match {
+          case AddOutputPolicy(policy: DataSendingPolicy) =>
+            policy match {
+              case _: OneToOnePolicy =>
+                protobufPolicy = edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2.OneToOnePolicy(
+                  Option(policy.policyTag), policy.batchSize, policy.receivers)
+
+              case _: RoundRobinPolicy =>
+                protobufPolicy = edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2.RoundRobinPolicy(
+                  Option(policy.policyTag), policy.batchSize, policy.receivers)
+              case _ => throw new UnsupportedOperationException("not supported data policy")
+            }
+
+            val protobufCommand = edu.uci.ics.amber.engine.architecture.worker.promisehandler2
+                .AddOutputPolicy(protobufPolicy)
+            val protobufControlInvocation = edu.uci.ics.amber.engine.common.ambermessage2
+                .ControlInvocation(commandID = commandID, command = protobufCommand)
+
+            val controlMessage =
+              edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage(
+                from = from,
+                sequenceNumber = 0L,
+                payload = protobufControlInvocation
+              )
+            val action: Action = new Action("control", controlMessage.toByteArray)
+            println(flightClient.doAction(action).next())
+            println("finish command")
+        }
+      }
+    }
   }
 
   override def close(): Unit = ???
