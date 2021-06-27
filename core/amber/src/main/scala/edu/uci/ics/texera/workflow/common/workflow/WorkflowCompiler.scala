@@ -24,9 +24,9 @@ object WorkflowCompiler {
   }
 
   def getUpstreamOperators(
-                            operatorID: String,
-                            workflowCompiler: WorkflowCompiler
-                          ): List[OperatorDescriptor] = {
+      operatorID: String,
+      workflowCompiler: WorkflowCompiler
+  ): List[OperatorDescriptor] = {
     workflowCompiler.workflowInfo.links
       .filter(link => link.destination.operatorID == operatorID)
       .flatMap(link =>
