@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle;
 import edu.uci.ics.amber.engine.operators.OpExecConfig;
-import edu.uci.ics.texera.workflow.common.IncrementalOutputMode;
 import edu.uci.ics.texera.workflow.common.metadata.InputPort;
 import edu.uci.ics.texera.workflow.common.metadata.OperatorGroupConstants;
 import edu.uci.ics.texera.workflow.common.metadata.OperatorInfo;
@@ -48,11 +47,6 @@ public class ScatterplotOpDesc extends VisualizationOperator {
             return VisualizationConstants.SPATIAL_SCATTERPLOT;
         }
         return VisualizationConstants.SIMPLE_SCATTERPLOT;
-    }
-
-    @Override
-    public IncrementalOutputMode outputMode() {
-        return IncrementalOutputMode.SET_SNAPSHOT;
     }
 
     @Override

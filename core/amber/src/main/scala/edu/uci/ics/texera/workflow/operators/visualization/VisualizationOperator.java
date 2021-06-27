@@ -11,6 +11,10 @@ public abstract class VisualizationOperator extends OperatorDescriptor {
 
     public abstract String chartType();
 
-    public abstract IncrementalOutputMode outputMode();
+    // visualization operators have SET_SNAPSHOT incremental output mode by default
+    // an operator can override this option if it wishes to output in other incremental output mode
+    public IncrementalOutputMode outputMode() {
+        return IncrementalOutputMode.SET_SNAPSHOT;
+    }
 
 }
