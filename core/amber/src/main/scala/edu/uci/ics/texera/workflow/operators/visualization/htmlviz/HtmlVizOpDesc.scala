@@ -35,6 +35,10 @@ class HtmlVizOpDesc extends VisualizationOperator {
 
   override def chartType: String = VisualizationConstants.HTML_VIZ
 
+  import edu.uci.ics.texera.workflow.common.IncrementalOutputMode
+
+  override def outputMode = IncrementalOutputMode.SET_SNAPSHOT
+
   override def operatorExecutor(operatorSchemaInfo: OperatorSchemaInfo) =
     new OneToOneOpExecConfig(operatorIdentifier, _ => new HtmlVizOpExec(htmlContentAttrName))
 
