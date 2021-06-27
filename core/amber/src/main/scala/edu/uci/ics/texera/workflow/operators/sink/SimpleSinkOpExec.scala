@@ -19,8 +19,18 @@ class SimpleSinkOpExec(
   val results: mutable.ListBuffer[Tuple] = mutable.ListBuffer()
 
   def getResultTuples(): List[ITuple] = {
-    results.toList
+    outputMode match {
+      case SET_SNAPSHOT =>
+        results.toList
+      case SET_DELTA =>
+        val ret = results.toList
+        // clear the delta result buffer after every progressive output
+        results.clear()
+        ret
+    }
   }
+
+  override def getOutputMode(): IncrementalOutputMode = this.outputMode
 
   override def open(): Unit = {}
 
