@@ -84,11 +84,7 @@ trait QueryWorkerStatisticsHandler {
         })
       // send update result to frontend
       if (operatorResultUpdate.nonEmpty) {
-        if (eventListener.workflowResultUpdateListener != null) {
-          eventListener.workflowResultUpdateListener.apply(
-            WorkflowResultUpdate(operatorResultUpdate.toMap)
-          )
-        }
+        updateFrontendWorkflowResult(WorkflowResultUpdate(operatorResultUpdate.toMap))
       }
     })
   })

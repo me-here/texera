@@ -39,11 +39,11 @@ object WebOperatorStatistics {
 }
 
 case class WebOperatorStatistics(
-                                  operatorState: OperatorState,
-                                  aggregatedInputRowCount: Long,
-                                  aggregatedOutputRowCount: Long,
-                                  aggregatedOutputResults: Option[WebOperatorResult], // in case of a sink operator
-                                  aggregatedOutputResultDirtyPageIndices: Option[List[Int]]
+    operatorState: OperatorState,
+    aggregatedInputRowCount: Long,
+    aggregatedOutputRowCount: Long,
+    aggregatedOutputResults: Option[WebOperatorResult], // in case of a sink operator
+    aggregatedOutputResultDirtyPageIndices: Option[List[Int]]
 )
 
 object WebWorkflowStatusUpdateEvent {
