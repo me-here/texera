@@ -55,7 +55,7 @@ class WorkflowResource {
   }
 
   /**
-    * This method handles the client request to get a specific workflow to be displayed
+    * This method handles the client request to get a specific workflow to be displayed in canvas
     * at current design, it only takes the workflowID and searches within the database for the matching workflow
     * for future design, it should also take userID as an parameter.
     *
