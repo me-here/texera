@@ -1,6 +1,7 @@
+import time
+
 import argparse
 import threading
-import time
 from functools import wraps
 from inspect import signature
 from loguru import logger
@@ -9,6 +10,7 @@ from pyarrow.flight import Action, FlightDescriptor, FlightServerBase, ServerCal
 from pyarrow.ipc import RecordBatchReader, RecordBatchStreamWriter
 from typing import Iterator, Tuple, Dict
 
+from edu.uci.ics.amber.engine.common import ActorVirtualIdentity
 from .common import deserialize_arguments
 
 
@@ -88,7 +90,9 @@ class ProxyServer(FlightServerBase):
         :return:
         """
         logger.debug(f"getting a data flight")
-        self.process_data(reader.read_all())
+
+        from_ = ActorVirtualIdentity().parse(descriptor.command)
+        self.process_data(from_, reader.read_all())
 
     ###############################
     # RPC actions related methods #
@@ -165,8 +169,8 @@ class ProxyServer(FlightServerBase):
         :return:
         """
 
-        # the handler at least should have an argument for the data batch.
-        assert len(signature(handler).parameters) >= 1
+        # the handler at least should have 2 arguments for the from_ and data batch.
+        assert len(signature(handler).parameters) >= 2
 
         self.process_data = handler
 

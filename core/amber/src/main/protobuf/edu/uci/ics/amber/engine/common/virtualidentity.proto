@@ -20,13 +20,19 @@ message WorkerActorVirtualIdentity {
 }
 
 // final case class ControllerVirtualIdentity extends ActorVirtualIdentity
-message ControllerVirtualIdentity {}
+message ControllerVirtualIdentity {
+  string name = 1;
+}
 
 // final case class SelfVirtualIdentity extends ActorVirtualIdentity
-message SelfVirtualIdentity {}
+message SelfVirtualIdentity {
+  string name = 1;
+}
 
 // final case class ClientVirtualIdentity extends ActorVirtualIdentity
-message ClientVirtualIdentity {}
+message ClientVirtualIdentity {
+  string name = 1;
+}
 
 // final case class LayerIdentity (
 //    workflow: String,

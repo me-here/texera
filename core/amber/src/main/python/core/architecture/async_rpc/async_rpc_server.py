@@ -1,13 +1,12 @@
-import asyncio
 from asyncio import Future
-from edu.uci.ics.amber.engine.architecture.worker.promisehandler2_pb2 import ControlCommand
-from edu.uci.ics.amber.engine.common.ambermessage2_pb2 import ControlInvocation
-from edu.uci.ics.amber.engine.common.ambermessage2_pb2 import ReturnPayload
-from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import ActorVirtualIdentity
+
+import asyncio
+from core.architecture.handlers.handler import Handler
 from loguru import logger
 from typing import Any, Dict
 
-from core.architecture.handlers.handler import Handler
+from edu.uci.ics.amber.engine.architecture.worker import ControlCommand
+from edu.uci.ics.amber.engine.common import ControlInvocation, ActorVirtualIdentity
 
 
 class AsyncRPCServer:
@@ -19,6 +18,7 @@ class AsyncRPCServer:
         self.handlers[newHandler.cmd_type] = newHandler
 
         logger.debug(f"registered a handler with control message {newHandler.cmd_type}")
+
     def receive(self, control: ControlInvocation, sender_id: ActorVirtualIdentity):
         try:
             future: Future = self.execute(control.command, sender_id)

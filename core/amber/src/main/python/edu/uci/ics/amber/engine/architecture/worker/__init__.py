@@ -6,18 +6,14 @@ from dataclasses import dataclass
 
 
 @dataclass(eq=False, repr=False)
-class Pause(betterproto.Message):
-    pass
-
-
-@dataclass(eq=False, repr=False)
-class Resume(betterproto.Message):
-    pass
-
-
-@dataclass(eq=False, repr=False)
 class StartWorker(betterproto.Message):
     pass
+
+
+@dataclass(eq=False, repr=False)
+class UpdateInputLinking(betterproto.Message):
+    identifier: "__common__.ActorVirtualIdentity" = betterproto.message_field(1)
+    input_link: "__common__.LinkIdentity" = betterproto.message_field(2)
 
 
 @dataclass(eq=False, repr=False)
@@ -27,12 +23,14 @@ class AddOutputPolicy(betterproto.Message):
 
 @dataclass(eq=False, repr=False)
 class ControlCommand(betterproto.Message):
-    pause: "Pause" = betterproto.message_field(1, group="sealed_value")
-    resume: "Resume" = betterproto.message_field(2, group="sealed_value")
     add_output_policy: "AddOutputPolicy" = betterproto.message_field(
         3, group="sealed_value"
     )
     start_worker: "StartWorker" = betterproto.message_field(4, group="sealed_value")
+    update_input_linking: "UpdateInputLinking" = betterproto.message_field(
+        5, group="sealed_value"
+    )
 
 
 from .. import sendsemantics as _sendsemantics__
+from ... import common as __common__

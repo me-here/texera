@@ -2,9 +2,9 @@ package edu.uci.ics.amber.engine.common.virtualidentity
 
 object util {
 
-  lazy val CONTROLLER: ControllerVirtualIdentity = ControllerVirtualIdentity()
-  lazy val SELF: SelfVirtualIdentity = SelfVirtualIdentity()
-  lazy val CLIENT: ClientVirtualIdentity = ClientVirtualIdentity()
+  lazy val CONTROLLER: ControllerVirtualIdentity = ControllerVirtualIdentity("controller")
+  lazy val SELF: SelfVirtualIdentity = SelfVirtualIdentity("self")
+  lazy val CLIENT: ClientVirtualIdentity = ClientVirtualIdentity("client")
 
   def makeLayer(operatorIdentity: OperatorIdentity, layerID: String): LayerIdentity = {
     LayerIdentity(operatorIdentity.workflow, operatorIdentity.operator, layerID)

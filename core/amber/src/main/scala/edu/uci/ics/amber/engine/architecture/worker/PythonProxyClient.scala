@@ -1,8 +1,11 @@
 package edu.uci.ics.amber.engine.architecture.worker
+
 import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.{DataSendingPolicy, OneToOnePolicy, RoundRobinPolicy}
-import edu.uci.ics.amber.engine.architecture.worker.PythonRPCClient.communicate
+import edu.uci.ics.amber.engine.architecture.worker.PythonProxyClient.communicate
 import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{ControlElement, DataElement}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.StartHandler.StartWorker
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.UpdateInputLinkingHandler.UpdateInputLinking
 import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataFrame, DataPayload}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
@@ -27,16 +30,16 @@ object MSG extends Enumeration {
   val HEALTH_CHECK: Value = Value
 }
 
-object PythonRPCClient {
+object PythonProxyClient {
 
   private def communicate(client: FlightClient, message: String): Array[Byte] =
     client.doAction(new Action(message)).next.getBody
 }
 
-case class PythonRPCClient(portNumber: Int)
+case class PythonProxyClient(portNumber: Int)
     extends Runnable
-    with AutoCloseable
-    with WorkerBatchInternalQueue {
+        with AutoCloseable
+        with WorkerBatchInternalQueue {
 
   val allocator: BufferAllocator =
     new RootAllocator().newChildAllocator("flight-server", 0, Long.MaxValue);
@@ -85,17 +88,18 @@ case class PythonRPCClient(portNumber: Int)
     while (true) {
 
       getElement match {
-        case DataElement(dataPayload, from) => {
+        case DataElement(dataPayload, from) =>
           println("java got a dataPayload")
           dataPayload match {
             case DataFrame(frame) =>
               val tuples = mutable.Queue(frame.map((t: ITuple) => t.asInstanceOf[Tuple]): _*)
-              writeArrowStream(flightClient, tuples, tuples.size)
+              writeArrowStream(flightClient, tuples, tuples.size, from)
           }
-
-        }
         case ControlElement(cmd, from) =>
+          println("java got a command " + cmd)
           sendControl(cmd, from)
+          println("finish command " + cmd)
+
       }
     }
 
@@ -104,9 +108,12 @@ case class PythonRPCClient(portNumber: Int)
   def sendControl(cmd: ControlPayload, from: ActorVirtualIdentity): Unit = {
     cmd match {
       case ControlInvocation(commandID: Long, command: ControlCommand[_]) => {
-        var protobufPolicy: edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2.DataSendingPolicy = null
+        println(" RPC CLIENT GOT COMMAND: " + command)
+
         command match {
           case AddOutputPolicy(policy: DataSendingPolicy) =>
+            var protobufPolicy: edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2.DataSendingPolicy = null
+
             policy match {
               case _: OneToOnePolicy =>
                 protobufPolicy = edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2.OneToOnePolicy(
@@ -131,13 +138,28 @@ case class PythonRPCClient(portNumber: Int)
               )
             val action: Action = new Action("control", controlMessage.toByteArray)
             println(flightClient.doAction(action).next())
-            println("finish command")
+
+          case StartWorker() =>
+          case UpdateInputLinking(identifier, inputLink) =>
+            val protobufCommand = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking(identifier = identifier, inputLink = Option(
+              inputLink)
+            )
+            val protobufControlInvocation = edu.uci.ics.amber.engine.common.ambermessage2
+                .ControlInvocation(commandID = commandID, command = protobufCommand)
+            val controlMessage =
+              edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage(
+                from = from,
+                sequenceNumber = 0L,
+                payload = protobufControlInvocation
+              )
+            val action: Action = new Action("control", controlMessage.toByteArray)
+            println(flightClient.doAction(action).next())
+            println("finish command update input linking")
         }
+
       }
     }
   }
-
-  override def close(): Unit = ???
 
   /**
     * For every batch, the operator converts list of {@code Tuple}s into Arrow stream data in almost the exact same
@@ -156,16 +178,18 @@ case class PythonRPCClient(portNumber: Int)
     *                    so in general it can be the same as {@code batchSize}.
     */ @throws[RuntimeException]
   private def writeArrowStream(
-      client: FlightClient,
-      values: mutable.Queue[Tuple],
-      chunkSize: Int
-  ): Unit = {
+                                  client: FlightClient,
+                                  values: mutable.Queue[Tuple],
+                                  chunkSize: Int,
+                                  from: ActorVirtualIdentity
+                              ): Unit = {
 
+    println(" NOW WRITING A DATA BATCH " + chunkSize + " from " + from.asMessage.toString)
     val flightListener = new SyncPutListener
     var schemaRoot: VectorSchemaRoot = null
 
     val streamWriter = client.startPut(
-      FlightDescriptor.path("data"),
+      FlightDescriptor.command(from.asMessage.toByteArray),
       schemaRoot,
       flightListener
     )
@@ -284,4 +308,6 @@ case class PythonRPCClient(portNumber: Int)
     }
     new Schema(arrowFields)
   }
+
+  override def close(): Unit = ???
 }

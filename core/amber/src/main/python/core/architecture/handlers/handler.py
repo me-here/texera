@@ -6,4 +6,4 @@ class Handler(ABC):
         self.cmd_type = cmd_type
 
     def __call__(self, *args, **kwargs):
-        pass
+        return None

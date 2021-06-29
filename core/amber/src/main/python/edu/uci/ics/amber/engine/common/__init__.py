@@ -39,21 +39,21 @@ class ControllerVirtualIdentity(betterproto.Message):
     final case class ControllerVirtualIdentity extends ActorVirtualIdentity
     """
 
-    pass
+    name: str = betterproto.string_field(1)
 
 
 @dataclass(eq=False, repr=False)
 class SelfVirtualIdentity(betterproto.Message):
     """final case class SelfVirtualIdentity extends ActorVirtualIdentity"""
 
-    pass
+    name: str = betterproto.string_field(1)
 
 
 @dataclass(eq=False, repr=False)
 class ClientVirtualIdentity(betterproto.Message):
     """final case class ClientVirtualIdentity extends ActorVirtualIdentity"""
 
-    pass
+    name: str = betterproto.string_field(1)
 
 
 @dataclass(eq=False, repr=False)
@@ -112,6 +112,7 @@ class ControlPayload(betterproto.Message):
     control_invocation: "ControlInvocation" = betterproto.message_field(
         1, group="sealed_value"
     )
+    return_payload: "ReturnPayload" = betterproto.message_field(2, group="sealed_value")
 
 
 @dataclass(eq=False, repr=False)

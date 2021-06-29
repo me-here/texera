@@ -30,7 +30,7 @@ class PythonWorkflowWorker(
   private val serverThreadExecutor: ExecutorService = Executors.newSingleThreadExecutor
   private val clientThreadExecutor: ExecutorService = Executors.newSingleThreadExecutor
   private var clientThread: Future[_] = null
-  private var pythonRPCClient: PythonRPCClient = null
+  private var pythonRPCClient: PythonProxyClient = null
   private var pythonServerProcess: Process = null
 
   override def receive: Receive = receiveAndProcessMessages
@@ -92,12 +92,12 @@ class PythonWorkflowWorker(
 
   def startRPCServer(outputPortNumber: Int): Unit = {
 
-    val serverThread = serverThreadExecutor.submit(new PythonRPCServer(outputPortNumber))
+    val serverThread = serverThreadExecutor.submit(new PythonProxyServer(outputPortNumber, controlOutputPort))
   }
 
   def startRPCClient(inputPortNumber: Int): Unit = {
 
-    pythonRPCClient = new PythonRPCClient(inputPortNumber)
+    pythonRPCClient = new PythonProxyClient(inputPortNumber)
     clientThread = clientThreadExecutor.submit(pythonRPCClient)
   }
 

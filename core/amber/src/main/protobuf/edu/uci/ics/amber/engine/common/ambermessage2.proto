@@ -15,6 +15,7 @@ message ControlInvocation{
 message ControlPayload{
   oneof sealed_value{
     ControlInvocation controlInvocation = 1;
+    ReturnPayload returnPayload = 2;
   }
 }
 

@@ -2,19 +2,24 @@ syntax = "proto3";
 
 package edu.uci.ics.amber.engine.architecture.worker;
 import "edu/uci/ics/amber/engine/architecture/sendsemantics/datatransferpolicy2.proto";
-message Pause{}
-message Resume{}
+import "edu/uci/ics/amber/engine/common/virtualidentity.proto";
+
 message StartWorker{}
+
+message UpdateInputLinking{
+  edu.uci.ics.amber.engine.common.ActorVirtualIdentity identifier = 1;
+  edu.uci.ics.amber.engine.common.LinkIdentity inputLink = 2;
+}
 message AddOutputPolicy{
   edu.uci.ics.amber.engine.architecture.sendsemantics.DataSendingPolicy policy = 1;
 }
 
 message ControlCommand {
   oneof sealed_value {
-    Pause pause = 1;
-    Resume resume = 2;
+
     AddOutputPolicy addOutputPolicy = 3;
     StartWorker startWorker = 4;
+    UpdateInputLinking updateInputLinking = 5;
   }
 
 }

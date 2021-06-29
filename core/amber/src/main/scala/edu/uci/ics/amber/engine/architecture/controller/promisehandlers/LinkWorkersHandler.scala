@@ -7,13 +7,6 @@ import edu.uci.ics.amber.engine.architecture.linksemantics.LinkStrategy
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.UpdateInputLinkingHandler.UpdateInputLinking
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  ActorVirtualIdentityMessage
-}
-
-import java.io.FileOutputStream
-import scala.util.Using
 
 object LinkWorkersHandler {
   final case class LinkWorkers(link: LinkStrategy) extends ControlCommand[CommandCompleted]
@@ -33,15 +26,6 @@ trait LinkWorkersHandler {
       val futures = msg.link.getPolicies.flatMap {
         case (from, policy, tos) =>
           // send messages to sender worker and receiver workers
-
-          Using(new FileOutputStream("actor.pb")) { output =>
-            from.asMessage.writeTo(output)
-          }
-
-          Using(new FileOutputStream("link.pb")) { output =>
-            println(msg.link.id.toByteString)
-            msg.link.id.writeTo(output)
-          }
           Seq(send(AddOutputPolicy(policy), from)) ++ tos.map(
             send(UpdateInputLinking(from, msg.link.id), _)
           )

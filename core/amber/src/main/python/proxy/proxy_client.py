@@ -24,18 +24,23 @@ class ProxyClient(FlightClient):
         :param procedure_kwargs, keyword arguments for the procedure
         :return: exactly one result in bytes
         """
-        payload = serialize_arguments(*procedure_args, **procedure_kwargs)
-        action = Action(procedure_name, payload)
+        if procedure_name == "control":
+            logger.info(f" control's arg {procedure_args}")
+            action = Action(procedure_name, *procedure_args)
+        else:
+            payload = serialize_arguments(*procedure_args, **procedure_kwargs)
+            action = Action(procedure_name, payload)
         options = FlightCallOptions(timeout=self._timeout)
+        logger.info(f"sending {action}, {action.body}")
         return next(self.do_action(action, options)).body.to_pybytes()
 
     def send_data(self, batch: Table, on_success: callable = lambda: None, on_error: callable = lambda: None) -> None:
         """
         send data to the server
         :param batch: a PyArrow.Table of column-stored records.
-        :param on_success: callback function upon success, only used with PythonRPCClient, Java
+        :param on_success: callback function upon success, only used with PythonProxyClient, Java
                             client should not use it.
-        :param on_error: callback function upon failure, only used with the PythonRPCClient, Java
+        :param on_error: callback function upon failure, only used with the PythonProxyClient, Java
                             client should not use it.
         :return:
         """
