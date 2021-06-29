@@ -1,9 +1,9 @@
 package edu.uci.ics.texera.web.resource.dashboard
 
 import edu.uci.ics.texera.web.SqlServer
-import edu.uci.ics.texera.web.model.jooq.generated.Tables.{WORKFLOW, WORKFLOW_OF_USER}
-import edu.uci.ics.texera.web.model.jooq.generated.tables.daos.{WorkflowDao, WorkflowOfUserDao}
-import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.{Workflow, WorkflowOfUser}
+import edu.uci.ics.texera.web.model.jooq.generated.Tables.{WORKFLOW, WORKFLOW_OF_USER, WORKFLOW_USER_ACCESS}
+import edu.uci.ics.texera.web.model.jooq.generated.tables.daos.{WorkflowDao, WorkflowOfUserDao, WorkflowUserAccessDao}
+import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.{Workflow, WorkflowOfUser, WorkflowUserAccess}
 import edu.uci.ics.texera.web.resource.auth.UserResource
 import io.dropwizard.jersey.sessions.Session
 import org.jooq.types.UInteger
@@ -12,6 +12,10 @@ import java.util
 import javax.servlet.http.HttpSession
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
+import edu.uci.ics.texera.web.resource.dashboard.WorkflowResource
+
+import scala.collection.immutable.HashMap
+
 
 /**
   * This file handles various request related to saved-workflows.
@@ -25,7 +29,7 @@ class WorkflowResource {
   final private val workflowOfUserDao = new WorkflowOfUserDao(
     SqlServer.createDSLContext.configuration
   )
-
+  final private val workflowUserAccessDao = new WorkflowUserAccessDao(SqlServer.createDSLContext().configuration())
   /**
     * This method returns the current in-session user's workflow list
     *
@@ -65,15 +69,16 @@ class WorkflowResource {
   def retrieveWorkflow(@PathParam("wid") wid: UInteger, @Session session: HttpSession): Response = {
     UserResource.getUser(session) match {
       case Some(user) =>
-        if (workflowOfUserExists(wid, user.getUid)) {
-          Response.ok(workflowDao.fetchOneByWid(wid)).build()
-        } else {
+        val uid = user.getUid
+        val accessLevel = WorkflowAccessResource.checkAccessLevel(wid, uid)
+        if(accessLevel.eq(Access.None) || accessLevel.eq(Access.NoRecord)){
           Response.status(Response.Status.BAD_REQUEST).build()
+        }else{
+          Response.ok(workflowDao.fetchOneByWid(wid)).build()
         }
       case None =>
         Response.status(Response.Status.UNAUTHORIZED).build()
     }
-
   }
 
   /**
@@ -90,13 +95,14 @@ class WorkflowResource {
   def persistWorkflow(@Session session: HttpSession, workflow: Workflow): Response = {
     UserResource.getUser(session) match {
       case Some(user) =>
-        if (workflowOfUserExists(workflow.getWid, user.getUid)) {
+        if (WorkflowAccessResource.hasWriteAccess(workflow.getWid, user.getUid)) {
           // when the wid is provided, update the existing workflow
           workflowDao.update(workflow)
         } else {
           // when the wid is not provided, treat it as a new workflow
           workflowDao.insert(workflow)
           workflowOfUserDao.insert(new WorkflowOfUser(user.getUid, workflow.getWid))
+          workflowUserAccessDao.insert(new WorkflowUserAccess(user.getUid, workflow.getWid, true, true))
         }
         Response.ok(workflowDao.fetchOneByWid(workflow.getWid)).build()
       case None =>
@@ -133,4 +139,5 @@ class WorkflowResource {
         .values(uid, wid)
     )
   }
+
 }
