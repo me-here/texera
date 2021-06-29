@@ -5,6 +5,7 @@ import edu.uci.ics.texera.web.model.jooq.generated.Tables.{WORKFLOW, WORKFLOW_OF
 import edu.uci.ics.texera.web.model.jooq.generated.tables.daos.{WorkflowDao, WorkflowOfUserDao, WorkflowUserAccessDao}
 import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.{Workflow, WorkflowOfUser, WorkflowUserAccess}
 import edu.uci.ics.texera.web.resource.auth.UserResource
+import edu.uci.ics.texera.web.resource.dashboard
 import io.dropwizard.jersey.sessions.Session
 import org.jooq.types.UInteger
 
@@ -17,29 +18,29 @@ import scala.collection.immutable.HashMap
 
 object Access extends Enumeration {
   type Access = Value
-  val Read = Value("read")
-  val Write = Value("write")
-  val None = Value("none")
-  val NoRecord = Value("No Record")
+  val Read: dashboard.Access.Value = Value("read")
+  val Write: dashboard.Access.Value = Value("write")
+  val None: dashboard.Access.Value = Value("none")
+  val NoRecord: dashboard.Access.Value = Value("No Record")
 }
 
 class AccessResponse(uid: UInteger, wid:UInteger, level:String)
 
 object WorkflowAccessResource{
 
-   def checkAccessLevel(wid : UInteger, uid: UInteger): Access.Value ={
+  def checkAccessLevel(wid : UInteger, uid: UInteger): Access.Value ={
     val accessDetail = SqlServer.createDSLContext
       .select(WORKFLOW_USER_ACCESS.READ_PRIVILEGE, WORKFLOW_USER_ACCESS.WRITE_PRIVILEGE)
       .from(WORKFLOW_USER_ACCESS)
-      .where((WORKFLOW_USER_ACCESS.WID.eq(wid)).and(WORKFLOW_USER_ACCESS.UID.eq(uid)))
+      .where(WORKFLOW_USER_ACCESS.WID.eq(wid).and(WORKFLOW_USER_ACCESS.UID.eq(uid)))
       .fetch()
-    if (accessDetail.isEmpty) return Access.NoRecord;
+    if (accessDetail.isEmpty) return Access.NoRecord
     if(accessDetail.getValue(0, 1) == true){
-      return Access.Write
+      Access.Write
     }else if(accessDetail.getValue(0, 0) == true){
-      return Access.Read
+      Access.Read
     }else{
-      return Access.None
+      Access.None
     }
   }
 
