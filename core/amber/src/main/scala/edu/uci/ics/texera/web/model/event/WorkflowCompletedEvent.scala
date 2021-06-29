@@ -5,33 +5,16 @@ import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.Workflow
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler
+import edu.uci.ics.texera.workflow.operators.sink.SimpleSinkOpDesc
 import edu.uci.ics.texera.workflow.operators.visualization.VisualizationOperator
 
 import scala.collection.mutable
 
 object WebOperatorResult {
   def getChartType(operatorID: String, workflowCompiler: WorkflowCompiler): Option[String] = {
-    val outLinks =
-      workflowCompiler.workflowInfo.links.filter(link => link.origin.operatorID == operatorID)
-    val isSink = outLinks.isEmpty
-
-    if (!isSink) {
-      return None
-    }
-
-    // add chartType to result
-    val precedentOpID =
-      workflowCompiler.workflowInfo.links
-        .find(link => link.destination.operatorID == operatorID)
-        .get
-        .origin
-    val precedentOp =
-      workflowCompiler.workflowInfo.operators
-        .find(op => op.operatorID == precedentOpID.operatorID)
-        .get
-    precedentOp match {
-      case operator: VisualizationOperator => Option.apply(operator.chartType())
-      case _                               => Option.empty
+    workflowCompiler.workflow.getOperator(operatorID) match {
+      case sink: SimpleSinkOpDesc => sink.getChartType
+      case _                      => Option.empty
     }
   }
 

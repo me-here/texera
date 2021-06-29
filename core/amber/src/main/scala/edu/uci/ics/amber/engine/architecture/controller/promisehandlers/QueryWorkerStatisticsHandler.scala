@@ -20,8 +20,9 @@ import scala.collection.mutable
 
 object QueryWorkerStatisticsHandler {
 
-  final case class ControllerInitiateQueryStatistics(workers: Option[List[ActorVirtualIdentity]])
-      extends ControlCommand[Unit]
+  final case class ControllerInitiateQueryStatistics(
+      workers: Option[List[ActorVirtualIdentity]] = Option.empty
+  ) extends ControlCommand[Unit]
 
   // ask the controller to initiate querying worker results
   // optionally specify the workers to query, None indicates querying all sink workers

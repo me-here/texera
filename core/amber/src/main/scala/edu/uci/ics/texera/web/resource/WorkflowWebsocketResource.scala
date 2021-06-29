@@ -51,32 +51,6 @@ object WorkflowWebsocketResource {
   // Map[sessionId, Map[downloadType, googleSheetLink]
   val sessionDownloadCache = new mutable.HashMap[String, mutable.HashMap[String, String]]
 
-  /**
-    * Calculate which page in frontend need to be re-fetched
-    * @param beforeList data before status update event (i.e. unmodified sessionResults)
-    * @param afterList data after status update event
-    * @return list of indices of modified pages starting from 1
-    */
-  def getDirtyPageIndices(beforeList: List[ITuple], afterList: List[ITuple]): List[Int] = {
-    val pageSize = 10
-
-    var currentIndex = 1
-    var currentIndexPageCount = 0
-    val dirtyPageIndices = new mutable.HashSet[Int]()
-    for ((before, after) <- beforeList.zipAll(afterList, null, null)) {
-      if (before == null || after == null || !before.equals(after)) {
-        dirtyPageIndices.add(currentIndex)
-      }
-      currentIndexPageCount += 1
-      if (currentIndexPageCount == pageSize) {
-        currentIndexPageCount = 0
-        currentIndex += 1
-      }
-    }
-
-    dirtyPageIndices.toList
-  }
-
 }
 
 @ServerEndpoint(
@@ -246,31 +220,25 @@ class WorkflowWebsocketResource {
         WorkflowWebsocketResource.sessionJobs.remove(session.getId)
       },
       workflowStatusUpdateListener = statusUpdate => {
-        // TODO: temporarily disable progressive result update until a further PR
-//        val sinkOpDirtyPageIndices = statusUpdate.operatorStatistics
-//          .filter(e => e._2.aggregatedOutputResults.isDefined)
-//          .map(e => {
-//            val beforeList =
-//              sessionResults.getOrElse(session.getId, Map.empty).getOrElse(e._1, List.empty)
-//            val afterList = e._2.aggregatedOutputResults.get
-//            val dirtyPageIndices = getDirtyPageIndices(beforeList, afterList)
-//            (e._1, dirtyPageIndices)
-//          })
+        send(session, WebWorkflowStatusUpdateEvent.apply(statusUpdate))
+      },
+      workflowResultUpdateListener = resultUpdate => {
+//         TODO: temporarily disable progressive result update until a further PR
+//                val sinkOpDirtyPageIndices = resultUpdate.operatorResults
+//                  .map(e => {
+//                    val beforeList =
+//                      sessionResults.getOrElse(session.getId, Map.empty).getOrElse(e._1, List.empty)
+//                    val afterList = e._2.result
+//                    val dirtyPageIndices = getDirtyPageIndices(beforeList, afterList)
+//                    (e._1, dirtyPageIndices)
+//                  })
 //
-//        sessionResults.update(
-//          session.getId,
-//          statusUpdate.operatorStatistics
-//            .filter(e => e._2.aggregatedOutputResults.isDefined)
-//            .map(e => (e._1, e._2.aggregatedOutputResults.get))
-//        )
-//        send(
-//          session,
-//          WebWorkflowStatusUpdateEvent.apply(
-//            statusUpdate,
-//            sinkOpDirtyPageIndices,
-//            texeraWorkflowCompiler
-//          )
-//        )
+//                sessionResults.update(
+//                  session.getId,
+//                  statusUpdate.operatorStatistics
+//                    .filter(e => e._2.aggregatedOutputResults.isDefined)
+//                    .map(e => (e._1, e._2.aggregatedOutputResults.get))
+//                )
       },
       modifyLogicCompletedListener = _ => {
         send(session, ModifyLogicCompletedEvent())
