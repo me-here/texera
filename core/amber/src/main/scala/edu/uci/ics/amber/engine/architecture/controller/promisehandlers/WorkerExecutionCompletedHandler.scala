@@ -11,6 +11,10 @@ import edu.uci.ics.amber.engine.architecture.controller.{
 }
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.KillWorkflowHandler.KillWorkflow
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.QueryWorkerStatisticsHandler.{
+  ControllerInitiateQueryResults,
+  ControllerInitiateQueryStatistics
+}
 import edu.uci.ics.amber.engine.architecture.principal.OperatorState
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.CollectSinkResultsHandler.CollectSinkResults
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
@@ -20,8 +24,10 @@ import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.Work
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
 import edu.uci.ics.amber.engine.operators.SinkOpExecConfig
 
+import scala.collection.mutable
+
 object WorkerExecutionCompletedHandler {
-  final case class WorkerExecutionCompleted() extends ControlCommand[CommandCompleted]
+  final case class WorkerExecutionCompleted() extends ControlCommand[Unit]
 }
 
 /** indicate a worker has completed its job
@@ -39,25 +45,33 @@ trait WorkerExecutionCompletedHandler {
       assert(sender.isInstanceOf[WorkerActorVirtualIdentity])
       // get the corresponding operator of this worker
       val operator = workflow.getOperator(sender)
-      val future =
-        if (operator.isInstanceOf[SinkOpExecConfig]) {
-          // if the operator is sink, first query stats then collect results of this worker.
-          send(QueryStatistics(), sender).join(send(CollectSinkResults(), sender)).map {
-            case (stats, results) =>
-              val workerInfo = operator.getWorker(sender)
-              workerInfo.stats = stats
-              workerInfo.state = stats.workerState
-              operator.acceptResultTuples(results)
-          }
-        } else {
-          // if the operator is not a sink, just query the stats
-          send(QueryStatistics(), sender).map { stats =>
-            val workerInfo = operator.getWorker(sender)
-            workerInfo.stats = stats
-            workerInfo.state = stats.workerState
-          }
-        }
-      future.flatMap { ret =>
+
+      // after worker execution is completed, query statistics immediately one last time
+      // because the worker might be killed before the next query statistics interval
+      // and the user sees the last update before completion
+      val requests = new mutable.MutableList[Future[Unit]]()
+      requests += execute(
+        ControllerInitiateQueryStatistics(Option(List(sender))),
+        ActorVirtualIdentity.Controller
+      )
+
+      // if operator is sink, additionally query result immediately one last time
+      if (operator.isInstanceOf[SinkOpExecConfig]) {
+        requests += execute(
+          ControllerInitiateQueryResults(Option(List(sender))),
+          ActorVirtualIdentity.Controller
+        )
+        // TODO: unify collect sink result (for final completion) and query results (for incremental update)
+        // TODO: this is a current hack to send QueryOperatorResult first, then send CollectSinkResult
+        //       because in SET_DELTA output mode, QueryOperatorResult should fetch and clear the result cache
+        requests += send(CollectSinkResults(), sender).map(results =>
+          operator.acceptResultTuples(results)
+        )
+      }
+
+      val allRequests = Future.collect(requests.toList)
+
+      allRequests.flatMap { ret =>
         updateFrontendWorkflowStatus()
         if (workflow.isCompleted) {
           //send result to frontend
@@ -73,11 +87,8 @@ trait WorkerExecutionCompletedHandler {
           actorContext.parent ! ControllerState.Completed // for testing
           // clean up all workers and terminate self
           execute(KillWorkflow(), ActorVirtualIdentity.Controller)
-        } else {
-          Future {
-            CommandCompleted()
-          }
         }
+        Future.Done
       }
     }
   }

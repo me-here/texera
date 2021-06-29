@@ -20,7 +20,8 @@ import scala.collection.mutable
 
 object QueryWorkerStatisticsHandler {
 
-  final case class ControllerInitiateQueryStatistics() extends ControlCommand[Unit]
+  final case class ControllerInitiateQueryStatistics(workers: Option[List[ActorVirtualIdentity]])
+      extends ControlCommand[Unit]
 
   // ask the controller to initiate querying worker results
   // optionally specify the workers to query, None indicates querying all sink workers
@@ -37,10 +38,12 @@ trait QueryWorkerStatisticsHandler {
 
   registerHandler { (msg: ControllerInitiateQueryStatistics, sender) =>
     {
-      // send QueryStatistics message to all workers
-      val requests = workflow.getAllWorkers.toList.map(worker =>
-        send(QueryStatistics(), worker).map(res => (worker, res))
-      )
+      // send to specified workers (or all workers by default)
+      val workers = msg.workers.getOrElse(workflow.getAllWorkers).toList
+
+      // send QueryStatistics message
+      val requests =
+        workers.map(worker => send(QueryStatistics(), worker).map(res => (worker, res)))
 
       // wait for all workers to reply
       val allResponses = Future.collect(requests)
