@@ -2,7 +2,7 @@ syntax = "proto3";
 
 
 package edu.uci.ics.amber.engine.common;
-import "google/protobuf/any.proto";
+
 import "edu/uci/ics/amber/engine/common/virtualidentity.proto";
 import "edu/uci/ics/amber/engine/architecture/worker/promisehandler2.proto";
 
@@ -21,7 +21,7 @@ message ControlPayload{
 
 message ReturnPayload {
   int64 originalCommandID = 1;
-  google.protobuf.Any returnValue = 2;
+  edu.uci.ics.amber.engine.architecture.worker.ControlCommand returnValue = 2;
 }
 
 

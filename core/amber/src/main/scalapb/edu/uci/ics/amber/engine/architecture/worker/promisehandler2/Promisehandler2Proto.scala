@@ -8,11 +8,14 @@ package edu.uci.ics.amber.engine.architecture.worker.promisehandler2
 object Promisehandler2Proto extends _root_.scalapb.GeneratedFileObject {
   lazy val dependencies: Seq[_root_.scalapb.GeneratedFileObject] = Seq(
     edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2.Datatransferpolicy2Proto,
-    edu.uci.ics.amber.engine.common.virtualidentity.VirtualidentityProto
+    edu.uci.ics.amber.engine.common.virtualidentity.VirtualidentityProto,
+    edu.uci.ics.amber.engine.common.statetransition2.Statetransition2Proto
   )
   lazy val messagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]] =
     Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]](
+      edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics,
       edu.uci.ics.amber.engine.architecture.worker.promisehandler2.StartWorker,
+      edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics,
       edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking,
       edu.uci.ics.amber.engine.architecture.worker.promisehandler2.AddOutputPolicy,
       edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage
@@ -22,17 +25,25 @@ object Promisehandler2Proto extends _root_.scalapb.GeneratedFileObject {
   """CkJlZHUvdWNpL2ljcy9hbWJlci9lbmdpbmUvYXJjaGl0ZWN0dXJlL3dvcmtlci9wcm9taXNlaGFuZGxlcjIucHJvdG8SLGVkd
   S51Y2kuaWNzLmFtYmVyLmVuZ2luZS5hcmNoaXRlY3R1cmUud29ya2VyGk1lZHUvdWNpL2ljcy9hbWJlci9lbmdpbmUvYXJjaGl0Z
   WN0dXJlL3NlbmRzZW1hbnRpY3MvZGF0YXRyYW5zZmVycG9saWN5Mi5wcm90bxo1ZWR1L3VjaS9pY3MvYW1iZXIvZW5naW5lL2Nvb
-  W1vbi92aXJ0dWFsaWRlbnRpdHkucHJvdG8iDQoLU3RhcnRXb3JrZXIi2QEKElVwZGF0ZUlucHV0TGlua2luZxJmCgppZGVudGlma
-  WVyGAEgASgLMjUuZWR1LnVjaS5pY3MuYW1iZXIuZW5naW5lLmNvbW1vbi5BY3RvclZpcnR1YWxJZGVudGl0eUIP4j8MEgppZGVud
-  GlmaWVyUgppZGVudGlmaWVyElsKCWlucHV0TGluaxgCIAEoCzItLmVkdS51Y2kuaWNzLmFtYmVyLmVuZ2luZS5jb21tb24uTGlua
-  0lkZW50aXR5Qg7iPwsSCWlucHV0TGlua1IJaW5wdXRMaW5rIn4KD0FkZE91dHB1dFBvbGljeRJrCgZwb2xpY3kYASABKAsyRi5lZ
-  HUudWNpLmljcy5hbWJlci5lbmdpbmUuYXJjaGl0ZWN0dXJlLnNlbmRzZW1hbnRpY3MuRGF0YVNlbmRpbmdQb2xpY3lCC+I/CBIGc
-  G9saWN5UgZwb2xpY3kioAMKDkNvbnRyb2xDb21tYW5kEn8KD2FkZE91dHB1dFBvbGljeRgDIAEoCzI9LmVkdS51Y2kuaWNzLmFtY
-  mVyLmVuZ2luZS5hcmNoaXRlY3R1cmUud29ya2VyLkFkZE91dHB1dFBvbGljeUIU4j8REg9hZGRPdXRwdXRQb2xpY3lIAFIPYWRkT
-  3V0cHV0UG9saWN5Em8KC3N0YXJ0V29ya2VyGAQgASgLMjkuZWR1LnVjaS5pY3MuYW1iZXIuZW5naW5lLmFyY2hpdGVjdHVyZS53b
-  3JrZXIuU3RhcnRXb3JrZXJCEOI/DRILc3RhcnRXb3JrZXJIAFILc3RhcnRXb3JrZXISiwEKEnVwZGF0ZUlucHV0TGlua2luZxgFI
-  AEoCzJALmVkdS51Y2kuaWNzLmFtYmVyLmVuZ2luZS5hcmNoaXRlY3R1cmUud29ya2VyLlVwZGF0ZUlucHV0TGlua2luZ0IX4j8UE
-  hJ1cGRhdGVJbnB1dExpbmtpbmdIAFISdXBkYXRlSW5wdXRMaW5raW5nQg4KDHNlYWxlZF92YWx1ZWIGcHJvdG8z"""
+  W1vbi92aXJ0dWFsaWRlbnRpdHkucHJvdG8aNmVkdS91Y2kvaWNzL2FtYmVyL2VuZ2luZS9jb21tb24vc3RhdGV0cmFuc2l0aW9uM
+  i5wcm90byIRCg9RdWVyeVN0YXRpc3RpY3MiDQoLU3RhcnRXb3JrZXIi6wEKEFdvcmtlclN0YXRpc3RpY3MSYAoLd29ya2VyU3Rhd
+  GUYASABKAsyLC5lZHUudWNpLmljcy5hbWJlci5lbmdpbmUuY29tbW9uLldvcmtlclN0YXRlQhDiPw0SC3dvcmtlclN0YXRlUgt3b
+  3JrZXJTdGF0ZRI4Cg1pbnB1dFJvd0NvdW50GAIgASgDQhLiPw8SDWlucHV0Um93Q291bnRSDWlucHV0Um93Q291bnQSOwoOb3V0c
+  HV0Um93Q291bnQYAyABKANCE+I/EBIOb3V0cHV0Um93Q291bnRSDm91dHB1dFJvd0NvdW50ItkBChJVcGRhdGVJbnB1dExpbmtpb
+  mcSZgoKaWRlbnRpZmllchgBIAEoCzI1LmVkdS51Y2kuaWNzLmFtYmVyLmVuZ2luZS5jb21tb24uQWN0b3JWaXJ0dWFsSWRlbnRpd
+  HlCD+I/DBIKaWRlbnRpZmllclIKaWRlbnRpZmllchJbCglpbnB1dExpbmsYAiABKAsyLS5lZHUudWNpLmljcy5hbWJlci5lbmdpb
+  mUuY29tbW9uLkxpbmtJZGVudGl0eUIO4j8LEglpbnB1dExpbmtSCWlucHV0TGluayJ+Cg9BZGRPdXRwdXRQb2xpY3kSawoGcG9sa
+  WN5GAEgASgLMkYuZWR1LnVjaS5pY3MuYW1iZXIuZW5naW5lLmFyY2hpdGVjdHVyZS5zZW5kc2VtYW50aWNzLkRhdGFTZW5kaW5nU
+  G9saWN5QgviPwgSBnBvbGljeVIGcG9saWN5IqcFCg5Db250cm9sQ29tbWFuZBJ/Cg9hZGRPdXRwdXRQb2xpY3kYAyABKAsyPS5lZ
+  HUudWNpLmljcy5hbWJlci5lbmdpbmUuYXJjaGl0ZWN0dXJlLndvcmtlci5BZGRPdXRwdXRQb2xpY3lCFOI/ERIPYWRkT3V0cHV0U
+  G9saWN5SABSD2FkZE91dHB1dFBvbGljeRJvCgtzdGFydFdvcmtlchgEIAEoCzI5LmVkdS51Y2kuaWNzLmFtYmVyLmVuZ2luZS5hc
+  mNoaXRlY3R1cmUud29ya2VyLlN0YXJ0V29ya2VyQhDiPw0SC3N0YXJ0V29ya2VySABSC3N0YXJ0V29ya2VyEosBChJ1cGRhdGVJb
+  nB1dExpbmtpbmcYBSABKAsyQC5lZHUudWNpLmljcy5hbWJlci5lbmdpbmUuYXJjaGl0ZWN0dXJlLndvcmtlci5VcGRhdGVJbnB1d
+  ExpbmtpbmdCF+I/FBISdXBkYXRlSW5wdXRMaW5raW5nSABSEnVwZGF0ZUlucHV0TGlua2luZxJ/Cg9xdWVyeVN0YXRpc3RpY3MYB
+  iABKAsyPS5lZHUudWNpLmljcy5hbWJlci5lbmdpbmUuYXJjaGl0ZWN0dXJlLndvcmtlci5RdWVyeVN0YXRpc3RpY3NCFOI/ERIPc
+  XVlcnlTdGF0aXN0aWNzSABSD3F1ZXJ5U3RhdGlzdGljcxKDAQoQd29ya2VyU3RhdGlzdGljcxgHIAEoCzI+LmVkdS51Y2kuaWNzL
+  mFtYmVyLmVuZ2luZS5hcmNoaXRlY3R1cmUud29ya2VyLldvcmtlclN0YXRpc3RpY3NCFeI/EhIQd29ya2VyU3RhdGlzdGljc0gAU
+  hB3b3JrZXJTdGF0aXN0aWNzQg4KDHNlYWxlZF92YWx1ZWIGcHJvdG8z"""
       ).mkString)
   lazy val scalaDescriptor: _root_.scalapb.descriptors.FileDescriptor = {
     val scalaProto = com.google.protobuf.descriptor.FileDescriptorProto.parseFrom(ProtoBytes)
@@ -42,7 +53,8 @@ object Promisehandler2Proto extends _root_.scalapb.GeneratedFileObject {
     val javaProto = com.google.protobuf.DescriptorProtos.FileDescriptorProto.parseFrom(ProtoBytes)
     com.google.protobuf.Descriptors.FileDescriptor.buildFrom(javaProto, _root_.scala.Array(
       edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2.Datatransferpolicy2Proto.javaDescriptor,
-      edu.uci.ics.amber.engine.common.virtualidentity.VirtualidentityProto.javaDescriptor
+      edu.uci.ics.amber.engine.common.virtualidentity.VirtualidentityProto.javaDescriptor,
+      edu.uci.ics.amber.engine.common.statetransition2.Statetransition2Proto.javaDescriptor
     ))
   }
   @deprecated("Use javaDescriptor instead. In a future version this will refer to scalaDescriptor.", "ScalaPB 0.5.47")

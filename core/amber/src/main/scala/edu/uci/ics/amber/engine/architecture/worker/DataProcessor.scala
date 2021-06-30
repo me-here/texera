@@ -10,15 +10,11 @@ import edu.uci.ics.amber.engine.common.ambermessage.ControlPayload
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCServer}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Completed
+import edu.uci.ics.amber.engine.common.statetransition2.Completed
 import edu.uci.ics.amber.engine.common.tuple.ITuple
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  LinkIdentity
-}
-import edu.uci.ics.amber.engine.common.{IOperatorExecutor, InputExhausted, WorkflowLogger}
+import edu.uci.ics.amber.engine.common.virtualidentity.util.{CONTROLLER, SELF}
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
-import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
+import edu.uci.ics.amber.engine.common.{IOperatorExecutor, InputExhausted, WorkflowLogger}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
@@ -163,7 +159,7 @@ class DataProcessor( // dependencies:
     // Send Completed signal to worker actor.
     logger.logInfo(s"${operator.toString} completed")
     asyncRPCClient.send(WorkerExecutionCompleted(), CONTROLLER)
-    stateManager.transitTo(Completed)
+    stateManager.transitTo(Completed())
     disableDataQueue()
     processControlCommandsAfterCompletion()
   }
@@ -182,7 +178,7 @@ class DataProcessor( // dependencies:
     }
     logger.logWarning(e.getLocalizedMessage + "\n" + e.getStackTrace.mkString("\n"))
     // invoke a pause in-place
-    asyncRPCServer.execute(PauseWorker(), ActorVirtualIdentity.Self)
+    asyncRPCServer.execute(PauseWorker(), SELF)
   }
 
   private[this] def handleInputTuple(): Unit = {

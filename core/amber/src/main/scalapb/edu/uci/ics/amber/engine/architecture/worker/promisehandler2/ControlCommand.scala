@@ -24,12 +24,16 @@ object ControlCommand {
       case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.AddOutputPolicy => __v.value
       case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.StartWorker => __v.value
       case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.UpdateInputLinking => __v.value
+      case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.QueryStatistics => __v.value
+      case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerStatistics => __v.value
       case edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.Empty => Empty
     }
     override def toBase(__custom: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommand): edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage(__custom match {
       case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.AddOutputPolicy => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.AddOutputPolicy(__v)
       case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.StartWorker => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.StartWorker(__v)
       case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.UpdateInputLinking(__v)
+      case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.QueryStatistics(__v)
+      case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerStatistics(__v)
       case Empty => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.Empty
     })
   }
@@ -53,6 +57,14 @@ final case class ControlCommandMessage(
       };
       if (sealedValue.updateInputLinking.isDefined) {
         val __value = sealedValue.updateInputLinking.get
+        __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(__value.serializedSize) + __value.serializedSize
+      };
+      if (sealedValue.queryStatistics.isDefined) {
+        val __value = sealedValue.queryStatistics.get
+        __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(__value.serializedSize) + __value.serializedSize
+      };
+      if (sealedValue.workerStatistics.isDefined) {
+        val __value = sealedValue.workerStatistics.get
         __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(__value.serializedSize) + __value.serializedSize
       };
       __size += unknownFields.serializedSize
@@ -85,6 +97,18 @@ final case class ControlCommandMessage(
         _output__.writeUInt32NoTag(__m.serializedSize)
         __m.writeTo(_output__)
       };
+      sealedValue.queryStatistics.foreach { __v =>
+        val __m = __v
+        _output__.writeTag(6, 2)
+        _output__.writeUInt32NoTag(__m.serializedSize)
+        __m.writeTo(_output__)
+      };
+      sealedValue.workerStatistics.foreach { __v =>
+        val __m = __v
+        _output__.writeTag(7, 2)
+        _output__.writeUInt32NoTag(__m.serializedSize)
+        __m.writeTo(_output__)
+      };
       unknownFields.writeTo(_output__)
     }
     def getAddOutputPolicy: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.AddOutputPolicy = sealedValue.addOutputPolicy.getOrElse(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.AddOutputPolicy.defaultInstance)
@@ -93,6 +117,10 @@ final case class ControlCommandMessage(
     def withStartWorker(__v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.StartWorker): ControlCommandMessage = copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.StartWorker(__v))
     def getUpdateInputLinking: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking = sealedValue.updateInputLinking.getOrElse(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking.defaultInstance)
     def withUpdateInputLinking(__v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking): ControlCommandMessage = copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.UpdateInputLinking(__v))
+    def getQueryStatistics: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics = sealedValue.queryStatistics.getOrElse(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics.defaultInstance)
+    def withQueryStatistics(__v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics): ControlCommandMessage = copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.QueryStatistics(__v))
+    def getWorkerStatistics: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics = sealedValue.workerStatistics.getOrElse(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics.defaultInstance)
+    def withWorkerStatistics(__v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics): ControlCommandMessage = copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerStatistics(__v))
     def clearSealedValue: ControlCommandMessage = copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.Empty)
     def withSealedValue(__v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue): ControlCommandMessage = copy(sealedValue = __v)
     def withUnknownFields(__v: _root_.scalapb.UnknownFieldSet) = copy(unknownFields = __v)
@@ -102,6 +130,8 @@ final case class ControlCommandMessage(
         case 3 => sealedValue.addOutputPolicy.orNull
         case 4 => sealedValue.startWorker.orNull
         case 5 => sealedValue.updateInputLinking.orNull
+        case 6 => sealedValue.queryStatistics.orNull
+        case 7 => sealedValue.workerStatistics.orNull
       }
     }
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = {
@@ -110,6 +140,8 @@ final case class ControlCommandMessage(
         case 3 => sealedValue.addOutputPolicy.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
         case 4 => sealedValue.startWorker.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
         case 5 => sealedValue.updateInputLinking.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
+        case 6 => sealedValue.queryStatistics.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
+        case 7 => sealedValue.workerStatistics.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
@@ -134,6 +166,10 @@ object ControlCommandMessage extends scalapb.GeneratedMessageCompanion[edu.uci.i
           __sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.StartWorker(__sealedValue.startWorker.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.StartWorker](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
         case 42 =>
           __sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.UpdateInputLinking(__sealedValue.updateInputLinking.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
+        case 50 =>
+          __sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.QueryStatistics(__sealedValue.queryStatistics.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
+        case 58 =>
+          __sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerStatistics(__sealedValue.workerStatistics.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
         case tag =>
           if (_unknownFields__ == null) {
             _unknownFields__ = new _root_.scalapb.UnknownFieldSet.Builder()
@@ -153,18 +189,22 @@ object ControlCommandMessage extends scalapb.GeneratedMessageCompanion[edu.uci.i
         sealedValue = __fieldsMap.get(scalaDescriptor.findFieldByNumber(3).get).flatMap(_.as[_root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.AddOutputPolicy]]).map(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.AddOutputPolicy(_))
             .orElse[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue](__fieldsMap.get(scalaDescriptor.findFieldByNumber(4).get).flatMap(_.as[_root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.StartWorker]]).map(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.StartWorker(_)))
             .orElse[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue](__fieldsMap.get(scalaDescriptor.findFieldByNumber(5).get).flatMap(_.as[_root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking]]).map(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.UpdateInputLinking(_)))
+            .orElse[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue](__fieldsMap.get(scalaDescriptor.findFieldByNumber(6).get).flatMap(_.as[_root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics]]).map(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.QueryStatistics(_)))
+            .orElse[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue](__fieldsMap.get(scalaDescriptor.findFieldByNumber(7).get).flatMap(_.as[_root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics]]).map(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerStatistics(_)))
             .getOrElse(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.Empty)
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(3)
-  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(3)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(5)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(5)
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = {
     var __out: _root_.scalapb.GeneratedMessageCompanion[_] = null
     (__number: @_root_.scala.unchecked) match {
       case 3 => __out = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.AddOutputPolicy
       case 4 => __out = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.StartWorker
       case 5 => __out = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking
+      case 6 => __out = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics
+      case 7 => __out = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics
     }
     __out
   }
@@ -179,9 +219,13 @@ object ControlCommandMessage extends scalapb.GeneratedMessageCompanion[edu.uci.i
     def isAddOutputPolicy: _root_.scala.Boolean = false
     def isStartWorker: _root_.scala.Boolean = false
     def isUpdateInputLinking: _root_.scala.Boolean = false
+    def isQueryStatistics: _root_.scala.Boolean = false
+    def isWorkerStatistics: _root_.scala.Boolean = false
     def addOutputPolicy: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.AddOutputPolicy] = _root_.scala.None
     def startWorker: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.StartWorker] = _root_.scala.None
     def updateInputLinking: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking] = _root_.scala.None
+    def queryStatistics: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics] = _root_.scala.None
+    def workerStatistics: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics] = _root_.scala.None
   }
   object SealedValue {
     @SerialVersionUID(0L)
@@ -214,16 +258,34 @@ object ControlCommandMessage extends scalapb.GeneratedMessageCompanion[edu.uci.i
       override def updateInputLinking: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking] = Some(value)
       override def number: _root_.scala.Int = 5
     }
+    @SerialVersionUID(0L)
+    final case class QueryStatistics(value: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics) extends edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue {
+      type ValueType = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics
+      override def isQueryStatistics: _root_.scala.Boolean = true
+      override def queryStatistics: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics] = Some(value)
+      override def number: _root_.scala.Int = 6
+    }
+    @SerialVersionUID(0L)
+    final case class WorkerStatistics(value: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics) extends edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue {
+      type ValueType = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics
+      override def isWorkerStatistics: _root_.scala.Boolean = true
+      override def workerStatistics: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics] = Some(value)
+      override def number: _root_.scala.Int = 7
+    }
   }
   implicit class ControlCommandMessageLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage](_l) {
     def addOutputPolicy: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.AddOutputPolicy] = field(_.getAddOutputPolicy)((c_, f_) => c_.copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.AddOutputPolicy(f_)))
     def startWorker: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.StartWorker] = field(_.getStartWorker)((c_, f_) => c_.copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.StartWorker(f_)))
     def updateInputLinking: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking] = field(_.getUpdateInputLinking)((c_, f_) => c_.copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.UpdateInputLinking(f_)))
+    def queryStatistics: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics] = field(_.getQueryStatistics)((c_, f_) => c_.copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.QueryStatistics(f_)))
+    def workerStatistics: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics] = field(_.getWorkerStatistics)((c_, f_) => c_.copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerStatistics(f_)))
     def sealedValue: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue] = field(_.sealedValue)((c_, f_) => c_.copy(sealedValue = f_))
   }
   final val ADDOUTPUTPOLICY_FIELD_NUMBER = 3
   final val STARTWORKER_FIELD_NUMBER = 4
   final val UPDATEINPUTLINKING_FIELD_NUMBER = 5
+  final val QUERYSTATISTICS_FIELD_NUMBER = 6
+  final val WORKERSTATISTICS_FIELD_NUMBER = 7
   def of(
     sealedValue: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue
   ): _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage = _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage(
@@ -324,8 +386,8 @@ object AddOutputPolicy extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amb
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(2)
-  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(2)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(4)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(4)
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = {
     var __out: _root_.scalapb.GeneratedMessageCompanion[_] = null
     (__number: @_root_.scala.unchecked) match {
@@ -410,8 +472,8 @@ object StartWorker extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.e
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(0)
-  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(0)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(1)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(1)
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = throw new MatchError(__number)
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
@@ -538,8 +600,8 @@ object UpdateInputLinking extends scalapb.GeneratedMessageCompanion[edu.uci.ics.
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(1)
-  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(1)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(3)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(3)
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = {
     var __out: _root_.scalapb.GeneratedMessageCompanion[_] = null
     (__number: @_root_.scala.unchecked) match {
@@ -571,4 +633,257 @@ object UpdateInputLinking extends scalapb.GeneratedMessageCompanion[edu.uci.ics.
     inputLink
   )
   // @@protoc_insertion_point(GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.UpdateInputLinking])
+}
+
+@SerialVersionUID(0L)
+final case class QueryStatistics(
+    unknownFields: _root_.scalapb.UnknownFieldSet = _root_.scalapb.UnknownFieldSet.empty
+    ) extends scalapb.GeneratedMessage with edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommand.NonEmpty with scalapb.lenses.Updatable[QueryStatistics] {
+    @transient
+    private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
+    private[this] def __computeSerializedValue(): _root_.scala.Int = {
+      var __size = 0
+      __size += unknownFields.serializedSize
+      __size
+    }
+    override def serializedSize: _root_.scala.Int = {
+      var read = __serializedSizeCachedValue
+      if (read == 0) {
+        read = __computeSerializedValue()
+        __serializedSizeCachedValue = read
+      }
+      read
+    }
+    def writeTo(`_output__`: _root_.com.google.protobuf.CodedOutputStream): _root_.scala.Unit = {
+      unknownFields.writeTo(_output__)
+    }
+    def withUnknownFields(__v: _root_.scalapb.UnknownFieldSet) = copy(unknownFields = __v)
+    def discardUnknownFields = copy(unknownFields = _root_.scalapb.UnknownFieldSet.empty)
+    def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = throw new MatchError(__fieldNumber)
+    def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = throw new MatchError(__field)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics
+    // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.QueryStatistics])
+}
+
+object QueryStatistics extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics] {
+  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics] = this
+  def parseFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics = {
+    var `_unknownFields__`: _root_.scalapb.UnknownFieldSet.Builder = null
+    var _done__ = false
+    while (!_done__) {
+      val _tag__ = _input__.readTag()
+      _tag__ match {
+        case 0 => _done__ = true
+        case tag =>
+          if (_unknownFields__ == null) {
+            _unknownFields__ = new _root_.scalapb.UnknownFieldSet.Builder()
+          }
+          _unknownFields__.parseField(tag, _input__)
+      }
+    }
+    edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics(
+        unknownFields = if (_unknownFields__ == null) _root_.scalapb.UnknownFieldSet.empty else _unknownFields__.result()
+    )
+  }
+  implicit def messageReads: _root_.scalapb.descriptors.Reads[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics] = _root_.scalapb.descriptors.Reads{
+    case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
+      _root_.scala.Predef.require(__fieldsMap.keys.forall(_.containingMessage eq scalaDescriptor), "FieldDescriptor does not match message type.")
+      edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics(
+      )
+    case _ => throw new RuntimeException("Expected PMessage")
+  }
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(0)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(0)
+  def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = throw new MatchError(__number)
+  lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]] = Seq.empty
+  def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
+  lazy val defaultInstance = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics(
+  )
+  implicit class QueryStatisticsLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics](_l) {
+  }
+  def of(
+  ): _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics = _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics(
+  )
+  // @@protoc_insertion_point(GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.QueryStatistics])
+}
+
+@SerialVersionUID(0L)
+final case class WorkerStatistics(
+    workerState: edu.uci.ics.amber.engine.common.statetransition2.WorkerState = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics._typemapper_workerState.toCustom(edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage.defaultInstance),
+    inputRowCount: _root_.scala.Long = 0L,
+    outputRowCount: _root_.scala.Long = 0L,
+    unknownFields: _root_.scalapb.UnknownFieldSet = _root_.scalapb.UnknownFieldSet.empty
+    ) extends scalapb.GeneratedMessage with edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommand.NonEmpty with scalapb.lenses.Updatable[WorkerStatistics] {
+    @transient
+    private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
+    private[this] def __computeSerializedValue(): _root_.scala.Int = {
+      var __size = 0
+      
+      {
+        val __value = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics._typemapper_workerState.toBase(workerState)
+        if (__value != edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage.defaultInstance) {
+          __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(__value.serializedSize) + __value.serializedSize
+        }
+      };
+      
+      {
+        val __value = inputRowCount
+        if (__value != 0L) {
+          __size += _root_.com.google.protobuf.CodedOutputStream.computeInt64Size(2, __value)
+        }
+      };
+      
+      {
+        val __value = outputRowCount
+        if (__value != 0L) {
+          __size += _root_.com.google.protobuf.CodedOutputStream.computeInt64Size(3, __value)
+        }
+      };
+      __size += unknownFields.serializedSize
+      __size
+    }
+    override def serializedSize: _root_.scala.Int = {
+      var read = __serializedSizeCachedValue
+      if (read == 0) {
+        read = __computeSerializedValue()
+        __serializedSizeCachedValue = read
+      }
+      read
+    }
+    def writeTo(`_output__`: _root_.com.google.protobuf.CodedOutputStream): _root_.scala.Unit = {
+      {
+        val __v = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics._typemapper_workerState.toBase(workerState)
+        if (__v != edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage.defaultInstance) {
+          _output__.writeTag(1, 2)
+          _output__.writeUInt32NoTag(__v.serializedSize)
+          __v.writeTo(_output__)
+        }
+      };
+      {
+        val __v = inputRowCount
+        if (__v != 0L) {
+          _output__.writeInt64(2, __v)
+        }
+      };
+      {
+        val __v = outputRowCount
+        if (__v != 0L) {
+          _output__.writeInt64(3, __v)
+        }
+      };
+      unknownFields.writeTo(_output__)
+    }
+    def withWorkerState(__v: edu.uci.ics.amber.engine.common.statetransition2.WorkerState): WorkerStatistics = copy(workerState = __v)
+    def withInputRowCount(__v: _root_.scala.Long): WorkerStatistics = copy(inputRowCount = __v)
+    def withOutputRowCount(__v: _root_.scala.Long): WorkerStatistics = copy(outputRowCount = __v)
+    def withUnknownFields(__v: _root_.scalapb.UnknownFieldSet) = copy(unknownFields = __v)
+    def discardUnknownFields = copy(unknownFields = _root_.scalapb.UnknownFieldSet.empty)
+    def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = {
+      (__fieldNumber: @_root_.scala.unchecked) match {
+        case 1 => {
+          val __t = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics._typemapper_workerState.toBase(workerState)
+          if (__t != edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage.defaultInstance) __t else null
+        }
+        case 2 => {
+          val __t = inputRowCount
+          if (__t != 0L) __t else null
+        }
+        case 3 => {
+          val __t = outputRowCount
+          if (__t != 0L) __t else null
+        }
+      }
+    }
+    def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = {
+      _root_.scala.Predef.require(__field.containingMessage eq companion.scalaDescriptor)
+      (__field.number: @_root_.scala.unchecked) match {
+        case 1 => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics._typemapper_workerState.toBase(workerState).toPMessage
+        case 2 => _root_.scalapb.descriptors.PLong(inputRowCount)
+        case 3 => _root_.scalapb.descriptors.PLong(outputRowCount)
+      }
+    }
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics
+    // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.WorkerStatistics])
+}
+
+object WorkerStatistics extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics] {
+  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics] = this
+  def parseFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics = {
+    var __workerState: _root_.scala.Option[edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage] = _root_.scala.None
+    var __inputRowCount: _root_.scala.Long = 0L
+    var __outputRowCount: _root_.scala.Long = 0L
+    var `_unknownFields__`: _root_.scalapb.UnknownFieldSet.Builder = null
+    var _done__ = false
+    while (!_done__) {
+      val _tag__ = _input__.readTag()
+      _tag__ match {
+        case 0 => _done__ = true
+        case 10 =>
+          __workerState = _root_.scala.Some(__workerState.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
+        case 16 =>
+          __inputRowCount = _input__.readInt64()
+        case 24 =>
+          __outputRowCount = _input__.readInt64()
+        case tag =>
+          if (_unknownFields__ == null) {
+            _unknownFields__ = new _root_.scalapb.UnknownFieldSet.Builder()
+          }
+          _unknownFields__.parseField(tag, _input__)
+      }
+    }
+    edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics(
+        workerState = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics._typemapper_workerState.toCustom(__workerState.getOrElse(edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage.defaultInstance)),
+        inputRowCount = __inputRowCount,
+        outputRowCount = __outputRowCount,
+        unknownFields = if (_unknownFields__ == null) _root_.scalapb.UnknownFieldSet.empty else _unknownFields__.result()
+    )
+  }
+  implicit def messageReads: _root_.scalapb.descriptors.Reads[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics] = _root_.scalapb.descriptors.Reads{
+    case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
+      _root_.scala.Predef.require(__fieldsMap.keys.forall(_.containingMessage eq scalaDescriptor), "FieldDescriptor does not match message type.")
+      edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics(
+        workerState = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics._typemapper_workerState.toCustom(__fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage]).getOrElse(edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage.defaultInstance)),
+        inputRowCount = __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).map(_.as[_root_.scala.Long]).getOrElse(0L),
+        outputRowCount = __fieldsMap.get(scalaDescriptor.findFieldByNumber(3).get).map(_.as[_root_.scala.Long]).getOrElse(0L)
+      )
+    case _ => throw new RuntimeException("Expected PMessage")
+  }
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(2)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(2)
+  def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = {
+    var __out: _root_.scalapb.GeneratedMessageCompanion[_] = null
+    (__number: @_root_.scala.unchecked) match {
+      case 1 => __out = edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage
+    }
+    __out
+  }
+  lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]] = Seq.empty
+  def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
+  lazy val defaultInstance = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics(
+    workerState = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics._typemapper_workerState.toCustom(edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage.defaultInstance),
+    inputRowCount = 0L,
+    outputRowCount = 0L
+  )
+  implicit class WorkerStatisticsLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics](_l) {
+    def workerState: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.common.statetransition2.WorkerState] = field(_.workerState)((c_, f_) => c_.copy(workerState = f_))
+    def inputRowCount: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Long] = field(_.inputRowCount)((c_, f_) => c_.copy(inputRowCount = f_))
+    def outputRowCount: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Long] = field(_.outputRowCount)((c_, f_) => c_.copy(outputRowCount = f_))
+  }
+  final val WORKERSTATE_FIELD_NUMBER = 1
+  final val INPUTROWCOUNT_FIELD_NUMBER = 2
+  final val OUTPUTROWCOUNT_FIELD_NUMBER = 3
+  @transient
+  private[promisehandler2] val _typemapper_workerState: _root_.scalapb.TypeMapper[edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage, edu.uci.ics.amber.engine.common.statetransition2.WorkerState] = implicitly[_root_.scalapb.TypeMapper[edu.uci.ics.amber.engine.common.statetransition2.WorkerStateMessage, edu.uci.ics.amber.engine.common.statetransition2.WorkerState]]
+  def of(
+    workerState: edu.uci.ics.amber.engine.common.statetransition2.WorkerState,
+    inputRowCount: _root_.scala.Long,
+    outputRowCount: _root_.scala.Long
+  ): _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics = _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics(
+    workerState,
+    inputRowCount,
+    outputRowCount
+  )
+  // @@protoc_insertion_point(GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.WorkerStatistics])
 }

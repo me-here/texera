@@ -13,6 +13,7 @@ class NetworkReceiver(StoppableThread):
         self._proxy_server = ProxyServer(host=host, port=port)
 
         def data_handler(from_: ActorVirtualIdentity, data_payload: Table):
+            logger.info(f"getting a data payload {data_payload} from {from_}")
             shared_queue.put(InputDataElement(batch=data_payload, from_=from_))
 
         self._proxy_server.register_data_handler(data_handler)

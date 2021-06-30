@@ -2,7 +2,7 @@ wheel
 attrs==21.2.0
 iniconfig==1.1.1
 loguru==0.5.3
-numpy==1.19.5
+numpy~=1.21.0
 packaging==20.9
 pandas==1.2.4
 pluggy==0.13.1
@@ -16,3 +16,11 @@ six==1.15.0
 toml==0.10.2
 pytest-timeout==1.4.2
 protobuf==3.17.3
+
+betterproto~=2.0.0b3
+typing~=3.7.4.3
+asyncio~=3.4.3
+sklearn~=0.0
+scikit-learn~=0.24.2
+gensim~=3.8.3
+pyLDAvis~=3.3.1

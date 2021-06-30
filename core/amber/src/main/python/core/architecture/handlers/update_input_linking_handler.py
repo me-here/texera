@@ -2,7 +2,8 @@ from core.architecture.handlers.handler import Handler
 
 
 class UpdateInputLinkingHandler(Handler):
-    pass
+    def __call__(self, *args, **kwargs):
+        return None
 
 
 """

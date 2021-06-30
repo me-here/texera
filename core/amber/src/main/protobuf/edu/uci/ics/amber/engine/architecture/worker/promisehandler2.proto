@@ -3,8 +3,17 @@ syntax = "proto3";
 package edu.uci.ics.amber.engine.architecture.worker;
 import "edu/uci/ics/amber/engine/architecture/sendsemantics/datatransferpolicy2.proto";
 import "edu/uci/ics/amber/engine/common/virtualidentity.proto";
+import "edu/uci/ics/amber/engine/common/statetransition2.proto";
 
+message QueryStatistics{}
 message StartWorker{}
+message WorkerStatistics{
+  edu.uci.ics.amber.engine.common.WorkerState workerState = 1;
+  int64 inputRowCount = 2;
+  int64 outputRowCount = 3;
+
+}
+
 
 message UpdateInputLinking{
   edu.uci.ics.amber.engine.common.ActorVirtualIdentity identifier = 1;
@@ -20,6 +29,8 @@ message ControlCommand {
     AddOutputPolicy addOutputPolicy = 3;
     StartWorker startWorker = 4;
     UpdateInputLinking updateInputLinking = 5;
+    QueryStatistics queryStatistics = 6;
+    WorkerStatistics workerStatistics = 7;
   }
 
 }

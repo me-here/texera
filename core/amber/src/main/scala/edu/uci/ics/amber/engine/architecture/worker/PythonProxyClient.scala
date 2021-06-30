@@ -1,16 +1,20 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
 import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.{DataSendingPolicy, OneToOnePolicy, RoundRobinPolicy}
+import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2
 import edu.uci.ics.amber.engine.architecture.worker.PythonProxyClient.communicate
 import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{ControlElement, DataElement}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.StartHandler.StartWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.UpdateInputLinkingHandler.UpdateInputLinking
 import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataFrame, DataPayload}
+import edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
+import edu.uci.ics.amber.engine.common.{IOperatorExecutor, ambermessage2}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType}
 import org.apache.arrow.flight._
@@ -36,7 +40,7 @@ object PythonProxyClient {
     client.doAction(new Action(message)).next.getBody
 }
 
-case class PythonProxyClient(portNumber: Int)
+case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
     extends Runnable
         with AutoCloseable
         with WorkerBatchInternalQueue {
@@ -89,7 +93,7 @@ case class PythonProxyClient(portNumber: Int)
 
       getElement match {
         case DataElement(dataPayload, from) =>
-          println("java got a dataPayload")
+          println("java got a dataPayload " + dataPayload)
           dataPayload match {
             case DataFrame(frame) =>
               val tuples = mutable.Queue(frame.map((t: ITuple) => t.asInstanceOf[Tuple]): _*)
@@ -108,67 +112,75 @@ case class PythonProxyClient(portNumber: Int)
   def sendControl(cmd: ControlPayload, from: ActorVirtualIdentity): Unit = {
     cmd match {
       case ControlInvocation(commandID: Long, command: ControlCommand[_]) => {
-        println(" RPC CLIENT GOT COMMAND: " + command)
+        println(" RPC CLIENT GOT COMMAND [id=" + commandID + "]: " + command)
 
         command match {
-          case AddOutputPolicy(policy: DataSendingPolicy) =>
-            var protobufPolicy: edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2.DataSendingPolicy = null
+          case AddOutputPolicy(policy: DataSendingPolicy) => var protobufPolicy: datatransferpolicy2.DataSendingPolicy = null
 
             policy match {
               case _: OneToOnePolicy =>
-                protobufPolicy = edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2.OneToOnePolicy(
+                protobufPolicy = datatransferpolicy2.OneToOnePolicy(
                   Option(policy.policyTag), policy.batchSize, policy.receivers)
 
               case _: RoundRobinPolicy =>
-                protobufPolicy = edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2.RoundRobinPolicy(
+                protobufPolicy = datatransferpolicy2.RoundRobinPolicy(
                   Option(policy.policyTag), policy.batchSize, policy.receivers)
               case _ => throw new UnsupportedOperationException("not supported data policy")
             }
 
-            val protobufCommand = edu.uci.ics.amber.engine.architecture.worker.promisehandler2
-                .AddOutputPolicy(protobufPolicy)
-            val protobufControlInvocation = edu.uci.ics.amber.engine.common.ambermessage2
-                .ControlInvocation(commandID = commandID, command = protobufCommand)
-
-            val controlMessage =
-              edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage(
-                from = from,
-                sequenceNumber = 0L,
-                payload = protobufControlInvocation
-              )
+            val protobufCommand = promisehandler2.AddOutputPolicy(protobufPolicy)
+            val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
+            println(" RPC CLIENT SENT:" + controlMessage)
             val action: Action = new Action("control", controlMessage.toByteArray)
             println(flightClient.doAction(action).next())
-
           case StartWorker() =>
-          case UpdateInputLinking(identifier, inputLink) =>
-            val protobufCommand = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking(identifier = identifier, inputLink = Option(
+          case UpdateInputLinking(identifier, inputLink) => {
+            val protobufCommand = promisehandler2.UpdateInputLinking(identifier = identifier, inputLink = Option(
               inputLink)
             )
-            val protobufControlInvocation = edu.uci.ics.amber.engine.common.ambermessage2
-                .ControlInvocation(commandID = commandID, command = protobufCommand)
-            val controlMessage =
-              edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage(
-                from = from,
-                sequenceNumber = 0L,
-                payload = protobufControlInvocation
-              )
+            val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
             val action: Action = new Action("control", controlMessage.toByteArray)
             println(flightClient.doAction(action).next())
             println("finish command update input linking")
+          }
+          case QueryStatistics() => {
+            val protobufCommand = promisehandler2.QueryStatistics()
+            val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
+            val action: Action = new Action("control", controlMessage.toByteArray)
+            println(flightClient.doAction(action).next())
+            println("finish command QueryStatistics")
+          }
+
         }
 
       }
     }
   }
 
+  def toWorkflowControlMessage2(from: ActorVirtualIdentity, commandID: Long, controlCommand: promisehandler2.ControlCommand): WorkflowControlMessage = {
+    toWorkflowControlMessage2(from, toControlInvocation2(commandID, controlCommand))
+  }
+
+  def toWorkflowControlMessage2(from: ActorVirtualIdentity, controlPayload: ambermessage2.ControlPayload): WorkflowControlMessage = {
+    ambermessage2.WorkflowControlMessage(
+      from = from,
+      sequenceNumber = 0L,
+      payload = controlPayload
+    )
+  }
+
+  def toControlInvocation2(commandID: Long, controlCommand: promisehandler2.ControlCommand): ambermessage2.ControlInvocation = {
+    ambermessage2.ControlInvocation(commandID = commandID, command = controlCommand)
+  }
+
   /**
-    * For every batch, the operator converts list of {@code Tuple}s into Arrow stream data in almost the exact same
-    * way as it would when using Arrow file, except now it sends stream to the server with
-    * {@link FlightClient#startPut(FlightDescriptor, VectorSchemaRoot, FlightClient.PutListener, CallOption...)} and
-    * {@link FlightClient.ClientStreamListener#putNext()}. The server uses {@code do_put()} to receive data stream
-    * and convert it into a {@code pyarrow.Table} and store it in the server.
-    * {@code startPut} is a non-blocking call, but this method in general is a blocking call, it waits until all the
-    * data are sent.
+   * For every batch, the operator converts list of {@code Tuple}s into Arrow stream data in almost the exact same
+   * way as it would when using Arrow file, except now it sends stream to the server with
+   * {@link FlightClient# startPut ( FlightDescriptor, VectorSchemaRoot, FlightClient.PutListener, CallOption...)} and
+   * {@link FlightClient.ClientStreamListener# putNext ( )}. The server uses {@code do_put()} to receive data stream
+   * and convert it into a {@code pyarrow.Table} and store it in the server.
+   * {@code startPut} is a non-blocking call, but this method in general is a blocking call, it waits until all the
+   * data are sent.
     *
     * @param client      The FlightClient that manages this.
     * @param values      The input queue that holds tuples, its contents will be consumed in this method.
@@ -201,6 +213,7 @@ case class PythonProxyClient(portNumber: Int)
           try globalInputSchema = convertAmber2ArrowSchema(tuple.getSchema)
           catch {
             case exception: RuntimeException =>
+              exception.printStackTrace()
             //          closeAndThrow(flightClient, exception)
           }
         if (schemaRoot == null)
@@ -220,8 +233,9 @@ case class PythonProxyClient(portNumber: Int)
       flightListener.close()
       schemaRoot.clear()
     } catch {
-      case e: Exception =>
-//        closeAndThrow(client, e)
+      case e: _ =>
+        e.printStackTrace()
+      //        closeAndThrow(client, e)
     }
 
   }

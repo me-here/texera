@@ -1,8 +1,9 @@
-from core.architecture.handlers.handler import Handler
+from .handler import Handler
 
 
 class AddOutputPolicyHandler(Handler):
-    pass
+    def __call__(self, *args, **kwargs):
+        return None
 
 
 """

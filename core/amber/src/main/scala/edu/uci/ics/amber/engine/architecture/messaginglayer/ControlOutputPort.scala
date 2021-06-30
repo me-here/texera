@@ -1,16 +1,12 @@
 package edu.uci.ics.amber.engine.architecture.messaginglayer
 
-import java.util.concurrent.atomic.AtomicLong
-import edu.uci.ics.amber.engine.common.ambermessage.WorkflowControlMessage
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  NetworkSenderActorRef,
-  SendRequest
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkSenderActorRef, SendRequest}
 import edu.uci.ics.amber.engine.common.WorkflowLogger
-import edu.uci.ics.amber.engine.common.ambermessage.ControlPayload
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.util.SELF
 
+import java.util.concurrent.atomic.AtomicLong
 import scala.collection.mutable
 
 /** This class handles the assignment of sequence numbers to controls

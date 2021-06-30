@@ -4,7 +4,6 @@ import edu.uci.ics.amber.engine.architecture.messaginglayer.ControlOutputPort
 import edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ReturnPayload
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.CommandCompleted
-import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
 import kotlin.NotImplementedError
 import org.apache.arrow.flight._
 import org.apache.arrow.flight.example.InMemoryStore
@@ -19,12 +18,25 @@ private class AmberProducer(allocator: BufferAllocator, location: Location, cont
     action.getType match {
       case "control" =>
         val workflowControlMessage = WorkflowControlMessage.parseFrom(action.getBody)
-        println("java got!!!" + workflowControlMessage)
-        println(CONTROLLER == workflowControlMessage.from)
-        println(workflowControlMessage.payload)
+        println("JAVA received CONTROL from PYTHON " + workflowControlMessage)
 
-
-        controlOutputPort.sendTo(to = workflowControlMessage.from, payload = ReturnPayload(originalCommandID = workflowControlMessage.payload.asMessage.getReturnPayload.originalCommandID, returnValue = CommandCompleted()))
+        var returnValue1: Any = null
+        workflowControlMessage.payload match {
+          case returnPayloadV2: edu.uci.ics.amber.engine.common.ambermessage2.ReturnPayload => {
+            if (returnPayloadV2.returnValue.isDefined) {
+              returnPayloadV2.returnValue match {
+                case workerStatistics: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics => {
+                  println(" this is statistics:::" + workerStatistics)
+                  returnValue1 = WorkerStatistics(workerStatistics.workerState, workerStatistics.inputRowCount, workerStatistics.outputRowCount, None)
+                }
+              }
+            }
+          }
+          case _ => returnValue1 = CommandCompleted()
+        }
+        controlOutputPort.sendTo(to = workflowControlMessage.from, payload = ReturnPayload(
+          originalCommandID = workflowControlMessage.payload.asMessage.getReturnPayload.originalCommandID
+          , returnValue = returnValue1))
         listener.onNext(new Result("ack".getBytes))
         listener.onCompleted()
       case _ => throw new NotImplementedError()

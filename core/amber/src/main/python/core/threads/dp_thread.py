@@ -42,8 +42,9 @@ class DPThread(StoppableQueueBlockingThread):
 
     def main_loop(self) -> None:
         next_entry = self.interruptible_get()
-        logger.debug(f"getting an entry {next_entry}")
+        logger.info(f"PYTHON DP receive an entry from queue: {next_entry}")
         if isinstance(next_entry, InputDataElement):
+            logger.info(f"PYTHON DP receive a DATA: {next_entry}")
             for element in self._batch_to_tuple_converter.process_data_payload(next_entry.from_, next_entry.batch):
                 if isinstance(element, Tuple):
                     self._current_input_tuple = element
@@ -61,16 +62,17 @@ class DPThread(StoppableQueueBlockingThread):
                     #  to invoke `batchProducer.emitEndOfUpstream()`
                     self.stop()
         elif isinstance(next_entry, ControlElement):
+            logger.info(f"PYTHON DP receive a CONTROL: {next_entry}")
             self.process_control_command(next_entry.cmd, next_entry.from_)
         else:
             raise TypeError(f"unknown InternalQueueElement {next_entry}")
 
     def process_control_command(self, cmd: ControlPayload, from_: ActorVirtualIdentity):
-        logger.info(f"processing one control")
-        # cmd.
+        logger.info(f"PYTHON DP processing one CONTROL: {cmd} from {from_}")
+
         payload = get_oneof(cmd)
         if isinstance(payload, ControlInvocation):
-            logger.debug("it's control invocation")
+            logger.info(f"PYTHON DP processing one CONTROL INVOCATION: {payload} from {from_}")
             self._rpc_server.receive(control_invocation=payload, from_=from_)
 
     #      cmd match {

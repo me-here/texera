@@ -6,8 +6,20 @@ from dataclasses import dataclass
 
 
 @dataclass(eq=False, repr=False)
+class QueryStatistics(betterproto.Message):
+    pass
+
+
+@dataclass(eq=False, repr=False)
 class StartWorker(betterproto.Message):
     pass
+
+
+@dataclass(eq=False, repr=False)
+class WorkerStatistics(betterproto.Message):
+    worker_state: "__common__.WorkerState" = betterproto.message_field(1)
+    input_row_count: int = betterproto.int64_field(2)
+    output_row_count: int = betterproto.int64_field(3)
 
 
 @dataclass(eq=False, repr=False)
@@ -29,6 +41,12 @@ class ControlCommand(betterproto.Message):
     start_worker: "StartWorker" = betterproto.message_field(4, group="sealed_value")
     update_input_linking: "UpdateInputLinking" = betterproto.message_field(
         5, group="sealed_value"
+    )
+    query_statistics: "QueryStatistics" = betterproto.message_field(
+        6, group="sealed_value"
+    )
+    worker_statistics: "WorkerStatistics" = betterproto.message_field(
+        7, group="sealed_value"
     )
 
 

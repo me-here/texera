@@ -7,26 +7,18 @@ import edu.uci.ics.amber.engine.architecture.deploysemantics.deploystrategy.Depl
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.RegisterActorRef
 import edu.uci.ics.amber.engine.architecture.worker.{WorkerStatistics, WorkflowWorker}
 import edu.uci.ics.amber.engine.common.IOperatorExecutor
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{
-  Uninitialized,
-  WorkerState
-}
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  LayerIdentity,
-  LinkIdentity,
-  WorkerActorVirtualIdentity
-}
+import edu.uci.ics.amber.engine.common.statetransition2.{Uninitialized, WorkerState}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LayerIdentity, LinkIdentity, WorkerActorVirtualIdentity}
 import edu.uci.ics.amber.engine.operators.OpExecConfig
 
 import scala.collection.mutable
 
 class WorkerLayer(
-    val id: LayerIdentity,
-    var metadata: Int => IOperatorExecutor,
-    var numWorkers: Int,
-    val deploymentFilter: DeploymentFilter,
-    val deployStrategy: DeployStrategy
+                     val id: LayerIdentity,
+                     var metadata: Int => IOperatorExecutor,
+                     var numWorkers: Int,
+                     val deploymentFilter: DeploymentFilter,
+                     val deployStrategy: DeployStrategy
 ) extends Serializable {
 
   private val startDependencies = mutable.HashSet[LinkIdentity]()
@@ -73,8 +65,8 @@ class WorkerLayer(
       workerToLayer(workerID) = this
       workerID -> WorkerInfo(
         workerID,
-        Uninitialized,
-        WorkerStatistics(Uninitialized, 0, 0)
+        Uninitialized(),
+        WorkerStatistics(Uninitialized(), 0, 0)
       )
     }.toMap
   }

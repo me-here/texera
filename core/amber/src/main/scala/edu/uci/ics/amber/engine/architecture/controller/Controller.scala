@@ -7,26 +7,20 @@ import com.softwaremill.macwire.wire
 import com.twitter.util.Future
 import edu.uci.ics.amber.clustering.ClusterListener.GetAvailableNodeAddresses
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
-import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{
-  ErrorOccurred,
-  WorkflowStatusUpdate
-}
+import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{ErrorOccurred, WorkflowStatusUpdate}
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LinkWorkersHandler.LinkWorkers
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  NetworkMessage,
-  RegisterActorRef
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkMessage, RegisterActorRef}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
 import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Ready
-import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, WorkflowIdentity}
+import edu.uci.ics.amber.engine.common.statetransition2.Ready
 import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, WorkflowIdentity}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
-import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext}
 
 object ControllerConfig {
   def default: ControllerConfig =
@@ -97,7 +91,7 @@ class Controller(
       )
     }.toSeq)
     .onSuccess { ret =>
-      workflow.getAllOperators.foreach(_.setAllWorkerState(Ready))
+      workflow.getAllOperators.foreach(_.setAllWorkerState(Ready()))
       if (eventListener.workflowStatusUpdateListener != null) {
         eventListener.workflowStatusUpdateListener
           .apply(WorkflowStatusUpdate(workflow.getWorkflowStatus))

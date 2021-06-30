@@ -1,15 +1,25 @@
 import time
 from collections import defaultdict
 
+import re
 from betterproto import which_one_of, Message
 from google.protobuf.any_pb2 import Any
 
 from edu.uci.ics.amber.engine.common import LayerIdentity, LinkIdentity
 
+pattern = re.compile(r'(?<!^)(?=[A-Z])')
 
-def get_oneof(base: Any) -> Any:
+
+def get_oneof(base: Message) -> Message:
     _, value = which_one_of(base, "sealed_value")
     return value
+
+
+def set_oneof(base: type, value: Message) -> Any:
+    snake_case_name = re.sub(pattern, '_', value.__class__.__name__).lower()
+    ret = base()
+    ret.__setattr__(snake_case_name, value)
+    return ret
 
 
 class ProtoDict(defaultdict):

@@ -35,7 +35,7 @@ class PythonWorkflowWorker(
 
   override def receive: Receive = receiveAndProcessMessages
 
-  start
+  start()
 
   def receiveAndProcessMessages: Receive = {
 
@@ -52,8 +52,7 @@ class PythonWorkflowWorker(
   }
 
   final def handleDataPayload(from: ActorVirtualIdentity, dataPayload: DataPayload): Unit = {
-//    tupleProducer.processDataPayload(from, dataPayload)
-    println("handling a data payload!!!!")
+    println("JAVA handing a DATA payload " + dataPayload)
     pythonRPCClient.sendBatch(dataPayload, from)
   }
 
@@ -61,7 +60,7 @@ class PythonWorkflowWorker(
       from: ActorVirtualIdentity,
       controlPayload: ControlPayload
   ): Unit = {
-
+    println("JAVA handing a CONTROL payload " + controlPayload)
     controlPayload match {
       case controlCommand @ (ControlInvocation(_, _) | ReturnPayload(_, _)) =>
         pythonRPCClient.enqueueCommand(controlCommand, from)
@@ -74,20 +73,6 @@ class PythonWorkflowWorker(
           )
         )
     }
-//    // let dp thread process it
-//    assert(from.isInstanceOf[ActorVirtualIdentity])
-//    controlPayload match {
-//      case controlCommand @ (ControlInvocation(_, _) | ReturnPayload(_, _)) =>
-//        dataProcessor.enqueueCommand(controlCommand, from)
-//      case _ =>
-//        logger.logError(
-//          WorkflowRuntimeError(
-//            s"unhandled control payload: $controlPayload",
-//            identifier.toString,
-//            Map.empty
-//          )
-//        )
-//    }
   }
 
   def startRPCServer(outputPortNumber: Int): Unit = {
@@ -95,41 +80,14 @@ class PythonWorkflowWorker(
     val serverThread = serverThreadExecutor.submit(new PythonProxyServer(outputPortNumber, controlOutputPort))
   }
 
-  def startRPCClient(inputPortNumber: Int): Unit = {
-
-    pythonRPCClient = new PythonProxyClient(inputPortNumber)
-    clientThread = clientThreadExecutor.submit(pythonRPCClient)
-  }
-
   override def postStop(): Unit = {
     // shutdown dp thread by sending a command
     pythonServerProcess.destroyForcibly()
-    logger.logInfo("python core stopped!")
-  }
-
-  /**
-    * Get a random free port.
-    *
-    * @return The port number.
-    * @throws IOException,RuntimeException Might happen when getting a free port.
-    */ @throws[IOException]
-  @throws[RuntimeException]
-  private def getFreeLocalPort: Int = {
-    var s: ServerSocket = null
-    try { // ServerSocket(0) results in availability of a free random port
-      s = new ServerSocket(0)
-      s.getLocalPort
-    } catch {
-      case e: Exception =>
-        throw new RuntimeException(e)
-    } finally {
-      assert(s != null)
-      s.close()
-    }
+    logger.logInfo("PYTHON process stopped!")
   }
 
   @throws[IOException]
-  private def start: Unit = {
+  private def start(): Unit = {
     val outputPortNumber = getFreeLocalPort
     val inputPortNumber = getFreeLocalPort
     // Start Flight server (Python process)
@@ -149,5 +107,33 @@ class PythonWorkflowWorker(
     ).inheritIO.start
     startRPCClient(outputPortNumber)
 
+  }
+
+  /**
+   * Get a random free port.
+   *
+   * @return The port number.
+   * @throws IOException ,RuntimeException Might happen when getting a free port.
+   */
+  @throws[IOException]
+  @throws[RuntimeException]
+  private def getFreeLocalPort: Int = {
+    var s: ServerSocket = null
+    try { // ServerSocket(0) results in availability of a free random port
+      s = new ServerSocket(0)
+      s.getLocalPort
+    } catch {
+      case e: Exception =>
+        throw new RuntimeException(e)
+    } finally {
+      assert(s != null)
+      s.close()
+    }
+  }
+
+  def startRPCClient(inputPortNumber: Int): Unit = {
+
+    pythonRPCClient = new PythonProxyClient(inputPortNumber, operator)
+    clientThread = clientThreadExecutor.submit(pythonRPCClient)
   }
 }
