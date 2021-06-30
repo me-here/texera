@@ -1,9 +1,21 @@
 package edu.uci.ics.texera.web.resource.dashboard
 
 import edu.uci.ics.texera.web.SqlServer
-import edu.uci.ics.texera.web.model.jooq.generated.Tables.{WORKFLOW, WORKFLOW_OF_USER, WORKFLOW_USER_ACCESS}
-import edu.uci.ics.texera.web.model.jooq.generated.tables.daos.{WorkflowDao, WorkflowOfUserDao, WorkflowUserAccessDao}
-import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.{Workflow, WorkflowOfUser, WorkflowUserAccess}
+import edu.uci.ics.texera.web.model.jooq.generated.Tables.{
+  WORKFLOW,
+  WORKFLOW_OF_USER,
+  WORKFLOW_USER_ACCESS
+}
+import edu.uci.ics.texera.web.model.jooq.generated.tables.daos.{
+  WorkflowDao,
+  WorkflowOfUserDao,
+  WorkflowUserAccessDao
+}
+import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.{
+  Workflow,
+  WorkflowOfUser,
+  WorkflowUserAccess
+}
 import edu.uci.ics.texera.web.resource.auth.UserResource
 import edu.uci.ics.texera.web.resource.dashboard
 import io.dropwizard.jersey.sessions.Session
@@ -14,7 +26,6 @@ import javax.servlet.http.HttpSession
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 import scala.collection.immutable.HashMap
-
 
 object Access extends Enumeration {
   type Access = Value
@@ -60,20 +71,24 @@ class WorkflowAccessResource {
   final private val workflowOfUserDao = new WorkflowOfUserDao(
     SqlServer.createDSLContext.configuration
   )
-  final private val workflowUserAccessDao = new WorkflowUserAccessDao(SqlServer.createDSLContext().configuration())
-
+  final private val workflowUserAccessDao = new WorkflowUserAccessDao(
+    SqlServer.createDSLContext().configuration()
+  )
 
   /**
-   * This method identifies the user access level of the given workflow
-   *
-   * @param wid     the given workflow
-   * @param session the session indicating current User
-   * @return "None" or "Read" or "Write" or "Read& Write"
-   */
+    * This method identifies the user access level of the given workflow
+    *
+    * @param wid     the given workflow
+    * @param session the session indicating current User
+    * @return "None" or "Read" or "Write" or "Read& Write"
+    */
   @GET
   @Path("/workflow/{wid}/level")
   @Produces(Array(MediaType.APPLICATION_JSON))
-  def retrieveUserAccessLevel(@PathParam("wid") wid: UInteger, @Session session: HttpSession): Response = {
+  def retrieveUserAccessLevel(
+      @PathParam("wid") wid: UInteger,
+      @Session session: HttpSession
+  ): Response = {
     UserResource.getUser(session) match {
       case Some(user) =>
         val uid = user.getUid
@@ -83,6 +98,5 @@ class WorkflowAccessResource {
         Response.status(Response.Status.UNAUTHORIZED).build()
     }
   }
-
 
 }
