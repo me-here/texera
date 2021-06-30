@@ -27,7 +27,7 @@ private class AmberProducer(allocator: BufferAllocator, location: Location, cont
               returnPayloadV2.returnValue match {
                 case workerStatistics: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics => {
                   println(" this is statistics:::" + workerStatistics)
-                  returnValue1 = WorkerStatistics(workerStatistics.workerState, workerStatistics.inputRowCount, workerStatistics.outputRowCount, None)
+                  returnValue1 = WorkerStatistics(workerStatistics.workerState, workerStatistics.inputRowCount, workerStatistics.outputRowCount)
                 }
               }
             }

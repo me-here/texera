@@ -15,6 +15,7 @@ import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, ambermessage2}
+import edu.uci.ics.texera.workflow.common.operators.OperatorExecutor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType}
 import org.apache.arrow.flight._
@@ -198,7 +199,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
 
     println(" NOW WRITING A DATA BATCH " + chunkSize + " from " + from.asMessage.toString)
     val flightListener = new SyncPutListener
-    var schemaRoot: VectorSchemaRoot = null
+    var schemaRoot: VectorSchemaRoot = VectorSchemaRoot.create(convertAmber2ArrowSchema(operator.asInstanceOf[OperatorExecutor].), PythonUDFOpExec.memoryAllocator)
 
     val streamWriter = client.startPut(
       FlightDescriptor.command(from.asMessage.toByteArray),
@@ -233,7 +234,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
       flightListener.close()
       schemaRoot.clear()
     } catch {
-      case e: _ =>
+      case e: Exception =>
         e.printStackTrace()
       //        closeAndThrow(client, e)
     }

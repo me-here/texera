@@ -2,17 +2,14 @@ package edu.uci.ics.texera.unittest.workflow.operators.intersect
 
 import edu.uci.ics.amber.engine.common.InputExhausted
 import edu.uci.ics.amber.engine.common.virtualidentity.{LayerIdentity, LinkIdentity}
-import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType, Schema}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
+import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType, Schema}
 import edu.uci.ics.texera.workflow.operators.intersect.IntersectOpExec
-import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.BeforeAndAfter
+import org.scalatest.flatspec.AnyFlatSpec
 
 import scala.util.Random
 class IntersectOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
-  var opExec: IntersectOpExec = _
-  var counter: Int = 0
-
   val tupleSchema: Schema = Schema
     .newBuilder()
     .add(new Attribute("field1", AttributeType.STRING))
@@ -21,13 +18,15 @@ class IntersectOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
       new Attribute("field3", AttributeType.BOOLEAN)
     )
     .build()
+  var opExec: IntersectOpExec = _
+  var counter: Int = 0
+
+  def linkID(): LinkIdentity = LinkIdentity(Option(layerID()), Option(layerID()))
 
   def layerID(): LayerIdentity = {
     counter += 1
     LayerIdentity("" + counter, "" + counter, "" + counter)
   }
-
-  def linkID(): LinkIdentity = LinkIdentity(layerID(), layerID())
 
   def tuple(): Tuple = {
     counter += 1
