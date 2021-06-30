@@ -1,6 +1,7 @@
 package edu.uci.ics.texera.web.resource
 
 import com.fasterxml.jackson.databind.node.ObjectNode
+import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.WorkflowResultUpdate
 import edu.uci.ics.amber.engine.architecture.principal.OperatorResult
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.texera.web.model.event.TexeraWebSocketEvent
@@ -8,14 +9,16 @@ import edu.uci.ics.texera.web.resource.OperatorResultService.{
   PaginationMode,
   SetDeltaMode,
   SetSnapshotMode,
-  WebResultUpdateMode,
+  WebOutputMode,
   defaultPageSize
 }
 import edu.uci.ics.texera.web.resource.WorkflowResultService.calculateDirtyPageIndices
-//import edu.uci.ics.texera.web.resource.OperatorResultService.{PaginationMode, WebResultUpdateMode}
-import edu.uci.ics.texera.workflow.common.IncrementalOutputMode
-import edu.uci.ics.texera.workflow.common.tuple.Tuple
+import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource.send
+import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler
+import edu.uci.ics.texera.workflow.operators.sink.SimpleSinkOpDesc
 import edu.uci.ics.texera.workflow.common.IncrementalOutputMode.{SET_DELTA, SET_SNAPSHOT}
+import edu.uci.ics.texera.workflow.common.tuple.Tuple
+import javax.websocket.Session
 
 import scala.collection.mutable
 
@@ -54,61 +57,96 @@ object OperatorResultService {
 
   val defaultPageSize: Int = 10
 
-  sealed abstract class WebResultUpdateMode extends Product with Serializable
-  final case class PaginationMode() extends WebResultUpdateMode
-  final case class SetSnapshotMode() extends WebResultUpdateMode
-  final case class SetDeltaMode() extends WebResultUpdateMode
+  /**
+    * Behavior for different modes:
+    *  - PaginationMode   (used by view result operator)
+    *     - send new number of pages and dirty page index
+    *  - SetSnapshotMode  (used by visualization in snapshot mode)
+    *     - send entire result snapshot to frontend
+    *  - SetDeltaMode     (used by visualization in snapshot mode)
+    *     - send incremental delta result to frontend
+    */
+  sealed abstract class WebOutputMode extends Product with Serializable
+  final case class PaginationMode() extends WebOutputMode
+  final case class SetSnapshotMode() extends WebOutputMode
+  final case class SetDeltaMode() extends WebOutputMode
 
-  case class WebPaginationUpdate(mode: PaginationMode, numPages: Int, dirtyPageIndices: List[Int])
-  case class WebDataUpdate(
-      mode: WebResultUpdateMode,
-      table: List[ObjectNode],
-      chartType: Option[String]
-  )
-
-  case class WebResultUpdateEvent(updates: Map[String, Either[WebPaginationUpdate, WebDataUpdate]])
-      extends TexeraWebSocketEvent
 }
+
+case class WebPaginationUpdate(mode: PaginationMode, numPages: Int, dirtyPageIndices: List[Int])
+
+object WebDataUpdate {
+  def fromTuple(
+      mode: WebOutputMode,
+      table: List[ITuple],
+      chartType: Option[String]
+  ): WebDataUpdate = {
+    val tableInJson = table.map(t => t.asInstanceOf[Tuple].asKeyValuePairJson())
+    WebDataUpdate(mode, tableInJson, chartType)
+  }
+}
+case class WebDataUpdate(mode: WebOutputMode, table: List[ObjectNode], chartType: Option[String])
+
+case class WebResultUpdateEvent(updates: Map[String, Either[WebPaginationUpdate, WebDataUpdate]])
+    extends TexeraWebSocketEvent
 
 /**
   * Service that manages the materialized result of an operator.
-  *
-  * This service always keep the latest snapshot of the computation result.
-  *
-  * Behavior for different modes:
-  *  - PaginationMode (used by view result operator)
-  *     - engine sends update in SET_SNAPSHOT mode
-  *     - send new number of pages and dirty page index
-  *  - Visualization Operator in SET_SNAPSHOT mode:
-  *     - send entire result snapshot to frontend
-  *  - Visualization Operator in SET_DELTA mode:
-  *     - send incremental delta result to frontend
+  * It always keeps the latest snapshot of the computation result.
   */
-class OperatorResultService(val operatorID: String, val updateMode: WebResultUpdateMode) {
+class OperatorResultService(val operatorID: String, val workflowCompiler: WorkflowCompiler) {
+
+  val webOutputMode: WebOutputMode = {
+    val op = workflowCompiler.workflow.getOperator(operatorID)
+    if (!op.isInstanceOf[SimpleSinkOpDesc]) {
+      throw new RuntimeException("operator is not sink: " + op.operatorID)
+    }
+    val sink = op.asInstanceOf[SimpleSinkOpDesc]
+    (sink.getOutputMode, sink.getChartType) match {
+      case (SET_SNAPSHOT, Some(_)) => SetSnapshotMode()
+      case (SET_DELTA, Some(_))    => SetDeltaMode()
+      case (_, None)               => PaginationMode()
+    }
+  }
+
+  val chartType: Option[String] = {
+    val op = workflowCompiler.workflow.getOperator(operatorID)
+    if (!op.isInstanceOf[SimpleSinkOpDesc]) {
+      throw new RuntimeException("operator is not sink: " + op.operatorID)
+    }
+    op.asInstanceOf[SimpleSinkOpDesc].getChartType
+  }
 
   private var result: List[ITuple] = List()
 
-  def onResultUpdate(resultUpdate: OperatorResult): Unit = {
-    (updateMode, resultUpdate.outputMode) match {
-      case (PaginationMode(), SET_SNAPSHOT) => {
+  def convertWebResultUpdate(
+      resultUpdate: OperatorResult
+  ): Either[WebPaginationUpdate, WebDataUpdate] = {
+    (webOutputMode, resultUpdate.outputMode) match {
+      case (PaginationMode(), SET_SNAPSHOT) =>
         val dirtyPageIndices =
           calculateDirtyPageIndices(result, resultUpdate.result, defaultPageSize)
         val newNumPages = math.ceil(resultUpdate.result.size.toDouble / defaultPageSize).toInt
+        Left(WebPaginationUpdate(PaginationMode(), newNumPages, dirtyPageIndices))
 
-        result = resultUpdate.result
-      }
-
-      case (SetSnapshotMode(), SET_SNAPSHOT) =>
-        result = resultUpdate.result
-
-      case (SetDeltaMode(), SET_DELTA) =>
+      case (SetSnapshotMode(), SET_SNAPSHOT) | (SetDeltaMode(), SET_DELTA) =>
+        Right(WebDataUpdate.fromTuple(webOutputMode, resultUpdate.result, chartType))
 
       // currently not supported mode combinations
       // (PaginationMode, SET_DELTA) | (DataSnapshotMode, SET_DELTA) | (DataDeltaMode, SET_SNAPSHOT)
       case _ =>
         throw new RuntimeException(
-          "update mode combination not supported: " + (updateMode, resultUpdate.outputMode)
+          "update mode combination not supported: " + (webOutputMode, resultUpdate.outputMode)
         )
+    }
+  }
+
+  def updateSnapshot(resultUpdate: OperatorResult): Unit = {
+    resultUpdate.outputMode match {
+      case SET_SNAPSHOT =>
+        this.result = resultUpdate.result
+      case SET_DELTA =>
+        this.result = (this.result ++ resultUpdate.result)
     }
   }
 
@@ -116,4 +154,28 @@ class OperatorResultService(val operatorID: String, val updateMode: WebResultUpd
 
 }
 
-class WorkflowResultService {}
+class WorkflowResultService(val workflowCompiler: WorkflowCompiler) {
+
+  val operatorResults: Map[String, OperatorResultService] =
+    workflowCompiler.workflow.getSinkOperators
+      .map(sink => (sink, new OperatorResultService(sink, workflowCompiler)))
+      .toMap
+
+  def onResultUpdate(resultUpdate: WorkflowResultUpdate, session: Session): Unit = {
+
+    // prepare web update event to frontend
+    val webUpdateEvent = resultUpdate.operatorResults.map(e => {
+      val opResultService = operatorResults(e._1)
+      val webUpdateEvent = opResultService.convertWebResultUpdate(e._2)
+      (e._1, webUpdateEvent)
+    })
+
+    // update the result snapshot of each operator
+    resultUpdate.operatorResults.foreach(e => operatorResults(e._1).updateSnapshot(e._2))
+
+    // send update event to frontend
+    send(session, WebResultUpdateEvent(webUpdateEvent))
+
+  }
+
+}

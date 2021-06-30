@@ -14,7 +14,6 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatist
 }
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
-import edu.uci.ics.texera.web.model.event.WebOperatorResult
 
 import scala.collection.mutable
 
@@ -26,8 +25,9 @@ object QueryWorkerStatisticsHandler {
 
   // ask the controller to initiate querying worker results
   // optionally specify the workers to query, None indicates querying all sink workers
-  final case class ControllerInitiateQueryResults(workers: Option[List[ActorVirtualIdentity]])
-      extends ControlCommand[Unit]
+  final case class ControllerInitiateQueryResults(
+      workers: Option[List[ActorVirtualIdentity]] = Option.empty
+  ) extends ControlCommand[Map[String, OperatorResult]]
 }
 
 /** Get statistics from all the workers
@@ -90,6 +90,7 @@ trait QueryWorkerStatisticsHandler {
       if (operatorResultUpdate.nonEmpty) {
         updateFrontendWorkflowResult(WorkflowResultUpdate(operatorResultUpdate.toMap))
       }
+      operatorResultUpdate.toMap
     })
   })
 }

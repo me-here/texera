@@ -17,7 +17,7 @@ object ControllerEvent {
 
   case class WorkflowCompleted(
       // map from sink operator ID to the result list of tuples
-      result: Map[String, List[ITuple]]
+      result: Map[String, OperatorResult]
   )
 
   case class WorkflowPaused()

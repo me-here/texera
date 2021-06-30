@@ -5,13 +5,7 @@ import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import akka.util.Timeout
 import ch.vorburger.mariadb4j.DB
 import edu.uci.ics.amber.clustering.SingleNodeListener
-import edu.uci.ics.amber.engine.architecture.controller.{
-  Controller,
-  ControllerConfig,
-  ControllerEventListener,
-  ControllerState,
-  Workflow
-}
+import edu.uci.ics.amber.engine.architecture.controller.{Controller, ControllerConfig, ControllerEventListener, ControllerState, Workflow}
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.StartWorkflowHandler.StartWorkflow
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
@@ -25,8 +19,10 @@ import edu.uci.ics.texera.workflow.common.workflow._
 import edu.uci.ics.texera.workflow.operators.aggregate.AggregationFunction
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.flatspec.AnyFlatSpecLike
-
 import java.sql.PreparedStatement
+
+import edu.uci.ics.amber.engine.architecture.principal.OperatorResult
+
 import scala.collection.mutable
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
@@ -68,7 +64,7 @@ class DataProcessingSpec
 
   def executeWorkflow(id: WorkflowIdentity, workflow: Workflow): Map[String, List[ITuple]] = {
     val parent = TestProbe()
-    var results: Map[String, List[ITuple]] = null
+    var results: Map[String, OperatorResult] = null
     val eventListener = ControllerEventListener()
     eventListener.workflowCompletedListener = evt => results = evt.result
     val controller = parent.childActorOf(
@@ -79,7 +75,7 @@ class DataProcessingSpec
     parent.expectMsg(ControllerState.Running)
     parent.expectMsg(1.minute, ControllerState.Completed)
     parent.ref ! PoisonPill
-    results
+    results.map(e => (e._1, e._2.result))
   }
 
   def initializeInMemoryMySQLInstance(): (String, String, String, String, String, String) = {
