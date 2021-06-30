@@ -24,31 +24,30 @@ object Access extends Enumeration {
   val NoRecord: dashboard.Access.Value = Value("No Record")
 }
 
-class AccessResponse(uid: UInteger, wid:UInteger, level:String)
+class AccessResponse(uid: UInteger, wid: UInteger, level: String)
 
-object WorkflowAccessResource{
-
-  def checkAccessLevel(wid : UInteger, uid: UInteger): Access.Value ={
+object WorkflowAccessResource {
+  def checkAccessLevel(wid: UInteger, uid: UInteger): Access.Value = {
     val accessDetail = SqlServer.createDSLContext
       .select(WORKFLOW_USER_ACCESS.READ_PRIVILEGE, WORKFLOW_USER_ACCESS.WRITE_PRIVILEGE)
       .from(WORKFLOW_USER_ACCESS)
       .where(WORKFLOW_USER_ACCESS.WID.eq(wid).and(WORKFLOW_USER_ACCESS.UID.eq(uid)))
       .fetch()
     if (accessDetail.isEmpty) return Access.NoRecord
-    if(accessDetail.getValue(0, 1) == true){
+    if (accessDetail.getValue(0, 1) == true) {
       Access.Write
-    }else if(accessDetail.getValue(0, 0) == true){
+    } else if (accessDetail.getValue(0, 0) == true) {
       Access.Read
-    }else{
+    } else {
       Access.None
     }
   }
 
-  def hasReadAccess(wid : UInteger, uid: UInteger): Boolean = {
+  def hasReadAccess(wid: UInteger, uid: UInteger): Boolean = {
     WorkflowAccessResource.checkAccessLevel(wid, uid).eq(Access.Read)
   }
 
-  def hasWriteAccess(wid : UInteger, uid: UInteger): Boolean = {
+  def hasWriteAccess(wid: UInteger, uid: UInteger): Boolean = {
     WorkflowAccessResource.checkAccessLevel(wid, uid).eq(Access.Write)
   }
 }
@@ -62,7 +61,6 @@ class WorkflowAccessResource {
     SqlServer.createDSLContext.configuration
   )
   final private val workflowUserAccessDao = new WorkflowUserAccessDao(SqlServer.createDSLContext().configuration())
-
 
 
   /**
@@ -80,7 +78,7 @@ class WorkflowAccessResource {
       case Some(user) =>
         val uid = user.getUid
         val accessLevel = WorkflowAccessResource.checkAccessLevel(wid, uid)
-        Response.ok(HashMap("UID"->uid, "WID"->wid, "Level"->accessLevel) ).build()
+        Response.ok(HashMap("UID" -> uid, "WID" -> wid, "Level" -> accessLevel)).build()
       case None =>
         Response.status(Response.Status.UNAUTHORIZED).build()
     }
