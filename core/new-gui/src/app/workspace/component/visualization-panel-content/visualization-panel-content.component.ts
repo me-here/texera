@@ -4,7 +4,7 @@ import { Primitive, PrimitiveArray } from 'c3';
 import * as d3 from 'd3';
 import * as cloud from 'd3-cloud';
 import { WorkflowStatusService } from '../../service/workflow-status/workflow-status.service';
-import { ResultObject } from '../../types/execute-workflow.interface';
+import { WebOperatorResult } from '../../types/execute-workflow.interface';
 import { ChartType, WordCloudTuple } from '../../types/visualization.interface';
 import { Subscription, Subject, Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -123,7 +123,7 @@ export class VisualizationPanelContentComponent implements AfterContentInit, OnD
     if (!this.operatorID) {
       return;
     }
-    const result: ResultObject | undefined = this.workflowStatusService.getCurrentResult()[this.operatorID];
+    const result: WebOperatorResult | undefined = this.workflowStatusService.getCurrentResult()[this.operatorID];
     if (!result) {
       return;
     }

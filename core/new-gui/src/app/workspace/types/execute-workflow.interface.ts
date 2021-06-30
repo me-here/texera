@@ -40,40 +40,11 @@ export interface LogicalPlan extends Readonly<{
 /**
  * The backend interface of the return object of a successful execution
  */
-export interface ResultObject extends Readonly<{
+export interface WebOperatorResult extends Readonly<{
   operatorID: string,
-  table: ReadonlyArray<object | string[]>,
+  table: ReadonlyArray<object>,
   chartType: ChartType | undefined,
-  totalRowCount: number
-}> {
-
-}
-
-export interface SuccessExecutionResult extends Readonly<{
-  code: 0,
-  result: ReadonlyArray<ResultObject>,
-  resultID: string
 }> { }
-
-/**
- * The backend interface of the return object of a failed execution
- */
-export interface ErrorExecutionResult extends Readonly<{
-  code: 1,
-  message: string
-}> { }
-
-/**
- * Discriminated Union
- * http://www.typescriptlang.org/docs/handbook/advanced-types.html
- *
- * ExecutionResult type can be either SuccessExecutionResult or ErrorExecutionResult.
- *  but cannot contain both structures at the same time.
- * In this case:
- *  if the code value is 0, then the object type must be SuccessExecutionResult
- *  if the code value is 1, then the object type must be ErrorExecutionResult
- */
-export type ExecutionResult = SuccessExecutionResult | ErrorExecutionResult;
 
 export enum OperatorState {
   Uninitialized = 'Uninitialized',
@@ -92,13 +63,32 @@ export interface OperatorStatistics extends Readonly<{
   operatorState: OperatorState,
   aggregatedInputRowCount: number,
   aggregatedOutputRowCount: number,
-  aggregatedOutputResults: ResultObject | undefined | null // undefined/null if operator is not sink
-  aggregatedOutputResultDirtyPageIndices?: Array<number>
 }> {}
 
 export interface WorkflowStatusUpdate extends Readonly<{
   operatorStatistics: Record<string, OperatorStatistics>
 }> { }
+
+export type PaginationMode = {'type': 'PaginationMode'};
+export type SetSnapshotMode = {'type': 'SetSnapshotMode'};
+export type SetDeltaMode = {'type': 'SetDeltaMode'};
+export type WebOutputMode = PaginationMode | SetSnapshotMode | SetDeltaMode;
+
+export interface WebPaginationUpdate extends Readonly<{
+  mode: PaginationMode,
+  numPages: number,
+  dirtyPageIndices: ReadonlyArray<number>,
+}> {}
+
+export interface WebDataUpdate extends Readonly<{
+  mode: SetSnapshotMode | SetDeltaMode,
+  table: ReadonlyArray<object>,
+  chartType: ChartType | undefined,
+}> {}
+
+export interface WorkflowResultUpdate extends Readonly<{
+  [key: string]: WebPaginationUpdate | WebDataUpdate
+}> {}
 
 export enum ExecutionState {
   Uninitialized = 'Uninitialized',

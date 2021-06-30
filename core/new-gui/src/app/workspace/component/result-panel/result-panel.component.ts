@@ -120,15 +120,15 @@ export class ResultPanelComponent {
       if (websocketEvent.type !== 'PaginatedResultEvent') {
         return;
       }
+      if (websocketEvent.operatorID !== this.resultPanelOperatorID) {
+        return;
+      }
 
-      const paginatedResults = websocketEvent.paginatedResults.filter(r => r.operatorID === this.resultPanelOperatorID);
+      const paginatedResults = websocketEvent.table;
       if (paginatedResults.length === 0) {
         return;
       }
-      const result = paginatedResults[0];
-
-      this.total = result.totalRowCount;
-      this.currentResult = result.table.slice();
+      this.currentResult = paginatedResults.slice();
 
       // When there is a result data from the backend,
       //  1. Get all the column names except '_id', using the first instance of
@@ -139,11 +139,11 @@ export class ResultPanelComponent {
       //      data table.
       //  4. Set the newly created data table to our own paginator.
 
-      let columns: {columnKey: any, columnText: string}[];
+      let columns: { columnKey: any, columnText: string }[];
 
       const columnKeys = Object.keys(this.currentResult[0]).filter(x => x !== '_id');
       this.currentDisplayColumns = columnKeys;
-      columns = columnKeys.map(v => ({columnKey: v, columnText: v}));
+      columns = columnKeys.map(v => ({ columnKey: v, columnText: v }));
 
       // generate columnDef from first row, column definition is in order
       this.currentColumns = ResultPanelComponent.generateColumns(columns);
@@ -171,7 +171,7 @@ export class ResultPanelComponent {
 
       // Don't update if the state is already in Completed
       //  because our result may conflict with the more recent result from WorkflowCompletedEvent
-      if (! result || this.executeWorkflowService.getExecutionState().state === ExecutionState.Completed) {
+      if (!result || this.executeWorkflowService.getExecutionState().state === ExecutionState.Completed) {
         return;
       }
 
@@ -191,12 +191,14 @@ export class ResultPanelComponent {
           this.currentPageIndex === Math.ceil(previousTotal / ResultPanelComponent.DEFAULT_PAGE_SIZE) && // on the last page
           Math.ceil(this.total / ResultPanelComponent.DEFAULT_PAGE_SIZE) < this.currentPageIndex         // less page
         ) {
-            this.currentPageIndex = Math.ceil(this.total / ResultPanelComponent.DEFAULT_PAGE_SIZE);  // decrease page index
+          this.currentPageIndex = Math.ceil(this.total / ResultPanelComponent.DEFAULT_PAGE_SIZE);  // decrease page index
         }
 
         console.log('sending result pagination request');
         this.workflowWebsocketService.send('ResultPaginationRequest',
-          { pageSize: ResultPanelComponent.DEFAULT_PAGE_SIZE, pageIndex: this.currentPageIndex });
+          { operatorID: this.resultPanelOperatorID,
+            pageSize: ResultPanelComponent.DEFAULT_PAGE_SIZE,
+            pageIndex: this.currentPageIndex });
       } else {
         const resultPaginationInfo = {
           newWorkflowExecuted: false,
@@ -361,7 +363,7 @@ export class ResultPanelComponent {
           },
           disabled: () => selectedRowIndex === this.currentResult.length - 1
         },
-        {label: 'OK', onClick: () => {modalRef.destroy(); }, type: 'primary'}
+        { label: 'OK', onClick: () => { modalRef.destroy(); }, type: 'primary' }
       ]
     });
   }
@@ -379,15 +381,16 @@ export class ResultPanelComponent {
    * @param params new parameters
    */
   public onTableQueryParamsChange(params: NzTableQueryParams) {
-    const { pageSize: newPageSize, pageIndex: newPageIndex } = params;
-
     if (this.isFrontPagination) {
       return;
     }
-
+    if (!this.resultPanelOperatorID) {
+      return;
+    }
+    const { pageSize: newPageSize, pageIndex: newPageIndex } = params;
     this.currentPageIndex = newPageIndex;
-
-    this.workflowWebsocketService.send('ResultPaginationRequest', { pageSize: newPageSize, pageIndex: newPageIndex });
+    this.workflowWebsocketService.send('ResultPaginationRequest',
+      { operatorID: this.resultPanelOperatorID, pageSize: newPageSize, pageIndex: newPageIndex });
   }
 
   /**
@@ -420,7 +423,7 @@ export class ResultPanelComponent {
         this.currentDisplayColumns = viewResultOperatorInfo.columnKeys;
 
         this.currentColumns = ResultPanelComponent.generateColumns(
-          this.currentDisplayColumns.map(v => ({columnKey: v, columnText: v}))
+          this.currentDisplayColumns.map(v => ({ columnKey: v, columnText: v }))
         );
         return;
       }
@@ -443,14 +446,18 @@ export class ResultPanelComponent {
 
     const columnKeys = Object.keys(resultData[0]).filter(x => x !== '_id');
     this.currentDisplayColumns = columnKeys;
-    columns = columnKeys.map(v => ({columnKey: v, columnText: v}));
+    columns = columnKeys.map(v => ({ columnKey: v, columnText: v }));
 
     // generate columnDef from first row, column definition is in order
     this.currentColumns = ResultPanelComponent.generateColumns(columns);
     this.total = totalRowCount;
 
     this.workflowWebsocketService.send('ResultPaginationRequest',
-    { pageSize: ResultPanelComponent.DEFAULT_PAGE_SIZE, pageIndex: this.currentPageIndex });
+      {
+        operatorID: this.resultPanelOperatorID,
+        pageSize: ResultPanelComponent.DEFAULT_PAGE_SIZE,
+        pageIndex: this.currentPageIndex
+      });
 
     // save paginated result into session storage
     resultPaginationInfo = {

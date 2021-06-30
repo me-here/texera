@@ -1,4 +1,4 @@
-import { LogicalPlan, WorkflowStatusUpdate, ResultObject, LogicalOperator, BreakpointInfo } from './execute-workflow.interface';
+import { LogicalPlan, WorkflowStatusUpdate, ResultObject, LogicalOperator, BreakpointInfo, WorkflowResultUpdate } from './execute-workflow.interface';
 import { BreakpointTriggerInfo, BreakpointFault, BreakpointFaultedTuple } from './workflow-common.interface';
 
 
@@ -50,12 +50,9 @@ export type OperatorCurrentTuples = Readonly<{
   tuples: ReadonlyArray<WorkerTuples>
 }>;
 
-type PaginatedResultEvent = Readonly<{
-  paginatedResults: ReadonlyArray<{
-    operatorID: string,
-    table: ReadonlyArray<object>,
-    totalRowCount: number
-  }>
+export type PaginatedResultEvent = Readonly<{
+  operatorID: string,
+  table: ReadonlyArray<object>,
 }>;
 
 export type ResultDownloadResponse = Readonly<{
@@ -74,7 +71,7 @@ export type TexeraWebsocketRequestTypeMap = {
   'ModifyLogicRequest': ModifyOperatorLogic,
   'SkipTupleRequest': SkipTuple,
   'AddBreakpointRequest': BreakpointInfo,
-  'ResultPaginationRequest': {pageIndex: number, pageSize: number},
+  'ResultPaginationRequest': {operatorID: string, pageIndex: number, pageSize: number},
   'ResultDownloadRequest': {downloadType: string, workflowName: string}
 };
 
@@ -85,6 +82,7 @@ export type TexeraWebsocketEventTypeMap = {
   'WorkflowStartedEvent': {},
   'WorkflowCompletedEvent': {result: ReadonlyArray<ResultObject>},
   'WebWorkflowStatusUpdateEvent': WorkflowStatusUpdate,
+  'WebResultUpdateEvent': WorkflowResultUpdate,
   'WorkflowPausedEvent': {},
   'WorkflowResumedEvent': {},
   'RecoveryStartedEvent': {},

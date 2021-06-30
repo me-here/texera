@@ -1,17 +1,12 @@
 package edu.uci.ics.texera.web.resource
 
+import com.fasterxml.jackson.annotation.{JsonTypeInfo, JsonTypeName}
 import com.fasterxml.jackson.databind.node.ObjectNode
 import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.WorkflowResultUpdate
 import edu.uci.ics.amber.engine.architecture.principal.OperatorResult
 import edu.uci.ics.amber.engine.common.tuple.ITuple
-import edu.uci.ics.texera.web.model.event.TexeraWebSocketEvent
-import edu.uci.ics.texera.web.resource.OperatorResultService.{
-  PaginationMode,
-  SetDeltaMode,
-  SetSnapshotMode,
-  WebOutputMode,
-  defaultPageSize
-}
+import edu.uci.ics.texera.web.model.event.{TexeraWebSocketEvent}
+import edu.uci.ics.texera.web.resource.OperatorResultService.{PaginationMode, SetDeltaMode, SetSnapshotMode, WebDataUpdate, WebOutputMode, WebPaginationUpdate, WebResultUpdate, defaultPageSize}
 import edu.uci.ics.texera.web.resource.WorkflowResultService.calculateDirtyPageIndices
 import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource.send
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler
@@ -66,14 +61,23 @@ object OperatorResultService {
     *  - SetDeltaMode     (used by visualization in snapshot mode)
     *     - send incremental delta result to frontend
     */
+//  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY)
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
   sealed abstract class WebOutputMode extends Product with Serializable
+  @JsonTypeName("PaginationMode")
   final case class PaginationMode() extends WebOutputMode
+  @JsonTypeName("SetSnapshotMode")
   final case class SetSnapshotMode() extends WebOutputMode
+  @JsonTypeName("SetDeltaMode")
   final case class SetDeltaMode() extends WebOutputMode
 
-}
+  sealed abstract class WebResultUpdate extends Product with Serializable
+  case class WebPaginationUpdate(mode: PaginationMode, numPages: Int, dirtyPageIndices: List[Int])
+      extends WebResultUpdate
+  case class WebDataUpdate(mode: WebOutputMode, table: List[ObjectNode], chartType: Option[String])
+      extends WebResultUpdate
 
-case class WebPaginationUpdate(mode: PaginationMode, numPages: Int, dirtyPageIndices: List[Int])
+}
 
 object WebDataUpdate {
   def fromTuple(
@@ -82,12 +86,11 @@ object WebDataUpdate {
       chartType: Option[String]
   ): WebDataUpdate = {
     val tableInJson = table.map(t => t.asInstanceOf[Tuple].asKeyValuePairJson())
-    WebDataUpdate(mode, tableInJson, chartType)
+    new WebDataUpdate(mode, tableInJson, chartType)
   }
 }
-case class WebDataUpdate(mode: WebOutputMode, table: List[ObjectNode], chartType: Option[String])
 
-case class WebResultUpdateEvent(updates: Map[String, Either[WebPaginationUpdate, WebDataUpdate]])
+case class WebResultUpdateEvent(updates: Map[String, WebResultUpdate])
     extends TexeraWebSocketEvent
 
 /**
@@ -121,16 +124,16 @@ class OperatorResultService(val operatorID: String, val workflowCompiler: Workfl
 
   def convertWebResultUpdate(
       resultUpdate: OperatorResult
-  ): Either[WebPaginationUpdate, WebDataUpdate] = {
+  ): WebResultUpdate = {
     (webOutputMode, resultUpdate.outputMode) match {
       case (PaginationMode(), SET_SNAPSHOT) =>
         val dirtyPageIndices =
           calculateDirtyPageIndices(result, resultUpdate.result, defaultPageSize)
         val newNumPages = math.ceil(resultUpdate.result.size.toDouble / defaultPageSize).toInt
-        Left(WebPaginationUpdate(PaginationMode(), newNumPages, dirtyPageIndices))
+        WebPaginationUpdate(PaginationMode(), newNumPages, dirtyPageIndices)
 
       case (SetSnapshotMode(), SET_SNAPSHOT) | (SetDeltaMode(), SET_DELTA) =>
-        Right(WebDataUpdate.fromTuple(webOutputMode, resultUpdate.result, chartType))
+        WebDataUpdate.fromTuple(webOutputMode, resultUpdate.result, chartType)
 
       // currently not supported mode combinations
       // (PaginationMode, SET_DELTA) | (DataSnapshotMode, SET_DELTA) | (DataDeltaMode, SET_SNAPSHOT)

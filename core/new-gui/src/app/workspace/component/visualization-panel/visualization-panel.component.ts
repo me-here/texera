@@ -1,7 +1,7 @@
 import { Component, Input, OnChanges } from '@angular/core';
 import { NzModalRef, NzModalService } from 'ng-zorro-antd/modal';
 import { WorkflowStatusService } from '../../service/workflow-status/workflow-status.service';
-import { ResultObject } from '../../types/execute-workflow.interface';
+import { WebOperatorResult } from '../../types/execute-workflow.interface';
 import { VisualizationPanelContentComponent } from '../visualization-panel-content/visualization-panel-content.component';
 
 /**
@@ -41,7 +41,7 @@ export class VisualizationPanelComponent implements OnChanges {
       this.displayVisualizationPanel = false;
       return;
     }
-    const result: ResultObject | undefined = this.workflowStatusService.getCurrentResult()[this.operatorID];
+    const result: WebOperatorResult | undefined = this.workflowStatusService.getCurrentResult()[this.operatorID];
     this.displayVisualizationPanel = result?.chartType !== undefined;
   }
 

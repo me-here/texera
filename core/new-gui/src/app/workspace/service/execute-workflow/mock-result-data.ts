@@ -1,10 +1,9 @@
-import { SuccessExecutionResult, ErrorExecutionResult, ResultObject } from '../../types/execute-workflow.interface';
+import { WebOperatorResult } from '../../types/execute-workflow.interface';
 import { Point, OperatorPredicate } from '../../types/workflow-common.interface';
 
-export const mockResultData: ResultObject[] = [{
+export const mockResultData: WebOperatorResult[] = [{
   chartType: undefined,
   operatorID: 'operator-1234',
-  totalRowCount: 6,
   table: [
     {
       'id': 1,
@@ -45,26 +44,6 @@ export const mockResultData: ResultObject[] = [{
   ]
 }
 ];
-
-// execution results for pre-amber engine (deprecated)
-export const mockExecutionResult: SuccessExecutionResult = {
-  code: 0,
-  resultID: '1',
-  result: mockResultData
-};
-
-
-export const mockExecutionEmptyResult: SuccessExecutionResult = {
-  code: 0,
-  resultID: '2',
-  result: []
-};
-
-
-export const mockExecutionErrorResult: ErrorExecutionResult = {
-  code: 1,
-  message: 'custom error happening'
-};
 
 export const mockResultOperator: OperatorPredicate = {
   operatorID: mockResultData[0].operatorID,

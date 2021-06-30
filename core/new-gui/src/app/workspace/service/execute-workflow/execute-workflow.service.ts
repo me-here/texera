@@ -16,8 +16,7 @@ import {
   LogicalLink,
   LogicalOperator,
   LogicalPlan,
-  ResultObject,
-  SuccessExecutionResult
+  WebOperatorResult,
 } from '../../types/execute-workflow.interface';
 import { environment } from '../../../../environments/environment';
 import { WorkflowWebsocketService } from '../workflow-websocket/workflow-websocket.service';
@@ -163,7 +162,7 @@ export class ExecuteWorkflowService {
   /**
    * Return map which contains all sink operators execution result
    */
-  public getResultMap(): ReadonlyMap<string, ResultObject> | undefined {
+  public getResultMap(): ReadonlyMap<string, WebOperatorResult> | undefined {
     if (this.currentState?.state === ExecutionState.Completed) {
       return this.currentState.resultMap;
     }
@@ -280,15 +279,6 @@ export class ExecuteWorkflowService {
       operatorType: op.operatorType
     };
     this.workflowWebsocketService.send('ModifyLogicRequest', {operator});
-  }
-
-  /**
-   * Sends the current workflow data to the backend
-   *  to execute the workflow and gets the results.
-   *  return workflow id to be used by workflowStatusService
-   */
-  public executeWorkflowOldTexera(): void {
-    throw new Error('no longer support executing workflow on old texera engine');
   }
 
   /**
@@ -420,10 +410,6 @@ export class ExecuteWorkflowService {
       throw new Error('unhandled breakpoint data ' + breakpointData);
     }
     return {operatorID, breakpoint};
-  }
-
-  public static isExecutionSuccessful(result: ExecutionResult | undefined): result is SuccessExecutionResult {
-    return !!result && result.code === 0;
   }
 
   /**
