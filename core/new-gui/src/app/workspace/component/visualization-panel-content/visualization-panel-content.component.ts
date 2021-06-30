@@ -13,6 +13,7 @@ import { MapboxLayer } from '@deck.gl/mapbox';
 import { ScatterplotLayer } from '@deck.gl/layers';
 import { ScatterplotLayerProps } from '@deck.gl/layers/scatterplot-layer/scatterplot-layer';
 import { DomSanitizer } from '@angular/platform-browser';
+import { WorkflowResultService } from '../../service/workflow-result/workflow-result.service';
 
 (mapboxgl as any).accessToken = environment.mapbox.accessToken;
 
@@ -72,7 +73,7 @@ export class VisualizationPanelContentComponent implements AfterContentInit, OnD
   displayHTML: boolean = false; // variable to decide whether to display the container to display the HTML container(iFrame)
   displayWordCloud: boolean = false; // variable to decide whether to display the container for worldcloud visualization
   displayMap: boolean = true; // variable to decide whether to hide/unhide the map
-  data: object[] | undefined;
+  data: ReadonlyArray<object> | undefined;
   chartType: ChartType | undefined;
   columns: string[] = [];
 
@@ -83,7 +84,7 @@ export class VisualizationPanelContentComponent implements AfterContentInit, OnD
   private updateSubscription: Subscription | undefined;
 
   constructor(
-    private workflowStatusService: WorkflowStatusService,
+    private workflowResultService: WorkflowResultService,
     private sanitizer: DomSanitizer
   ) {
   }
@@ -94,7 +95,7 @@ export class VisualizationPanelContentComponent implements AfterContentInit, OnD
 
     // setup an event lister that re-draws the chart content every (n) milliseconds
     // auditTime makes sure the first re-draw happens after (n) milliseconds has elapsed
-    const resultUpdate = this.workflowStatusService.getResultUpdateStream()
+    const resultUpdate = this.workflowResultService.getResultUpdateStream()
       .auditTime(VisualizationPanelContentComponent.UPDATE_INTERVAL_MS);
     const controlUpdate = this.wordCloudControlUpdateObservable
       .debounceTime(VisualizationPanelContentComponent.WORD_CLOUD_CONTROL_UPDATE_INTERVAL_MS);
@@ -123,13 +124,12 @@ export class VisualizationPanelContentComponent implements AfterContentInit, OnD
     if (!this.operatorID) {
       return;
     }
-    const result: WebOperatorResult | undefined = this.workflowStatusService.getCurrentResult()[this.operatorID];
-    if (!result) {
+    const opratorResultService = this.workflowResultService.getResultService(this.operatorID);
+    if (! opratorResultService) {
       return;
     }
-
-    this.data = result.table as object[];
-    this.chartType = result.chartType;
+    this.data = opratorResultService.getCurrentResultSnapshot();
+    this.chartType = opratorResultService.getChartType();
     if (!this.data || !this.chartType) {
       return;
     }

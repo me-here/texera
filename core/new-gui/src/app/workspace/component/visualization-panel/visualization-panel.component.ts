@@ -3,6 +3,7 @@ import { NzModalRef, NzModalService } from 'ng-zorro-antd/modal';
 import { WorkflowStatusService } from '../../service/workflow-status/workflow-status.service';
 import { WebOperatorResult } from '../../types/execute-workflow.interface';
 import { VisualizationPanelContentComponent } from '../visualization-panel-content/visualization-panel-content.component';
+import { WorkflowResultService } from '../../service/workflow-result/workflow-result.service';
 
 /**
  * VisualizationPanelComponent displays the button for visualization in ResultPanel when the result type is chart.
@@ -25,9 +26,9 @@ export class VisualizationPanelComponent implements OnChanges {
 
   constructor(
     private modalService: NzModalService,
-    private workflowStatusService: WorkflowStatusService
+    private workflowResultService: WorkflowResultService
   ) {
-    this.workflowStatusService.getResultUpdateStream().subscribe(event => {
+    this.workflowResultService.getResultUpdateStream().subscribe(event => {
       this.updateDisplayVisualizationPanel();
     });
   }
@@ -41,8 +42,12 @@ export class VisualizationPanelComponent implements OnChanges {
       this.displayVisualizationPanel = false;
       return;
     }
-    const result: WebOperatorResult | undefined = this.workflowStatusService.getCurrentResult()[this.operatorID];
-    this.displayVisualizationPanel = result?.chartType !== undefined;
+    const opratorResultService = this.workflowResultService.getResultService(this.operatorID);
+    if (! opratorResultService) {
+      return;
+    }
+    const chartType = opratorResultService.getChartType();
+    this.displayVisualizationPanel = chartType !== undefined && chartType !== null;
   }
 
   onClickVisualize(): void {

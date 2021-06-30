@@ -5,16 +5,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.WorkflowResultUpdate
 import edu.uci.ics.amber.engine.architecture.principal.OperatorResult
 import edu.uci.ics.amber.engine.common.tuple.ITuple
-import edu.uci.ics.texera.web.model.event.{TexeraWebSocketEvent}
+import edu.uci.ics.texera.web.model.event.TexeraWebSocketEvent
 import edu.uci.ics.texera.web.resource.OperatorResultService.{PaginationMode, SetDeltaMode, SetSnapshotMode, WebDataUpdate, WebOutputMode, WebPaginationUpdate, WebResultUpdate, defaultPageSize}
 import edu.uci.ics.texera.web.resource.WorkflowResultService.calculateDirtyPageIndices
 import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource.send
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler
 import edu.uci.ics.texera.workflow.operators.sink.SimpleSinkOpDesc
 import edu.uci.ics.texera.workflow.common.IncrementalOutputMode.{SET_DELTA, SET_SNAPSHOT}
+import edu.uci.ics.texera.workflow.common.Utils.objectMapper
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
-import javax.websocket.Session
 
+import javax.websocket.Session
 import scala.collection.mutable
 
 object WorkflowResultService {
@@ -72,7 +73,7 @@ object OperatorResultService {
   final case class SetDeltaMode() extends WebOutputMode
 
   sealed abstract class WebResultUpdate extends Product with Serializable
-  case class WebPaginationUpdate(mode: PaginationMode, numPages: Int, dirtyPageIndices: List[Int])
+  case class WebPaginationUpdate(mode: PaginationMode, totalNumTuples: Int, dirtyPageIndices: List[Int])
       extends WebResultUpdate
   case class WebDataUpdate(mode: WebOutputMode, table: List[ObjectNode], chartType: Option[String])
       extends WebResultUpdate
@@ -87,6 +88,11 @@ object WebDataUpdate {
   ): WebDataUpdate = {
     val tableInJson = table.map(t => t.asInstanceOf[Tuple].asKeyValuePairJson())
     new WebDataUpdate(mode, tableInJson, chartType)
+  }
+
+  def main(args: Array[String]): Unit = {
+    val a = WebPaginationUpdate(PaginationMode(), 100, List(1))
+    println(objectMapper.writeValueAsString(a))
   }
 }
 
@@ -129,8 +135,7 @@ class OperatorResultService(val operatorID: String, val workflowCompiler: Workfl
       case (PaginationMode(), SET_SNAPSHOT) =>
         val dirtyPageIndices =
           calculateDirtyPageIndices(result, resultUpdate.result, defaultPageSize)
-        val newNumPages = math.ceil(resultUpdate.result.size.toDouble / defaultPageSize).toInt
-        WebPaginationUpdate(PaginationMode(), newNumPages, dirtyPageIndices)
+        WebPaginationUpdate(PaginationMode(), resultUpdate.result.size, dirtyPageIndices)
 
       case (SetSnapshotMode(), SET_SNAPSHOT) | (SetDeltaMode(), SET_DELTA) =>
         WebDataUpdate.fromTuple(webOutputMode, resultUpdate.result, chartType)

@@ -50,8 +50,16 @@ export type OperatorCurrentTuples = Readonly<{
   tuples: ReadonlyArray<WorkerTuples>
 }>;
 
-export type PaginatedResultEvent = Readonly<{
+export type PaginationRequest = Readonly<{
+  requestID: string,
   operatorID: string,
+  pageIndex: number,
+  pageSize: number
+}>;
+
+export type PaginatedResultEvent = Readonly<{
+  requestID: string,
+  pageIndex: number,
   table: ReadonlyArray<object>,
 }>;
 
@@ -71,7 +79,7 @@ export type TexeraWebsocketRequestTypeMap = {
   'ModifyLogicRequest': ModifyOperatorLogic,
   'SkipTupleRequest': SkipTuple,
   'AddBreakpointRequest': BreakpointInfo,
-  'ResultPaginationRequest': {operatorID: string, pageIndex: number, pageSize: number},
+  'ResultPaginationRequest': PaginationRequest,
   'ResultDownloadRequest': {downloadType: string, workflowName: string}
 };
 

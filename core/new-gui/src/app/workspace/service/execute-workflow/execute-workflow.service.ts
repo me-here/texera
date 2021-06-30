@@ -9,8 +9,6 @@ import { WorkflowActionService } from '../workflow-graph/model/workflow-action.s
 import { WorkflowGraphReadonly } from '../workflow-graph/model/workflow-graph';
 import {
   BreakpointInfo,
-  ErrorExecutionResult,
-  ExecutionResult,
   ExecutionState,
   ExecutionStateInfo,
   LogicalLink,
@@ -180,7 +178,7 @@ export class ExecuteWorkflowService {
     if (environment.amberEngineEnabled) {
       this.executeWorkflowAmberTexera();
     } else {
-      this.executeWorkflowOldTexera();
+      throw new Error('old texera engine not supported');
     }
   }
 
@@ -410,26 +408,6 @@ export class ExecuteWorkflowService {
       throw new Error('unhandled breakpoint data ' + breakpointData);
     }
     return {operatorID, breakpoint};
-  }
-
-  /**
-   * Handles the HTTP Error response in different failure scenarios
-   *  and converts to an ErrorExecutionResult object.
-   * @param errorResponse
-   */
-  private static processErrorResponse(errorResponse: HttpErrorResponse): Record<string, string> {
-    // client side error, such as no internet connection
-    if (errorResponse.error instanceof ProgressEvent) {
-      return {'network error': 'Could not reach Texera server'};
-    }
-    // the workflow graph is invalid
-    // error message from backend will be included in the error property
-    if (errorResponse.status === 400) {
-      const result = <ErrorExecutionResult>(errorResponse.error);
-      return {'workflow error': result.message};
-    }
-    // other kinds of server error
-    return {'server error': `Texera server error: ${errorResponse.error.message}`};
   }
 
 }
