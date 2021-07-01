@@ -15,11 +15,8 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.QueryWor
   ControllerInitiateQueryResults,
   ControllerInitiateQueryStatistics
 }
-import edu.uci.ics.amber.engine.architecture.principal.OperatorState
-import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.CollectSinkResultsHandler.CollectSinkResults
-import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
+import edu.uci.ics.amber.engine.architecture.principal.OperatorResult
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Completed
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.WorkerActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
 import edu.uci.ics.amber.engine.operators.SinkOpExecConfig
@@ -61,35 +58,28 @@ trait WorkerExecutionCompletedHandler {
           ControllerInitiateQueryResults(Option(List(sender))),
           ActorVirtualIdentity.Controller
         )
-        // TODO: unify collect sink result (for final completion) and query results (for incremental update)
-        // TODO: this is a current hack to send QueryOperatorResult first, then send CollectSinkResult
-        //       because in SET_DELTA output mode, QueryOperatorResult should fetch and clear the result cache
-        requests += send(CollectSinkResults(), sender).map(results =>
-          operator.acceptResultTuples(results)
-        )
       }
 
       val allRequests = Future.collect(requests.toList)
 
-      allRequests.flatMap { ret =>
-        updateFrontendWorkflowStatus()
+      allRequests.flatMap(_ => {
+        // if entire workflow is completed, fire workflow completed event, clean up, and kill the workflow
         if (workflow.isCompleted) {
-          //send result to frontend
-          if (eventListener.workflowCompletedListener != null) {
-            eventListener.workflowCompletedListener
-              .apply(
-                WorkflowCompleted(
-                  workflow.getEndOperators.map(op => op.id.operator -> op.results).toMap
-                )
-              )
-          }
-          disableStatusUpdate()
-          actorContext.parent ! ControllerState.Completed // for testing
-          // clean up all workers and terminate self
-          execute(KillWorkflow(), ActorVirtualIdentity.Controller)
+          execute(ControllerInitiateQueryResults(), ActorVirtualIdentity.Controller)
+            .flatMap(ret => {
+              if (eventListener.workflowCompletedListener != null) {
+                eventListener.workflowCompletedListener.apply(WorkflowCompleted(ret))
+              }
+              disableStatusUpdate()
+              actorContext.parent ! ControllerState.Completed // for testing
+              // clean up all workers and terminate self
+              execute(KillWorkflow(), ActorVirtualIdentity.Controller)
+              Future.Done
+            })
+        } else {
+          Future.Done
         }
-        Future.Done
-      }
+      })
     }
   }
 }
