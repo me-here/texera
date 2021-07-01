@@ -1,11 +1,7 @@
 package edu.uci.ics.texera.web.resource.dashboard
 
 import edu.uci.ics.texera.web.SqlServer
-import edu.uci.ics.texera.web.model.jooq.generated.Tables.{
-  WORKFLOW,
-  WORKFLOW_OF_USER,
-  WORKFLOW_USER_ACCESS
-}
+import edu.uci.ics.texera.web.model.jooq.generated.Tables.{WORKFLOW, WORKFLOW_OF_USER}
 import edu.uci.ics.texera.web.model.jooq.generated.tables.daos.{
   WorkflowDao,
   WorkflowOfUserDao,
@@ -19,13 +15,11 @@ import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.{
 import edu.uci.ics.texera.web.resource.auth.UserResource
 import io.dropwizard.jersey.sessions.Session
 import org.jooq.types.UInteger
+
 import java.util
 import javax.servlet.http.HttpSession
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
-import edu.uci.ics.texera.web.resource.dashboard.WorkflowResource
-
-import scala.collection.immutable.HashMap
 
 /**
   * This file handles various request related to saved-workflows.
@@ -101,7 +95,7 @@ class WorkflowResource {
     *
     * @param session  HttpSession
     * @param workflow , a workflow
-    * @return Workflow, which contains the generated wid if not provided// TODO: the types of Ownership-Access pairs should be considered in a case-by-case manner
+    * @return Workflow, which contains the generated wid if not provided// TODO: divide into two endpoints -> one for new-workflow and one for updating existing workflow
     */
   @POST
   @Path("/persist")
@@ -111,21 +105,26 @@ class WorkflowResource {
     UserResource.getUser(session) match {
       case Some(user) =>
         if (workflowOfUserExists(workflow.getWid, user.getUid)) {
-//          current user reading
+          // current user reading
           workflowDao.update(workflow)
         } else {
           if (WorkflowAccessResource.hasNoWorkflowAccessRecord(workflow.getWid, user.getUid)) {
-//            not owner and not access record --> new record
+            // not owner and not access record --> new record
             workflowDao.insert(workflow)
             workflowOfUserDao.insert(new WorkflowOfUser(user.getUid, workflow.getWid))
             workflowUserAccessDao.insert(
-              new WorkflowUserAccess(user.getUid, workflow.getWid, true, true)
+              new WorkflowUserAccess(
+                user.getUid,
+                workflow.getWid,
+                true, // readPrivilege
+                true // writePrivilege
+              )
             )
           } else if (WorkflowAccessResource.hasWriteAccess(workflow.getWid, user.getUid)) {
-//            not owner but has write access
+            // not owner but has write access
             workflowDao.update(workflow)
           } else {
-//            not owner and no write access -> :(
+            // not owner and no write access -> rejected
             Response.status(Response.Status.UNAUTHORIZED).build()
           }
         }

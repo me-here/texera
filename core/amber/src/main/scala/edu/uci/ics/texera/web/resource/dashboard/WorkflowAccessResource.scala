@@ -1,31 +1,20 @@
 package edu.uci.ics.texera.web.resource.dashboard
 
 import edu.uci.ics.texera.web.SqlServer
-import edu.uci.ics.texera.web.model.jooq.generated.Tables.{
-  WORKFLOW,
-  WORKFLOW_OF_USER,
-  WORKFLOW_USER_ACCESS
-}
+import edu.uci.ics.texera.web.model.jooq.generated.Tables.WORKFLOW_USER_ACCESS
 import edu.uci.ics.texera.web.model.jooq.generated.tables.daos.{
   WorkflowDao,
   WorkflowOfUserDao,
   WorkflowUserAccessDao
-}
-import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.{
-  Workflow,
-  WorkflowOfUser,
-  WorkflowUserAccess
 }
 import edu.uci.ics.texera.web.resource.auth.UserResource
 import edu.uci.ics.texera.web.resource.dashboard
 import io.dropwizard.jersey.sessions.Session
 import org.jooq.types.UInteger
 
-import java.util
 import javax.servlet.http.HttpSession
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
-import scala.collection.immutable.HashMap
 
 /**
   * An enum class identifying the specific workflow access level
@@ -35,42 +24,20 @@ import scala.collection.immutable.HashMap
   * NONE indicates having an access record, but either read or write access is granted
   * NO_RECORD indicates having no record in the table
   */
-object Access extends Enumeration {
+object WorkflowAccess extends Enumeration {
   type Access = Value
-  val READ: dashboard.Access.Value = Value("read")
-  val WRITE: dashboard.Access.Value = Value("write")
-  val NONE: dashboard.Access.Value = Value("none")
-  val NO_RECORD: dashboard.Access.Value = Value("No Record")
+  val READ: dashboard.WorkflowAccess.Value = Value("read")
+  val WRITE: dashboard.WorkflowAccess.Value = Value("write")
+  val NONE: dashboard.WorkflowAccess.Value = Value("none")
+  val NO_RECORD: dashboard.WorkflowAccess.Value = Value("No Record")
 }
+
+class WorkflowAccessResponse(uid: UInteger, wid: UInteger, level: String)
 
 /**
   * Helper functions for retrieving access level based on given information
   */
 object WorkflowAccessResource {
-
-  /**
-    * Returns an Access Object based on given wid and uid
-    * Searches in database for the given uid-wid pair, and returns Access Object based on search result
-    *
-    * @param wid     workflow id
-    * @param uid     user id, works with workflow id as primary keys in database
-    * @return Access Object indicating the access level
-    */
-  def checkAccessLevel(wid: UInteger, uid: UInteger): Access.Value = {
-    val accessDetail = SqlServer.createDSLContext
-      .select(WORKFLOW_USER_ACCESS.READ_PRIVILEGE, WORKFLOW_USER_ACCESS.WRITE_PRIVILEGE)
-      .from(WORKFLOW_USER_ACCESS)
-      .where(WORKFLOW_USER_ACCESS.WID.eq(wid).and(WORKFLOW_USER_ACCESS.UID.eq(uid)))
-      .fetch()
-    if (accessDetail.isEmpty) return Access.NO_RECORD
-    if (accessDetail.getValue(0, 1) == true) {
-      Access.WRITE
-    } else if (accessDetail.getValue(0, 0) == true) {
-      Access.READ
-    } else {
-      Access.NONE
-    }
-  }
 
   /**
     * Returns a short workflow access description in string
@@ -81,10 +48,34 @@ object WorkflowAccessResource {
     */
   def getWorkflowAccessDesc(wid: UInteger, uid: UInteger): String = {
     WorkflowAccessResource.checkAccessLevel(wid, uid) match {
-      case Access.READ      => "Read-Only"
-      case Access.WRITE     => "Write-Privilege (which dominates)"
-      case Access.NONE      => "No access granted"
-      case Access.NO_RECORD => "Record not found"
+      case WorkflowAccess.READ      => "Read"
+      case WorkflowAccess.WRITE     => "Write"
+      case WorkflowAccess.NONE      => "None"
+      case WorkflowAccess.NO_RECORD => "NoRecord"
+    }
+  }
+
+  /**
+    * Returns an Access Object based on given wid and uid
+    * Searches in database for the given uid-wid pair, and returns Access Object based on search result
+    *
+    * @param wid     workflow id
+    * @param uid     user id, works with workflow id as primary keys in database
+    * @return Access Object indicating the access level
+    */
+  def checkAccessLevel(wid: UInteger, uid: UInteger): WorkflowAccess.Value = {
+    val accessDetail = SqlServer.createDSLContext
+      .select(WORKFLOW_USER_ACCESS.READ_PRIVILEGE, WORKFLOW_USER_ACCESS.WRITE_PRIVILEGE)
+      .from(WORKFLOW_USER_ACCESS)
+      .where(WORKFLOW_USER_ACCESS.WID.eq(wid).and(WORKFLOW_USER_ACCESS.UID.eq(uid)))
+      .fetch()
+    if (accessDetail.isEmpty) return WorkflowAccess.NO_RECORD
+    if (accessDetail.getValue(0, 1) == true) {
+      WorkflowAccess.WRITE
+    } else if (accessDetail.getValue(0, 0) == true) {
+      WorkflowAccess.READ
+    } else {
+      WorkflowAccess.NONE
     }
   }
 
@@ -96,7 +87,7 @@ object WorkflowAccessResource {
     * @return boolean value indicating yes/no
     */
   def hasReadAccess(wid: UInteger, uid: UInteger): Boolean = {
-    WorkflowAccessResource.checkAccessLevel(wid, uid).eq(Access.READ)
+    WorkflowAccessResource.checkAccessLevel(wid, uid).eq(WorkflowAccess.READ)
   }
 
   /**
@@ -106,7 +97,7 @@ object WorkflowAccessResource {
     * @return boolean value indicating yes/no
     */
   def hasWriteAccess(wid: UInteger, uid: UInteger): Boolean = {
-    WorkflowAccessResource.checkAccessLevel(wid, uid).eq(Access.WRITE)
+    WorkflowAccessResource.checkAccessLevel(wid, uid).eq(WorkflowAccess.WRITE)
   }
 
   /**
@@ -116,7 +107,7 @@ object WorkflowAccessResource {
     * @return boolean value indicating yes/no
     */
   def hasNoWorkflowAccess(wid: UInteger, uid: UInteger): Boolean = {
-    WorkflowAccessResource.checkAccessLevel(wid, uid).eq(Access.NONE)
+    WorkflowAccessResource.checkAccessLevel(wid, uid).eq(WorkflowAccess.NONE)
   }
 
   /**
@@ -126,7 +117,7 @@ object WorkflowAccessResource {
     * @return boolean value indicating yes/no
     */
   def hasNoWorkflowAccessRecord(wid: UInteger, uid: UInteger): Boolean = {
-    WorkflowAccessResource.checkAccessLevel(wid, uid).eq(Access.NO_RECORD)
+    WorkflowAccessResource.checkAccessLevel(wid, uid).eq(WorkflowAccess.NO_RECORD)
   }
 }
 
@@ -149,7 +140,7 @@ class WorkflowAccessResource {
     *
     * @param wid     the given workflow
     * @param session the session indicating current User
-    * @return json object indicating uid, wid and access level, ex: {Level: "Write-Privilege (which dominates)", UID: 1, WID: 15}
+    * @return json object indicating uid, wid and access level, ex: {"level": "Write", "uid": 1, "wid": 15}
     */
   @GET
   @Path("/workflow/{wid}/level")
@@ -162,7 +153,7 @@ class WorkflowAccessResource {
       case Some(user) =>
         val uid = user.getUid
         val workflowAccessLevel = WorkflowAccessResource.getWorkflowAccessDesc(wid, uid)
-        Response.ok(HashMap("UID" -> uid, "WID" -> wid, "Level" -> workflowAccessLevel)).build()
+        Response.ok(new WorkflowAccessResponse(uid, wid, workflowAccessLevel)).build()
       case None =>
         Response.status(Response.Status.UNAUTHORIZED).build()
     }
