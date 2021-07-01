@@ -1,12 +1,13 @@
 package edu.uci.ics.texera.web.resource.dashboard
 
 import edu.uci.ics.texera.web.SqlServer
-import edu.uci.ics.texera.web.model.jooq.generated.Tables.WORKFLOW_USER_ACCESS
+import edu.uci.ics.texera.web.model.jooq.generated.Tables.{WORKFLOW_OF_USER, WORKFLOW_USER_ACCESS}
 import edu.uci.ics.texera.web.model.jooq.generated.tables.daos.{
   WorkflowDao,
   WorkflowOfUserDao,
   WorkflowUserAccessDao
 }
+import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.WorkflowUserAccess
 import edu.uci.ics.texera.web.resource.auth.UserResource
 import edu.uci.ics.texera.web.resource.dashboard
 import io.dropwizard.jersey.sessions.Session
@@ -15,6 +16,7 @@ import org.jooq.types.UInteger
 import javax.servlet.http.HttpSession
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
+import scala.collection.immutable.HashMap
 
 /**
   * An enum class identifying the specific workflow access level
@@ -153,10 +155,90 @@ class WorkflowAccessResource {
       case Some(user) =>
         val uid = user.getUid
         val workflowAccessLevel = WorkflowAccessResource.getWorkflowAccessDesc(wid, uid)
-        Response.ok(new WorkflowAccessResponse(uid, wid, workflowAccessLevel)).build()
+        val resultData = HashMap("uid" -> uid, "wid" -> wid, "level" -> workflowAccessLevel)
+//        Response.ok(new WorkflowAccessResponse(uid, wid, workflowAccessLevel)).build()
+        Response.ok(resultData).build()
       case None =>
         Response.status(Response.Status.UNAUTHORIZED).build()
     }
   }
 
+  /**
+    * This method shares a workflow to a user with a specific access type
+    *
+    * @param wid     the given workflow
+    * @param uid     the user id which the access is given to
+    * @param session the session indicating current User
+    * @param accessType the type of Access given to the target user
+    * @return rejection if user not permitted to share the workflow
+    */
+  @POST
+  @Path("/share/{wid}/{uid}/{access_type}")
+  def shareAccess(
+      @PathParam("wid") wid: UInteger,
+      @PathParam("uid") uid: UInteger,
+      @PathParam("access_type") accessType: String,
+      @Session session: HttpSession
+  ): Response = {
+    UserResource.getUser(session) match {
+      case Some(user) =>
+        if (
+          !workflowOfUserDao.existsById(
+            SqlServer.createDSLContext
+              .newRecord(WORKFLOW_OF_USER.UID, WORKFLOW_OF_USER.WID)
+              .values(user.getUid, wid)
+          )
+        ) {
+          Response.status(Response.Status.UNAUTHORIZED).build()
+        } else {
+          if (WorkflowAccessResource.hasNoWorkflowAccessRecord(wid, uid)) {
+            accessType match {
+              case "read" =>
+                workflowUserAccessDao.insert(
+                  new WorkflowUserAccess(
+                    uid,
+                    wid,
+                    true, // readPrivilege
+                    false // writePrivilege
+                  )
+                )
+              case "write" =>
+                workflowUserAccessDao.insert(
+                  new WorkflowUserAccess(
+                    uid,
+                    wid,
+                    true, // readPrivilege
+                    true // writePrivilege
+                  )
+                )
+              case _ => Response.status(Response.Status.BAD_REQUEST).build()
+            }
+          } else {
+            accessType match {
+              case "read" =>
+                workflowUserAccessDao.update(
+                  new WorkflowUserAccess(
+                    uid,
+                    wid,
+                    true, // readPrivilege
+                    false // writePrivilege
+                  )
+                )
+              case "write" =>
+                workflowUserAccessDao.update(
+                  new WorkflowUserAccess(
+                    uid,
+                    wid,
+                    true, // readPrivilege
+                    true // writePrivilege
+                  )
+                )
+              case _ => Response.status(Response.Status.BAD_REQUEST).build()
+            }
+          }
+          Response.ok().build()
+        }
+      case None => Response.status(Response.Status.UNAUTHORIZED).build()
+    }
+  }
 }
