@@ -196,7 +196,7 @@ class WorkflowWebsocketResource {
         WorkflowWebsocketResource.sessionJobs.remove(session.getId)
       },
       workflowStatusUpdateListener = statusUpdate => {
-        send(session, WorkflowStatusUpdateEvent.apply(statusUpdate))
+        send(session, WebWorkflowStatusUpdateEvent.apply(statusUpdate))
       },
       workflowResultUpdateListener = resultUpdate => {
         workflowResultService.onResultUpdate(resultUpdate, session)
