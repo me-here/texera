@@ -66,17 +66,18 @@ object WorkflowCompletedEvent {
       workflowCompiler: WorkflowCompiler
   ): WorkflowCompletedEvent = {
     val resultList = new mutable.MutableList[WebOperatorResult]
-    for ((operatorID, resultTuples) <- workflowCompleted.result) {
-      val chartType = WebOperatorResult.getChartType(operatorID, workflowCompiler)
-
-      var table = resultTuples
-      // if not visualization result, then only return first page results
-      if (chartType.isEmpty) {
-        table = resultTuples.slice(0, defaultPageSize)
-      }
-
-      resultList += WebOperatorResult.fromTuple(operatorID, table, chartType, resultTuples.length)
-    }
+    // TODO: temporarily comment out to make it compile, this will be deleted in later PRs
+//    for ((operatorID, resultTuples) <- workflowCompleted.result) {
+//      val chartType = WebOperatorResult.getChartType(operatorID, workflowCompiler)
+//
+//      var table = resultTuples
+//      // if not visualization result, then only return first page results
+//      if (chartType.isEmpty) {
+//        table = resultTuples.slice(0, defaultPageSize)
+//      }
+//
+//      resultList += WebOperatorResult.fromTuple(operatorID, table, chartType, resultTuples.length)
+//    }
     WorkflowCompletedEvent(resultList.toList)
   }
 }

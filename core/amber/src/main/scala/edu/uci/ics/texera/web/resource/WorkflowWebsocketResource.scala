@@ -236,6 +236,7 @@ class WorkflowWebsocketResource {
 
     val eventListener = ControllerEventListener(
       workflowCompletedListener = completed => {
+        // TODO: temporarily comment out to make it compile, this will be changed in later PRs
 //        sessionResults.remove(session.getId)
 //        sessionDownloadCache.remove(session.getId)
 //        sessionResults.update(session.getId, completed.result)
