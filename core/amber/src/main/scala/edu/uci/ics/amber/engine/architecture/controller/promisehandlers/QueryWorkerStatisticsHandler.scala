@@ -12,7 +12,7 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatist
   QueryStatistics,
   QueryWorkerResult
 }
-import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
+import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 
 import scala.collection.mutable
@@ -20,13 +20,13 @@ import scala.collection.mutable
 object QueryWorkerStatisticsHandler {
 
   final case class ControllerInitiateQueryStatistics(
-      workers: Option[List[ActorVirtualIdentity]] = None
+      filterByWorkers: Option[List[ActorVirtualIdentity]] = None
   ) extends ControlCommand[Unit]
 
   // ask the controller to initiate querying worker results
   // optionally specify the workers to query, None indicates querying all sink workers
   final case class ControllerInitiateQueryResults(
-      workers: Option[List[ActorVirtualIdentity]] = None
+      filterByWorkers: Option[List[ActorVirtualIdentity]] = None
   ) extends ControlCommand[Map[String, OperatorResult]]
 }
 
@@ -40,7 +40,7 @@ trait QueryWorkerStatisticsHandler {
   registerHandler { (msg: ControllerInitiateQueryStatistics, sender) =>
     {
       // send to specified workers (or all workers by default)
-      val workers = msg.workers.getOrElse(workflow.getAllWorkers).toList
+      val workers = msg.filterByWorkers.getOrElse(workflow.getAllWorkers).toList
 
       // send QueryStatistics message
       val requests =
@@ -63,7 +63,7 @@ trait QueryWorkerStatisticsHandler {
 
   registerHandler((msg: ControllerInitiateQueryResults, sender) => {
     val sinkWorkers = workflow.getSinkLayers.flatMap(l => l.workers.keys).toList
-    val workers = msg.workers.getOrElse(sinkWorkers)
+    val workers = msg.filterByWorkers.getOrElse(sinkWorkers)
 
     // send all sink worker QueryResult message
     val requests = workers.map(worker => {
