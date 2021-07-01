@@ -4,8 +4,7 @@ import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.Da
 import edu.uci.ics.amber.engine.architecture.worker.WorkerAsyncRPCHandlerInitializer
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
-import edu.uci.ics.amber.engine.common.statetransition2.Ready
-
+import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager._
 object AddOutputPolicyHandler {
   final case class AddOutputPolicy(policy: DataSendingPolicy)
       extends ControlCommand[CommandCompleted]
@@ -15,7 +14,7 @@ trait AddOutputPolicyHandler {
   this: WorkerAsyncRPCHandlerInitializer =>
 
   registerHandler { (msg: AddOutputPolicy, sender) =>
-    stateManager.assertState(Ready())
+    stateManager.assertState(Ready)
     tupleToBatchConverter.addPolicy(msg.policy)
     CommandCompleted()
   }

@@ -13,7 +13,7 @@ import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCHandlerInitializer}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
-import edu.uci.ics.amber.engine.common.statetransition2._
+import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager._
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.util.{CONTROLLER, SELF}
 import edu.uci.ics.amber.error.WorkflowRuntimeError
@@ -22,7 +22,6 @@ import edu.uci.ics.texera.workflow.operators.pythonUDF.PythonUDFOpExec
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-
 object WorkflowWorker {
   def props(
       id: ActorVirtualIdentity,
@@ -67,8 +66,9 @@ class WorkflowWorker(
     parentNetworkCommunicationActorRef ! RegisterActorRef(identifier, self)
   }
 
-  workerStateManager.assertState(Uninitialized())
-  workerStateManager.transitTo(Ready())
+  workerStateManager.assertState(Uninitialized)
+  workerStateManager.transitTo(Ready)
+  println(workerStateManager)
 
   override def receive: Receive = receiveAndProcessMessages
 
@@ -86,8 +86,8 @@ class WorkflowWorker(
   }
 
   final def handleDataPayload(from: ActorVirtualIdentity, dataPayload: DataPayload): Unit = {
-    if (workerStateManager.getCurrentState == Ready()) {
-      workerStateManager.transitTo(Running())
+    if (workerStateManager.getCurrentState == Ready) {
+      workerStateManager.transitTo(Running)
       asyncRPCClient.send(
         WorkerStateUpdated(workerStateManager.getCurrentState),
         CONTROLLER

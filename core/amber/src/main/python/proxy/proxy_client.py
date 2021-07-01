@@ -34,7 +34,8 @@ class ProxyClient(FlightClient):
         logger.info(f"sending {action}, {action.body}")
         return next(self.do_action(action, options)).body.to_pybytes()
 
-    def send_data(self, batch: Table, on_success: callable = lambda: None, on_error: callable = lambda: None) -> None:
+    def send_data(self, target, batch: Table, on_success: callable = lambda: None,
+                  on_error: callable = lambda: None) -> None:
         """
         send data to the server
         :param batch: a PyArrow.Table of column-stored records.
@@ -45,10 +46,13 @@ class ProxyClient(FlightClient):
         :return:
         """
         try:
-            writer, reader = self.do_put(FlightDescriptor.for_path(""), batch.schema)
+            writer, reader = self.do_put(FlightDescriptor.for_command(target), batch.schema)
             logger.debug("start writing")
-            with writer:
-                writer.write_table(batch)
+            try:
+                with writer:
+                    writer.write_table(batch)
+            except:
+                pass
 
             logger.debug("finish writing")
 

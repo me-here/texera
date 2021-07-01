@@ -1,14 +1,19 @@
-from core.models.tuple import ITuple
+from dataclasses import dataclass
 from typing import List
 
-DataPayload = list[ITuple]
+from core.models.tuple import ITuple
 
 
+@dataclass
+class DataPayload:
+    pass
+
+
+@dataclass
 class DataFrame(DataPayload):
-    def __init__(self, frame: List[ITuple]):
-        super().__init__()
-        self.frame = frame
+    frame: List[ITuple]
 
 
+@dataclass
 class EndOfUpstream(DataPayload):
     pass

@@ -1,9 +1,10 @@
-from core.models.payload import DataFrame, EndOfUpstream
-from core.models.tuple import ITuple, Tuple
-from core.util.proto_helper import get_oneof, ProtoDict
+from collections import defaultdict
+
 from dataclasses import dataclass
 from typing import Set, Iterable, Union
 
+from core.models.payload import DataFrame, EndOfUpstream
+from core.models.tuple import ITuple
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, LinkIdentity
 
 DataPayload = list[ITuple]
@@ -32,8 +33,8 @@ class EndOfAllMarker(Marker):
 
 class BatchToTupleConverter:
     def __init__(self):
-        self._input_map: ProtoDict[ActorVirtualIdentity, LinkIdentity] = ProtoDict()
-        self._upstream_map: ProtoDict[LinkIdentity, Set[ActorVirtualIdentity]] = ProtoDict(set)
+        self._input_map: dict[ActorVirtualIdentity, LinkIdentity] = dict()
+        self._upstream_map: dict[LinkIdentity, Set[ActorVirtualIdentity]] = defaultdict(set)
         self._current_link: LinkIdentity = None
 
     def register_input(self, identifier: ActorVirtualIdentity, input: LinkIdentity) -> None:
@@ -46,12 +47,13 @@ class BatchToTupleConverter:
         if self._current_link is None or self._current_link != link:
             self._current_link = link
             yield SenderChangeMarker(link)
-        payload = get_oneof(data_payload)
-        if isinstance(payload, DataFrame):
-            for index, row in payload.to_pandas().iterrows():
-                yield Tuple(row)
 
-        elif isinstance(payload, EndOfUpstream):
+        if isinstance(data_payload, DataFrame):
+            for tuple_ in data_payload.frame:
+                # logger.info(f" yielding a tuple {tuple_}")
+                yield tuple_
+
+        elif isinstance(data_payload, EndOfUpstream):
             self._upstream_map[link].remove(from_)
             if len(self._upstream_map[link]) == 0:
                 del self._upstream_map[link]

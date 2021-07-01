@@ -1,7 +1,7 @@
-from core.models.tuple import ITuple
-from core.util.stable_priority_queue import StablePriorityQueue, QueueElement
 from dataclasses import dataclass
 
+from core.models.payload import DataPayload
+from core.util.stable_priority_queue import StablePriorityQueue, QueueElement
 from edu.uci.ics.amber.engine.common import ControlPayload, ActorVirtualIdentity
 
 
@@ -16,14 +16,14 @@ class InternalQueueElement(QueueElement):
 
 @dataclass
 class InputDataElement(InternalQueueElement):
-    batch: list[ITuple]
+    batch: DataPayload
     from_: ActorVirtualIdentity
     _priority: int = 1
 
 
 @dataclass
 class OutputDataElement(InternalQueueElement):
-    batch: list[ITuple]
+    batch: DataPayload
     to: ActorVirtualIdentity
     _priority: int = 1
 

@@ -2,13 +2,8 @@ package edu.uci.ics.amber.engine.common.rpc
 
 import com.twitter.util.Future
 import edu.uci.ics.amber.engine.architecture.messaginglayer.ControlOutputPort
-import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
 import edu.uci.ics.amber.engine.common.WorkflowLogger
-import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{
-  noReplyNeeded,
-  ControlInvocation,
-  ReturnPayload
-}
+import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload, noReplyNeeded}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 
@@ -60,6 +55,7 @@ class AsyncRPCServer(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
           // user's code returns a future
           // the result should be returned after the future is resolved.
           f.onSuccess { ret =>
+            println(s"response to $senderID ret: $ret")
             returnResult(senderID, control.commandID, ret)
           }
           f.onFailure { err =>
@@ -82,9 +78,9 @@ class AsyncRPCServer(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
     if (call.commandID == AsyncRPCClient.IgnoreReplyAndDoNotLog) {
       return
     }
-    if (call.command.isInstanceOf[QueryStatistics]) {
-      return
-    }
+    //    if (call.command.isInstanceOf[QueryStatistics]) {
+    //      return
+    //    }
     logger.logInfo(
       s"receive command: ${call.command} from ${sender.toString} (controlID: ${call.commandID})"
     )

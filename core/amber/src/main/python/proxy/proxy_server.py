@@ -89,10 +89,13 @@ class ProxyServer(FlightServerBase):
         :param writer: the output stream.
         :return:
         """
-        logger.debug(f"getting a data flight")
 
+        logger.debug(f"getting a data flight")
         from_ = ActorVirtualIdentity().parse(descriptor.command)
-        self.process_data(from_, reader.read_all())
+        data = reader.read_all()
+        logger.debug(f"getting a data flight {from_}, {len(data)}")
+
+        self.process_data(from_, data)
 
     ###############################
     # RPC actions related methods #

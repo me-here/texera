@@ -1,12 +1,12 @@
-from core.models.internal_queue import InternalQueue, ControlElement, OutputDataElement
-from core.models.tuple import ITuple
-from core.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
+import pandas
 from loguru import logger
-from pandas import DataFrame
-from proxy import ProxyClient
 from pyarrow import Table
 
-from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ControlPayload, WorkflowControlMessage
+from core.models.internal_queue import InternalQueue, ControlElement, OutputDataElement
+from core.models.payload import DataFrame
+from core.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
+from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ControlPayload, WorkflowControlMessage, DataPayload
+from proxy import ProxyClient
 
 
 class NetworkSender(StoppableQueueBlockingThread):
@@ -23,23 +23,21 @@ class NetworkSender(StoppableQueueBlockingThread):
             self.send_batch(next_entry.to, next_entry.batch)
         elif isinstance(next_entry, ControlElement):
             logger.debug(f"NETWORK received a ControlElement {next_entry}")
-            # payload = get_oneof(next_entry.cmd)
-            # if isinstance(payload, ControlInvocation):
-            #
-            #     logger.debug("it's control invocation")
-            #     command = get_oneof(payload.command)
-            #     self.send_control()
-            # elif isinstance(payload, ReturnPayload):
             self.send_control(next_entry.from_, next_entry.cmd)
 
-    def send_batch(self, to: ActorVirtualIdentity, batch: list[ITuple]) -> None:
-        # TODO: add to information to the batch
-        table = Table.from_pandas(DataFrame.from_records(batch))
-        self._proxy_client.send_data(table)
+    def send_batch(self, to: ActorVirtualIdentity, batch: DataPayload) -> None:
+        def chunks(lst, n):
+            """Yield successive n-sized chunks from lst."""
+            for i in range(0, len(lst), n):
+                yield lst[i:i + n]
+
+        to.SerializeToString()
+        if isinstance(batch, DataFrame):
+            for chunk in chunks(batch.frame, 100):
+                table = Table.from_pandas(pandas.DataFrame.from_records([t.row for t in chunk]))
+                self._proxy_client.send_data(to.SerializeToString(), table)
 
     def send_control(self, to: ActorVirtualIdentity, cmd: ControlPayload):
         workflow_control_message = WorkflowControlMessage(from_=to, sequence_number=1, payload=cmd)
-        logger.info(
-            f"serialized workflow control message {workflow_control_message}, {workflow_control_message.SerializeToString()}")
         ret = self._proxy_client.call("control", workflow_control_message.SerializeToString())
         logger.info(f"return: {ret}")

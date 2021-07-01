@@ -1,10 +1,11 @@
-from edu.uci.ics.amber.engine.architecture.worker import WorkerStatistics
-from edu.uci.ics.amber.engine.common import WorkerState, Running
+from edu.uci.ics.amber.engine.architecture.worker import WorkerStatistics, QueryStatistics
 from .handler import Handler
-from ...util.proto_helper import set_oneof
+from ..manager.context import Context
 
 
 class QueryStatisticsHandler(Handler):
-    def __call__(self, *args, **kwargs):
-        worker_state = set_oneof(WorkerState, Running())
-        return WorkerStatistics(worker_state=worker_state, input_row_count=0, output_row_count=1)
+    def __call__(self, context: Context, command: QueryStatistics, *args, **kwargs):
+        input_count, output_count = context.statistics_manager.get_statistics()
+        state = context.state_manager.get_current_state()
+
+        return WorkerStatistics(worker_state=state, input_row_count=input_count, output_row_count=output_count)

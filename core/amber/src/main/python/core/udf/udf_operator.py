@@ -1,4 +1,5 @@
 from abc import ABC
+from loguru import logger
 from typing import Union, Iterable
 
 from core.models.tuple import Tuple, InputExhausted
@@ -15,7 +16,8 @@ class UDFOperator(ABC):
         pass
 
     def process_texera_tuple(self, tuple_: Union[Tuple, InputExhausted], input_: LinkIdentity) -> Iterable[Tuple]:
-        pass
+        logger.info(" udf process a tuple")
+        yield tuple_
 
     def close(self) -> None:
         pass

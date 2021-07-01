@@ -1,16 +1,16 @@
 import typing
-from core.architecture.messaginglayer.batch_to_tuple_converter import BatchToTupleConverter, EndMarker, EndOfAllMarker
-from core.architecture.messaginglayer.tuple_to_batch_converter import TupleToBatchConverter
+from loguru import logger
+from typing import Iterable, Union
+
+from core.architecture.manager.context import Context
+from core.architecture.messaginglayer.batch_to_tuple_converter import EndMarker, EndOfAllMarker
 from core.architecture.sync_rpc.sync_rpc_server import SyncRPCServer
 from core.models.internal_queue import ControlElement, InputDataElement, OutputDataElement, InternalQueue
 from core.models.tuple import ITuple, InputExhausted, Tuple
 from core.udf.udf_operator import UDFOperator
 from core.util.proto_helper import get_oneof
 from core.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
-from loguru import logger
-from typing import Iterable, Union
-
-from edu.uci.ics.amber.engine.common import ControlInvocation, ControlPayload
+from edu.uci.ics.amber.engine.common import ControlInvocation, ControlPayload, Uninitialized, Ready
 from edu.uci.ics.amber.engine.common import LinkIdentity, ActorVirtualIdentity
 
 
@@ -19,8 +19,7 @@ class BatchProducer:
 
 
 class DPThread(StoppableQueueBlockingThread):
-    def __init__(self, input_queue: InternalQueue, output_queue: InternalQueue, udf_operator: UDFOperator,
-                 batch_to_tuple_converter: BatchToTupleConverter):
+    def __init__(self, input_queue: InternalQueue, output_queue: InternalQueue, udf_operator: UDFOperator):
         super().__init__(self.__class__.__name__, queue=input_queue)
 
         self._input_queue = input_queue
@@ -28,28 +27,31 @@ class DPThread(StoppableQueueBlockingThread):
         self._udf_operator = udf_operator
         self._current_input_tuple: Union[ITuple, InputExhausted] = None
         self._current_input_link: LinkIdentity = None
-        self.output_tuple_count: int = 0
-        self.input_tuple_count: int = 0
-        self._batch_to_tuple_converter = batch_to_tuple_converter
-        self._tuple_to_batch_converter = TupleToBatchConverter()
-        self._rpc_server = SyncRPCServer(output_queue)
+
+        self.context = Context()
+        self._rpc_server = SyncRPCServer(output_queue, context=self.context)
 
     def before_loop(self) -> None:
         self._udf_operator.open()
+        self.context.state_manager.assert_state(Uninitialized())
+        self.context.state_manager.transit_to(Ready())
 
     def after_loop(self) -> None:
         self._udf_operator.close()
 
     def main_loop(self) -> None:
         next_entry = self.interruptible_get()
-        logger.info(f"PYTHON DP receive an entry from queue: {next_entry}")
+        # logger.info(f"PYTHON DP receive an entry from queue: {next_entry}")
         if isinstance(next_entry, InputDataElement):
-            logger.info(f"PYTHON DP receive a DATA: {next_entry}")
-            for element in self._batch_to_tuple_converter.process_data_payload(next_entry.from_, next_entry.batch):
+            # logger.info(f"PYTHON DP receive a DATA: {next_entry}")
+            for element in self.context.batch_to_tuple_converter.process_data_payload(next_entry.from_,
+                                                                                      next_entry.batch):
                 if isinstance(element, Tuple):
+                    # logger.info(" python main get a tuple")
                     self._current_input_tuple = element
                     self.handle_input_tuple()
-                    self.check_and_handle_control()
+
+                    # self.check_and_handle_control()
 
                 elif isinstance(element, EndMarker):
                     self._current_input_tuple = InputExhausted()
@@ -85,17 +87,21 @@ class DPThread(StoppableQueueBlockingThread):
     #     }
 
     def handle_input_tuple(self):
-        results: Iterable[ITuple] = self.process_tuple(self._current_input_tuple, self._current_input_link)
         if isinstance(self._current_input_tuple, ITuple):
-            self.input_tuple_count += 1
+            self.context.statistics_manager.input_tuple_count += 1
+        # logger.info(f"python main handling a tuple {self._current_input_tuple}")
+
+        results: Iterable[ITuple] = self.process_tuple(self._current_input_tuple, self._current_input_link)
         for result in results:
+            # logger.info(f" python main getting a result tuple {result}")
+            self.context.statistics_manager.output_tuple_count += 1
             self.pass_tuple_to_downstream(result)
 
     def process_tuple(self, tuple_: Union[ITuple, InputExhausted], link: LinkIdentity) -> Iterable[ITuple]:
         typing.cast(tuple_, Union[Tuple, InputExhausted])
-        logger.debug(f"processing a tuple {tuple_}")
+        # logger.debug(f"processing a tuple {tuple_}")
         return self._udf_operator.process_texera_tuple(tuple_, link)
 
     def pass_tuple_to_downstream(self, tuple_: ITuple):
-        for to, batch in self._tuple_to_batch_converter.tuple_to_batch(tuple_):
+        for to, batch in self.context.tuple_to_batch_converter.tuple_to_batch(tuple_):
             self._output_queue.put(OutputDataElement(batch, to))

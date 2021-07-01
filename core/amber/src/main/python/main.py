@@ -1,4 +1,5 @@
 import sys
+
 from loguru import logger
 from typing import Iterable, Union
 
@@ -10,8 +11,8 @@ from core.udf import UDFOperator
 
 class EchoOperator(UDFOperator):
     def process_texera_tuple(self, row: Union[Tuple, InputExhausted], nth_child: int = 0) -> Iterable[Tuple]:
-        logger.debug("processing one row")
-        return [row]
+        # logger.debug("processing one row")
+        yield row
 
 
 if __name__ == '__main__':

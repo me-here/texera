@@ -1,10 +1,12 @@
-from core.models.internal_queue import InternalQueue, ControlElement, InputDataElement
-from core.util import StoppableThread
 from loguru import logger
-from proxy import ProxyServer
 from pyarrow.lib import Table
 
+from core import Tuple
+from core.models.internal_queue import InternalQueue, ControlElement, InputDataElement
+from core.models.payload import DataFrame
+from core.util import StoppableThread
 from edu.uci.ics.amber.engine.common import WorkflowControlMessage, ActorVirtualIdentity
+from proxy import ProxyServer
 
 
 class NetworkReceiver(StoppableThread):
@@ -12,9 +14,11 @@ class NetworkReceiver(StoppableThread):
         super().__init__(self.__class__.__name__)
         self._proxy_server = ProxyServer(host=host, port=port)
 
-        def data_handler(from_: ActorVirtualIdentity, data_payload: Table):
-            logger.info(f"getting a data payload {data_payload} from {from_}")
-            shared_queue.put(InputDataElement(batch=data_payload, from_=from_))
+        def data_handler(from_: ActorVirtualIdentity, table: Table):
+            logger.info(f"getting a data payload {table} from {from_}")
+
+            shared_queue.put(InputDataElement(batch=DataFrame([Tuple(row) for i, row in table.to_pandas().iterrows()])
+                                              , from_=from_))
 
         self._proxy_server.register_data_handler(data_handler)
         self._proxy_server.register("health_check", ProxyServer.ack()(lambda: None))

@@ -2,7 +2,6 @@ package edu.uci.ics.amber.engine.common.rpc
 
 import com.twitter.util.{Future, Promise}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.ControlOutputPort
-import edu.uci.ics.amber.engine.architecture.worker.WorkerStatistics
 import edu.uci.ics.amber.engine.common.WorkflowLogger
 import edu.uci.ics.amber.engine.common.ambermessage.ControlPayload
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
@@ -64,19 +63,21 @@ class AsyncRPCClient(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
   def fulfillPromise(ret: ReturnPayload): Unit = {
     if (unfulfilledPromises.contains(ret.originalCommandID)) {
       val p = unfulfilledPromises(ret.originalCommandID)
+      println(s" promise ${p}: ret: $ret")
       p.setValue(ret.returnValue.asInstanceOf[p.returnType])
       unfulfilledPromises.remove(ret.originalCommandID)
     }
   }
 
   def logControlReply(ret: ReturnPayload, sender: ActorVirtualIdentity): Unit = {
+
     if (ret.originalCommandID == AsyncRPCClient.IgnoreReplyAndDoNotLog) {
       return
     }
     if (ret.returnValue != null) {
-      if (ret.returnValue.isInstanceOf[WorkerStatistics]) {
-        return
-      }
+      //      if (ret.returnValue.isInstanceOf[WorkerStatistics]) {
+      //        return
+      //      }
       logger.logInfo(
         s"receive reply: ${ret.returnValue.getClass.getSimpleName} from ${sender.toString} (controlID: ${ret.originalCommandID})"
       )

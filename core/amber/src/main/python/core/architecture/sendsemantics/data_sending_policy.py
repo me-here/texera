@@ -6,9 +6,9 @@ from core.models.tuple import ITuple
 from edu.uci.ics.amber.engine.common import LinkIdentity, ActorVirtualIdentity
 
 
-class DataSendingPolicy(ABC):
+class DataSendingPolicyExec(ABC):
 
-    def __init__(self, policy_tag: LinkIdentity, batch_size: int, receivers: List[ActorVirtualIdentity]):
+    def __init__(self, policy_tag: LinkIdentity, batch_size: int, receivers: list[ActorVirtualIdentity]):
         self.policy_tag = policy_tag
         self.batch_size = batch_size
         self.receivers = receivers
@@ -22,11 +22,14 @@ class DataSendingPolicy(ABC):
     def reset(self) -> None:
         pass
 
+    def __repr__(self):
+        return f"PolicyExec[policy_tag={self.policy_tag}, batch_size={self.batch_size}, receivers={self.receivers}"
 
-class OneToOnePolicy(DataSendingPolicy):
+
+class OneToOnePolicyExec(DataSendingPolicyExec):
     def __init__(self, policy_tag: LinkIdentity, batch_size: int, receivers: List[ActorVirtualIdentity]):
         super().__init__(policy_tag, batch_size, receivers)
-
+        self.batch_size = 100
         self.batch = list()
 
     def add_tuple_to_batch(self, tuple_: ITuple) -> Optional[Tuple[ActorVirtualIdentity, DataPayload]]:

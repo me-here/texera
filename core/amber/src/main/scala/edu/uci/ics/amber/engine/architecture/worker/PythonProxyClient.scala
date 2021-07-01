@@ -15,7 +15,6 @@ import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, ambermessage2}
-import edu.uci.ics.texera.workflow.common.operators.OperatorExecutor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType}
 import org.apache.arrow.flight._
@@ -24,7 +23,7 @@ import org.apache.arrow.memory.{BufferAllocator, RootAllocator}
 import org.apache.arrow.vector.types.FloatingPointPrecision
 import org.apache.arrow.vector.types.pojo.ArrowType.ArrowTypeID
 import org.apache.arrow.vector.types.pojo.{ArrowType, Field, Schema}
-import org.apache.arrow.vector.{BitVector, Float8Vector, IntVector, VarCharVector, VectorSchemaRoot}
+import org.apache.arrow.vector.{BitVector, FieldVector, Float8Vector, IntVector, VarCharVector, VectorSchemaRoot}
 
 import java.nio.charset.StandardCharsets
 import java.util
@@ -52,9 +51,8 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
   val mem: InMemoryStore = new InMemoryStore(allocator, location)
   private val MAX_TRY_COUNT: Int = 3
   private val WAIT_TIME_MS = 1000
-  private val inputTupleBuffer = new util.LinkedList[Tuple]
   private var flightClient: FlightClient = null
-  private var globalInputSchema: Schema = null
+
 
   def sendBatch(dataPayload: DataPayload, from: ActorVirtualIdentity): Any = {
     enqueueData(DataElement(dataPayload, from))
@@ -98,7 +96,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
           dataPayload match {
             case DataFrame(frame) =>
               val tuples = mutable.Queue(frame.map((t: ITuple) => t.asInstanceOf[Tuple]): _*)
-              writeArrowStream(flightClient, tuples, tuples.size, from)
+              writeArrowStream(flightClient, tuples, 100, from)
           }
         case ControlElement(cmd, from) =>
           println("java got a command " + cmd)
@@ -116,16 +114,23 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
         println(" RPC CLIENT GOT COMMAND [id=" + commandID + "]: " + command)
 
         command match {
-          case AddOutputPolicy(policy: DataSendingPolicy) => var protobufPolicy: datatransferpolicy2.DataSendingPolicy = null
+          case AddOutputPolicy(policy: DataSendingPolicy) =>
+            var protobufPolicy: datatransferpolicy2.DataSendingPolicy = null
 
             policy match {
               case _: OneToOnePolicy =>
                 protobufPolicy = datatransferpolicy2.OneToOnePolicy(
-                  Option(policy.policyTag), policy.batchSize, policy.receivers)
+                  Option(policy.policyTag),
+                  policy.batchSize,
+                  policy.receivers
+                )
 
               case _: RoundRobinPolicy =>
                 protobufPolicy = datatransferpolicy2.RoundRobinPolicy(
-                  Option(policy.policyTag), policy.batchSize, policy.receivers)
+                  Option(policy.policyTag),
+                  policy.batchSize,
+                  policy.receivers
+                )
               case _ => throw new UnsupportedOperationException("not supported data policy")
             }
 
@@ -136,8 +141,9 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
             println(flightClient.doAction(action).next())
           case StartWorker() =>
           case UpdateInputLinking(identifier, inputLink) => {
-            val protobufCommand = promisehandler2.UpdateInputLinking(identifier = identifier, inputLink = Option(
-              inputLink)
+            val protobufCommand = promisehandler2.UpdateInputLinking(
+              identifier = identifier,
+              inputLink = Option(inputLink)
             )
             val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
             val action: Action = new Action("control", controlMessage.toByteArray)
@@ -158,11 +164,18 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
     }
   }
 
-  def toWorkflowControlMessage2(from: ActorVirtualIdentity, commandID: Long, controlCommand: promisehandler2.ControlCommand): WorkflowControlMessage = {
+  def toWorkflowControlMessage2(
+                                   from: ActorVirtualIdentity,
+                                   commandID: Long,
+                                   controlCommand: promisehandler2.ControlCommand
+                               ): WorkflowControlMessage = {
     toWorkflowControlMessage2(from, toControlInvocation2(commandID, controlCommand))
   }
 
-  def toWorkflowControlMessage2(from: ActorVirtualIdentity, controlPayload: ambermessage2.ControlPayload): WorkflowControlMessage = {
+  def toWorkflowControlMessage2(
+                                   from: ActorVirtualIdentity,
+                                   controlPayload: ambermessage2.ControlPayload
+                               ): WorkflowControlMessage = {
     ambermessage2.WorkflowControlMessage(
       from = from,
       sequenceNumber = 0L,
@@ -170,7 +183,10 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
     )
   }
 
-  def toControlInvocation2(commandID: Long, controlCommand: promisehandler2.ControlCommand): ambermessage2.ControlInvocation = {
+  def toControlInvocation2(
+                              commandID: Long,
+                              controlCommand: promisehandler2.ControlCommand
+                          ): ambermessage2.ControlInvocation = {
     ambermessage2.ControlInvocation(commandID = commandID, command = controlCommand)
   }
 
@@ -182,62 +198,61 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
    * and convert it into a {@code pyarrow.Table} and store it in the server.
    * {@code startPut} is a non-blocking call, but this method in general is a blocking call, it waits until all the
    * data are sent.
-    *
-    * @param client      The FlightClient that manages this.
-    * @param values      The input queue that holds tuples, its contents will be consumed in this method.
-    * @param arrowSchema Input Arrow table schema. This should already have been defined (converted).
-    * @param chunkSize   The chunk size of the arrow stream. This is different than the batch size of the operator,
-    *                    although they may seem similar. This doesn't actually affect serialization speed that much,
-    *                    so in general it can be the same as {@code batchSize}.
-    */ @throws[RuntimeException]
+   *
+   * @param client      The FlightClient that manages this.
+   * @param values      The input queue that holds tuples, its contents will be consumed in this method.
+   * @param arrowSchema Input Arrow table schema. This should already have been defined (converted).
+   * @param chunkSize   The chunk size of the arrow stream. This is different than the batch size of the operator,
+   *                    although they may seem similar. This doesn't actually affect serialization speed that much,
+   *                    so in general it can be the same as {@code batchSize}.
+   */
+  @throws[RuntimeException]
   private def writeArrowStream(
                                   client: FlightClient,
                                   values: mutable.Queue[Tuple],
-                                  chunkSize: Int,
+                                  chunkSize: Int = 100,
                                   from: ActorVirtualIdentity
                               ): Unit = {
 
-    println(" NOW WRITING A DATA BATCH " + chunkSize + " from " + from.asMessage.toString)
-    val flightListener = new SyncPutListener
-    var schemaRoot: VectorSchemaRoot = VectorSchemaRoot.create(convertAmber2ArrowSchema(operator.asInstanceOf[OperatorExecutor].), PythonUDFOpExec.memoryAllocator)
+    println(" NOW before writing A DATA BATCH " + chunkSize + " from " + from.asMessage.toString)
+    if (values.nonEmpty) {
+      val cachedTuple = values.front
+      val schema = cachedTuple.getSchema
+      val arrowSchema = convertAmber2ArrowSchema(schema)
+      val flightListener = new SyncPutListener
+      val schemaRoot: VectorSchemaRoot = VectorSchemaRoot.create(arrowSchema, allocator)
+      val streamWriter = client.startPut(
+        FlightDescriptor.command(from.asMessage.toByteArray),
+        schemaRoot,
+        flightListener
+      )
+      try {
+        while (values.nonEmpty) {
 
-    val streamWriter = client.startPut(
-      FlightDescriptor.command(from.asMessage.toByteArray),
-      schemaRoot,
-      flightListener
-    )
-    try {
-      while (values.nonEmpty) {
-
-        val tuple: Tuple = values.dequeue()
-        if (globalInputSchema == null)
-          try globalInputSchema = convertAmber2ArrowSchema(tuple.getSchema)
-          catch {
-            case exception: RuntimeException =>
-              exception.printStackTrace()
-            //          closeAndThrow(flightClient, exception)
+          schemaRoot.allocateNew()
+          var indexThisChunk = 0
+          while ( {
+            indexThisChunk < chunkSize && values.nonEmpty
+          }) {
+            convertAmber2ArrowTuple(values.dequeue(), indexThisChunk, schemaRoot)
+            indexThisChunk += 1
           }
-        if (schemaRoot == null)
-          schemaRoot = VectorSchemaRoot.create(globalInputSchema, allocator)
-        schemaRoot.allocateNew()
-        var indexThisChunk = 0
-        do {
-          convertAmber2ArrowTuple(tuple, indexThisChunk, schemaRoot)
-          indexThisChunk += 1
-        } while (values.nonEmpty)
-        schemaRoot.setRowCount(indexThisChunk)
-        streamWriter.putNext()
+          schemaRoot.setRowCount(indexThisChunk)
+          streamWriter.putNext()
+          schemaRoot.clear()
+        }
+        streamWriter.completed()
+        flightListener.getResult()
+        flightListener.close()
         schemaRoot.clear()
+      } catch {
+        case e: Exception =>
+          e.printStackTrace()
+        //        closeAndThrow(client, e)
       }
-      streamWriter.completed()
-      flightListener.getResult()
-      flightListener.close()
-      schemaRoot.clear()
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
-      //        closeAndThrow(client, e)
     }
+
+    println(" NOW WRITING A DATA BATCH " + chunkSize + " from " + from.asMessage.toString)
 
   }
 
@@ -256,7 +271,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
   ): Unit = {
     val preDefinedFields = vectorSchemaRoot.getSchema.getFields
     for (i <- 0 until preDefinedFields.size) {
-      val vector = vectorSchemaRoot.getVector(i)
+      val vector: FieldVector = vectorSchemaRoot.getVector(i)
       preDefinedFields.get(i).getFieldType.getType.getTypeID match {
         case ArrowTypeID.Int =>
           vector.asInstanceOf[IntVector].set(index, tuple.get(i).asInstanceOf[Int])
@@ -312,8 +327,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
         case AttributeType.BOOLEAN =>
           field = Field.nullablePrimitive(name, ArrowType.Bool.INSTANCE)
 
-        case AttributeType.STRING =>
-        case AttributeType.ANY =>
+        case AttributeType.STRING | AttributeType.ANY =>
           field = Field.nullablePrimitive(name, ArrowType.Utf8.INSTANCE)
 
         case _ =>
