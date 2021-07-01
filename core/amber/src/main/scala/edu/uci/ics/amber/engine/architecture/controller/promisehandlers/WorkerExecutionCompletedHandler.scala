@@ -46,21 +46,22 @@ trait WorkerExecutionCompletedHandler {
       // after worker execution is completed, query statistics immediately one last time
       // because the worker might be killed before the next query statistics interval
       // and the user sees the last update before completion
-      val requests = new mutable.MutableList[Future[Unit]]()
-      requests += execute(
+      val statsRequests = new mutable.MutableList[Future[Unit]]()
+      statsRequests += execute(
         ControllerInitiateQueryStatistics(Option(List(sender))),
         ActorVirtualIdentity.Controller
       )
 
       // if operator is sink, additionally query result immediately one last time
+      val resultRequests = new mutable.MutableList[Future[Map[String, OperatorResult]]]()
       if (operator.isInstanceOf[SinkOpExecConfig]) {
-        requests += execute(
+        resultRequests += execute(
           ControllerInitiateQueryResults(Option(List(sender))),
           ActorVirtualIdentity.Controller
         )
       }
 
-      val allRequests = Future.collect(requests.toList)
+      val allRequests = Future.collect(statsRequests ++ resultRequests)
 
       allRequests.flatMap(_ => {
         // if entire workflow is completed, fire workflow completed event, clean up, and kill the workflow

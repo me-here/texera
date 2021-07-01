@@ -122,11 +122,11 @@ class WorkflowWebsocketResource {
     val opResultService = sessionResults(session.getId).operatorResults(request.operatorID)
     // calculate from index (pageIndex starts from 1 instead of 0)
     val from = request.pageSize * (request.pageIndex - 1)
-    val paginationResults = opResultService.getSnapshot
+    val paginationResults = opResultService.getResult
       .slice(from, from + request.pageSize)
       .map(tuple => tuple.asInstanceOf[Tuple].asKeyValuePairJson())
 
-    send(session, PaginatedResultEvent(request.requestID, request.pageIndex, paginationResults))
+    send(session, PaginatedResultEvent.apply(request, paginationResults))
   }
 
   def addBreakpoint(session: Session, addBreakpoint: AddBreakpointRequest): Unit = {

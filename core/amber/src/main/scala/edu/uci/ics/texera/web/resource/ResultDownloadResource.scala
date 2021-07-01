@@ -53,7 +53,7 @@ object ResultDownloadResource {
     // TODO: currently assume only one operator should contains the result
     // TODO: change status checking of the workflow
     val operatorWithResult =
-      sessionResults(sessionId).operatorResults.values.count(p => p.getSnapshot.nonEmpty)
+      sessionResults(sessionId).operatorResults.values.count(p => p.getResult.nonEmpty)
     if (operatorWithResult == 0) {
       return ResultDownloadResponse(
         request.downloadType,
@@ -73,9 +73,9 @@ object ResultDownloadResource {
     // TODO: currently only accept the tuple as input
     val results: List[Tuple] =
       sessionResults(sessionId).operatorResults.values
-        .find(p => p.getSnapshot.nonEmpty)
+        .find(p => p.getResult.nonEmpty)
         .get
-        .getSnapshot
+        .getResult
         .map(iTuple => iTuple.asInstanceOf[Tuple])
     val schema = getSchema(results.head)
 
