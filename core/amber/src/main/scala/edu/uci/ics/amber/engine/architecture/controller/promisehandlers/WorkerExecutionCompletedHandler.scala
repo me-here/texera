@@ -46,40 +46,40 @@ trait WorkerExecutionCompletedHandler {
       // after worker execution is completed, query statistics immediately one last time
       // because the worker might be killed before the next query statistics interval
       // and the user sees the last update before completion
-      val queryStats = new mutable.MutableList[Future[Unit]]()
-      queryStats += execute(
+      val requests = new mutable.MutableList[Future[Unit]]()
+      requests += execute(
         ControllerInitiateQueryStatistics(Option(List(sender))),
         ActorVirtualIdentity.Controller
       )
 
       // if operator is sink, additionally query result immediately one last time
-      val queryResults = new mutable.MutableList[Future[Map[String, OperatorResult]]]()
       if (operator.isInstanceOf[SinkOpExecConfig]) {
-        queryResults += execute(
+        requests += execute(
           ControllerInitiateQueryResults(Option(List(sender))),
           ActorVirtualIdentity.Controller
         )
       }
 
-      Future
-        .collect(queryStats ++ queryResults)
-        .flatMap(_ => {
-          if (workflow.isCompleted) {
-            execute(ControllerInitiateQueryResults(), ActorVirtualIdentity.Controller)
-              .flatMap(ret => {
-                if (eventListener.workflowCompletedListener != null) {
-                  eventListener.workflowCompletedListener.apply(WorkflowCompleted(ret))
-                }
-                disableStatusUpdate()
-                actorContext.parent ! ControllerState.Completed // for testing
-                // clean up all workers and terminate self
-                execute(KillWorkflow(), ActorVirtualIdentity.Controller)
-                Future.Done
-              })
-          } else {
-            Future.Done
-          }
-        })
+      val allRequests = Future.collect(requests.toList)
+
+      allRequests.flatMap(_ => {
+        // if entire workflow is completed, fire workflow completed event, clean up, and kill the workflow
+        if (workflow.isCompleted) {
+          execute(ControllerInitiateQueryResults(), ActorVirtualIdentity.Controller)
+            .flatMap(ret => {
+              if (eventListener.workflowCompletedListener != null) {
+                eventListener.workflowCompletedListener.apply(WorkflowCompleted(ret))
+              }
+              disableStatusUpdate()
+              actorContext.parent ! ControllerState.Completed // for testing
+              // clean up all workers and terminate self
+              execute(KillWorkflow(), ActorVirtualIdentity.Controller)
+              Future.Done
+            })
+        } else {
+          Future.Done
+        }
+      })
     }
   }
 }
