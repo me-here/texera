@@ -5,16 +5,14 @@ import { NzModalRef, NzModalService } from 'ng-zorro-antd/modal';
 import { NzTableQueryParams } from 'ng-zorro-antd/table';
 import { Observable } from 'rxjs/Observable';
 import { assertType } from 'src/app/common/util/assert';
-import { sessionGetObject, sessionRemoveObject, sessionSetObject } from 'src/app/common/util/storage';
 import { ExecuteWorkflowService } from '../../service/execute-workflow/execute-workflow.service';
 import { ResultPanelToggleService } from '../../service/result-panel-toggle/result-panel-toggle.service';
 import { WorkflowActionService } from '../../service/workflow-graph/model/workflow-action.service';
-import { WorkflowWebsocketService } from '../../service/workflow-websocket/workflow-websocket.service';
-import { ExecutionState } from '../../types/execute-workflow.interface';
-import { IndexableObject, PAGINATION_INFO_STORAGE_KEY, ResultPaginationInfo, TableColumn } from '../../types/result-table.interface';
+import { ExecutionState, isWebPaginationUpdate, ExecutionStateInfo } from '../../types/execute-workflow.interface';
+import { IndexableObject, TableColumn } from '../../types/result-table.interface';
 import { BreakpointTriggerInfo } from '../../types/workflow-common.interface';
-import { WorkflowStatusService } from '../../service/workflow-status/workflow-status.service';
 import { WorkflowResultService, DEFAULT_PAGE_SIZE } from '../../service/workflow-result/workflow-result.service';
+import { Subscription } from 'rxjs';
 
 /**
  * ResultPanelComponent is the bottom level area that displays the
@@ -40,6 +38,8 @@ export class ResultPanelComponent {
 
   private static readonly PRETTY_JSON_TEXT_LIMIT: number = 50000;
   private static readonly TABLE_COLUMN_TEXT_LIMIT: number = 1000;
+
+  public pageSize = DEFAULT_PAGE_SIZE;
 
   public showResultPanel: boolean = false;
 
@@ -70,7 +70,9 @@ export class ResultPanelComponent {
   public isLoadingResult: boolean = false;
   // this starts from **ONE**, not zero
   public currentPageIndex: number = 1;
-  public total: number = 0;
+  public totalNumTuples: number = 0;
+
+  public resultUpdateSubscription: Subscription | undefined;
 
   constructor(
     private executeWorkflowService: ExecuteWorkflowService,
@@ -79,12 +81,15 @@ export class ResultPanelComponent {
     private workflowActionService: WorkflowActionService,
     private workflowResultService: WorkflowResultService,
   ) {
+
     Observable.merge(
-      this.executeWorkflowService.getExecutionStateStream(),
+      this.executeWorkflowService.getExecutionStateStream().filter(event => this.needRerenderOnStateChange(event)),
       this.workflowActionService.getJointGraphWrapper().getJointOperatorHighlightStream(),
       this.workflowActionService.getJointGraphWrapper().getJointOperatorUnhighlightStream(),
       this.resultPanelToggleService.getToggleChangeStream()
-    ).subscribe(trigger => this.displayResultPanel());
+    ).subscribe(trigger => {
+      this.rerenderResultPanel();
+    });
 
     this.executeWorkflowService.getExecutionStateStream().subscribe(event => {
       if (event.current.state === ExecutionState.BreakpointTriggered) {
@@ -109,7 +114,23 @@ export class ResultPanelComponent {
 
   }
 
-  public displayResultPanel(): void {
+  public needRerenderOnStateChange(event: { previous: ExecutionStateInfo, current: ExecutionStateInfo }): boolean {
+    // transitioning from any state to failed state
+    if (event.current.state === ExecutionState.Failed) {
+      return true;
+    }
+    // transitioning from any state to breakpoint triggered state
+    if (event.current.state === ExecutionState.BreakpointTriggered) {
+      return true;
+    }
+    // transition from uninitialized / completed to anything else indicates a new execution of the workflow
+    if (event.previous.state === ExecutionState.Uninitialized || event.previous.state === ExecutionState.Completed) {
+      return true;
+    }
+    return false;
+  }
+
+  public rerenderResultPanel(): void {
     // current result panel is closed, do nothing
     this.showResultPanel = this.resultPanelToggleService.isResultPanelOpen();
     if (!this.showResultPanel) {
@@ -149,36 +170,32 @@ export class ResultPanelComponent {
         const paginatedResultService = this.workflowResultService.getPaginatedResultService(this.resultPanelOperatorID);
         const resultService = this.workflowResultService.getResultService(this.resultPanelOperatorID);
 
+        this.resultUpdateSubscription = this.workflowResultService.getResultUpdateStream().subscribe(update => {
+          if (! this.resultPanelOperatorID) {
+            return;
+          }
+          const opUpdate = update[this.resultPanelOperatorID];
+          if (! opUpdate || ! isWebPaginationUpdate(opUpdate)) {
+            return;
+          }
+          this.totalNumTuples = opUpdate.totalNumTuples;
+          this.isFrontPagination = false;
+          if (opUpdate.dirtyPageIndices.includes(this.currentPageIndex)) {
+            this.changePaginatedResultData();
+          }
+        });
+
         if (paginatedResultService) {
           this.isFrontPagination = false;
-          this.total = paginatedResultService.getCurrentTotalNumTuples();
+          this.totalNumTuples = paginatedResultService.getCurrentTotalNumTuples();
           this.currentPageIndex = paginatedResultService.getCurrentPageIndex();
-          this.isLoadingResult = true;
-          paginatedResultService.selectPage(this.currentPageIndex, DEFAULT_PAGE_SIZE).subscribe(result => {
-            if (this.currentPageIndex === result.pageIndex) {
-              this.setupResultTable(result.table, paginatedResultService.getCurrentTotalNumTuples());
-            }
-          });
+          this.changePaginatedResultData();
+
         } else if (resultService && resultService.getChartType()) {
           this.chartType = resultService.getChartType();
         }
       }
     }
-    // else if (executionState.state === ExecutionState.Paused) {
-    //   if (this.resultPanelOperatorID) {
-    //     const result = executionState.currentTuples[this.resultPanelOperatorID]?.tuples;
-    //     if (result) {
-    //       const resultTable: string[][] = [];
-    //       result.forEach(workerTuple => {
-    //         const updatedTuple: string[] = [];
-    //         updatedTuple.push(workerTuple.workerID);
-    //         updatedTuple.push(...workerTuple.tuple);
-    //         resultTable.push(updatedTuple);
-    //       });
-    //       this.setupResultTable(resultTable, resultTable.length);
-    //     }
-    //   }
-    // }
   }
 
   public clearResultPanel(): void {
@@ -196,8 +213,13 @@ export class ResultPanelComponent {
 
     this.currentPageIndex = 1;
 
-    this.total = 0;
+    this.totalNumTuples = 0;
     this.isLoadingResult = false;
+
+    if (this.resultUpdateSubscription !== undefined) {
+      this.resultUpdateSubscription.unsubscribe();
+      this.resultUpdateSubscription = undefined;
+    }
   }
 
   /**
@@ -257,7 +279,6 @@ export class ResultPanelComponent {
     this.executeWorkflowService.skipTuples();
     this.breakpointAction = false;
   }
-
   /**
    * Callback function for table query params changed event
    *   params containing new page index, new page size, and more
@@ -272,29 +293,37 @@ export class ResultPanelComponent {
     if (!this.resultPanelOperatorID) {
       return;
     }
-    this.isLoadingResult = true;
-    const { pageIndex: newPageIndex, pageSize: newPageSize } = params;
-    this.currentPageIndex = newPageIndex;
+    this.currentPageIndex = params.pageIndex;
 
+    this.changePaginatedResultData();
+  }
+
+  // frontend table data must be changed, because:
+  // 1. result panel is opened - must display currently selected page
+  // 2. user selects a new page - must display new page data
+  // 3. current page is dirty - must re-fetch data
+  public changePaginatedResultData(): void {
+    if (! this.resultPanelOperatorID) {
+      return;
+    }
     const paginatedResultService = this.workflowResultService.getPaginatedResultService(this.resultPanelOperatorID);
     if (! paginatedResultService) {
       return;
     }
-    paginatedResultService.selectPage(newPageIndex, newPageSize).subscribe(pageData => {
+    this.isLoadingResult = true;
+    paginatedResultService.selectPage(this.currentPageIndex, DEFAULT_PAGE_SIZE).subscribe(pageData => {
       if (this.currentPageIndex === pageData.pageIndex) {
-        // TODO: load table with new data
-        this.setupResultTable(pageData.table, this.total);
+        this.setupResultTable(pageData.table, paginatedResultService.getCurrentTotalNumTuples());
       }
     });
-
   }
+
 
   /**
    * Updates all the result table properties based on the execution result,
    *  displays a new data table with a new paginator on the result panel.
    *
    * @param resultData rows of the result (may not be all rows if displaying result for workflow completed event)
-   * @param totalRowCount the total number of rows for the result
    */
   private setupResultTable(resultData: ReadonlyArray<object>, totalRowCount: number) {
     if (! this.resultPanelOperatorID) {
@@ -303,6 +332,8 @@ export class ResultPanelComponent {
     if (resultData.length < 1) {
       return;
     }
+
+    this.isLoadingResult = false;
 
     // creates a shallow copy of the readonly response.result,
     //  this copy will be has type object[] because MatTableDataSource's input needs to be object[]
@@ -319,7 +350,7 @@ export class ResultPanelComponent {
 
     // generate columnDef from first row, column definition is in order
     this.currentColumns = ResultPanelComponent.generateColumns(columns);
-    this.total = totalRowCount;
+    this.totalNumTuples = totalRowCount;
 
   }
 

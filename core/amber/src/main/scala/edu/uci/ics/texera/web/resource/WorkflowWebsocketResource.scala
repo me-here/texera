@@ -126,7 +126,7 @@ class WorkflowWebsocketResource {
       .slice(from, from + request.pageSize)
       .map(tuple => tuple.asInstanceOf[Tuple].asKeyValuePairJson())
 
-    send(session, PaginatedResultEvent(request.requestID, paginationResults))
+    send(session, PaginatedResultEvent(request.requestID, request.pageIndex, paginationResults))
   }
 
   def addBreakpoint(session: Session, addBreakpoint: AddBreakpointRequest): Unit = {

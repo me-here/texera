@@ -53,6 +53,7 @@ trait QueryWorkerStatisticsHandler {
       allResponses.map(responses => {
         responses.foreach(res => {
           val (worker, stats) = res
+          workflow.getOperator(worker).getWorker(worker).state = stats.workerState
           workflow.getOperator(worker).getWorker(worker).stats = stats
         })
         updateFrontendWorkflowStatus()

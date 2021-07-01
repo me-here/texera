@@ -4,7 +4,6 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Subject } from 'rxjs/Subject';
 import { Observable } from 'rxjs/Observable';
 import './../../../common/rxjs-operators';
-import { AppSettings } from '../../../common/app-setting';
 import { WorkflowActionService } from '../workflow-graph/model/workflow-action.service';
 import { WorkflowGraphReadonly } from '../workflow-graph/model/workflow-graph';
 import {
@@ -93,8 +92,7 @@ export class ExecuteWorkflowService {
       case 'WorkflowStartedEvent':
         return {state: ExecutionState.Running};
       case 'WorkflowCompletedEvent':
-        const resultMap = new Map(event.result.map(r => [r.operatorID, r]));
-        return {state: ExecutionState.Completed, resultID: undefined, resultMap: resultMap};
+        return {state: ExecutionState.Completed};
       case 'WorkflowPausedEvent':
         if (this.currentState.state === ExecutionState.BreakpointTriggered ||
           this.currentState.state === ExecutionState.Paused) {
@@ -157,16 +155,6 @@ export class ExecuteWorkflowService {
     return undefined;
   }
 
-  /**
-   * Return map which contains all sink operators execution result
-   */
-  public getResultMap(): ReadonlyMap<string, WebOperatorResult> | undefined {
-    if (this.currentState?.state === ExecutionState.Completed) {
-      return this.currentState.resultMap;
-    }
-    return undefined;
-  }
-
   public getBreakpointTriggerInfo(): BreakpointTriggerInfo | undefined {
     if (this.currentState?.state === ExecutionState.BreakpointTriggered) {
       return this.currentState.breakpoint;
@@ -223,7 +211,7 @@ export class ExecuteWorkflowService {
       throw new Error('cannot kill workflow, current execution state is ' + this.currentState.state);
     }
     this.workflowWebsocketService.send('KillWorkflowRequest', {});
-    this.updateExecutionState({state: ExecutionState.Completed, resultID: undefined, resultMap: new Map()});
+    this.updateExecutionState({state: ExecutionState.Completed});
   }
 
   public resumeWorkflow(): void {

@@ -1,5 +1,7 @@
-import { LogicalPlan, WorkflowStatusUpdate, ResultObject, LogicalOperator, BreakpointInfo, WorkflowResultUpdate } from './execute-workflow.interface';
-import { BreakpointTriggerInfo, BreakpointFault, BreakpointFaultedTuple } from './workflow-common.interface';
+import {
+  LogicalPlan, WorkflowStatusUpdate, LogicalOperator, BreakpointInfo, WorkflowResultUpdateEvent
+} from './execute-workflow.interface';
+import { BreakpointTriggerInfo, BreakpointFaultedTuple } from './workflow-common.interface';
 
 
 /**
@@ -15,12 +17,12 @@ import { BreakpointTriggerInfo, BreakpointFault, BreakpointFaultedTuple } from '
  * 2. value is the payload this request/event needs
  */
 
-export interface WebSocketHelloWorld extends Readonly<{message: string}> { }
+export interface WebSocketHelloWorld extends Readonly<{ message: string }> { }
 
 export interface TexeraConstraintViolation extends Readonly<{
   message: string;
   propertyPath: string;
-}> {}
+}> { }
 
 export interface WorkflowError extends Readonly<{
   operatorErrors: Record<string, TexeraConstraintViolation>,
@@ -80,7 +82,7 @@ export type TexeraWebsocketRequestTypeMap = {
   'SkipTupleRequest': SkipTuple,
   'AddBreakpointRequest': BreakpointInfo,
   'ResultPaginationRequest': PaginationRequest,
-  'ResultDownloadRequest': {downloadType: string, workflowName: string}
+  'ResultDownloadRequest': { downloadType: string, workflowName: string }
 };
 
 export type TexeraWebsocketEventTypeMap = {
@@ -88,9 +90,9 @@ export type TexeraWebsocketEventTypeMap = {
   'HeartBeatResponse': {},
   'WorkflowErrorEvent': WorkflowError,
   'WorkflowStartedEvent': {},
-  'WorkflowCompletedEvent': {result: ReadonlyArray<ResultObject>},
+  'WorkflowCompletedEvent': {},
   'WebWorkflowStatusUpdateEvent': WorkflowStatusUpdate,
-  'WebResultUpdateEvent': WorkflowResultUpdate,
+  'WebResultUpdateEvent': WorkflowResultUpdateEvent,
   'WorkflowPausedEvent': {},
   'WorkflowResumedEvent': {},
   'RecoveryStartedEvent': {},

@@ -88,8 +88,10 @@ export interface WebDataUpdate extends Readonly<{
 
 export type WebResultUpdate = WebPaginationUpdate | WebDataUpdate;
 
-export interface WorkflowResultUpdate extends Readonly<{
-  [key: string]: WebResultUpdate
+export type WorkflowResultUpdate = Record<string, WebResultUpdate>;
+
+export interface WorkflowResultUpdateEvent extends Readonly<{
+  updates: WorkflowResultUpdate
 }> {}
 
 // user-defined type guards to check the type of the result update
@@ -124,7 +126,7 @@ export type ExecutionStateInfo = Readonly<{
 } | {
   state: ExecutionState.BreakpointTriggered, breakpoint: BreakpointTriggerInfo
 } | {
-  state: ExecutionState.Completed, resultID: string | undefined, resultMap: ReadonlyMap<string, ResultObject>
+  state: ExecutionState.Completed
 } | {
   state: ExecutionState.Failed, errorMessages: Readonly<Record<string, string>>
 }>;

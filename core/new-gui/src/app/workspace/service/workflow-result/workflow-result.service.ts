@@ -10,6 +10,9 @@ import { ChartType } from '../../types/visualization.interface';
 
 export const DEFAULT_PAGE_SIZE = 10;
 
+/**
+ * WorkflowResultService manages the result data of a workflow execution.
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -20,10 +23,8 @@ export class WorkflowResultService {
 
   private resultUpdateStream = new Subject<Record<string, WebResultUpdate>>();
 
-  constructor(
-    private wsService: WorkflowWebsocketService,
-  ) {
-    this.wsService.subscribeToEvent('WebResultUpdateEvent').subscribe(event => this.handleResultUpdate(event));
+  constructor(private wsService: WorkflowWebsocketService) {
+    this.wsService.subscribeToEvent('WebResultUpdateEvent').subscribe(event => this.handleResultUpdate(event.updates));
   }
 
   public getResultUpdateStream(): Observable<Record<string, WebResultUpdate>> {
