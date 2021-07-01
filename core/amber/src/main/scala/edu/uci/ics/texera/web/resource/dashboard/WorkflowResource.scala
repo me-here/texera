@@ -83,9 +83,11 @@ class WorkflowResource {
     UserResource.getUser(session) match {
       case Some(user) =>
         val uid = user.getUid
-        val accessLevel = WorkflowAccessResource.checkAccessLevel(wid, uid)
-        if (accessLevel.eq(Access.None) || accessLevel.eq(Access.NoRecord)) {
-          Response.status(Response.Status.BAD_REQUEST).build()
+        if (
+          WorkflowAccessResource.hasNoWorkflowAccess(wid, user.getUid) || WorkflowAccessResource
+            .hasNoWorkflowAccessRecord(wid, user.getUid)
+        ) {
+          Response.status(Response.Status.UNAUTHORIZED).build()
         } else {
           Response.ok(workflowDao.fetchOneByWid(wid)).build()
         }
@@ -99,7 +101,7 @@ class WorkflowResource {
     *
     * @param session  HttpSession
     * @param workflow , a workflow
-    * @return Workflow, which contains the generated wid if not provided
+    * @return Workflow, which contains the generated wid if not provided// TODO: the types of Ownership-Access pairs should be considered in a case-by-case manner
     */
   @POST
   @Path("/persist")
@@ -108,16 +110,24 @@ class WorkflowResource {
   def persistWorkflow(@Session session: HttpSession, workflow: Workflow): Response = {
     UserResource.getUser(session) match {
       case Some(user) =>
-        if (WorkflowAccessResource.hasWriteAccess(workflow.getWid, user.getUid)) {
-          // when the wid is provided, update the existing workflow
+        if (workflowOfUserExists(workflow.getWid, user.getUid)) {
+//          current user reading
           workflowDao.update(workflow)
         } else {
-          // when the wid is not provided, treat it as a new workflow
-          workflowDao.insert(workflow)
-          workflowOfUserDao.insert(new WorkflowOfUser(user.getUid, workflow.getWid))
-          workflowUserAccessDao.insert(
-            new WorkflowUserAccess(user.getUid, workflow.getWid, true, true)
-          )
+          if (WorkflowAccessResource.hasNoWorkflowAccessRecord(workflow.getWid, user.getUid)) {
+//            not owner and not access record --> new record
+            workflowDao.insert(workflow)
+            workflowOfUserDao.insert(new WorkflowOfUser(user.getUid, workflow.getWid))
+            workflowUserAccessDao.insert(
+              new WorkflowUserAccess(user.getUid, workflow.getWid, true, true)
+            )
+          } else if (WorkflowAccessResource.hasWriteAccess(workflow.getWid, user.getUid)) {
+//            not owner but has write access
+            workflowDao.update(workflow)
+          } else {
+//            not owner and no write access -> :(
+            Response.status(Response.Status.UNAUTHORIZED).build()
+          }
         }
         Response.ok(workflowDao.fetchOneByWid(workflow.getWid)).build()
       case None =>
