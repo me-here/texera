@@ -173,11 +173,11 @@ class WorkflowAccessResource {
     * @return rejection if user not permitted to share the workflow
     */
   @POST
-  @Path("/share/{wid}/{uid}/{access_type}")
+  @Path("/share/{wid}/{uid}/{accessType}")
   def shareAccess(
       @PathParam("wid") wid: UInteger,
       @PathParam("uid") uid: UInteger,
-      @PathParam("access_type") accessType: String,
+      @PathParam("accessType") accessType: String,
       @Session session: HttpSession
   ): Response = {
     UserResource.getUser(session) match {
