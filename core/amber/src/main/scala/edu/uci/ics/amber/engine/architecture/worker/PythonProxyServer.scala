@@ -83,13 +83,13 @@ private class AmberProducer(
   }
 
   //
-  override def acceptPut(context: FlightProducer.CallContext, flightStream: FlightStream, ackStream: FlightProducer.StreamListener[PutResult]): Runnable
-  = {
-    super.acceptPut(context, flightStream, ackStream)
-    holders
-    .
-
-  }
+  //  override def acceptPut(context: FlightProducer.CallContext, flightStream: FlightStream, ackStream: FlightProducer.StreamListener[PutResult]): Runnable
+  //  = {
+  //    super.acceptPut(context, flightStream, ackStream)
+  //    holders
+  //    .
+  //
+  //  }
 
 }
 

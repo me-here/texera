@@ -9,4 +9,4 @@ class Handler(ABC):
         self.cmd_type = cmd_type
 
     def __call__(self, context: Context, command: ControlCommand, *args, **kwargs):
-        return None
+        pass
