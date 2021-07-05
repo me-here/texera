@@ -44,7 +44,7 @@ libraryDependencies ++= Seq(
 libraryDependencies += "org.jgrapht" % "jgrapht-core" % "1.4.0"
 
 // dropwizard web framework
-val dropwizardVersion = "1.3.23"
+val dropwizardVersion = "2.0.23"
 // jersey version should be the same as jersey-server that is contained in dropwizard
 val jerseyMultipartVersion = "2.25.1"
 val jacksonVersion = "2.12.0"
@@ -59,6 +59,32 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.module" % "jackson-module-jsonSchema" % jacksonVersion,
   "com.fasterxml.jackson.module" % "jackson-module-scala_2.12" % jacksonVersion
 )
+
+//////////////////
+// Test related //
+//////////////////
+libraryDependencies += "org.scalamock" %% "scalamock" % "4.4.0" % Test
+libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.9"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.9" % Test
+// https://mvnrepository.com/artifact/ch.vorburger.mariaDB4j/mariaDB4j
+libraryDependencies += "ch.vorburger.mariaDB4j" % "mariaDB4j" % "2.4.0" % Test
+// https://mvnrepository.com/artifact/junit/junit
+libraryDependencies += "junit" % "junit" % "4.13.2" % Test
+// https://mvnrepository.com/artifact/org.scalatestplus/junit-4-13
+libraryDependencies += "org.scalatestplus" %% "junit-4-13" % "3.2.9.0" % Test
+// https://mvnrepository.com/artifact/io.dropwizard/dropwizard-testing
+libraryDependencies += "io.dropwizard" % "dropwizard-testing" % "2.0.23" % Test
+//// https://mvnrepository.com/artifact/org.mockito/mockito-all
+//libraryDependencies += "org.mockito" % "mockito-all" % "1.10.19" % Test
+// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+libraryDependencies += "org.junit.jupiter" % "junit-jupiter-api" % "5.7.2" % Test
+// https://mvnrepository.com/artifact/org.glassfish.jersey.test-framework.providers/jersey-test-framework-provider-grizzly2
+libraryDependencies += "org.glassfish.jersey.test-framework.providers" % "jersey-test-framework-provider-grizzly2" % jerseyMultipartVersion % Test
+// https://mvnrepository.com/artifact/org.hibernate.validator/hibernate-validator
+libraryDependencies += "org.hibernate.validator" % "hibernate-validator" % "6.2.0.Final"
+
+
+////////////////////
 
 libraryDependencies += "com.kjetland" % "mbknor-jackson-jsonschema_2.12" % "1.0.39"
 
@@ -99,10 +125,6 @@ libraryDependencies += "org.jooq" % "jooq" % "3.14.4"
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
 
-libraryDependencies += "org.scalamock" %% "scalamock" % "4.4.0" % Test
-libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.2"
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.2" % Test
-
 libraryDependencies += "com.google.oauth-client" % "google-oauth-client" % "1.31.4" exclude ("com.google.guava", "guava")
 libraryDependencies += "com.google.oauth-client" % "google-oauth-client-jetty" % "1.31.4" exclude ("com.google.guava", "guava")
 libraryDependencies += "com.google.api-client" % "google-api-client" % "1.31.1" exclude ("com.google.guava", "guava")
@@ -117,12 +139,6 @@ libraryDependencies += "com.konghq" % "unirest-java" % "3.11.11"
 
 // https://mvnrepository.com/artifact/com.github.marianobarrios/lbmq
 libraryDependencies += "com.github.marianobarrios" % "lbmq" % "0.5.0"
-
-// https://mvnrepository.com/artifact/ch.vorburger.mariaDB4j/mariaDB4j
-libraryDependencies += "ch.vorburger.mariaDB4j" % "mariaDB4j" % "2.4.0" % Test
-
-// https://www.scalatest.org/getting_started_with_fun_suite
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.5" % "test"
 
 // https://mvnrepository.com/artifact/com.github.redouane59.twitter/twittered
 libraryDependencies += "com.github.redouane59.twitter" % "twittered" % "1.23"

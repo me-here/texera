@@ -6,6 +6,7 @@ import edu.uci.ics.texera.web.model.jooq.generated.tables.daos.{WorkflowDao, Wor
 import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.{Workflow, WorkflowOfUser}
 import edu.uci.ics.texera.web.resource.auth.UserResource
 import io.dropwizard.jersey.sessions.Session
+import org.jooq.DSLContext
 import org.jooq.types.UInteger
 
 import java.util
@@ -20,11 +21,9 @@ import javax.ws.rs.core.{MediaType, Response}
   */
 @Path("/workflow")
 @Produces(Array(MediaType.APPLICATION_JSON))
-class WorkflowResource {
-  final private val workflowDao = new WorkflowDao(SqlServer.createDSLContext.configuration)
-  final private val workflowOfUserDao = new WorkflowOfUserDao(
-    SqlServer.createDSLContext.configuration
-  )
+class WorkflowResource(context: DSLContext = SqlServer.createDSLContext) {
+  final private val workflowDao = new WorkflowDao(context.configuration)
+  final private val workflowOfUserDao = new WorkflowOfUserDao(context.configuration)
 
   /**
     * This method returns the current in-session user's workflow list
@@ -38,7 +37,7 @@ class WorkflowResource {
   def retrieveWorkflowsBySessionUser(@Session session: HttpSession): util.List[Workflow] = {
     UserResource.getUser(session) match {
       case Some(user) =>
-        SqlServer.createDSLContext
+        context
           .select()
           .from(WORKFLOW)
           .join(WORKFLOW_OF_USER)
@@ -104,6 +103,14 @@ class WorkflowResource {
     }
   }
 
+  private def workflowOfUserExists(wid: UInteger, uid: UInteger): Boolean = {
+    workflowOfUserDao.existsById(
+      context
+        .newRecord(WORKFLOW_OF_USER.UID, WORKFLOW_OF_USER.WID)
+        .values(uid, wid)
+    )
+  }
+
   /**
     * This method deletes the workflow from database
     *
@@ -124,13 +131,5 @@ class WorkflowResource {
       case None =>
         Response.status(Response.Status.UNAUTHORIZED).build()
     }
-  }
-
-  private def workflowOfUserExists(wid: UInteger, uid: UInteger): Boolean = {
-    workflowOfUserDao.existsById(
-      SqlServer.createDSLContext
-        .newRecord(WORKFLOW_OF_USER.UID, WORKFLOW_OF_USER.WID)
-        .values(uid, wid)
-    )
   }
 }
