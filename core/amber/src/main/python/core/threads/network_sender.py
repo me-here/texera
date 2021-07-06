@@ -3,7 +3,7 @@ from loguru import logger
 from pyarrow import Table
 
 from core.models.internal_queue import InternalQueue, ControlElement, OutputDataElement
-from core.models.payload import DataFrame
+from core.models.payload import DataFrame, EndOfUpstream
 from core.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ControlPayload, WorkflowControlMessage, DataPayload
 from proxy import ProxyClient
@@ -19,6 +19,7 @@ class NetworkSender(StoppableQueueBlockingThread):
         next_entry = self.interruptible_get()
         logger.debug(f"received a message")
         if isinstance(next_entry, OutputDataElement):
+
             logger.debug(f"received an OutputDataElement")
             self.send_batch(next_entry.to, next_entry.batch)
         elif isinstance(next_entry, ControlElement):
@@ -33,9 +34,12 @@ class NetworkSender(StoppableQueueBlockingThread):
 
         logger.info(" here in send batch")
         if isinstance(batch, DataFrame):
-            for chunk in chunks(batch.frame, 1):
+            for chunk in chunks(batch.frame, 100):
                 table = Table.from_pandas(pandas.DataFrame.from_records([t.row for t in chunk]))
                 self._proxy_client.send_data(to.SerializeToString(), table)
+        elif isinstance(batch, EndOfUpstream):
+            logger.info("python-python sending an EndOfStream")
+            self._proxy_client.send_data(to.SerializeToString(), None)
 
     def send_control(self, to: ActorVirtualIdentity, cmd: ControlPayload):
         workflow_control_message = WorkflowControlMessage(from_=to, sequence_number=1, payload=cmd)

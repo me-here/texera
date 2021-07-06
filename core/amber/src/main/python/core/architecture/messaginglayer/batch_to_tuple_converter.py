@@ -50,7 +50,6 @@ class BatchToTupleConverter:
 
         if isinstance(data_payload, DataFrame):
             for tuple_ in data_payload.frame:
-                # logger.info(f" yielding a tuple {tuple_}")
                 yield tuple_
 
         elif isinstance(data_payload, EndOfUpstream):

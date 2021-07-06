@@ -1,7 +1,9 @@
 from loguru import logger
 from pyarrow import Table
+from pyarrow._flight import FlightStreamWriter
 from pyarrow.flight import Action, FlightCallOptions, FlightClient
 from pyarrow.flight import FlightDescriptor
+from typing import Optional
 
 from .common import serialize_arguments
 from .proxy_server import ProxyServer
@@ -34,7 +36,7 @@ class ProxyClient(FlightClient):
         logger.info(f"sending {action}, {action.body}")
         return next(self.do_action(action, options)).body.to_pybytes()
 
-    def send_data(self, target, batch: Table, on_success: callable = lambda: None,
+    def send_data(self, target, batch: Optional[Table], on_success: callable = lambda: None,
                   on_error: callable = lambda: None) -> None:
         """
         send data to the server
@@ -46,12 +48,17 @@ class ProxyClient(FlightClient):
         :return:
         """
         try:
-            writer, reader = self.do_put(FlightDescriptor.for_command(target), batch.schema)
+            descriptor = FlightDescriptor.for_path(target)
+            batch = Table.from_arrays([]) if batch is None else batch
+            refs = self.do_put(descriptor, batch.schema)
+            writer: FlightStreamWriter = refs[0]
+            logger.info("descriptor: \n " + str(descriptor) + "\nbatch schema: \n" + str(batch.schema))
             logger.debug("start writing")
             try:
                 with writer:
-                    writer.write_table(batch)
-            except:
+                    writer.write_table(batch, max_chunksize=100)
+            except Exception as err:
+                logger.exception(err)
                 pass
 
             logger.debug("finish writing")

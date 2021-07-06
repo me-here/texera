@@ -1,7 +1,7 @@
 from abc import ABC
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Iterable
 
-from core.models.payload import DataPayload, DataFrame
+from core.models.payload import DataPayload, DataFrame, EndOfUpstream
 from core.models.tuple import ITuple
 from edu.uci.ics.amber.engine.common import LinkIdentity, ActorVirtualIdentity
 
@@ -16,7 +16,7 @@ class DataSendingPolicyExec(ABC):
     def add_tuple_to_batch(self, tuple_: ITuple) -> Optional[Tuple[ActorVirtualIdentity, DataPayload]]:
         pass
 
-    def no_more(self) -> Optional[Tuple[ActorVirtualIdentity, DataPayload]]:
+    def no_more(self) -> Tuple[ActorVirtualIdentity, DataPayload]:
         pass
 
     def reset(self) -> None:
@@ -36,7 +36,21 @@ class OneToOnePolicyExec(DataSendingPolicyExec):
         self.batch.append(tuple_)
         if len(self.batch) == self.batch_size:
             ret_batch = self.batch
-            self.batch = list()
+            self.reset()
             return self.receivers[0], DataFrame(ret_batch)
         else:
             return None
+
+    def no_more(self) -> Iterable[Tuple[ActorVirtualIdentity, DataPayload]]:
+        if len(self.batch) > 0:
+            yield self.receivers[0], DataFrame(self.batch)
+        yield self.receivers[0], EndOfUpstream()
+        self.reset()
+
+    def reset(self) -> None:
+        self.batch = list()
+#
+#   override def reset(): Unit = {
+#     batch = new Array[ITuple](batchSize)
+#     currentSize = 0
+#   }

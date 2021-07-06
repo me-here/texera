@@ -7,13 +7,19 @@ import com.softwaremill.macwire.wire
 import com.twitter.util.Future
 import edu.uci.ics.amber.clustering.ClusterListener.GetAvailableNodeAddresses
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
-import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{ErrorOccurred, WorkflowStatusUpdate}
+import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{
+  ErrorOccurred,
+  WorkflowStatusUpdate
+}
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LinkWorkersHandler.LinkWorkers
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkMessage, RegisterActorRef}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  NetworkMessage,
+  RegisterActorRef
+}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
 import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager._
+import edu.uci.ics.amber.engine.common.statetransition2.Ready
 import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, WorkflowIdentity}
 import edu.uci.ics.amber.error.ErrorUtils.safely
@@ -91,7 +97,7 @@ class Controller(
       )
     }.toSeq)
     .onSuccess { ret =>
-      workflow.getAllOperators.foreach(_.setAllWorkerState(Ready))
+      workflow.getAllOperators.foreach(_.setAllWorkerState(Ready()))
       if (eventListener.workflowStatusUpdateListener != null) {
         eventListener.workflowStatusUpdateListener
           .apply(WorkflowStatusUpdate(workflow.getWorkflowStatus))
@@ -150,7 +156,6 @@ class Controller(
           asyncRPCServer.logControlInvocation(invocation, from)
           asyncRPCServer.receive(invocation, from)
         case ret: ReturnPayload =>
-          println(s"controller receive $ret")
           asyncRPCClient.logControlReply(ret, from)
           asyncRPCClient.fulfillPromise(ret)
         case other =>

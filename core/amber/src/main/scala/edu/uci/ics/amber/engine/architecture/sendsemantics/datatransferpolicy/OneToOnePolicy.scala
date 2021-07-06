@@ -35,7 +35,7 @@ class OneToOnePolicy(
     if (currentSize > 0) {
       ret.append((receivers(0), DataFrame(batch.slice(0, currentSize))))
     }
-    println("appending " + receivers(0) + " " + EndOfUpstream())
+//    println("appending " + receivers(0) + " " + EndOfUpstream())
     ret.append((receivers(0), EndOfUpstream()))
     ret.toArray
   }

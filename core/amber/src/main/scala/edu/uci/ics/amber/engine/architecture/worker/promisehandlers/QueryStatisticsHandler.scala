@@ -1,20 +1,14 @@
 package edu.uci.ics.amber.engine.architecture.worker.promisehandlers
 
-import edu.uci.ics.amber.engine.architecture.worker.{
-  WorkerAsyncRPCHandlerInitializer,
-  WorkerResult,
-  WorkerStatistics
-}
+import edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.{
   QueryStatistics,
   QueryWorkerResult
 }
-import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
-import edu.uci.ics.amber.engine.architecture.worker.{WorkerAsyncRPCHandlerInitializer, WorkerStatistics}
+import edu.uci.ics.amber.engine.architecture.worker.{WorkerAsyncRPCHandlerInitializer, WorkerResult}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager._
+import edu.uci.ics.amber.engine.common.statetransition2.WorkerState
 import edu.uci.ics.amber.engine.common.{Constants, ITupleSinkOperatorExecutor}
-import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 
 object QueryStatisticsHandler {
   final case class QueryStatistics() extends ControlCommand[WorkerStatistics]
@@ -47,7 +41,6 @@ trait QueryStatisticsHandler {
     }
 
     val state: WorkerState = stateManager.getCurrentState
-    val ret = WorkerStatistics(state, in, displayOut)
     WorkerStatistics(state, in, displayOut)
   }
 

@@ -2,6 +2,7 @@ package edu.uci.ics.amber.engine.common.rpc
 
 import com.twitter.util.{Future, Promise}
 import edu.uci.ics.amber.engine.architecture.messaginglayer.ControlOutputPort
+import edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics
 import edu.uci.ics.amber.engine.common.WorkflowLogger
 import edu.uci.ics.amber.engine.common.ambermessage.ControlPayload
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
@@ -60,10 +61,16 @@ class AsyncRPCClient(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
     p
   }
 
+  private def createPromise[T](): (Promise[T], Long) = {
+    promiseID += 1
+    val promise = new WorkflowPromise[T]()
+    unfulfilledPromises(promiseID) = promise
+    (promise, promiseID)
+  }
+
   def fulfillPromise(ret: ReturnPayload): Unit = {
     if (unfulfilledPromises.contains(ret.originalCommandID)) {
       val p = unfulfilledPromises(ret.originalCommandID)
-      println(s" promise ${p}: ret: $ret")
       p.setValue(ret.returnValue.asInstanceOf[p.returnType])
       unfulfilledPromises.remove(ret.originalCommandID)
     }
@@ -75,9 +82,9 @@ class AsyncRPCClient(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
       return
     }
     if (ret.returnValue != null) {
-      //      if (ret.returnValue.isInstanceOf[WorkerStatistics]) {
-      //        return
-      //      }
+      if (ret.returnValue.isInstanceOf[WorkerStatistics]) {
+        return
+      }
       logger.logInfo(
         s"receive reply: ${ret.returnValue.getClass.getSimpleName} from ${sender.toString} (controlID: ${ret.originalCommandID})"
       )
@@ -86,13 +93,6 @@ class AsyncRPCClient(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
         s"receive reply: null from ${sender.toString} (controlID: ${ret.originalCommandID})"
       )
     }
-  }
-
-  private def createPromise[T](): (Promise[T], Long) = {
-    promiseID += 1
-    val promise = new WorkflowPromise[T]()
-    unfulfilledPromises(promiseID) = promise
-    (promise, promiseID)
   }
 
 }

@@ -1,10 +1,9 @@
-from queue import Queue
-from typing import Iterable, List
-
 import pytest
 from pandas import DataFrame
 from pyarrow import Table, ArrowNotImplementedError
 from pyarrow.flight import FlightServerError
+from queue import Queue
+from typing import Iterable, List
 
 from .proxy_client import ProxyClient
 from .proxy_server import ProxyServer
@@ -23,7 +22,8 @@ class TestRPCClient:
     @pytest.fixture
     def server_with_dp(self, data_queue):
         server = ProxyServer()
-        server.register_data_handler(lambda batch: list(map(data_queue.put, map(lambda t: t[1], batch.to_pandas().iterrows()))))
+        server.register_data_handler(lambda table: list(map(data_queue.put,
+                                                            map(lambda t: t[1], table.to_pandas().iterrows()))))
         yield server
 
     @pytest.fixture

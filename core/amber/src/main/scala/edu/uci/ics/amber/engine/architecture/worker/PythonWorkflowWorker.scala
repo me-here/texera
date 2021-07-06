@@ -1,8 +1,9 @@
 package edu.uci.ics.amber.engine.architecture.worker
 import akka.actor.ActorRef
+import com.softwaremill.macwire.wire
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.NetworkMessage
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{DataOutputPort, NetworkInputPort}
 import edu.uci.ics.amber.engine.common.IOperatorExecutor
 import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload, WorkflowControlMessage, WorkflowDataMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
@@ -24,6 +25,7 @@ class PythonWorkflowWorker(
     new NetworkInputPort[DataPayload](this.logger, this.handleDataPayload)
   lazy val controlInputPort: NetworkInputPort[ControlPayload] =
     new NetworkInputPort[ControlPayload](this.logger, this.handleControlPayload)
+  lazy val dataOutputPort: DataOutputPort = wire[DataOutputPort]
   override val rpcHandlerInitializer: AsyncRPCHandlerInitializer = null
   val config = WebUtils.config
   val pythonPath = config.getString("python.path").trim
@@ -77,7 +79,7 @@ class PythonWorkflowWorker(
 
   def startRPCServer(outputPortNumber: Int): Unit = {
 
-    val serverThread = serverThreadExecutor.submit(new PythonProxyServer(outputPortNumber, controlOutputPort))
+    val serverThread = serverThreadExecutor.submit(new PythonProxyServer(outputPortNumber, controlOutputPort, dataOutputPort))
   }
 
   override def postStop(): Unit = {

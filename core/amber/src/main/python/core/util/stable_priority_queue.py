@@ -35,10 +35,9 @@ class StablePriorityQueue(PriorityQueue):
         #    Here is a temporary solution to make sure the queue is stable.
         #    However, the current implementation has the following two issues:
         #       1. violating thread-safe, the sequence change may not be atomic.
-        #       2. the sequence keeps increment, which will have a performance issue when the number gets
-        #          really big. Python handles infinite int, but it gets really slow after 2**10000000.
+        #       2. the sequence keeps getting increased, which will have a performance issue when the number gets
+        #          really big. Python handles infinite int, but it gets really slow after 2e7.
         #
-        logger.debug(f"putting a {item} in queue with {type(item)}")
         self.sequence += 1
         if not isinstance(item, QueueElement):
             raise TypeError(f"Unsupported type {type(item)} to put in the {self.__class__.__name__}.")

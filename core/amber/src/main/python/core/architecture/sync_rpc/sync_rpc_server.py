@@ -23,7 +23,7 @@ class SyncRPCServer:
 
     def receive(self, control_invocation: ControlInvocation, from_: ActorVirtualIdentity):
         command = get_oneof(control_invocation.command)
-        logger.info(f"PYTHON receive a CONTROL: {control_invocation}")
+        # logger.info(f"PYTHON receive a CONTROL: {control_invocation}")
         handler = self._handlers[type(command)]
         result: ControlCommand = set_oneof(ControlCommand, handler(self._context, command))
 
@@ -31,7 +31,7 @@ class SyncRPCServer:
                             ReturnPayload(original_command_id=control_invocation.command_id,
                                           return_value=result))
 
-        logger.info(f"returning control {payload}")
+        # logger.info(f"returning control {payload}")
         self._output_queue.put(ControlElement(from_=from_, cmd=payload))
 
     def register(self, handler: Handler):

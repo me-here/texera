@@ -3,21 +3,10 @@ package edu.uci.ics.amber.engine.architecture.common
 import akka.actor.{Actor, ActorRef, Stash}
 import com.softwaremill.macwire.wire
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.FatalErrorHandler.FatalError
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  GetActorRef,
-  NetworkSenderActorRef,
-  RegisterActorRef
-}
-import edu.uci.ics.amber.engine.architecture.messaginglayer.{
-  ControlOutputPort,
-  NetworkCommunicationActor
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{GetActorRef, NetworkSenderActorRef, RegisterActorRef}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{ControlOutputPort, DataOutputPort, NetworkCommunicationActor}
 import edu.uci.ics.amber.engine.common.WorkflowLogger
-import edu.uci.ics.amber.engine.common.rpc.{
-  AsyncRPCClient,
-  AsyncRPCHandlerInitializer,
-  AsyncRPCServer
-}
+import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCHandlerInitializer, AsyncRPCServer}
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
 import edu.uci.ics.amber.error.WorkflowRuntimeError

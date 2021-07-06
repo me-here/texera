@@ -4,6 +4,7 @@ import edu.uci.ics.amber.engine.architecture.controller.ControllerAsyncRPCHandle
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionStartedHandler.WorkerStateUpdated
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager._
+import edu.uci.ics.amber.engine.common.statetransition2.WorkerState
 
 object WorkerExecutionStartedHandler {
   final case class WorkerStateUpdated(state: WorkerState) extends ControlCommand[CommandCompleted]

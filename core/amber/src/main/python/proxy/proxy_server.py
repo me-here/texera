@@ -6,7 +6,7 @@ from functools import wraps
 from inspect import signature
 from loguru import logger
 from pyarrow import py_buffer, Table
-from pyarrow._flight import MetadataRecordBatchReader, FlightStreamChunk
+from pyarrow._flight import MetadataRecordBatchReader
 from pyarrow.flight import Action, FlightDescriptor, FlightServerBase, ServerCallContext, Result
 from pyarrow.ipc import RecordBatchStreamWriter
 from typing import Iterator, Tuple, Dict
@@ -92,18 +92,17 @@ class ProxyServer(FlightServerBase):
         :return:
         """
 
-        logger.debug(f"getting a data flight")
+        # logger.debug(f"getting a data flight")
         from_ = ActorVirtualIdentity().parse(descriptor.command)
-        try:
-            while True:
-                data: FlightStreamChunk = reader.read_chunk()
-                logger.debug(f"getting a data flight {from_}")
-                # logger.info(data.data)
-                self.process_data(from_, data.data)
-        except StopIteration as err:
-            logger.exception(err)
 
+        data: Table = reader.read_all()
+        if len(data.schema) == 0:
+            logger.info("GOT AN END!!! ")
             self.process_data(from_, None)
+        else:
+            logger.debug(f"getting a data flight {from_}, data: \n {data}")
+            # logger.info(data.data)
+            self.process_data(from_, data)
 
     ###############################
     # RPC actions related methods #

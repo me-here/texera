@@ -17,12 +17,12 @@ class NetworkReceiver(StoppableThread):
         def data_handler(from_: ActorVirtualIdentity, table: Table):
 
             if table is not None:
-                logger.info(f"getting a data payload {table} from {from_}")
+                # logger.info(f"getting a data payload {table} from {from_}")
 
                 shared_queue.put(InputDataElement(batch=DataFrame([Tuple(row) for i, row in table.to_pandas().iterrows()])
                                                   , from_=from_))
             else:
-                logger.info(f"getting an end of stream from {from_}")
+                # logger.info(f"getting an end of stream from {from_}")
 
                 shared_queue.put(
                     InputDataElement(batch=EndOfUpstream(), from_=from_))

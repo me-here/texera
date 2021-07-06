@@ -11,6 +11,8 @@ import edu.uci.ics.amber.error.WorkflowRuntimeError
 import scala.collection.mutable
 
 object StateManager {
+  trait IntermediateState
+
   case class InvalidStateException(message: String)
       extends WorkflowRuntimeException(
         WorkflowRuntimeError(
@@ -20,6 +22,7 @@ object StateManager {
         )
       )
       with Serializable
+
   case class InvalidTransitionException(message: String)
       extends WorkflowRuntimeException(
         WorkflowRuntimeError(
@@ -29,14 +32,12 @@ object StateManager {
         )
       )
       with Serializable
-
-  trait IntermediateState
 }
 
 class StateManager[T](stateTransitionGraph: Map[T, Set[T]], initialState: T) {
 
-  @volatile private var currentState: T = initialState
   private val stateStack = mutable.Stack[T]()
+  @volatile private var currentState: T = initialState
 
   if (!initialState.isInstanceOf[IntermediateState]) {
     stateStack.push(initialState)
@@ -57,6 +58,8 @@ class StateManager[T](stateTransitionGraph: Map[T, Set[T]], initialState: T) {
   }
 
   def confirmState(state: T): Boolean = getCurrentState == state
+
+  def getCurrentState: T = currentState
 
   def confirmState(states: T*): Boolean = states.contains(getCurrentState)
 
@@ -83,7 +86,5 @@ class StateManager[T](stateTransitionGraph: Map[T, Set[T]], initialState: T) {
     }
     currentState = stateStack.pop()
   }
-
-  def getCurrentState: T = currentState
 
 }

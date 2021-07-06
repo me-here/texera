@@ -68,11 +68,9 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
     new RootAllocator().newChildAllocator("flight-server", 0, Long.MaxValue);
   val location: Location = Location.forGrpcInsecure("localhost", portNumber)
   val mem: InMemoryStore = new InMemoryStore(allocator, location)
-  val streamWriterMap: mutable.HashMap[ActorVirtualIdentity, FlightClient.ClientStreamListener] =
-    mutable.HashMap()
+
   private val MAX_TRY_COUNT: Int = 3
   private val WAIT_TIME_MS = 1000
-//  var streamWriter: FlightClient.ClientStreamListener = null
   var schemaRoot: VectorSchemaRoot = null
   private var flightClient: FlightClient = null
 
@@ -123,12 +121,18 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
               writeArrowStream(flightClient, tuples, 100, from)
             case EndOfUpstream() =>
               println("JAVA receives EndOfUpstream from " + from)
-              streamWriterMap(from).completed()
+              val q = mutable.Queue(
+                Tuple
+                  .newBuilder(
+                    edu.uci.ics.texera.workflow.common.tuple.schema.Schema.newBuilder().build()
+                  )
+                  .build()
+              )
+              writeArrowStream(flightClient, q, 100, from)
+//              streamWriterMap(from).completed()
           }
         case ControlElement(cmd, from) =>
-          println("java got a command " + cmd)
           sendControl(cmd, from)
-          println("finish command " + cmd)
 
       }
     }
@@ -138,8 +142,6 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
   def sendControl(cmd: ControlPayload, from: ActorVirtualIdentity): Unit = {
     cmd match {
       case ControlInvocation(commandID: Long, command: ControlCommand[_]) => {
-        println(" RPC CLIENT GOT COMMAND [id=" + commandID + "]: " + command)
-
         command match {
           case AddOutputPolicy(policy: DataSendingPolicy) =>
             var protobufPolicy: datatransferpolicy2.DataSendingPolicy = null
@@ -163,7 +165,6 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
 
             val protobufCommand = promisehandler2.AddOutputPolicy(protobufPolicy)
             val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
-            println(" RPC CLIENT SENT:" + controlMessage)
             val action: Action = new Action("control", controlMessage.toByteArray)
             println(flightClient.doAction(action).next())
           case StartWorker() =>
@@ -175,16 +176,13 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
             val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
             val action: Action = new Action("control", controlMessage.toByteArray)
             println(flightClient.doAction(action).next())
-            println("finish command update input linking")
+
           }
-          case QueryStatistics() => {
+          case QueryStatistics() =>
             val protobufCommand = promisehandler2.QueryStatistics()
             val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
             val action: Action = new Action("control", controlMessage.toByteArray)
             println(flightClient.doAction(action).next())
-            println("finish command QueryStatistics")
-          }
-
         }
 
       }
@@ -248,17 +246,13 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
       val arrowSchema = convertAmber2ArrowSchema(schema)
       val flightListener = new SyncPutListener
 
-      if (!streamWriterMap.contains(from)) {
-        schemaRoot = VectorSchemaRoot.create(arrowSchema, allocator)
-        streamWriterMap.put(
-          from,
-          client.startPut(
-            FlightDescriptor.command(from.asMessage.toByteArray),
-            schemaRoot,
-            flightListener
-          )
+      val schemaRoot = VectorSchemaRoot.create(arrowSchema, allocator)
+      val writer =
+        client.startPut(
+          FlightDescriptor.command(from.asMessage.toByteArray),
+          schemaRoot,
+          flightListener
         )
-      }
 
       try {
         while (values.nonEmpty) {
@@ -272,12 +266,14 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
             indexThisChunk += 1
           }
           schemaRoot.setRowCount(indexThisChunk)
-          streamWriterMap(from).putNext()
+          writer.putNext()
           schemaRoot.clear()
         }
+        writer.completed()
         flightListener.getResult()
         flightListener.close()
         schemaRoot.clear()
+
       } catch {
         case e: Exception =>
           e.printStackTrace()
