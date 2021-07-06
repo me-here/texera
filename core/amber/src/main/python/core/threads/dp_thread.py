@@ -64,13 +64,13 @@ class DPThread(StoppableQueueBlockingThread):
                     #  to invoke `batchProducer.emitEndOfUpstream()`
                     self.stop()
         elif isinstance(next_entry, ControlElement):
-            logger.info(f"PYTHON DP receive a CONTROL: {next_entry}")
+            # logger.info(f"PYTHON DP receive a CONTROL: {next_entry}")
             self.process_control_command(next_entry.cmd, next_entry.from_)
         else:
             raise TypeError(f"unknown InternalQueueElement {next_entry}")
 
     def process_control_command(self, cmd: ControlPayload, from_: ActorVirtualIdentity):
-        logger.info(f"PYTHON DP processing one CONTROL: {cmd} from {from_}")
+        # logger.info(f"PYTHON DP processing one CONTROL: {cmd} from {from_}")
 
         payload = get_oneof(cmd)
         if isinstance(payload, ControlInvocation):

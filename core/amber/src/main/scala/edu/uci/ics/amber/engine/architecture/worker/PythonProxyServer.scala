@@ -12,20 +12,20 @@ import org.apache.arrow.memory.{BufferAllocator, RootAllocator}
 import org.apache.arrow.util.AutoCloseables
 
 private class AmberProducer(
-                               allocator: BufferAllocator,
-                               location: Location,
-                               controlOutputPort: ControlOutputPort
-                           ) extends InMemoryStore(allocator, location) {
+    allocator: BufferAllocator,
+    location: Location,
+    controlOutputPort: ControlOutputPort
+) extends InMemoryStore(allocator, location) {
 
   override def doAction(
-                           context: FlightProducer.CallContext,
-                           action: Action,
-                           listener: FlightProducer.StreamListener[Result]
-                       ): Unit = {
+      context: FlightProducer.CallContext,
+      action: Action,
+      listener: FlightProducer.StreamListener[Result]
+  ): Unit = {
     action.getType match {
       case "control" =>
         val workflowControlMessage = WorkflowControlMessage.parseFrom(action.getBody)
-        println("JAVA received CONTROL from PYTHON " + workflowControlMessage)
+        println("PythonProxyServer-JAVA received CONTROL from PYTHON " + workflowControlMessage)
 
         var returnValue1: Any = null
         workflowControlMessage.payload match {
@@ -35,7 +35,7 @@ private class AmberProducer(
             if (returnPayloadV2.returnValue.isDefined) {
               returnPayloadV2.returnValue match {
                 case workerStatistics: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics => {
-                  println(" this is statistics:::" + workerStatistics)
+                  println("PythonProxyServer-JAVA this is statistics:::" + workerStatistics)
                   var state: WorkerState = null
                   workerStatistics.workerState match {
                     case _: edu.uci.ics.amber.engine.common.statetransition2.Uninitialized =>
@@ -66,7 +66,7 @@ private class AmberProducer(
           }
           case _ => returnValue1 = CommandCompleted()
         }
-        println(s" JAVA RESPONSE TO OTHER ACTORS with $returnValue1")
+        println(s" PythonProxyServer-JAVA RESPONSE TO OTHER ACTORS with $returnValue1")
         controlOutputPort.sendTo(
           to = workflowControlMessage.from,
           payload = ReturnPayload(
@@ -82,20 +82,18 @@ private class AmberProducer(
 
   }
 
-  //
-  //  override def acceptPut(context: FlightProducer.CallContext, flightStream: FlightStream, ackStream: FlightProducer.StreamListener[PutResult]): Runnable
-  //  = {
-  //    super.acceptPut(context, flightStream, ackStream)
-  //    holders
-  //    .
-  //
-  //  }
+  override def acceptPut(context: FlightProducer.CallContext, flightStream: FlightStream, ackStream: FlightProducer.StreamListener[PutResult]): Runnable = {
+    println(" PythonProxyServer-JAVA got a data batch return from python!!!")
+    super.acceptPut(context, flightStream, ackStream)
+
+  }
+
 
 }
 
 class PythonProxyServer(portNumber: Int, controlOutputPort: ControlOutputPort)
     extends Runnable
-        with AutoCloseable {
+    with AutoCloseable {
 
   val allocator: BufferAllocator =
     new RootAllocator().newChildAllocator("flight-server", 0, Long.MaxValue);
@@ -111,6 +109,5 @@ class PythonProxyServer(portNumber: Int, controlOutputPort: ControlOutputPort)
   override def close(): Unit = {
     AutoCloseables.close(mem, server, allocator)
   }
-
 
 }

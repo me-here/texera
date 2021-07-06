@@ -60,6 +60,7 @@ class ProxyClient(FlightClient):
             on_success()
         except Exception as e:
             logger.warning(e)
+            logger.debug("send data error")
 
             # invoke error handler
             on_error()

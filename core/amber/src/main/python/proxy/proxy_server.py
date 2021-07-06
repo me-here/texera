@@ -6,8 +6,9 @@ from functools import wraps
 from inspect import signature
 from loguru import logger
 from pyarrow import py_buffer, Table
+from pyarrow._flight import MetadataRecordBatchReader, FlightStreamChunk
 from pyarrow.flight import Action, FlightDescriptor, FlightServerBase, ServerCallContext, Result
-from pyarrow.ipc import RecordBatchReader, RecordBatchStreamWriter
+from pyarrow.ipc import RecordBatchStreamWriter
 from typing import Iterator, Tuple, Dict
 
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity
@@ -80,7 +81,8 @@ class ProxyServer(FlightServerBase):
     # Flights related methods #
     ###########################
 
-    def do_put(self, context: ServerCallContext, descriptor: FlightDescriptor, reader: RecordBatchReader, writer: RecordBatchStreamWriter):
+    def do_put(self, context: ServerCallContext, descriptor: FlightDescriptor, reader: MetadataRecordBatchReader,
+               writer: RecordBatchStreamWriter):
         """
         put a data table into server, the data will be handled by the `self.process_data()` handler.
         :param context: server context, containing information of middlewares.
@@ -92,10 +94,16 @@ class ProxyServer(FlightServerBase):
 
         logger.debug(f"getting a data flight")
         from_ = ActorVirtualIdentity().parse(descriptor.command)
-        data = reader.read_all()
-        logger.debug(f"getting a data flight {from_}, {len(data)}")
+        try:
+            while True:
+                data: FlightStreamChunk = reader.read_chunk()
+                logger.debug(f"getting a data flight {from_}")
+                # logger.info(data.data)
+                self.process_data(from_, data.data)
+        except StopIteration as err:
+            logger.exception(err)
 
-        self.process_data(from_, data)
+            self.process_data(from_, None)
 
     ###############################
     # RPC actions related methods #

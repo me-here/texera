@@ -1,11 +1,6 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
-import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{
-  CONTROL_QUEUE,
-  ControlElement,
-  DATA_QUEUE,
-  InternalQueueElement
-}
+import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{CONTROL_QUEUE, ControlElement, DATA_QUEUE, InternalQueueElement}
 import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload}
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import lbmq.LinkedBlockingMultiQueue
@@ -19,6 +14,7 @@ object WorkerBatchInternalQueue {
 
   case class DataElement(dataPayload: DataPayload, from: ActorVirtualIdentity)
       extends InternalQueueElement
+
 
   case class ControlElement(cmd: ControlPayload, from: ActorVirtualIdentity)
       extends InternalQueueElement

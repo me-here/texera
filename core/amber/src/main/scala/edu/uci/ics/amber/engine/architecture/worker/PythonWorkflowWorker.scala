@@ -60,7 +60,7 @@ class PythonWorkflowWorker(
       from: ActorVirtualIdentity,
       controlPayload: ControlPayload
   ): Unit = {
-    println("JAVA handing a CONTROL payload " + controlPayload)
+    println("PythonWorker-JAVA handing a CONTROL payload " + controlPayload)
     controlPayload match {
       case controlCommand @ (ControlInvocation(_, _) | ReturnPayload(_, _)) =>
         pythonRPCClient.enqueueCommand(controlCommand, from)

@@ -3,7 +3,7 @@ from pyarrow.lib import Table
 
 from core import Tuple
 from core.models.internal_queue import InternalQueue, ControlElement, InputDataElement
-from core.models.payload import DataFrame
+from core.models.payload import DataFrame, EndOfUpstream
 from core.util import StoppableThread
 from edu.uci.ics.amber.engine.common import WorkflowControlMessage, ActorVirtualIdentity
 from proxy import ProxyServer
@@ -15,10 +15,17 @@ class NetworkReceiver(StoppableThread):
         self._proxy_server = ProxyServer(host=host, port=port)
 
         def data_handler(from_: ActorVirtualIdentity, table: Table):
-            logger.info(f"getting a data payload {table} from {from_}")
 
-            shared_queue.put(InputDataElement(batch=DataFrame([Tuple(row) for i, row in table.to_pandas().iterrows()])
-                                              , from_=from_))
+            if table is not None:
+                logger.info(f"getting a data payload {table} from {from_}")
+
+                shared_queue.put(InputDataElement(batch=DataFrame([Tuple(row) for i, row in table.to_pandas().iterrows()])
+                                                  , from_=from_))
+            else:
+                logger.info(f"getting an end of stream from {from_}")
+
+                shared_queue.put(
+                    InputDataElement(batch=EndOfUpstream(), from_=from_))
 
         self._proxy_server.register_data_handler(data_handler)
         self._proxy_server.register("health_check", ProxyServer.ack()(lambda: None))
@@ -29,7 +36,7 @@ class NetworkReceiver(StoppableThread):
 
         def control_deserializer(message: bytes) -> WorkflowControlMessage:
             workflow_control_message = WorkflowControlMessage().parse(message)
-            logger.info(f"serialized to \n{workflow_control_message}")
+            # logger.info(f"serialized to \n{workflow_control_message}")
             return workflow_control_message
 
         # def control_serializer(workflow_control_message: WorkflowControlMessage) -> bytes:

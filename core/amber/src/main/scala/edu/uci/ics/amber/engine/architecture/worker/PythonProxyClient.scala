@@ -1,14 +1,26 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
-import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.{DataSendingPolicy, OneToOnePolicy, RoundRobinPolicy}
+import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.{
+  DataSendingPolicy,
+  OneToOnePolicy,
+  RoundRobinPolicy
+}
 import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2
 import edu.uci.ics.amber.engine.architecture.worker.PythonProxyClient.communicate
-import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{ControlElement, DataElement}
+import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{
+  ControlElement,
+  DataElement
+}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.StartHandler.StartWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.UpdateInputLinkingHandler.UpdateInputLinking
-import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataFrame, DataPayload}
+import edu.uci.ics.amber.engine.common.ambermessage.{
+  ControlPayload,
+  DataFrame,
+  DataPayload,
+  EndOfUpstream
+}
 import edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
@@ -23,7 +35,14 @@ import org.apache.arrow.memory.{BufferAllocator, RootAllocator}
 import org.apache.arrow.vector.types.FloatingPointPrecision
 import org.apache.arrow.vector.types.pojo.ArrowType.ArrowTypeID
 import org.apache.arrow.vector.types.pojo.{ArrowType, Field, Schema}
-import org.apache.arrow.vector.{BitVector, FieldVector, Float8Vector, IntVector, VarCharVector, VectorSchemaRoot}
+import org.apache.arrow.vector.{
+  BitVector,
+  FieldVector,
+  Float8Vector,
+  IntVector,
+  VarCharVector,
+  VectorSchemaRoot
+}
 
 import java.nio.charset.StandardCharsets
 import java.util
@@ -42,20 +61,25 @@ object PythonProxyClient {
 
 case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
     extends Runnable
-        with AutoCloseable
-        with WorkerBatchInternalQueue {
+    with AutoCloseable
+    with WorkerBatchInternalQueue {
 
   val allocator: BufferAllocator =
     new RootAllocator().newChildAllocator("flight-server", 0, Long.MaxValue);
   val location: Location = Location.forGrpcInsecure("localhost", portNumber)
   val mem: InMemoryStore = new InMemoryStore(allocator, location)
+  val streamWriterMap: mutable.HashMap[ActorVirtualIdentity, FlightClient.ClientStreamListener] =
+    mutable.HashMap()
   private val MAX_TRY_COUNT: Int = 3
   private val WAIT_TIME_MS = 1000
+//  var streamWriter: FlightClient.ClientStreamListener = null
+  var schemaRoot: VectorSchemaRoot = null
   private var flightClient: FlightClient = null
 
-
   def sendBatch(dataPayload: DataPayload, from: ActorVirtualIdentity): Any = {
+    println("python-java enqueue " + dataPayload)
     enqueueData(DataElement(dataPayload, from))
+
   }
 
   override def run(): Unit = {
@@ -66,7 +90,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
   def connect(): Unit = {
     var connected = false
     var tryCount = 0
-    while ( {
+    while ({
       !connected && tryCount < MAX_TRY_COUNT
     }) try {
       println("trying to connect to " + location)
@@ -97,6 +121,9 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
             case DataFrame(frame) =>
               val tuples = mutable.Queue(frame.map((t: ITuple) => t.asInstanceOf[Tuple]): _*)
               writeArrowStream(flightClient, tuples, 100, from)
+            case EndOfUpstream() =>
+              println("JAVA receives EndOfUpstream from " + from)
+              streamWriterMap(from).completed()
           }
         case ControlElement(cmd, from) =>
           println("java got a command " + cmd)
@@ -165,17 +192,17 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
   }
 
   def toWorkflowControlMessage2(
-                                   from: ActorVirtualIdentity,
-                                   commandID: Long,
-                                   controlCommand: promisehandler2.ControlCommand
-                               ): WorkflowControlMessage = {
+      from: ActorVirtualIdentity,
+      commandID: Long,
+      controlCommand: promisehandler2.ControlCommand
+  ): WorkflowControlMessage = {
     toWorkflowControlMessage2(from, toControlInvocation2(commandID, controlCommand))
   }
 
   def toWorkflowControlMessage2(
-                                   from: ActorVirtualIdentity,
-                                   controlPayload: ambermessage2.ControlPayload
-                               ): WorkflowControlMessage = {
+      from: ActorVirtualIdentity,
+      controlPayload: ambermessage2.ControlPayload
+  ): WorkflowControlMessage = {
     ambermessage2.WorkflowControlMessage(
       from = from,
       sequenceNumber = 0L,
@@ -184,35 +211,35 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
   }
 
   def toControlInvocation2(
-                              commandID: Long,
-                              controlCommand: promisehandler2.ControlCommand
-                          ): ambermessage2.ControlInvocation = {
+      commandID: Long,
+      controlCommand: promisehandler2.ControlCommand
+  ): ambermessage2.ControlInvocation = {
     ambermessage2.ControlInvocation(commandID = commandID, command = controlCommand)
   }
 
   /**
-   * For every batch, the operator converts list of {@code Tuple}s into Arrow stream data in almost the exact same
-   * way as it would when using Arrow file, except now it sends stream to the server with
-   * {@link FlightClient# startPut ( FlightDescriptor, VectorSchemaRoot, FlightClient.PutListener, CallOption...)} and
-   * {@link FlightClient.ClientStreamListener# putNext ( )}. The server uses {@code do_put()} to receive data stream
-   * and convert it into a {@code pyarrow.Table} and store it in the server.
-   * {@code startPut} is a non-blocking call, but this method in general is a blocking call, it waits until all the
-   * data are sent.
-   *
-   * @param client      The FlightClient that manages this.
-   * @param values      The input queue that holds tuples, its contents will be consumed in this method.
-   * @param arrowSchema Input Arrow table schema. This should already have been defined (converted).
-   * @param chunkSize   The chunk size of the arrow stream. This is different than the batch size of the operator,
-   *                    although they may seem similar. This doesn't actually affect serialization speed that much,
-   *                    so in general it can be the same as {@code batchSize}.
-   */
+    * For every batch, the operator converts list of {@code Tuple}s into Arrow stream data in almost the exact same
+    * way as it would when using Arrow file, except now it sends stream to the server with
+    * {@link FlightClient# startPut ( FlightDescriptor, VectorSchemaRoot, FlightClient.PutListener, CallOption...)} and
+    * {@link FlightClient.ClientStreamListener# putNext ( )}. The server uses {@code do_put()} to receive data stream
+    * and convert it into a {@code pyarrow.Table} and store it in the server.
+    * {@code startPut} is a non-blocking call, but this method in general is a blocking call, it waits until all the
+    * data are sent.
+    *
+    * @param client      The FlightClient that manages this.
+    * @param values      The input queue that holds tuples, its contents will be consumed in this method.
+    * @param arrowSchema Input Arrow table schema. This should already have been defined (converted).
+    * @param chunkSize   The chunk size of the arrow stream. This is different than the batch size of the operator,
+    *                    although they may seem similar. This doesn't actually affect serialization speed that much,
+    *                    so in general it can be the same as {@code batchSize}.
+    */
   @throws[RuntimeException]
   private def writeArrowStream(
-                                  client: FlightClient,
-                                  values: mutable.Queue[Tuple],
-                                  chunkSize: Int = 100,
-                                  from: ActorVirtualIdentity
-                              ): Unit = {
+      client: FlightClient,
+      values: mutable.Queue[Tuple],
+      chunkSize: Int = 100,
+      from: ActorVirtualIdentity
+  ): Unit = {
 
     println(" NOW before writing A DATA BATCH " + chunkSize + " from " + from.asMessage.toString)
     if (values.nonEmpty) {
@@ -220,28 +247,34 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
       val schema = cachedTuple.getSchema
       val arrowSchema = convertAmber2ArrowSchema(schema)
       val flightListener = new SyncPutListener
-      val schemaRoot: VectorSchemaRoot = VectorSchemaRoot.create(arrowSchema, allocator)
-      val streamWriter = client.startPut(
-        FlightDescriptor.command(from.asMessage.toByteArray),
-        schemaRoot,
-        flightListener
-      )
+
+      if (!streamWriterMap.contains(from)) {
+        schemaRoot = VectorSchemaRoot.create(arrowSchema, allocator)
+        streamWriterMap.put(
+          from,
+          client.startPut(
+            FlightDescriptor.command(from.asMessage.toByteArray),
+            schemaRoot,
+            flightListener
+          )
+        )
+      }
+
       try {
         while (values.nonEmpty) {
 
           schemaRoot.allocateNew()
           var indexThisChunk = 0
-          while ( {
+          while ({
             indexThisChunk < chunkSize && values.nonEmpty
           }) {
             convertAmber2ArrowTuple(values.dequeue(), indexThisChunk, schemaRoot)
             indexThisChunk += 1
           }
           schemaRoot.setRowCount(indexThisChunk)
-          streamWriter.putNext()
+          streamWriterMap(from).putNext()
           schemaRoot.clear()
         }
-        streamWriter.completed()
         flightListener.getResult()
         flightListener.close()
         schemaRoot.clear()
