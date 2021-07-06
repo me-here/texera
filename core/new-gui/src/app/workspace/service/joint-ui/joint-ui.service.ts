@@ -342,6 +342,14 @@ export class JointUIService {
     }
   }
 
+  public changeOperatorDisableStatus(jointPaper: joint.dia.Paper, operatorID: string, isDisabled: boolean): void {
+    if (isDisabled) {
+      jointPaper.getModelById(operatorID).attr('rect/fill', '#E0E0E0');
+    } else {
+      jointPaper.getModelById(operatorID).attr('rect/fill', '#FFFFFF');
+    }
+  }
+
   public getBreakpointButton(): (new () => joint.linkTools.Button) {
     return joint.linkTools.Button.extend({
       name: 'info-button',

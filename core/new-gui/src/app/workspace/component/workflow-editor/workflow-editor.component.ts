@@ -133,6 +133,7 @@ export class WorkflowEditorComponent implements AfterViewInit {
     this.handleWindowResize();
     this.handleViewDeleteOperator();
     this.handleCellHighlight();
+    this.handleDisableOperator();
     this.handleViewDeleteLink();
     this.handleViewCollapseGroup();
     this.handleViewExpandGroup();
@@ -474,6 +475,13 @@ export class WorkflowEditorComponent implements AfterViewInit {
   private handleCellHighlight(): void {
     this.handleHighlightMouseInput();
     this.handleElementHightlightEvent();
+  }
+
+  private handleDisableOperator(): void {
+    this.workflowActionService.getTexeraGraph().getDisabledOperatorsChangedStream().subscribe(event => {
+      event.newDisabled.forEach(op => this.jointUIService.changeOperatorDisableStatus(this.getJointPaper(), op, true));
+      event.newEnabled.forEach(op => this.jointUIService.changeOperatorDisableStatus(this.getJointPaper(), op, false));
+    });
   }
 
   /**

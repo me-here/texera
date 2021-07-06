@@ -17,6 +17,7 @@ import { ExecutionState } from '../../types/execute-workflow.interface';
 import { NgbActiveModal, NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { ResultDownloadComponent } from './result-download/result-download.component';
 import { WorkflowWebsocketService } from '../../service/workflow-websocket/workflow-websocket.service';
+import { Observable } from 'rxjs';
 
 /**
  * NavigationComponent is the top level navigation bar that shows
@@ -59,6 +60,10 @@ export class NavigationComponent implements OnInit {
   public onClickRunHandler: () => void;
 
   public downloadResultPopup: NgbModalRef | undefined;
+
+  // whether the disable operator button should be enabled
+  public isDisableOperatorClickable: boolean = false;
+  public isDisableOperator: boolean = true;
 
   constructor(
     public executeWorkflowService: ExecuteWorkflowService,
@@ -111,6 +116,8 @@ export class NavigationComponent implements OnInit {
       });
 
     this.registerWorkflowMetadataDisplayRefresh();
+
+    this.handleDisableOperatorIconChange();
   }
 
   ngOnInit() {
@@ -325,6 +332,19 @@ export class NavigationComponent implements OnInit {
     }
   }
 
+  public onClickDisableOperators(): void {
+    if (this.isDisableOperator) {
+      this.effectivelyHighlightedOperators().forEach(op => {
+        this.workflowActionService.getTexeraGraph().disableOperator(op);
+      });
+    } else {
+      this.effectivelyHighlightedOperators().forEach(op => {
+        this.workflowActionService.getTexeraGraph().enableOperator(op);
+      });
+    }
+  }
+
+
   /**
    * Returns true if currently highlighted elements are all groups.
    */
@@ -369,6 +389,38 @@ export class NavigationComponent implements OnInit {
             'MM/dd/yyyy HH:mm:ss zzz', Intl.DateTimeFormat().resolvedOptions().timeZone, 'en');
 
       });
+  }
+
+  handleDisableOperatorIconChange() {
+    Observable.merge(
+      this.workflowActionService.getJointGraphWrapper().getJointOperatorHighlightStream(),
+      this.workflowActionService.getJointGraphWrapper().getJointOperatorUnhighlightStream(),
+      this.workflowActionService.getJointGraphWrapper().getJointGroupHighlightStream(),
+      this.workflowActionService.getJointGraphWrapper().getJointGroupUnhighlightStream(),
+      this.workflowActionService.getTexeraGraph().getDisabledOperatorsChangedStream(),
+    ).subscribe(event => {
+      this.isDisableOperator = this.calculateIsDisableOperator();
+      this.isDisableOperatorClickable = this.effectivelyHighlightedOperators().length !== 0;
+    });
+  }
+
+  calculateIsDisableOperator(): boolean {
+    const allDisabled = this.effectivelyHighlightedOperators().every(
+      op => this.workflowActionService.getTexeraGraph().isOperatorDisabled(op));
+    return ! allDisabled;
+  }
+
+  effectivelyHighlightedOperators(): readonly string[] {
+    const highlightedOperators = this.workflowActionService.getJointGraphWrapper().getCurrentHighlightedOperatorIDs();
+    const highlightedGroups = this.workflowActionService.getJointGraphWrapper().getCurrentHighlightedGroupIDs();
+
+    const operatorInHighlightedGroups: string[] = highlightedGroups.flatMap(
+      g => Array.from(this.workflowActionService.getOperatorGroup().getGroup(g).operators.keys()));
+
+    const effectiveHighlightedOperators = new Set<string>();
+    highlightedOperators.forEach(op => effectiveHighlightedOperators.add(op));
+    operatorInHighlightedGroups.forEach(op => effectiveHighlightedOperators.add(op));
+    return Array.from(effectiveHighlightedOperators);
   }
 
 }

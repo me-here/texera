@@ -82,6 +82,9 @@ export class ValidationWorkflowService {
 
 
   public validateOperator(operatorID: string): Validation {
+    if (this.workflowActionService.getTexeraGraph().isOperatorDisabled(operatorID)) {
+      return { isValid: true };
+    }
     const jsonSchemaValidation = this.validateJsonSchema(operatorID);
     const operatorConnectionValidation = this.validateOperatorConnection(operatorID);
     return ValidationWorkflowService.combineValidation(jsonSchemaValidation, operatorConnectionValidation);
@@ -133,6 +136,28 @@ export class ValidationWorkflowService {
     // Capture the operator property change event and validate the current operator being changed
     this.workflowActionService.getTexeraGraph().getOperatorPropertyChangeStream()
       .subscribe(value => this.updateValidationState(value.operator.operatorID, this.validateOperator(value.operator.operatorID)));
+
+    // on enable / disable operator - re-validate the changed operators
+    this.workflowActionService.getTexeraGraph().getDisabledOperatorsChangedStream()
+      .subscribe(event => {
+        const operatorsToRevalidate = new Set<string>();
+
+        // for every changed operator:
+        event.newDisabled.concat(event.newEnabled).forEach(op => {
+          // revalidate itself
+          operatorsToRevalidate.add(op);
+
+          // revalidate all its input operators
+          const inputs = this.workflowActionService.getTexeraGraph().getInputLinksByOperatorId(op);
+          inputs.forEach(link => operatorsToRevalidate.add(link.source.operatorID));
+
+          // revliadate all its output operators
+          const outputs = this.workflowActionService.getTexeraGraph().getOutputLinksByOperatorId(op);
+          outputs.forEach(link => operatorsToRevalidate.add(link.target.operatorID));
+        });
+
+        operatorsToRevalidate.forEach(op => this.updateValidationState(op, this.validateOperator(op)));
+      });
   }
 
   /**
@@ -182,9 +207,11 @@ export class ValidationWorkflowService {
     // check if input links satisfy the requirement
     const numInputLinksByPort = new Map<string, number>();
     texeraGraph.getInputLinksByOperatorId(operatorID).forEach(inLink => {
-      const portID = inLink.target.portID;
-      const num = numInputLinksByPort.get(portID) ?? 0;
-      numInputLinksByPort.set(portID, num + 1);
+      if (texeraGraph.isLinkEnabled(inLink.linkID)) {
+        const portID = inLink.target.portID;
+        const num = numInputLinksByPort.get(portID) ?? 0;
+        numInputLinksByPort.set(portID, num + 1);
+      }
     });
 
     let satisfyInput = true;
@@ -207,7 +234,8 @@ export class ValidationWorkflowService {
 
     // check if output links satisfy the requirement
     const requiredOutputNum = operator.outputPorts.length;
-    const actualOutputNum = texeraGraph.getOutputLinksByOperatorId(operatorID).length;
+    const actualOutputNum = texeraGraph.getOutputLinksByOperatorId(operatorID)
+      .filter(link => texeraGraph.isLinkEnabled(link.linkID)).length;
 
     // If the operator is the sink operator, the actual output number must be equal to required number.
     const satisyOutput = this.operatorMetadataService.

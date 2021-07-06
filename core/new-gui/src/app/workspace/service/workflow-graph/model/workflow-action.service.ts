@@ -773,6 +773,8 @@ export class WorkflowActionService {
       operatorsAndPositions.push({op: op, pos: opPosition});
     });
 
+    const disabledOperators = workflowContent.disabledOperators;
+
     const links: OperatorLink[] = workflowContent.links;
 
     const groups: readonly Group[] = workflowContent.groups.map(group => {
@@ -786,6 +788,8 @@ export class WorkflowActionService {
     const breakpoints = new Map(Object.entries(workflowContent.breakpoints));
 
     this.addOperatorsAndLinks(operatorsAndPositions, links, groups, breakpoints);
+
+    disabledOperators.forEach(op => this.getTexeraGraph().disableOperator(op));
 
     // operators shouldn't be highlighted during page reload
     const jointGraphWrapper = this.getJointGraphWrapper();
@@ -807,7 +811,8 @@ export class WorkflowActionService {
       this.getOperatorGroup().getGroupExpandStream(),
       this.getTexeraGraph().getOperatorPropertyChangeStream(),
       this.getTexeraGraph().getBreakpointChangeStream(),
-      this.getJointGraphWrapper().getElementPositionChangeEvent()
+      this.getJointGraphWrapper().getElementPositionChangeEvent(),
+      this.getTexeraGraph().getDisabledOperatorsChangedStream(),
     );
   }
 
@@ -828,6 +833,7 @@ export class WorkflowActionService {
     // collect workflow content
     const texeraGraph = this.getTexeraGraph();
     const operators = texeraGraph.getAllOperators();
+    const disabledOperators = Array.from(texeraGraph.getDisabledOperators());
     const links = texeraGraph.getAllLinks();
     const operatorPositions: { [key: string]: Point } = {};
 
@@ -843,9 +849,11 @@ export class WorkflowActionService {
     breakpointsMap.forEach((value, key) => (breakpoints[key] = value));
     texeraGraph.getAllOperators().forEach(op => operatorPositions[op.operatorID] =
       this.getJointGraphWrapper().getElementPosition(op.operatorID));
-    return <WorkflowContent>{
-      operators, operatorPositions, links, groups, breakpoints
+
+    const workflowContent: WorkflowContent = {
+      operators, operatorPositions, disabledOperators, links, groups, breakpoints
     };
+    return workflowContent;
   }
 
   public getWorkflow(): Workflow {
