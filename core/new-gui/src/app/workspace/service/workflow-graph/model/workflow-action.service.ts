@@ -857,7 +857,7 @@ export class WorkflowActionService {
   }
 
   public getWorkflow(): Workflow {
-    return <Workflow>{...this.workflowMetadata, ...{content: this.getWorkflowContent()}};
+    return {...this.workflowMetadata, ...{content: this.getWorkflowContent()}};
   }
 
   public setWorkflowName(name: string): void {
