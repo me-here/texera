@@ -35,6 +35,7 @@ import javax.websocket.{EndpointConfig, _}
 import javax.websocket.server.ServerEndpoint
 
 import scala.collection.mutable
+import com.typesafe.scalalogging.Logger
 
 object WorkflowWebsocketResource {
   // TODO should reorganize this resource.
@@ -63,6 +64,8 @@ object WorkflowWebsocketResource {
   configurator = classOf[ServletAwareConfigurator]
 )
 class WorkflowWebsocketResource {
+
+  private var logger = Logger(this.getClass.getName)
 
   final val objectMapper = Utils.objectMapper
 
@@ -167,6 +170,8 @@ class WorkflowWebsocketResource {
   def executeWorkflow(session: Session, request: ExecuteWorkflowRequest): Unit = {
     val context = new WorkflowContext
     val jobID = Integer.toString(WorkflowWebsocketResource.nextJobID.incrementAndGet)
+    logger.info("zjs: request: {}", request.toString)
+    logger.info("zjs: request.operators: {}", request.operators)
     context.jobID = jobID
     context.userID = UserResource
       .getUser(sessionMap(session.getId)._2)
@@ -176,6 +181,7 @@ class WorkflowWebsocketResource {
       WorkflowInfo(request.operators, request.links, request.breakpoints),
       context
     )
+    logger.info("zjs: workflowDAG: {}", texeraWorkflowCompiler.workflow)
 
     val violations = texeraWorkflowCompiler.validate
     if (violations.nonEmpty) {
