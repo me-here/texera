@@ -117,6 +117,13 @@ class TexeraCustomGroupElement extends joint.shapes.devs.Model {
     </g>`;
 }
 
+Observable
+  .fromEvent<JointPaperEvent>(this.getJointPaper(), 'element:operator-processed-count')
+  .subscribe(
+    value => {
+      console.log(value);
+    }
+  );
 /**
  * JointUIService controls the shape of an operator and a link
  *  when they are displayed by JointJS.
@@ -211,9 +218,10 @@ export class JointUIService {
         id: port.portID,
         attrs: {
           '.port-label': {
-              text: port.displayName ?? ''
+            text: port.displayName ?? ''
           }
-      }})
+        }
+      })
     );
     operator.outputPorts.forEach(
       port => operatorElement.addPort({
@@ -221,9 +229,10 @@ export class JointUIService {
         id: port.portID,
         attrs: {
           '.port-label': {
-              text: port.displayName ?? ''
+            text: port.displayName ?? ''
           }
-      }})
+        }
+      })
     );
 
     return operatorElement;
@@ -251,17 +260,19 @@ export class JointUIService {
    * @param bottomRight the position of the operator (if there was one) that's in the bottom right corner of the group
    */
   public getJointGroupElement(group: Group, boundingBox: GroupBoundingBox): joint.dia.Element {
-    const {topLeft, bottomRight} = boundingBox;
+    const { topLeft, bottomRight } = boundingBox;
 
-    const groupElementPosition = {x: topLeft.x - JointUIService.DEFAULT_GROUP_MARGIN,
-      y: topLeft.y - JointUIService.DEFAULT_GROUP_MARGIN};
+    const groupElementPosition = {
+      x: topLeft.x - JointUIService.DEFAULT_GROUP_MARGIN,
+      y: topLeft.y - JointUIService.DEFAULT_GROUP_MARGIN
+    };
     const widthMargin = JointUIService.DEFAULT_OPERATOR_WIDTH + 2 * JointUIService.DEFAULT_GROUP_MARGIN;
     const heightMargin = JointUIService.DEFAULT_OPERATOR_HEIGHT + JointUIService.DEFAULT_GROUP_MARGIN +
       JointUIService.DEFAULT_GROUP_MARGIN_BOTTOM;
 
     const groupElement = new TexeraCustomGroupElement({
       position: groupElementPosition,
-      size: {width: bottomRight.x - topLeft.x + widthMargin, height: bottomRight.y - topLeft.y + heightMargin},
+      size: { width: bottomRight.x - topLeft.x + widthMargin, height: bottomRight.y - topLeft.y + heightMargin },
       attrs: JointUIService.getCustomGroupStyleAttrs(bottomRight.x - topLeft.x + widthMargin)
     });
 
@@ -269,9 +280,9 @@ export class JointUIService {
     return groupElement;
   }
 
-
   public changeOperatorState(jointPaper: joint.dia.Paper, operatorID: string, operatorState: OperatorState): void {
     let fillColor: string;
+    let state: string;
     switch (operatorState) {
       case OperatorState.Completed:
         fillColor = 'green';
@@ -285,7 +296,7 @@ export class JointUIService {
         break;
     }
 
-    jointPaper.getModelById(operatorID).attr(`.${operatorStateClass}/text`, operatorState.toString());
+    jointPaper.getModelById(operatorID).attr(`.${operatorStateClass}/text`, '●');
     jointPaper.getModelById(operatorID).attr(`.${operatorStateClass}/fill`, fillColor);
   }
 
@@ -534,12 +545,13 @@ export class JointUIService {
         'ref-x': 0.5, 'ref-y': 100, ref: 'rect', 'y-alignment': 'middle', 'x-alignment': 'middle'
       },
       '.texera-operator-processed-count': {
-        text: '', fill: 'green', 'font-size': '14px', 'visible': true,
+        text: '', fill: 'green', 'font-size': '12px', 'visible': true,
         'ref-x': 0.5, 'ref-y': -40, ref: 'rect', 'y-alignment': 'middle', 'x-alignment': 'middle'
       },
       '.texera-operator-output-count': {
-        text: '', fill: 'green', 'font-size': '14px', 'visible': true,
-        'ref-x': 0.5, 'ref-y': -20, ref: 'rect', 'y-alignment': 'middle', 'x-alignment': 'middle'
+        text: '', fill: 'green', 'font-size': '12px', 'visible': true,
+        'ref-x': 0.5, 'ref-y': -20, ref: 'rect', 'y-alignment': 'middle', 'x-alignment': 'middle',
+        event: 'element:operator-processed-count'
       },
       'rect': {
         fill: '#FFFFFF', 'follow-scale': true, stroke: 'red', 'stroke-width': '2',
