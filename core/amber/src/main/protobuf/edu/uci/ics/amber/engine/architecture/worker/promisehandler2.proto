@@ -22,7 +22,9 @@ message UpdateInputLinking{
 message AddOutputPolicy{
   edu.uci.ics.amber.engine.architecture.sendsemantics.DataSendingPolicy policy = 1;
 }
+message WorkerExecutionCompleted{
 
+}
 message ControlCommand {
   oneof sealed_value {
 
@@ -31,6 +33,11 @@ message ControlCommand {
     UpdateInputLinking updateInputLinking = 5;
     QueryStatistics queryStatistics = 6;
     WorkerStatistics workerStatistics = 7;
+
+
+
+    WorkerExecutionCompleted workerExecutionCompleted = 101;
+
   }
 
 }

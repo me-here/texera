@@ -8,9 +8,11 @@ from core.architecture.sync_rpc.sync_rpc_server import SyncRPCServer
 from core.models.internal_queue import ControlElement, InputDataElement, OutputDataElement, InternalQueue
 from core.models.tuple import ITuple, InputExhausted, Tuple
 from core.udf.udf_operator import UDFOperator
-from core.util.proto_helper import get_oneof
+from core.util.proto_helper import get_oneof, set_oneof
 from core.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
-from edu.uci.ics.amber.engine.common import ControlInvocation, ControlPayload, Uninitialized, Ready, Running, Completed
+from edu.uci.ics.amber.engine.architecture.worker import WorkerExecutionCompleted, ControlCommand
+from edu.uci.ics.amber.engine.common import ControlInvocation, ControlPayload, Uninitialized, Ready, Running, Completed, \
+    ControllerVirtualIdentity
 from edu.uci.ics.amber.engine.common import LinkIdentity, ActorVirtualIdentity
 
 
@@ -114,3 +116,7 @@ class DPThread(StoppableQueueBlockingThread):
     def complete(self):
         self._udf_operator.close()
         self.context.state_manager.transit_to(Completed())
+        control_command = set_oneof(ControlCommand, WorkerExecutionCompleted())
+        payload = set_oneof(ControlPayload, ControlInvocation(1, command=control_command))
+        from_ = set_oneof(ActorVirtualIdentity, ControllerVirtualIdentity())
+        self._output_queue.put(ControlElement(from_=from_, cmd=payload))

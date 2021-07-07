@@ -1,10 +1,12 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{ControlOutputPort, DataOutputPort}
 import edu.uci.ics.amber.engine.common.ambermessage.{DataFrame, EndOfUpstream}
 import edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage
-import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ReturnPayload
+import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.CommandCompleted
+import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, ActorVirtualIdentityMessage}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import kotlin.NotImplementedError
@@ -35,7 +37,6 @@ private class AmberProducer(
         var returnValue1: Any = null
         workflowControlMessage.payload match {
           case returnPayloadV2: edu.uci.ics.amber.engine.common.ambermessage2.ReturnPayload => {
-            println()
 
             if (returnPayloadV2.returnValue.isDefined) {
               returnPayloadV2.returnValue match {
@@ -48,18 +49,31 @@ private class AmberProducer(
             } else {
               returnValue1 = CommandCompleted()
             }
+            println(s" PythonProxyServer-JAVA RESPONSE TO OTHER ACTORS with $returnValue1")
+            controlOutputPort.sendTo(
+              to = workflowControlMessage.from,
+              payload = ReturnPayload(
+                originalCommandID =
+                  workflowControlMessage.payload.asMessage.getReturnPayload.originalCommandID,
+                returnValue = returnValue1
+              )
+            )
           }
-          case _ => returnValue1 = CommandCompleted()
+
+          case controlInvocation: edu.uci.ics.amber.engine.common.ambermessage2.ControlInvocation =>
+            controlInvocation.command match {
+              case _: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted =>
+                controlOutputPort.sendTo(
+                  to = CONTROLLER,
+                  payload = ControlInvocation(
+                    controlInvocation.commandID,
+                    command = WorkerExecutionCompleted()
+                  )
+                )
+            }
+
         }
-        println(s" PythonProxyServer-JAVA RESPONSE TO OTHER ACTORS with $returnValue1")
-        controlOutputPort.sendTo(
-          to = workflowControlMessage.from,
-          payload = ReturnPayload(
-            originalCommandID =
-              workflowControlMessage.payload.asMessage.getReturnPayload.originalCommandID,
-            returnValue = returnValue1
-          )
-        )
+
         listener.onNext(new Result("ack".getBytes))
         listener.onCompleted()
       case _ => throw new NotImplementedError()
@@ -82,11 +96,13 @@ private class AmberProducer(
         val root = flightStream.getRoot
         val schema = flightStream.getSchema
 
-        if (schema.getFields.size() == 0){
+        if (schema.getFields.size() == 0) {
           // EndOfUpstream
           println("python-java received an EndOfUpstream!")
           dataOutputPort.sendTo(to, EndOfUpstream())
-        }else{
+          ackStream.onNext(PutResult.metadata(flightStream.getLatestMetadata))
+          flightStream.takeDictionaryOwnership
+        } else {
           while ({
             flightStream.next
           }) {

@@ -1,6 +1,6 @@
 from loguru import logger
 from pyarrow import Table
-from pyarrow._flight import FlightStreamWriter
+from pyarrow.flight import FlightStreamWriter
 from pyarrow.flight import Action, FlightCallOptions, FlightClient
 from pyarrow.flight import FlightDescriptor
 from typing import Optional
