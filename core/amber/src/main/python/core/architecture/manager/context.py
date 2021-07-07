@@ -23,3 +23,4 @@ class Context:
         self.statistics_manager = StatisticsManager()
         self.tuple_to_batch_converter = TupleToBatchConverter()
         self.batch_to_tuple_converter = BatchToTupleConverter()
+

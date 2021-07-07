@@ -11,7 +11,7 @@ class DataPayload:
 
 @dataclass
 class DataFrame(DataPayload):
-    frame: List[ITuple]
+    frame: list[ITuple]
 
 
 @dataclass

@@ -1,5 +1,4 @@
 import pandas
-from loguru import logger
 from pyarrow import Table
 
 from core.models.internal_queue import InternalQueue, ControlElement, OutputDataElement
@@ -17,31 +16,23 @@ class NetworkSender(StoppableQueueBlockingThread):
 
     def main_loop(self):
         next_entry = self.interruptible_get()
-        logger.debug(f"received a message")
-        if isinstance(next_entry, OutputDataElement):
 
-            logger.debug(f"received an OutputDataElement")
-            self.send_batch(next_entry.to, next_entry.batch)
+        if isinstance(next_entry, OutputDataElement):
+            self.send_data(next_entry.to, next_entry.payload)
         elif isinstance(next_entry, ControlElement):
-            logger.debug(f"NETWORK received a ControlElement {next_entry}")
             self.send_control(next_entry.from_, next_entry.cmd)
 
-    def send_batch(self, to: ActorVirtualIdentity, batch: DataPayload) -> None:
-        def chunks(lst: list, n):
-            """Yield successive n-sized chunks from lst."""
-            for i in range(0, len(lst), n):
-                yield lst[i:i + n]
+        # TODO: handle else
 
-        logger.info(" here in send batch")
-        if isinstance(batch, DataFrame):
-            for chunk in chunks(batch.frame, 100):
-                table = Table.from_pandas(pandas.DataFrame.from_records([t.row for t in chunk]))
-                self._proxy_client.send_data(to.SerializeToString(), table)
-        elif isinstance(batch, EndOfUpstream):
-            logger.info("python-python sending an EndOfStream")
+    def send_data(self, to: ActorVirtualIdentity, data_payload: DataPayload) -> None:
+
+        if isinstance(data_payload, DataFrame):
+            table = Table.from_pandas(pandas.DataFrame.from_records([t.row for t in data_payload.frame]))
+
+            self._proxy_client.send_data(to.SerializeToString(), table)
+        elif isinstance(data_payload, EndOfUpstream):
             self._proxy_client.send_data(to.SerializeToString(), None)
 
     def send_control(self, to: ActorVirtualIdentity, cmd: ControlPayload):
         workflow_control_message = WorkflowControlMessage(from_=to, sequence_number=1, payload=cmd)
-        ret = self._proxy_client.call("control", workflow_control_message.SerializeToString())
-        logger.info(f"return: {ret}")
+        self._proxy_client.call("control", workflow_control_message.SerializeToString())

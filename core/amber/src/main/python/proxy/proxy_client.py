@@ -1,8 +1,8 @@
 from loguru import logger
 from pyarrow import Table
-from pyarrow.flight import FlightStreamWriter
 from pyarrow.flight import Action, FlightCallOptions, FlightClient
 from pyarrow.flight import FlightDescriptor
+from pyarrow.flight import FlightStreamWriter
 from typing import Optional
 
 from .common import serialize_arguments
@@ -36,42 +36,22 @@ class ProxyClient(FlightClient):
         logger.info(f"sending {action}, {action.body}")
         return next(self.do_action(action, options)).body.to_pybytes()
 
-    def send_data(self, target, batch: Optional[Table], on_success: callable = lambda: None,
-                  on_error: callable = lambda: None) -> None:
+    def send_data(self, target, batch: Optional[Table]) -> None:
         """
         send data to the server
         :param batch: a PyArrow.Table of column-stored records.
-        :param on_success: callback function upon success, only used with PythonProxyClient, Java
-                            client should not use it.
-        :param on_error: callback function upon failure, only used with the PythonProxyClient, Java
-                            client should not use it.
         :return:
         """
+
+        descriptor = FlightDescriptor.for_path(target)
+        batch = Table.from_arrays([]) if batch is None else batch
+        refs = self.do_put(descriptor, batch.schema)
+        writer: FlightStreamWriter = refs[0]
         try:
-            descriptor = FlightDescriptor.for_path(target)
-            batch = Table.from_arrays([]) if batch is None else batch
-            refs = self.do_put(descriptor, batch.schema)
-            writer: FlightStreamWriter = refs[0]
-            logger.info("descriptor: \n " + str(descriptor) + "\nbatch schema: \n" + str(batch.schema))
-            logger.debug("start writing")
-            try:
-                with writer:
-                    writer.write_table(batch, max_chunksize=100)
-            except Exception as err:
-                logger.exception(err)
-                pass
-
-            logger.debug("finish writing")
-
-            # invoke success handler
-            on_success()
-        except Exception as e:
-            logger.warning(e)
-            logger.debug("send data error")
-
-            # invoke error handler
-            on_error()
-            raise
+            with writer:
+                writer.write_table(batch, max_chunksize=100)
+        except Exception as err:
+            logger.exception(err)
 
 
 if __name__ == '__main__':

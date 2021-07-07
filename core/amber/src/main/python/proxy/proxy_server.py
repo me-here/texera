@@ -6,8 +6,8 @@ from functools import wraps
 from inspect import signature
 from loguru import logger
 from pyarrow import py_buffer, Table
-from pyarrow._flight import MetadataRecordBatchReader
 from pyarrow.flight import Action, FlightDescriptor, FlightServerBase, ServerCallContext, Result
+from pyarrow.flight import MetadataRecordBatchReader
 from pyarrow.ipc import RecordBatchStreamWriter
 from typing import Iterator, Tuple, Dict
 

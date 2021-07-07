@@ -1,5 +1,3 @@
-import typing
-from loguru import logger
 from typing import Iterable, Union
 
 from core.architecture.manager.context import Context
@@ -50,22 +48,22 @@ class DPThread(StoppableQueueBlockingThread):
                 self.context.state_manager.transit_to(Running())
             # logger.info(f"PYTHON DP receive a DATA: {next_entry}")
             for element in self.context.batch_to_tuple_converter.process_data_payload(next_entry.from_,
-                                                                                      next_entry.batch):
+                                                                                      next_entry.payload):
                 if isinstance(element, Tuple):
                     # logger.info(" python main get a tuple")
                     self._current_input_tuple = element
                     self.handle_input_tuple()
 
-                    # self.check_and_handle_control()
+                    # TODO: add self.check_and_handle_control()
 
                 elif isinstance(element, EndMarker):
                     self._current_input_tuple = InputExhausted()
                     self.handle_input_tuple()
                 elif isinstance(element, EndOfAllMarker):
                     for to, batch in self.context.tuple_to_batch_converter.emit_end_of_upstream():
-                        logger.info(f" in the end getting {to}, {batch}")
-                        self._output_queue.put(OutputDataElement(batch, to))
+                        self._output_queue.put(OutputDataElement(payload=batch, to=to))
                     self.complete()
+                # TODO: handle else
 
         elif isinstance(next_entry, ControlElement):
             # logger.info(f"PYTHON DP receive a CONTROL: {next_entry}")
@@ -75,35 +73,24 @@ class DPThread(StoppableQueueBlockingThread):
 
     def process_control_command(self, cmd: ControlPayload, from_: ActorVirtualIdentity):
         # logger.info(f"PYTHON DP processing one CONTROL: {cmd} from {from_}")
-
         payload = get_oneof(cmd)
         if isinstance(payload, ControlInvocation):
             # logger.info(f"PYTHON DP processing one CONTROL INVOCATION: {payload} from {from_}")
             self._rpc_server.receive(control_invocation=payload, from_=from_)
 
-    #      cmd match {
-    #       case invocation: ControlInvocation =>
-    #         asyncRPCServer.logControlInvocation(invocation, from)
-    #         asyncRPCServer.receive(invocation, from)
-    #       case ret: ReturnPayload =>
-    #         asyncRPCClient.logControlReply(ret, from)
-    #         asyncRPCClient.fulfillPromise(ret)
-    #     }
+        # TODO: handle ReturnPayload
+
+        # TODO: handle else
 
     def handle_input_tuple(self):
         if isinstance(self._current_input_tuple, ITuple):
             self.context.statistics_manager.input_tuple_count += 1
-        # logger.info(f"python main handling a tuple {self._current_input_tuple}")
 
-        results: Iterable[ITuple] = self.process_tuple(self._current_input_tuple, self._current_input_link)
-        for result in results:
-            # logger.info(f" python main getting a result tuple {result}")
+        for result in self.process_tuple(self._current_input_tuple, self._current_input_link):
             self.context.statistics_manager.output_tuple_count += 1
             self.pass_tuple_to_downstream(result)
 
     def process_tuple(self, tuple_: Union[ITuple, InputExhausted], link: LinkIdentity) -> Iterable[ITuple]:
-        typing.cast(tuple_, Union[Tuple, InputExhausted])
-        # logger.debug(f"processing a tuple {tuple_}")
         if isinstance(tuple_, InputExhausted):
             return iter(())
         else:
@@ -111,7 +98,7 @@ class DPThread(StoppableQueueBlockingThread):
 
     def pass_tuple_to_downstream(self, tuple_: ITuple):
         for to, batch in self.context.tuple_to_batch_converter.tuple_to_batch(tuple_):
-            self._output_queue.put(OutputDataElement(batch, to))
+            self._output_queue.put(OutputDataElement(payload=batch, to=to))
 
     def complete(self):
         self._udf_operator.close()

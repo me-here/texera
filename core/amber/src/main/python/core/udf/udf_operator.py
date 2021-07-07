@@ -16,8 +16,7 @@ class UDFOperator(ABC):
         pass
 
     def process_texera_tuple(self, tuple_: Union[Tuple, InputExhausted], input_: LinkIdentity) -> Iterable[Tuple]:
-        logger.info(" udf process a tuple")
-        yield tuple_
+        pass
 
     def close(self) -> None:
         pass

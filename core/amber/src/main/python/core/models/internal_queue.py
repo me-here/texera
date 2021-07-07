@@ -16,14 +16,14 @@ class InternalQueueElement(QueueElement):
 
 @dataclass
 class InputDataElement(InternalQueueElement):
-    batch: DataPayload
+    payload: DataPayload
     from_: ActorVirtualIdentity
     _priority: int = 1
 
 
 @dataclass
 class OutputDataElement(InternalQueueElement):
-    batch: DataPayload
+    payload: DataPayload
     to: ActorVirtualIdentity
     _priority: int = 1
 
