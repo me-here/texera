@@ -1,3 +1,4 @@
+from loguru import logger
 from typing import Iterable, Union
 
 from core.architecture.manager.context import Context
@@ -50,7 +51,6 @@ class DPThread(StoppableQueueBlockingThread):
             for element in self.context.batch_to_tuple_converter.process_data_payload(next_entry.from_,
                                                                                       next_entry.payload):
                 if isinstance(element, Tuple):
-                    # logger.info(" python main get a tuple")
                     self._current_input_tuple = element
                     self.handle_input_tuple()
 

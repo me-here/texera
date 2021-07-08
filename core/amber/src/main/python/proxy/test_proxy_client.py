@@ -5,11 +5,12 @@ from pyarrow.flight import FlightServerError
 from queue import Queue
 from typing import Iterable, List
 
+from edu.uci.ics.amber.engine.common import ActorVirtualIdentity
 from .proxy_client import ProxyClient
 from .proxy_server import ProxyServer
 
 
-class TestRPCClient:
+class TestProxyClient:
 
     @pytest.fixture
     def data_queue(self):
@@ -134,7 +135,7 @@ class TestRPCClient:
         with server:
             # send the pyarrow table to server as a flight
             with pytest.raises(ArrowNotImplementedError):
-                client.send_data(table)
+                client.send_data(ActorVirtualIdentity(),table)
 
     def test_client_can_send_data_with_handler(self, data_queue: Queue, server_with_dp, client):
         # prepare a dataframe and convert to pyarrow table
@@ -146,7 +147,7 @@ class TestRPCClient:
 
         with server_with_dp:
             # send the pyarrow table to server as a flight
-            client.send_data(table)
+            client.send_data(ActorVirtualIdentity(), table)
 
             assert data_queue.qsize() == 400
             for i, row in table.to_pandas().iterrows():

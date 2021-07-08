@@ -17,9 +17,9 @@ class NetworkReceiver(StoppableThread):
         def data_handler(from_: ActorVirtualIdentity, table: Table):
 
             if table is not None:
-
-                shared_queue.put(InputDataElement(payload=DataFrame([Tuple(row) for i, row in table.to_pandas().iterrows()])
-                                                  , from_=from_))
+                shared_queue.put(InputDataElement(
+                    payload=DataFrame([Tuple.from_series(row) for i, row in table.to_pandas().iterrows()])
+                    , from_=from_))
             else:
                 shared_queue.put(InputDataElement(payload=EndOfUpstream(), from_=from_))
 
@@ -32,7 +32,6 @@ class NetworkReceiver(StoppableThread):
 
         def control_deserializer(message: bytes) -> WorkflowControlMessage:
             workflow_control_message = WorkflowControlMessage().parse(message)
-            # logger.info(f"serialized to \n{workflow_control_message}")
             return workflow_control_message
 
         self._proxy_server.register_control_handler(control_handler, control_deserializer)

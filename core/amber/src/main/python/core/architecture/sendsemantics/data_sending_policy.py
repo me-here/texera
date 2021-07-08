@@ -1,8 +1,8 @@
 from abc import ABC
-from typing import List, Optional, Tuple, Iterable
+from typing import Optional, Iterable
 
+from core import Tuple
 from core.models.payload import DataPayload, DataFrame, EndOfUpstream
-from core.models.tuple import ITuple
 from edu.uci.ics.amber.engine.common import LinkIdentity, ActorVirtualIdentity
 
 
@@ -13,10 +13,10 @@ class DataSendingPolicyExec(ABC):
         self.batch_size = batch_size
         self.receivers = receivers
 
-    def add_tuple_to_batch(self, tuple_: ITuple) -> Optional[Tuple[ActorVirtualIdentity, DataPayload]]:
+    def add_tuple_to_batch(self, tuple_: Tuple) -> Optional[tuple[ActorVirtualIdentity, DataPayload]]:
         pass
 
-    def no_more(self) -> Tuple[ActorVirtualIdentity, DataPayload]:
+    def no_more(self) -> tuple[ActorVirtualIdentity, DataPayload]:
         pass
 
     def reset(self) -> None:
@@ -27,12 +27,12 @@ class DataSendingPolicyExec(ABC):
 
 
 class OneToOnePolicyExec(DataSendingPolicyExec):
-    def __init__(self, policy_tag: LinkIdentity, batch_size: int, receivers: List[ActorVirtualIdentity]):
+    def __init__(self, policy_tag: LinkIdentity, batch_size: int, receivers: list[ActorVirtualIdentity]):
         super().__init__(policy_tag, batch_size, receivers)
         self.batch_size = 100
-        self.batch = list()
+        self.batch: list[Tuple] = list()
 
-    def add_tuple_to_batch(self, tuple_: ITuple) -> Optional[Tuple[ActorVirtualIdentity, DataPayload]]:
+    def add_tuple_to_batch(self, tuple_: Tuple) -> Optional[tuple[ActorVirtualIdentity, DataPayload]]:
         self.batch.append(tuple_)
         if len(self.batch) == self.batch_size:
             ret_batch = self.batch
@@ -41,7 +41,7 @@ class OneToOnePolicyExec(DataSendingPolicyExec):
         else:
             return None
 
-    def no_more(self) -> Iterable[Tuple[ActorVirtualIdentity, DataPayload]]:
+    def no_more(self) -> Iterable[tuple[ActorVirtualIdentity, DataPayload]]:
         if len(self.batch) > 0:
             yield self.receivers[0], DataFrame(self.batch)
         yield self.receivers[0], EndOfUpstream()
@@ -49,8 +49,3 @@ class OneToOnePolicyExec(DataSendingPolicyExec):
 
     def reset(self) -> None:
         self.batch = list()
-#
-#   override def reset(): Unit = {
-#     batch = new Array[ITuple](batchSize)
-#     currentSize = 0
-#   }

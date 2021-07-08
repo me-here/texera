@@ -1,3 +1,4 @@
+import pandas
 from loguru import logger
 from pyarrow import Table
 from pyarrow.flight import Action, FlightCallOptions, FlightClient
@@ -36,14 +37,15 @@ class ProxyClient(FlightClient):
         logger.info(f"sending {action}, {action.body}")
         return next(self.do_action(action, options)).body.to_pybytes()
 
-    def send_data(self, target, batch: Optional[Table]) -> None:
+    def send_data(self, path: bytes, batch: Optional[Table]) -> None:
         """
         send data to the server
         :param batch: a PyArrow.Table of column-stored records.
         :return:
         """
 
-        descriptor = FlightDescriptor.for_path(target)
+        descriptor = FlightDescriptor.for_command(path)
+        # batch = Table.from_pandas(pandas.DataFrame({'str': ["EOF"]})) if batch is None else batch
         batch = Table.from_arrays([]) if batch is None else batch
         refs = self.do_put(descriptor, batch.schema)
         writer: FlightStreamWriter = refs[0]
@@ -51,8 +53,8 @@ class ProxyClient(FlightClient):
             with writer:
                 writer.write_table(batch, max_chunksize=100)
         except Exception as err:
-            logger.exception(err)
-
+            # logger.exception(err)
+            pass
 
 if __name__ == '__main__':
     with ProxyServer() as server:

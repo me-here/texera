@@ -7,7 +7,10 @@ import edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.CommandCompleted
 import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
-import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, ActorVirtualIdentityMessage}
+import edu.uci.ics.amber.engine.common.virtualidentity.{
+  ActorVirtualIdentity,
+  ActorVirtualIdentityMessage
+}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import kotlin.NotImplementedError
 import org.apache.arrow.flight._
@@ -91,31 +94,36 @@ private class AmberProducer(
       try {
         val descriptor = flightStream.getDescriptor
         val to: ActorVirtualIdentity = ActorVirtualIdentityMessage
-          .parseFrom(descriptor.getPath.get(0).getBytes())
+          .parseFrom(descriptor.getCommand)
           .toActorVirtualIdentity
         val root = flightStream.getRoot
         val schema = flightStream.getSchema
+        try {
+          if (schema.getFields.size() == 0) {
+            // EndOfUpstream
+            println("python-java received an EndOfUpstream!")
+            //          ackStream.onNext(PutResult.metadata(flightStream.getLatestMetadata))
+//            flightStream.takeDictionaryOwnership
+            dataOutputPort.sendTo(to, EndOfUpstream())
+//            flightStream.
+          } else {
+            while ({
+              flightStream.next
+            }) {
+              ackStream.onNext(PutResult.metadata(flightStream.getLatestMetadata))
+            }
+            // Closing the stream will release the dictionaries
+            flightStream.takeDictionaryOwnership
+            val queue = mutable.Queue[Tuple]()
+            for (i <- 0 until root.getRowCount)
+              queue.enqueue(ArrowUtils.getTexeraTuple(i, root))
 
-        if (schema.getFields.size() == 0) {
-          // EndOfUpstream
-          println("python-java received an EndOfUpstream!")
-          dataOutputPort.sendTo(to, EndOfUpstream())
-          ackStream.onNext(PutResult.metadata(flightStream.getLatestMetadata))
-          flightStream.takeDictionaryOwnership
-        } else {
-          while ({
-            flightStream.next
-          }) {
-            ackStream.onNext(PutResult.metadata(flightStream.getLatestMetadata))
+            dataOutputPort.sendTo(to, DataFrame(queue.toArray))
+
           }
-          // Closing the stream will release the dictionaries
-          flightStream.takeDictionaryOwnership
-          val queue = mutable.Queue[Tuple]()
-          for (i <- 0 until root.getRowCount)
-            queue.enqueue(ArrowUtils.getTexeraTuple(i, root))
-
-          dataOutputPort.sendTo(to, DataFrame(queue.toArray))
-
+        } catch {
+          case e: Exception =>
+            e.printStackTrace()
         }
 
       }

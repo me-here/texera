@@ -77,6 +77,9 @@ class ProxyServer(FlightServerBase):
         # the data message handlers for each batch, needs to be implemented during runtime.
         self.register_data_handler(lambda *args, **kwargs: (_ for _ in ()).throw(NotImplementedError))
 
+        self.process_data = None
+        self.process_control = None
+
     ###########################
     # Flights related methods #
     ###########################
@@ -92,16 +95,13 @@ class ProxyServer(FlightServerBase):
         :return:
         """
 
-        # logger.debug(f"getting a data flight")
         from_ = ActorVirtualIdentity().parse(descriptor.command)
 
         data: Table = reader.read_all()
         if len(data.schema) == 0:
-            logger.info("GOT AN END!!! ")
             self.process_data(from_, None)
         else:
-            logger.debug(f"getting a data flight {from_}, data: \n {data}")
-            # logger.info(data.data)
+            logger.debug(f"getting a data flight from {from_}, data: \n {data}")
             self.process_data(from_, data)
 
     ###############################
@@ -130,9 +130,8 @@ class ProxyServer(FlightServerBase):
         # get procedure by name
 
         if action.type == "control":
-            logger.debug("getting control!!!")
-            workflow_control_message = self.deserialize_control(action.body.to_pybytes())
-            self.process_control(workflow_control_message)
+            message = self.deserialize_control(action.body.to_pybytes())
+            self.process_control(message)
             encoded = b"ack"
         else:
             procedure, _ = self._procedures.get(action.type)

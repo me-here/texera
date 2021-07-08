@@ -1,12 +1,11 @@
 import pytest
-from edu.uci.ics.amber.engine.common.ambermessage2_pb2 import ControlPayload
-from edu.uci.ics.amber.engine.common.virtualidentity_pb2 import ActorVirtualIdentity, LinkIdentity
 
 from core import Tuple
-from core.models.internal_queue import InternalQueue, InputTuple, ControlElement, SenderChangeMarker, EndMarker, \
-    EndOfAllMarker
+from core.models.internal_queue import InternalQueue, ControlElement, InputDataElement, OutputDataElement
+from core.models.payload import DataFrame
 from core.models.tuple import InputExhausted
 from core.util.stable_priority_queue import PrioritizedItem
+from edu.uci.ics.amber.engine.common import ControlPayload, ActorVirtualIdentity
 
 
 class TestInternalQueue:
@@ -19,7 +18,8 @@ class TestInternalQueue:
             internal_queue.put(1)
 
         with pytest.raises(TypeError):
-            internal_queue.put(PrioritizedItem((1, 1), InputTuple(Tuple())))
+            internal_queue.put(PrioritizedItem((1, 1), InputDataElement(payload=DataFrame(frame=[Tuple()]),
+                                                                        from_=ActorVirtualIdentity())))
 
         with pytest.raises(TypeError):
             internal_queue.put(Tuple())
@@ -31,16 +31,18 @@ class TestInternalQueue:
             internal_queue.put(InputExhausted())
 
     def test_internal_queue_can_put_internal_queue_element(self, internal_queue):
-        internal_queue.put(InputTuple(Tuple()))
+        internal_queue.put(InputDataElement(payload=DataFrame(frame=[Tuple()]),
+                                            from_=ActorVirtualIdentity()))
         internal_queue.put(ControlElement(ControlPayload(), ActorVirtualIdentity()))
-        internal_queue.put(SenderChangeMarker(LinkIdentity()))
-        internal_queue.put(EndMarker())
-        internal_queue.put(EndOfAllMarker())
+        internal_queue.put(OutputDataElement(payload=DataFrame(frame=[Tuple()]),
+                                             to=ActorVirtualIdentity()))
 
     def test_internal_queue_should_emit_control_first(self, internal_queue):
 
-        elements = [InputTuple(Tuple()), SenderChangeMarker(LinkIdentity()),
-                    EndMarker(), EndOfAllMarker()]
+        elements = [InputDataElement(payload=DataFrame(frame=[Tuple()]),
+                                     from_=ActorVirtualIdentity()),
+                    OutputDataElement(payload=DataFrame(frame=[Tuple()]),
+                                      to=ActorVirtualIdentity())]
         for element in elements:
             internal_queue.put(element)
 
@@ -51,8 +53,10 @@ class TestInternalQueue:
         assert internal_queue.get() == control
 
     def test_internal_queue_should_emit_stable_result(self, internal_queue):
-        elements1 = [InputTuple(Tuple()), SenderChangeMarker(LinkIdentity()),
-                     EndMarker(), EndOfAllMarker()]
+        elements1 = [InputDataElement(payload=DataFrame(frame=[Tuple()]),
+                                      from_=ActorVirtualIdentity()),
+                     OutputDataElement(payload=DataFrame(frame=[Tuple()]),
+                                       to=ActorVirtualIdentity())]
         for element in elements1:
             internal_queue.put(element)
 
@@ -60,9 +64,15 @@ class TestInternalQueue:
         control1 = ControlElement(ControlPayload(), ActorVirtualIdentity())
         internal_queue.put(control1)
 
-        elements2 = [EndOfAllMarker(), InputTuple(Tuple()), InputTuple(Tuple()),
-                     InputTuple(Tuple()), EndMarker(), InputTuple(Tuple()),
-                     InputTuple(Tuple()), SenderChangeMarker(LinkIdentity())]
+        elements2 = [InputDataElement(payload=DataFrame(frame=[Tuple()]),
+                                      from_=ActorVirtualIdentity()),
+                     InputDataElement(payload=DataFrame(frame=[Tuple()]),
+                                      from_=ActorVirtualIdentity()),
+                     OutputDataElement(payload=DataFrame(frame=[Tuple()]),
+                                       to=ActorVirtualIdentity()),
+                     InputDataElement(payload=DataFrame(frame=[Tuple()]),
+                                      from_=ActorVirtualIdentity())
+                     ]
         for element in elements2:
             internal_queue.put(element)
 

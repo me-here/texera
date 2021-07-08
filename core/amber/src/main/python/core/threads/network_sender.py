@@ -25,13 +25,14 @@ class NetworkSender(StoppableQueueBlockingThread):
         # TODO: handle else
 
     def send_data(self, to: ActorVirtualIdentity, data_payload: DataPayload) -> None:
-
         if isinstance(data_payload, DataFrame):
-            table = Table.from_pandas(pandas.DataFrame.from_records([t.row for t in data_payload.frame]))
-
-            self._proxy_client.send_data(to.SerializeToString(), table)
+            table = Table.from_pandas(
+                pandas.DataFrame.from_records([tuple_.as_series() for tuple_ in data_payload.frame]))
+            self._proxy_client.send_data(bytes(to), table)
         elif isinstance(data_payload, EndOfUpstream):
-            self._proxy_client.send_data(to.SerializeToString(), None)
+            self._proxy_client.send_data(bytes(to), None)
+
+        # TODO: handle else
 
     def send_control(self, to: ActorVirtualIdentity, cmd: ControlPayload):
         workflow_control_message = WorkflowControlMessage(from_=to, sequence_number=1, payload=cmd)

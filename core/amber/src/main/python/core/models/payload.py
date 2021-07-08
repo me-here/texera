@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
-from core.models.tuple import ITuple
+from core.models.tuple import ITuple, Tuple
 
 
 @dataclass
@@ -11,7 +11,7 @@ class DataPayload:
 
 @dataclass
 class DataFrame(DataPayload):
-    frame: list[ITuple]
+    frame: list[Tuple]
 
 
 @dataclass

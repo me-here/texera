@@ -37,9 +37,9 @@ class BatchToTupleConverter:
         self._upstream_map: dict[LinkIdentity, Set[ActorVirtualIdentity]] = defaultdict(set)
         self._current_link: LinkIdentity = None
 
-    def register_input(self, identifier: ActorVirtualIdentity, input: LinkIdentity) -> None:
-        self._upstream_map[input].add(identifier)
-        self._input_map[identifier] = input
+    def register_input(self, identifier: ActorVirtualIdentity, input_: LinkIdentity) -> None:
+        self._upstream_map[input_].add(identifier)
+        self._input_map[identifier] = input_
 
     def process_data_payload(self, from_: ActorVirtualIdentity, data_payload: DataPayload) \
             -> Iterable[Union[ITuple, Marker]]:
