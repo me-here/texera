@@ -4,14 +4,42 @@ import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 
 import scala.collection.mutable
 
+//TODO: Support rule-based rewriting.
+//TODO: Refactor.
+//TODO: Add unit test.
 class WorkflowRewriter(workflowInfo: WorkflowInfo) {
-  private val workflowDAG: WorkflowDAG = new WorkflowDAG(workflowInfo)
-  private val newOperators = mutable.MutableList[OperatorDescriptor]()
-  private val newLinks = mutable.MutableList[OperatorLink]()
-  private val newBreakpoints = mutable.MutableList[BreakpointInfo]()
-  private val opIDQueue = new mutable.Queue[String]()
+
+  private val workflowDAG: WorkflowDAG = if (workflowInfo != null) {
+    new WorkflowDAG(workflowInfo)
+  } else {
+    null
+  }
+  private val newOperators = if (workflowInfo != null) {
+    mutable.MutableList[OperatorDescriptor]()
+  } else {
+    null
+  }
+  private val newLinks = if (workflowInfo != null) {
+    mutable.MutableList[OperatorLink]()
+  } else {
+    null
+  }
+  private val newBreakpoints = if (workflowInfo != null) {
+    mutable.MutableList[BreakpointInfo]()
+  } else {
+    null
+  }
+  private val opIDQueue = if (workflowInfo != null) {
+    new mutable.Queue[String]()
+  } else {
+    null
+  }
 
   def rewrite: WorkflowInfo = {
+    if (null == workflowInfo) {
+      return null
+    }
+    checkCacheValidity()
     // Topological traversal
     workflowDAG.getSinkOperators.foreach(sinkOpID => {
       opIDQueue.enqueue(sinkOpID)
@@ -27,6 +55,30 @@ class WorkflowRewriter(workflowInfo: WorkflowInfo) {
       })
     }
     WorkflowInfo(newOperators, newLinks, newBreakpoints)
+  }
+
+  private def checkCacheValidity(): Unit = {
+    val sourceOperators: List[String] = workflowDAG.getSourceOperators
+    sourceOperators.foreach(operator => {
+      checkOperatorCacheValidity(operator)
+    })
+  }
+
+  private def checkOperatorCacheValidity(operatorID: String): Unit = {
+    val desc = workflowDAG.getOperator(operatorID)
+    if (isCacheEnabled(desc) && !isCacheValid(desc)) {
+      invalidateCache(operatorID)
+    }
+    workflowDAG.getDownstream(operatorID).foreach(desc => {
+      checkOperatorCacheValidity(desc.operatorID)
+    })
+  }
+
+  private def invalidateCache(operatorID: String): Unit = {
+    workflowDAG.getOperator(operatorID).isCacheEnabled = false
+    workflowDAG.getDownstream(operatorID).foreach(desc => {
+      invalidateCache(desc.operatorID)
+    })
   }
 
   private def rewriteUpstreamOperator(opID: String, upstreamOp: OperatorDescriptor): Unit = {
@@ -75,7 +127,7 @@ class WorkflowRewriter(workflowInfo: WorkflowInfo) {
     // Add the new links.
     newLinks += workflowDAG.jgraphtDag.getEdge(upstreamOp.operatorID, opID)
     // Add new links.
-    newLinks += generateCacheLink(toCacheOperator)
+    newLinks += generateToCacheLink(toCacheOperator)
     // Remove the old link from the old DAG.
     workflowDAG.jgraphtDag.removeEdge(upstreamOp.operatorID, opID)
   }
@@ -102,12 +154,12 @@ class WorkflowRewriter(workflowInfo: WorkflowInfo) {
   }
 
   private def isCacheValid(operator: OperatorDescriptor): Boolean = {
-    // TODO: Add cache map with cache invalidation strategy.
+    //TODO: Add cache map with cache invalidation strategy.
     false
   }
 
   private def getCachedOperator(operator: OperatorDescriptor): OperatorDescriptor = {
-    // TODO: Map the original operator to the cached (source) operator.
+    //TODO: Map the original operator to the cached (source) operator.
     null
   }
 
@@ -123,9 +175,16 @@ class WorkflowRewriter(workflowInfo: WorkflowInfo) {
     newLinks
   }
 
-  private def generateNewBreakpoints(operator: OperatorDescriptor, upstreamOp: OperatorDescriptor):
+  private def generateNewBreakpoints(newOperator: OperatorDescriptor,
+                                     upstreamOp: OperatorDescriptor):
   mutable.MutableList[BreakpointInfo] = {
-    null
+    val breakpointInfoList = new mutable.MutableList[BreakpointInfo]()
+    workflowInfo.breakpoints.foreach(info => {
+      if (upstreamOp.operatorID.equals(info.operatorID)) {
+        breakpointInfoList += BreakpointInfo(newOperator.operatorID, info.breakpoint)
+      }
+    })
+    breakpointInfoList
   }
 
   private def removeFromWorkflow(operator: OperatorDescriptor): Unit = {
@@ -136,7 +195,7 @@ class WorkflowRewriter(workflowInfo: WorkflowInfo) {
     null
   }
 
-  private def generateCacheLink(cacheOperator: OperatorDescriptor): OperatorLink = {
+  private def generateToCacheLink(toCacheOperator: OperatorDescriptor): OperatorLink = {
     null
   }
 }
