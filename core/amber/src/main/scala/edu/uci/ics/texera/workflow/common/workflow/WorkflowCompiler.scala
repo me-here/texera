@@ -89,8 +89,6 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
 
     val outLinks: mutable.Map[OperatorIdentity, mutable.Set[OperatorIdentity]] = mutable.Map()
     workflowInfo.links.foreach(link => {
-      printf("zjs: origin: %d\n", link.origin.portOrdinal)
-      printf("zjs: destination: %d\n", link.destination.portOrdinal)
       val origin = OperatorIdentity(this.context.jobID, link.origin.operatorID)
       val dest = OperatorIdentity(this.context.jobID, link.destination.operatorID)
       val destSet = outLinks.getOrElse(origin, mutable.Set())
