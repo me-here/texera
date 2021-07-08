@@ -74,8 +74,8 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
   var schemaRoot: VectorSchemaRoot = null
   private var flightClient: FlightClient = null
 
-  def sendBatch(dataPayload: DataPayload, from: ActorVirtualIdentity): Any = {
-    println("python-java enqueue " + dataPayload)
+  def sendData(dataPayload: DataPayload, from: ActorVirtualIdentity): Any = {
+
     enqueueData(DataElement(dataPayload, from))
 
   }
