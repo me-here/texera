@@ -127,7 +127,7 @@ class WorkflowRewriter(workflowInfo: WorkflowInfo) {
     // Add the new links.
     newLinks += workflowDAG.jgraphtDag.getEdge(upstreamOp.operatorID, opID)
     // Add new links.
-    newLinks += generateToCacheLink(toCacheOperator)
+    newLinks += generateToCacheLink(toCacheOperator, upstreamOp)
     // Remove the old link from the old DAG.
     workflowDAG.jgraphtDag.removeEdge(upstreamOp.operatorID, opID)
   }
@@ -192,10 +192,15 @@ class WorkflowRewriter(workflowInfo: WorkflowInfo) {
   }
 
   private def generateToCacheOperator(operator: OperatorDescriptor): OperatorDescriptor = {
+    //TODO: Generate an operator to save cache.
     null
   }
 
-  private def generateToCacheLink(toCacheOperator: OperatorDescriptor): OperatorLink = {
-    null
+  private def generateToCacheLink(toCacheOperator: OperatorDescriptor,
+                                  upstream: OperatorDescriptor): OperatorLink = {
+    //TODO: Port ordinal.
+    val origin: OperatorPort = OperatorPort(upstream.operatorID, 0)
+    val destination: OperatorPort = OperatorPort(toCacheOperator.operatorID, 0)
+    OperatorLink(origin, destination)
   }
 }
