@@ -53,8 +53,8 @@ class ProxyClient(FlightClient):
             with writer:
                 writer.write_table(batch, max_chunksize=100)
         except Exception as err:
-            # logger.exception(err)
-            pass
+            logger.exception(err)
+
 
 if __name__ == '__main__':
     with ProxyServer() as server:

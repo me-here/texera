@@ -1,15 +1,16 @@
 import re
 from betterproto import which_one_of, Message
+from typing_extensions import T
 
 pattern = re.compile(r'(?<!^)(?=[A-Z])')
 
 
-def get_oneof(base: Message) -> Message:
+def get_oneof(base: T) -> T:
     _, value = which_one_of(base, "sealed_value")
     return value
 
 
-def set_oneof(base: type(Message), value: Message) -> Message:
+def set_oneof(base: T, value: Message) -> T:
     snake_case_name = re.sub(pattern, '_', value.__class__.__name__).lower()
     ret = base()
     ret.__setattr__(snake_case_name, value)

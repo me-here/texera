@@ -3,14 +3,10 @@ package edu.uci.ics.amber.engine.architecture.worker
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{ControlOutputPort, DataOutputPort}
 import edu.uci.ics.amber.engine.common.ambermessage.{DataFrame, EndOfUpstream}
-import edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage
+import edu.uci.ics.amber.engine.common.ambermessage2.{DataHeader, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
-import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.CommandCompleted
+import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  ActorVirtualIdentityMessage
-}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import kotlin.NotImplementedError
 import org.apache.arrow.flight._
@@ -35,33 +31,16 @@ private class AmberProducer(
     action.getType match {
       case "control" =>
         val workflowControlMessage = WorkflowControlMessage.parseFrom(action.getBody)
-        println("PythonProxyServer-JAVA received CONTROL from PYTHON " + workflowControlMessage)
 
-        var returnValue1: Any = null
         workflowControlMessage.payload match {
-          case returnPayloadV2: edu.uci.ics.amber.engine.common.ambermessage2.ReturnPayload => {
-
-            if (returnPayloadV2.returnValue.isDefined) {
-              returnPayloadV2.returnValue match {
-                case workerStatistics: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics => {
-                  println("PythonProxyServer-JAVA this is statistics:::" + workerStatistics)
-                  returnValue1 = workerStatistics
-                }
-                case _ => returnValue1 = CommandCompleted()
-              }
-            } else {
-              returnValue1 = CommandCompleted()
-            }
-            println(s" PythonProxyServer-JAVA RESPONSE TO OTHER ACTORS with $returnValue1")
+          case returnPayload: edu.uci.ics.amber.engine.common.ambermessage2.ReturnPayload =>
             controlOutputPort.sendTo(
               to = workflowControlMessage.from,
               payload = ReturnPayload(
-                originalCommandID =
-                  workflowControlMessage.payload.asMessage.getReturnPayload.originalCommandID,
-                returnValue = returnValue1
+                originalCommandID = returnPayload.originalCommandID,
+                returnValue = returnPayload.returnValue
               )
             )
-          }
 
           case controlInvocation: edu.uci.ics.amber.engine.common.ambermessage2.ControlInvocation =>
             controlInvocation.command match {
@@ -90,43 +69,37 @@ private class AmberProducer(
       ackStream: FlightProducer.StreamListener[PutResult]
   ): Runnable = { () =>
     {
-      println(" PythonProxyServer-JAVA got a data batch return from python!!!")
+
+      val dataHeader: DataHeader = DataHeader
+        .parseFrom(flightStream.getDescriptor.getCommand)
+      val to: ActorVirtualIdentity = dataHeader.from
+      val isEnd: Boolean = dataHeader.isEnd
+
+      val root = flightStream.getRoot
       try {
-        val descriptor = flightStream.getDescriptor
-        val to: ActorVirtualIdentity = ActorVirtualIdentityMessage
-          .parseFrom(descriptor.getCommand)
-          .toActorVirtualIdentity
-        val root = flightStream.getRoot
-        val schema = flightStream.getSchema
-        try {
-          if (schema.getFields.size() == 0) {
-            // EndOfUpstream
-            println("python-java received an EndOfUpstream!")
-            //          ackStream.onNext(PutResult.metadata(flightStream.getLatestMetadata))
-//            flightStream.takeDictionaryOwnership
-            dataOutputPort.sendTo(to, EndOfUpstream())
-//            flightStream.
-          } else {
-            while ({
-              flightStream.next
-            }) {
-              ackStream.onNext(PutResult.metadata(flightStream.getLatestMetadata))
-            }
-            // Closing the stream will release the dictionaries
-            flightStream.takeDictionaryOwnership
-            val queue = mutable.Queue[Tuple]()
-            for (i <- 0 until root.getRowCount)
-              queue.enqueue(ArrowUtils.getTexeraTuple(i, root))
+        // consume all data in the stream, it will store on the root vectors.
+        while (flightStream.next) {
+          ackStream.onNext(PutResult.metadata(flightStream.getLatestMetadata))
+        }
+        // closing the stream will release the dictionaries
+        flightStream.takeDictionaryOwnership
 
-            dataOutputPort.sendTo(to, DataFrame(queue.toArray))
-
-          }
-        } catch {
-          case e: Exception =>
-            e.printStackTrace()
+        if (isEnd) {
+          // EndOfUpstream
+          dataOutputPort.sendTo(to, EndOfUpstream())
+        } else {
+          // normal data batches
+          val queue = mutable.Queue[Tuple]()
+          for (i <- 0 until root.getRowCount)
+            queue.enqueue(ArrowUtils.getTexeraTuple(i, root))
+          dataOutputPort.sendTo(to, DataFrame(queue.toArray))
         }
 
+      } catch {
+        case e: Exception =>
+          e.printStackTrace()
       }
+
     }
 
   }

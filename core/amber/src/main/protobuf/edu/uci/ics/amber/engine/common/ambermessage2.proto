@@ -46,4 +46,9 @@ message WorkflowMessage {
   }
 }
 
+message DataHeader {
+  edu.uci.ics.amber.engine.common.ActorVirtualIdentity from = 1;
+  bool isEnd = 2;
+}
+
 

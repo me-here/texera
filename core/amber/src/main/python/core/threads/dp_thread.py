@@ -1,4 +1,3 @@
-from loguru import logger
 from typing import Iterable, Union
 
 from core.architecture.manager.context import Context
@@ -13,10 +12,6 @@ from edu.uci.ics.amber.engine.architecture.worker import WorkerExecutionComplete
 from edu.uci.ics.amber.engine.common import ControlInvocation, ControlPayload, Uninitialized, Ready, Running, Completed, \
     ControllerVirtualIdentity
 from edu.uci.ics.amber.engine.common import LinkIdentity, ActorVirtualIdentity
-
-
-class BatchProducer:
-    pass
 
 
 class DPThread(StoppableQueueBlockingThread):
@@ -91,10 +86,7 @@ class DPThread(StoppableQueueBlockingThread):
             self.pass_tuple_to_downstream(result)
 
     def process_tuple(self, tuple_: Union[ITuple, InputExhausted], link: LinkIdentity) -> Iterable[ITuple]:
-        if isinstance(tuple_, InputExhausted):
-            return iter(())
-        else:
-            return self._udf_operator.process_texera_tuple(tuple_, link)
+        return self._udf_operator.process_texera_tuple(tuple_, link)
 
     def pass_tuple_to_downstream(self, tuple_: ITuple):
         for to, batch in self.context.tuple_to_batch_converter.tuple_to_batch(tuple_):

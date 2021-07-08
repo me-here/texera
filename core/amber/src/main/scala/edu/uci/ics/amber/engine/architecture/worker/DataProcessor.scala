@@ -176,6 +176,7 @@ class DataProcessor( // dependencies:
         CONTROLLER
       )
     }
+    e.printStackTrace()
     logger.logWarning(e.getLocalizedMessage + "\n" + e.getStackTrace.mkString("\n"))
     // invoke a pause in-place
     asyncRPCServer.execute(PauseWorker(), SELF)

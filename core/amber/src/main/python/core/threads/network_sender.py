@@ -4,7 +4,8 @@ from pyarrow import Table
 from core.models.internal_queue import InternalQueue, ControlElement, OutputDataElement
 from core.models.payload import DataFrame, EndOfUpstream
 from core.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
-from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ControlPayload, WorkflowControlMessage, DataPayload
+from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ControlPayload, WorkflowControlMessage, DataPayload, \
+    DataHeader
 from proxy import ProxyClient
 
 
@@ -26,11 +27,13 @@ class NetworkSender(StoppableQueueBlockingThread):
 
     def send_data(self, to: ActorVirtualIdentity, data_payload: DataPayload) -> None:
         if isinstance(data_payload, DataFrame):
+            data_header = DataHeader(from_=to, is_end=False)
             table = Table.from_pandas(
                 pandas.DataFrame.from_records([tuple_.as_series() for tuple_ in data_payload.frame]))
-            self._proxy_client.send_data(bytes(to), table)
+            self._proxy_client.send_data(bytes(data_header), table)
         elif isinstance(data_payload, EndOfUpstream):
-            self._proxy_client.send_data(bytes(to), None)
+            data_header = DataHeader(from_=to, is_end=True)
+            self._proxy_client.send_data(bytes(data_header), None)
 
         # TODO: handle else
 
