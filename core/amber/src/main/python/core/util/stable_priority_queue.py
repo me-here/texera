@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from loguru import logger
 from queue import PriorityQueue
 from typing import Optional, Tuple, Any
 
@@ -44,5 +43,17 @@ class StablePriorityQueue(PriorityQueue):
         super(StablePriorityQueue, self).put(PrioritizedItem((item.priority, self.sequence), item), block, timeout)
 
     def get(self, block: bool = ..., timeout: Optional[float] = ...) -> Any:
+        another_queue = StablePriorityQueue()
         prioritized_item: PrioritizedItem = super(StablePriorityQueue, self).get()
+
         return prioritized_item.item
+
+#
+# class MultiQueue(Queue):
+#     def __init__(self):
+#         super().__init__()
+#         self.queue1 = Queue()
+#         self.queue2 = Queue()
+#
+#     def _put(self, item: T) -> None:
+#         if isinstance(T, [InputDataElement, OutputDataElement, ])

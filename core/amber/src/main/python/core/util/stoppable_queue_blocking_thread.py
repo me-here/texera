@@ -71,3 +71,6 @@ class StoppableQueueBlockingThread(StoppableThread):
         """
         Used to interrupt a thread.
         """
+
+    def has_next(self) -> bool:
+        return not self._internal_queue.empty()

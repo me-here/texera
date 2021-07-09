@@ -8,6 +8,16 @@ from betterproto.grpc.grpclib_server import ServiceBase
 
 
 @dataclass(eq=False, repr=False)
+class PauseWorker(betterproto.Message):
+    pass
+
+
+@dataclass(eq=False, repr=False)
+class ResumeWorker(betterproto.Message):
+    pass
+
+
+@dataclass(eq=False, repr=False)
 class QueryStatistics(betterproto.Message):
     pass
 
@@ -22,6 +32,11 @@ class WorkerStatistics(betterproto.Message):
     worker_state: "__common__.WorkerState" = betterproto.message_field(1)
     input_row_count: int = betterproto.int64_field(2)
     output_row_count: int = betterproto.int64_field(3)
+
+
+@dataclass(eq=False, repr=False)
+class WorkerStateInfo(betterproto.Message):
+    worker_state: "__common__.WorkerState" = betterproto.message_field(1)
 
 
 @dataclass(eq=False, repr=False)
@@ -42,6 +57,8 @@ class WorkerExecutionCompleted(betterproto.Message):
 
 @dataclass(eq=False, repr=False)
 class ControlCommand(betterproto.Message):
+    pause_worker: "PauseWorker" = betterproto.message_field(1, group="sealed_value")
+    resume_worker: "ResumeWorker" = betterproto.message_field(2, group="sealed_value")
     add_output_policy: "AddOutputPolicy" = betterproto.message_field(
         3, group="sealed_value"
     )
@@ -54,6 +71,9 @@ class ControlCommand(betterproto.Message):
     )
     worker_statistics: "WorkerStatistics" = betterproto.message_field(
         7, group="sealed_value"
+    )
+    worker_state_info: "WorkerStateInfo" = betterproto.message_field(
+        8, group="sealed_value"
     )
     worker_execution_completed: "WorkerExecutionCompleted" = betterproto.message_field(
         101, group="sealed_value"

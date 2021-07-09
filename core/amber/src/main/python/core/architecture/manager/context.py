@@ -1,4 +1,5 @@
 from edu.uci.ics.amber.engine.common import Uninitialized, Ready, Recovering, Paused, Running, Completed
+from .pause_manager import PauseManager
 from .state_manager import StateManager
 from .statistics_manager import StatisticsManager
 from ..messaginglayer.batch_to_tuple_converter import BatchToTupleConverter
@@ -21,6 +22,8 @@ class Context:
 
         }, Uninitialized())
         self.statistics_manager = StatisticsManager()
+        self.pause_manager = PauseManager()
         self.tuple_to_batch_converter = TupleToBatchConverter()
         self.batch_to_tuple_converter = BatchToTupleConverter()
+
 

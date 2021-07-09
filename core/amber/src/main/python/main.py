@@ -1,4 +1,5 @@
 import sys
+import time
 
 import pandas
 import random
@@ -15,6 +16,7 @@ from edu.uci.ics.amber.engine.common import LinkIdentity
 class EchoOperator(UDFOperator):
     def process_texera_tuple(self, tuple_: Union[Tuple, InputExhausted], link: LinkIdentity) -> Iterable[Tuple]:
         if isinstance(tuple_, Tuple):
+            # time.sleep(0.01)
             yield tuple_
 
 
@@ -29,6 +31,7 @@ class TrainOperator(UDFOperator):
     def process_texera_tuple(self, tuple_: Union[Tuple, InputExhausted], link: LinkIdentity) -> Iterable[Tuple]:
         if isinstance(tuple_, Tuple):
             self.records.append(tuple_)
+            time.sleep(0.01)
         elif isinstance(tuple_, InputExhausted):
             model = self.train()
             yield Tuple.from_series(pandas.concat([self.records[-1].as_series(), pandas.Series(model)]))
@@ -36,6 +39,6 @@ class TrainOperator(UDFOperator):
 
 if __name__ == '__main__':
     data_processor = DataProcessor(host="localhost", input_port=int(sys.argv[1]), output_port=int(sys.argv[2]),
-                                   udf_operator=TrainOperator())
+                                   udf_operator=EchoOperator())
     data_processor.start()
     data_processor.join()

@@ -1,3 +1,6 @@
+from time import sleep
+
+from queue import Queue
 from typing import Iterable, Union
 
 from core.architecture.manager.context import Context
@@ -27,6 +30,8 @@ class DPThread(StoppableQueueBlockingThread):
         self.context = Context()
         self._rpc_server = SyncRPCServer(output_queue, context=self.context)
 
+        self._data_cache_queue = Queue()
+
     def before_loop(self) -> None:
         self._udf_operator.open()
         self.context.state_manager.assert_state(Uninitialized())
@@ -36,7 +41,10 @@ class DPThread(StoppableQueueBlockingThread):
         pass
 
     def main_loop(self) -> None:
-        next_entry = self.interruptible_get()
+        if not self._data_cache_queue.empty():
+            next_entry = self._data_cache_queue.get()
+        else:
+            next_entry = self.interruptible_get()
         # logger.info(f"PYTHON DP receive an entry from queue: {next_entry}")
         if isinstance(next_entry, InputDataElement):
 
@@ -48,15 +56,17 @@ class DPThread(StoppableQueueBlockingThread):
                 if isinstance(element, Tuple):
                     self._current_input_tuple = element
                     self.handle_input_tuple()
-
+                    self.check_and_handle_control()
                     # TODO: add self.check_and_handle_control()
 
                 elif isinstance(element, EndMarker):
                     self._current_input_tuple = InputExhausted()
                     self.handle_input_tuple()
+                    self.check_and_handle_control()
                 elif isinstance(element, EndOfAllMarker):
                     for to, batch in self.context.tuple_to_batch_converter.emit_end_of_upstream():
                         self._output_queue.put(OutputDataElement(payload=batch, to=to))
+                        self.check_and_handle_control()
                     self.complete()
                 # TODO: handle else
 
@@ -78,6 +88,9 @@ class DPThread(StoppableQueueBlockingThread):
         # TODO: handle else
 
     def handle_input_tuple(self):
+        while self.context.pause_manager.is_paused():
+            self.check_and_handle_control()
+
         if isinstance(self._current_input_tuple, ITuple):
             self.context.statistics_manager.input_tuple_count += 1
 
@@ -99,3 +112,15 @@ class DPThread(StoppableQueueBlockingThread):
         payload = set_oneof(ControlPayload, ControlInvocation(1, command=control_command))
         from_ = set_oneof(ActorVirtualIdentity, ControllerVirtualIdentity())
         self._output_queue.put(ControlElement(from_=from_, cmd=payload))
+
+    def check_and_handle_control(self):
+
+        if self.has_next():
+            next_entry = self.interruptible_get()
+            if isinstance(next_entry, InputDataElement):
+                self._data_cache_queue.put(next_entry)
+            elif isinstance(next_entry, ControlElement):
+                # logger.info(f"PYTHON DP receive a CONTROL: {next_entry}")
+                self.process_control_command(next_entry.cmd, next_entry.from_)
+        else:
+            sleep(0.01)

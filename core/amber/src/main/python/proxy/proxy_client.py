@@ -12,7 +12,7 @@ from .proxy_server import ProxyServer
 
 class ProxyClient(FlightClient):
 
-    def __init__(self, scheme: str = "grpc+tcp", host: str = "localhost", port: int = 5005, timeout=1,
+    def __init__(self, scheme: str = "grpc+tcp", host: str = "localhost", port: int = 5005, timeout=1000,
                  *args, **kwargs):
         location = f"{scheme}://{host}:{port}"
         super().__init__(location, *args, **kwargs)

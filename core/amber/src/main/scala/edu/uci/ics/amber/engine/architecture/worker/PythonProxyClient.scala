@@ -12,7 +12,9 @@ import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{
   DataElement
 }
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.PauseHandler.PauseWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ResumeHandler.ResumeWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.StartHandler.StartWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.UpdateInputLinkingHandler.UpdateInputLinking
 import edu.uci.ics.amber.engine.common.ambermessage.{
@@ -180,6 +182,16 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
           }
           case QueryStatistics() =>
             val protobufCommand = promisehandler2.QueryStatistics()
+            val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
+            val action: Action = new Action("control", controlMessage.toByteArray)
+            println(flightClient.doAction(action).next())
+          case PauseWorker() =>
+            val protobufCommand = promisehandler2.PauseWorker()
+            val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
+            val action: Action = new Action("control", controlMessage.toByteArray)
+            println(flightClient.doAction(action).next())
+          case ResumeWorker() =>
+            val protobufCommand = promisehandler2.ResumeWorker()
             val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
             val action: Action = new Action("control", controlMessage.toByteArray)
             println(flightClient.doAction(action).next())

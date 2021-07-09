@@ -2,13 +2,15 @@ from loguru import logger
 
 from core.architecture.handlers.add_output_policy_handler import AddOutputPolicyHandler
 from core.architecture.handlers.handler import Handler
+from core.architecture.handlers.pause_worker_handler import PauseWorkerHandler
 from core.architecture.handlers.query_statistics_handler import QueryStatisticsHandler
+from core.architecture.handlers.resume_worker_handler import ResumeWorkerHandler
 from core.architecture.handlers.update_input_linking_handler import UpdateInputLinkingHandler
 from core.architecture.manager.context import Context
 from core.models.internal_queue import InternalQueue, ControlElement
 from core.util.proto_helper import get_oneof, set_oneof
 from edu.uci.ics.amber.engine.architecture.worker import ControlCommand, AddOutputPolicy, UpdateInputLinking, \
-    QueryStatistics
+    QueryStatistics, PauseWorker, ResumeWorker
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ReturnPayload, ControlInvocation, ControlPayload
 
 
@@ -19,11 +21,13 @@ class SyncRPCServer:
         self.register(AddOutputPolicyHandler(AddOutputPolicy))
         self.register(UpdateInputLinkingHandler(UpdateInputLinking))
         self.register(QueryStatisticsHandler(QueryStatistics))
+        self.register(PauseWorkerHandler(PauseWorker))
+        self.register(ResumeWorkerHandler(ResumeWorker))
         self._context = context
 
     def receive(self, control_invocation: ControlInvocation, from_: ActorVirtualIdentity):
         command = get_oneof(control_invocation.command)
-        # logger.info(f"PYTHON receive a CONTROL: {control_invocation}")
+        logger.info(f"PYTHON receive a CONTROL: {control_invocation}")
         handler = self._handlers[type(command)]
         result: ControlCommand = set_oneof(ControlCommand, handler(self._context, command))
 
