@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from typing import List
 
-from core.models.tuple import ITuple, Tuple
+from core.models.tuple import Tuple
 
 
 @dataclass

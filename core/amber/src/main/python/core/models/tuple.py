@@ -24,14 +24,6 @@ class Tuple(ITuple):
     def as_series(self) -> Series:
         return self._internal_storage
 
-    @staticmethod
-    def new_builder() -> Tuple.Builder:
-        return Tuple.Builder()
-
-    class Builder:
-        def __init__(self):
-            pass
-
 
 @dataclass
 class InputExhausted:

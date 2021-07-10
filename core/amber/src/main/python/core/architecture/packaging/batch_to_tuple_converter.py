@@ -1,34 +1,11 @@
 from collections import defaultdict
 
-from dataclasses import dataclass
 from typing import Set, Iterable, Union
 
-from core.models.payload import DataFrame, EndOfUpstream
-from core.models.tuple import ITuple
+from core import Tuple
+from core.models.marker import Marker, SenderChangeMarker, EndMarker, EndOfAllMarker
+from core.models.payload import DataFrame, EndOfUpstream, DataPayload
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, LinkIdentity
-
-DataPayload = list[ITuple]
-
-
-@dataclass
-class Marker:
-    pass
-
-
-@dataclass
-class SenderChangeMarker(Marker):
-    link: LinkIdentity
-    _priority: int = 1
-
-
-@dataclass
-class EndMarker(Marker):
-    _priority: int = 1
-
-
-@dataclass
-class EndOfAllMarker(Marker):
-    _priority: int = 1
 
 
 class BatchToTupleConverter:
@@ -42,7 +19,7 @@ class BatchToTupleConverter:
         self._input_map[identifier] = input_
 
     def process_data_payload(self, from_: ActorVirtualIdentity, data_payload: DataPayload) \
-            -> Iterable[Union[ITuple, Marker]]:
+            -> Iterable[Union[Tuple, Marker]]:
         link = self._input_map[from_]
         if self._current_link is None or self._current_link != link:
             self._current_link = link
