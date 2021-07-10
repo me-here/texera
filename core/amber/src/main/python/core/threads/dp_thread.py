@@ -1,8 +1,8 @@
 from queue import Queue
 from typing import Iterable, Union
 
-from core.architecture.manager.context import Context
-from core.architecture.messaginglayer.batch_to_tuple_converter import EndMarker, EndOfAllMarker
+from core.architecture.managers.context import Context
+from core.architecture.packaging.batch_to_tuple_converter import EndMarker, EndOfAllMarker
 from core.architecture.sync_rpc.sync_rpc_server import SyncRPCServer
 from core.models.internal_queue import ControlElement, InputDataElement, OutputDataElement, InternalQueue
 from core.models.tuple import ITuple, InputExhausted, Tuple

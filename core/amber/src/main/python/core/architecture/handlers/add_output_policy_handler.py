@@ -1,6 +1,6 @@
 from edu.uci.ics.amber.engine.architecture.worker import AddOutputPolicy
 from .handler_base import Handler
-from ..manager.context import Context
+from ..managers.context import Context
 
 
 class AddOutputPolicyHandler(Handler):

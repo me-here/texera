@@ -3,7 +3,8 @@ from itertools import chain
 
 from typing import Iterable, Tuple
 
-from core.architecture.sendsemantics.data_sending_policy import DataSendingPolicyExec, OneToOnePolicyExec
+from core.architecture.sendsemantics.data_sending_policy_exec import DataSendingPolicyExec
+from core.architecture.sendsemantics.one_to_one_policy_exec import OneToOnePolicyExec
 from core.models.payload import DataPayload
 from core.models.tuple import ITuple
 from core.util.proto.proto_helper import get_oneof
@@ -26,8 +27,8 @@ class TupleToBatchConverter:
         :return:
         """
         the_policy = get_oneof(policy)
-        policy_exec = self._policy_exec_map[type(the_policy)]
-        policy_exec_instance = policy_exec(the_policy.policy_tag, the_policy.batch_size, the_policy.receivers)
+        policy_exec: type = self._policy_exec_map[type(the_policy)]
+        policy_exec_instance: DataSendingPolicyExec = policy_exec(the_policy)
         self._policy_execs.update({the_policy.policy_tag: policy_exec_instance})
 
     def tuple_to_batch(self, tuple_: ITuple) -> Iterable[Tuple[ActorVirtualIdentity, DataPayload]]:

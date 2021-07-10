@@ -6,7 +6,7 @@ from core.architecture.handlers.pause_worker_handler import PauseWorkerHandler
 from core.architecture.handlers.query_statistics_handler import QueryStatisticsHandler
 from core.architecture.handlers.resume_worker_handler import ResumeWorkerHandler
 from core.architecture.handlers.update_input_linking_handler import UpdateInputLinkingHandler
-from core.architecture.manager.context import Context
+from core.architecture.managers.context import Context
 from core.models.internal_queue import InternalQueue, ControlElement
 from core.util.proto.proto_helper import get_oneof, set_oneof
 from edu.uci.ics.amber.engine.architecture.worker import ControlCommand, AddOutputPolicy, UpdateInputLinking, \

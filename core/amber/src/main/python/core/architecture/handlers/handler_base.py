@@ -1,6 +1,6 @@
 from abc import ABC
 
-from core.architecture.manager.context import Context
+from core.architecture.managers.context import Context
 from edu.uci.ics.amber.engine.architecture.worker import ControlCommand
 
 

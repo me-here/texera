@@ -9,7 +9,7 @@ if (stateManager.getCurrentState == Paused()) {
     stateManager.getCurrentState
 """
 from core.architecture.handlers.handler_base import Handler
-from core.architecture.manager.context import Context
+from core.architecture.managers.context import Context
 from edu.uci.ics.amber.engine.architecture.worker import ResumeWorker, WorkerStateInfo
 from edu.uci.ics.amber.engine.common import Running, Paused
 

@@ -2,8 +2,8 @@ from edu.uci.ics.amber.engine.common import Uninitialized, Ready, Recovering, Pa
 from .pause_manager import PauseManager
 from .state_manager import StateManager
 from .statistics_manager import StatisticsManager
-from ..messaginglayer.batch_to_tuple_converter import BatchToTupleConverter
-from ..messaginglayer.tuple_to_batch_converter import TupleToBatchConverter
+from ..packaging.batch_to_tuple_converter import BatchToTupleConverter
+from ..packaging.tuple_to_batch_converter import TupleToBatchConverter
 
 
 class Context:
