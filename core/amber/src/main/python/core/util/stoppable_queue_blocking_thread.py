@@ -1,7 +1,6 @@
 from loguru import logger
 
-from core.util.double_blocking_queue import Queue
-from core.util.stable_priority_queue import QueueControl
+from core.util.queue_base import QueueControl, Queue
 from core.util.stoppable_thread import StoppableThread
 
 
