@@ -64,7 +64,6 @@ class PythonWorkflowWorker(
       from: ActorVirtualIdentity,
       controlPayload: ControlPayload
   ): Unit = {
-    println("PythonWorker-JAVA handing a CONTROL payload " + controlPayload)
     controlPayload match {
       case ControlInvocation(commandID, command) =>
         if (command.isInstanceOf[QueryCurrentInputTuple]) {

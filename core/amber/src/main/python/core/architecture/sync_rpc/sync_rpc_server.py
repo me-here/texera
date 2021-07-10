@@ -9,8 +9,7 @@ from core.architecture.handlers.update_input_linking_handler import UpdateInputL
 from core.architecture.managers.context import Context
 from core.models.internal_queue import InternalQueue, ControlElement
 from core.util.proto.proto_helper import get_oneof, set_oneof
-from edu.uci.ics.amber.engine.architecture.worker import ControlCommand, AddOutputPolicy, UpdateInputLinking, \
-    QueryStatistics, PauseWorker, ResumeWorker
+from edu.uci.ics.amber.engine.architecture.worker import ControlCommand
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ReturnPayload, ControlInvocation, ControlPayload
 
 
@@ -35,7 +34,7 @@ class SyncRPCServer:
                             ReturnPayload(original_command_id=control_invocation.command_id,
                                           return_value=result))
 
-        # logger.info(f"returning control {payload}")
+        # logger.info(f"PYTHON returning control {payload}")
         self._output_queue.put(ControlElement(from_=from_, cmd=payload))
 
     def register(self, handler: Handler):

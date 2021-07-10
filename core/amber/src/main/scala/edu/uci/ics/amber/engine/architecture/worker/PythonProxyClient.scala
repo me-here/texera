@@ -1,17 +1,27 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
-import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.{DataSendingPolicy, OneToOnePolicy, RoundRobinPolicy}
+import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.{
+  DataSendingPolicy,
+  OneToOnePolicy,
+  RoundRobinPolicy
+}
 import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2
 import edu.uci.ics.amber.engine.architecture.worker.PythonProxyClient.communicate
-import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{ControlElement, DataElement}
+import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{
+  ControlElement,
+  DataElement
+}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.PauseHandler.PauseWorker
-import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryCurrentInputTupleHandler.QueryCurrentInputTuple
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ResumeHandler.ResumeWorker
-import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.StartHandler.StartWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.UpdateInputLinkingHandler.UpdateInputLinking
-import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataFrame, DataPayload, EndOfUpstream}
+import edu.uci.ics.amber.engine.common.ambermessage.{
+  ControlPayload,
+  DataFrame,
+  DataPayload,
+  EndOfUpstream
+}
 import edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
@@ -108,7 +118,6 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
                   .build()
               )
               writeArrowStream(flightClient, q, 100, from)
-//              streamWriterMap(from).completed()
           }
         case ControlElement(cmd, from) =>
           sendControl(cmd, from)
@@ -120,7 +129,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
 
   def sendControl(cmd: ControlPayload, from: ActorVirtualIdentity): Unit = {
     cmd match {
-      case ControlInvocation(commandID: Long, command: ControlCommand[_]) => {
+      case ControlInvocation(commandID: Long, command: ControlCommand[_]) =>
         command match {
           case AddOutputPolicy(policy: DataSendingPolicy) =>
             var protobufPolicy: datatransferpolicy2.DataSendingPolicy = null
@@ -141,44 +150,36 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
                 )
               case _ => throw new UnsupportedOperationException("not supported data policy")
             }
+            send(from, commandID, promisehandler2.AddOutputPolicy(protobufPolicy))
 
-            val protobufCommand = promisehandler2.AddOutputPolicy(protobufPolicy)
-            val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
-            val action: Action = new Action("control", controlMessage.toByteArray)
-            println(flightClient.doAction(action).next())
-          case StartWorker() =>
-          case UpdateInputLinking(identifier, inputLink) => {
-            val protobufCommand = promisehandler2.UpdateInputLinking(
-              identifier = identifier,
-              inputLink = Option(inputLink)
+          case UpdateInputLinking(identifier, inputLink) =>
+            send(
+              from,
+              commandID,
+              promisehandler2.UpdateInputLinking(
+                identifier = identifier,
+                inputLink = Option(inputLink)
+              )
             )
-            val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
-            val action: Action = new Action("control", controlMessage.toByteArray)
-            println(flightClient.doAction(action).next())
-
-          }
           case QueryStatistics() =>
-            val protobufCommand = promisehandler2.QueryStatistics()
-            val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
-            val action: Action = new Action("control", controlMessage.toByteArray)
-            println(flightClient.doAction(action).next())
+            send(from, commandID, promisehandler2.QueryStatistics())
           case PauseWorker() =>
-            println("PYTHON-JAVA sending Pause")
-            val protobufCommand = promisehandler2.PauseWorker()
-            val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
-            val action: Action = new Action("control", controlMessage.toByteArray)
-            println(flightClient.doAction(action).next())
+            send(from, commandID, promisehandler2.PauseWorker())
+
           case ResumeWorker() =>
-            println("PYTHON-JAVA sending Resume")
-            val protobufCommand = promisehandler2.ResumeWorker()
-            val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
-            val action: Action = new Action("control", controlMessage.toByteArray)
-            println(flightClient.doAction(action).next())
-
+            send(from, commandID, promisehandler2.ResumeWorker())
         }
-
-      }
     }
+  }
+  def send(
+      from: ActorVirtualIdentity,
+      commandID: Long,
+      commandV2: promisehandler2.ControlCommand
+  ): Result = {
+    val controlMessage =
+      toWorkflowControlMessage2(from, commandID, commandV2)
+    val action: Action = new Action("control", controlMessage.toByteArray)
+    flightClient.doAction(action).next()
   }
 
   def toWorkflowControlMessage2(
@@ -230,8 +231,6 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
       chunkSize: Int = 100,
       from: ActorVirtualIdentity
   ): Unit = {
-
-    println(" NOW before writing A DATA BATCH " + chunkSize + " from " + from.asMessage.toString)
     if (values.nonEmpty) {
       val cachedTuple = values.front
       val schema = cachedTuple.getSchema
@@ -264,8 +263,6 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
           e.printStackTrace()
       }
     }
-
-    println(" NOW WRITING A DATA BATCH " + chunkSize + " from " + from.asMessage.toString)
 
   }
 

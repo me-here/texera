@@ -28,13 +28,11 @@ class ProxyClient(FlightClient):
         :return: exactly one result in bytes
         """
         if procedure_name == "control":
-            logger.info(f" control's arg {procedure_args}")
             action = Action(procedure_name, *procedure_args)
         else:
             payload = serialize_arguments(*procedure_args, **procedure_kwargs)
             action = Action(procedure_name, payload)
         options = FlightCallOptions(timeout=self._timeout)
-        logger.info(f"sending {action}, {action.body}")
         return next(self.do_action(action, options)).body.to_pybytes()
 
     def send_data(self, path: bytes, batch: Optional[Table]) -> None:
