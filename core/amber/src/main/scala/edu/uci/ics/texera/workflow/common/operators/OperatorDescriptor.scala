@@ -89,8 +89,6 @@ import java.util.UUID
 )
 abstract class OperatorDescriptor extends Serializable {
 
-  var isCacheEnabled: Boolean = false
-
   @JsonIgnore
   var context: WorkflowContext = _
 
