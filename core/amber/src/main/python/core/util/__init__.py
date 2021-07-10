@@ -1,2 +1,1 @@
-from .stoppable_queue_blocking_thread import StoppableQueueBlockingThread
-from .stoppable_thread import StoppableThread
+from core.util.thread.stoppable_queue_blocking_thread import StoppableQueueBlockingThread

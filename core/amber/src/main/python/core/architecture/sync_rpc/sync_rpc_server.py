@@ -1,14 +1,14 @@
 from loguru import logger
 
 from core.architecture.handlers.add_output_policy_handler import AddOutputPolicyHandler
-from core.architecture.handlers.handler import Handler
+from core.architecture.handlers.handler_base import Handler
 from core.architecture.handlers.pause_worker_handler import PauseWorkerHandler
 from core.architecture.handlers.query_statistics_handler import QueryStatisticsHandler
 from core.architecture.handlers.resume_worker_handler import ResumeWorkerHandler
 from core.architecture.handlers.update_input_linking_handler import UpdateInputLinkingHandler
 from core.architecture.manager.context import Context
 from core.models.internal_queue import InternalQueue, ControlElement
-from core.util.proto_helper import get_oneof, set_oneof
+from core.util.proto.proto_helper import get_oneof, set_oneof
 from edu.uci.ics.amber.engine.architecture.worker import ControlCommand, AddOutputPolicy, UpdateInputLinking, \
     QueryStatistics, PauseWorker, ResumeWorker
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ReturnPayload, ControlInvocation, ControlPayload
@@ -18,11 +18,11 @@ class SyncRPCServer:
     def __init__(self, output_queue: InternalQueue, context: Context):
         self._output_queue = output_queue
         self._handlers: dict[type(ControlCommand), Handler] = dict()
-        self.register(AddOutputPolicyHandler(AddOutputPolicy))
-        self.register(UpdateInputLinkingHandler(UpdateInputLinking))
-        self.register(QueryStatisticsHandler(QueryStatistics))
-        self.register(PauseWorkerHandler(PauseWorker))
-        self.register(ResumeWorkerHandler(ResumeWorker))
+        self.register(AddOutputPolicyHandler())
+        self.register(UpdateInputLinkingHandler())
+        self.register(QueryStatisticsHandler())
+        self.register(PauseWorkerHandler())
+        self.register(ResumeWorkerHandler())
         self._context = context
 
     def receive(self, control_invocation: ControlInvocation, from_: ActorVirtualIdentity):
@@ -39,4 +39,4 @@ class SyncRPCServer:
         self._output_queue.put(ControlElement(from_=from_, cmd=payload))
 
     def register(self, handler: Handler):
-        self._handlers[handler.cmd_type] = handler
+        self._handlers[handler.cmd] = handler

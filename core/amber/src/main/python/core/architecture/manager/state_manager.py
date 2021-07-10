@@ -1,6 +1,4 @@
-from typing import Union
-
-from core.util.proto_helper import set_oneof
+from core.util.proto.proto_helper import set_oneof
 from edu.uci.ics.amber.engine.common import WorkerState
 
 

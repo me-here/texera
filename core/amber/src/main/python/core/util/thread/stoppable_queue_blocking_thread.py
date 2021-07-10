@@ -1,7 +1,7 @@
 from loguru import logger
 
-from core.util.queue_base import QueueControl, Queue
-from core.util.stoppable_thread import StoppableThread
+from core.util.queue.queue_base import QueueControl, Queue
+from core.util.thread.stoppable_thread import StoppableThread
 
 
 class StoppableQueueBlockingThread(StoppableThread):

@@ -3,7 +3,7 @@ from core.models.internal_queue import InternalQueue
 from core.threads.network_receiver import NetworkReceiver
 from core.threads.network_sender import NetworkSender
 from core.udf.udf_operator import UDFOperator
-from core.util.stoppable_thread import StoppableThread
+from core.util.thread.stoppable_thread import StoppableThread
 
 
 class DataProcessor(StoppableThread):

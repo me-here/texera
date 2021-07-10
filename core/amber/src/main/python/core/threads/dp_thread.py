@@ -7,8 +7,8 @@ from core.architecture.sync_rpc.sync_rpc_server import SyncRPCServer
 from core.models.internal_queue import ControlElement, InputDataElement, OutputDataElement, InternalQueue
 from core.models.tuple import ITuple, InputExhausted, Tuple
 from core.udf.udf_operator import UDFOperator
-from core.util.proto_helper import get_oneof, set_oneof
-from core.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
+from core.util.proto.proto_helper import get_oneof, set_oneof
+from core.util.thread.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
 from edu.uci.ics.amber.engine.architecture.worker import WorkerExecutionCompleted, ControlCommand
 from edu.uci.ics.amber.engine.common import ControlInvocation, ControlPayload, Uninitialized, Ready, Running, Completed, \
     ControllerVirtualIdentity

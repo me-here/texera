@@ -1,9 +1,11 @@
 from edu.uci.ics.amber.engine.architecture.worker import WorkerStatistics, QueryStatistics
-from .handler import Handler
+from .handler_base import Handler
 from ..manager.context import Context
 
 
 class QueryStatisticsHandler(Handler):
+    cmd = QueryStatistics
+
     def __call__(self, context: Context, command: QueryStatistics, *args, **kwargs):
         input_count, output_count = context.statistics_manager.get_statistics()
         state = context.state_manager.get_current_state()

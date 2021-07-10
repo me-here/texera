@@ -6,7 +6,7 @@ from typing import Iterable, Tuple
 from core.architecture.sendsemantics.data_sending_policy import DataSendingPolicyExec, OneToOnePolicyExec
 from core.models.payload import DataPayload
 from core.models.tuple import ITuple
-from core.util.proto_helper import get_oneof
+from core.util.proto.proto_helper import get_oneof
 from edu.uci.ics.amber.engine.architecture.sendsemantics import DataSendingPolicy, OneToOnePolicy
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity
 

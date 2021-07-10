@@ -28,7 +28,7 @@ libraryDependencies ++= Seq(
   "com.softwaremill.macwire" %% "macros" % "2.3.6" % "provided",
   "com.softwaremill.macwire" %% "macrosakka" % "2.3.6" % "provided",
   "com.softwaremill.macwire" %% "util" % "2.3.6",
-  "com.softwaremill.macwire" %% "proxy" % "2.3.6"
+  "com.softwaremill.macwire" %% "core/proxy" % "2.3.6"
 )
 
 val excludeHadoopJersey = ExclusionRule(organization = "com.sun.jersey")

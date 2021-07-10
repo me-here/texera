@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
 from core.models.payload import DataPayload
-from core.util.double_blocking_queue import DoubleBlockingQueue
-from core.util.queue_base import QueueElement
+from core.util.queue.double_blocking_queue import DoubleBlockingQueue
+from core.util.queue.queue_base import QueueElement
 
 from edu.uci.ics.amber.engine.common import ControlPayload, ActorVirtualIdentity
 

@@ -4,10 +4,10 @@ from pyarrow.lib import Schema, schema
 
 from core.models.internal_queue import InternalQueue, ControlElement, OutputDataElement
 from core.models.payload import DataFrame, EndOfUpstream
-from core.util.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
+from core.proxy import ProxyClient
+from core.util.thread.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ControlPayload, WorkflowControlMessage, DataPayload, \
     DataHeader
-from proxy import ProxyClient
 
 
 class NetworkSender(StoppableQueueBlockingThread):

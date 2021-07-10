@@ -4,9 +4,11 @@ from pyarrow.lib import Table
 from core import Tuple
 from core.models.internal_queue import InternalQueue, ControlElement, InputDataElement
 from core.models.payload import DataFrame, EndOfUpstream
-from core.util import StoppableThread
+from core.proxy import ProxyServer
+from core.util.thread.stoppable_thread import StoppableThread
+
 from edu.uci.ics.amber.engine.common import WorkflowControlMessage, ActorVirtualIdentity
-from proxy import ProxyServer
+
 
 
 class NetworkReceiver(StoppableThread):
