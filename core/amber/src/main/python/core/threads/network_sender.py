@@ -1,5 +1,4 @@
 import pandas
-from loguru import logger
 from pyarrow import Table
 from pyarrow.lib import Schema, schema
 
@@ -34,8 +33,6 @@ class NetworkSender(StoppableQueueBlockingThread):
             inferred_schema: Schema = Schema.from_pandas(df)
             # create a output schema, use the original input schema if possible
             output_schema = schema([self.schema_map.get(field.name, field) for field in inferred_schema])
-            logger.debug("output schema: " + str(output_schema))
-
             data_header = DataHeader(from_=to, is_end=False)
             table = Table.from_pandas(df, output_schema)
             self._proxy_client.send_data(bytes(data_header), table)

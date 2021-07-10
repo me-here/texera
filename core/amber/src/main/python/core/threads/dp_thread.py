@@ -1,6 +1,3 @@
-from time import sleep
-
-from loguru import logger
 from queue import Queue
 from typing import Iterable, Union
 
@@ -22,8 +19,8 @@ class DPThread(StoppableQueueBlockingThread):
     def __init__(self, input_queue: InternalQueue, output_queue: InternalQueue, udf_operator: UDFOperator):
         super().__init__(self.__class__.__name__, queue=input_queue)
 
-        self._input_queue:InternalQueue = input_queue
-        self._output_queue:InternalQueue = output_queue
+        self._input_queue: InternalQueue = input_queue
+        self._output_queue: InternalQueue = output_queue
         self._udf_operator = udf_operator
         self._current_input_tuple: Union[ITuple, InputExhausted] = None
         self._current_input_link: LinkIdentity = None
@@ -42,10 +39,8 @@ class DPThread(StoppableQueueBlockingThread):
         pass
 
     def main_loop(self) -> None:
-        if not self._data_cache_queue.empty():
-            next_entry = self._data_cache_queue.get()
-        else:
-            next_entry = self.interruptible_get()
+
+        next_entry = self.interruptible_get()
         # logger.info(f"PYTHON DP receive an entry from queue: {next_entry}")
         if isinstance(next_entry, InputDataElement):
 
@@ -89,8 +84,6 @@ class DPThread(StoppableQueueBlockingThread):
         # TODO: handle else
 
     def handle_input_tuple(self):
-        while self.context.pause_manager.is_paused():
-            self.check_and_handle_control()
 
         if isinstance(self._current_input_tuple, ITuple):
             self.context.statistics_manager.input_tuple_count += 1
@@ -116,12 +109,11 @@ class DPThread(StoppableQueueBlockingThread):
 
     def check_and_handle_control(self):
 
-        if self.has_next():
+        while not self._input_queue.master_empty():
             next_entry = self.interruptible_get()
-            if isinstance(next_entry, InputDataElement):
-                self._data_cache_queue.put(next_entry)
-            elif isinstance(next_entry, ControlElement):
+
+            if isinstance(next_entry, ControlElement):
                 # logger.info(f"PYTHON DP receive a CONTROL: {next_entry}")
                 self.process_control_command(next_entry.cmd, next_entry.from_)
-        else:
-            sleep(0.01)
+            else:
+                raise TypeError("wrong type of message being handled")

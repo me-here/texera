@@ -101,7 +101,7 @@ class ProxyServer(FlightServerBase):
         if len(data.schema) == 0:
             self.process_data(from_, None)
         else:
-            logger.debug(f"getting a data flight from {from_}, data: \n {data}")
+            # logger.debug(f"getting a data flight from {from_}, data: \n {data}")
             self.process_data(from_, data)
 
     ###############################
@@ -126,7 +126,7 @@ class ProxyServer(FlightServerBase):
                         action.body: the procedure arguments in bytes
         :return: yield the encoded result back to client.
         """
-        logger.debug(f"python getting a call on {action.type}, {type(action.type)}")
+        # logger.debug(f"python getting a call on {action.type}, {type(action.type)}")
         # get procedure by name
 
         if action.type == "control":

@@ -1,27 +1,42 @@
-from queue import Queue
-from typing import Optional
-from typing_extensions import T
+import queue
+from loguru import logger
+
+from typing_extensions import T, Protocol
 
 
-class DoubleBlockingQueue(Queue):
+class Queue(Protocol):
+    def get(self) -> T:
+        pass
+
+    def put(self, item: T) -> None:
+        pass
+
+    def empty(self) -> bool:
+        pass
+
+
+class DoubleBlockingQueue:
 
     def __init__(self, *slave_types: type):
         super().__init__()
-        self._slave_queue = Queue()
+        self._master_queue = queue.Queue()
+        self._slave_queue = queue.Queue()
         self._slave_types = slave_types
         self._slave_enabled = True
 
-    def get(self, **kwargs):
-        if self._slave_enabled and super(DoubleBlockingQueue, self).empty() and not self._slave_queue.empty():
+    def get(self):
+
+        if self._slave_enabled and self._master_queue.empty() and not self._slave_queue.empty():
             return self._slave_queue.get()
         else:
-            return super(DoubleBlockingQueue, self).get()
+            return self._master_queue.get()
 
-    def put(self, item: T, block: bool = ..., timeout: Optional[float] = ...) -> None:
+    def put(self, item: T) -> None:
+
         if isinstance(item, self._slave_types):
             self._slave_queue.put(item)
         else:
-            super(DoubleBlockingQueue, self).put(item)
+            self._master_queue.put(item)
 
     def disable_slave(self) -> None:
         self._slave_enabled = False
@@ -30,7 +45,16 @@ class DoubleBlockingQueue(Queue):
         self._slave_enabled = True
 
     def empty(self) -> bool:
-        return super(DoubleBlockingQueue, self).empty() and (self._slave_queue.empty() if self._slave_enabled else True)
+        logger.debug(f" checking empty")
+        if self._slave_enabled:
+            logger.debug(f" with slave")
+            return self._slave_queue.empty() and self._master_queue.empty()
+        else:
+            logger.debug(f" without slave")
+            return self._master_queue.empty()
+
+    def master_empty(self) -> bool:
+        return self._master_queue.empty()
 
 
 if __name__ == '__main__':

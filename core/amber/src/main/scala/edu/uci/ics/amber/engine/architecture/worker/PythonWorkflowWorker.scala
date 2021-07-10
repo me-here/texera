@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.NetworkMessage
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{DataOutputPort, NetworkInputPort}
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryCurrentInputTupleHandler.QueryCurrentInputTuple
 import edu.uci.ics.amber.engine.common.IOperatorExecutor
 import edu.uci.ics.amber.engine.common.ambermessage.{
   ControlPayload,
@@ -63,10 +64,16 @@ class PythonWorkflowWorker(
       from: ActorVirtualIdentity,
       controlPayload: ControlPayload
   ): Unit = {
-//    println("PythonWorker-JAVA handing a CONTROL payload " + controlPayload)
+    println("PythonWorker-JAVA handing a CONTROL payload " + controlPayload)
     controlPayload match {
-      case controlCommand @ (ControlInvocation(_, _) | ReturnPayload(_, _)) =>
-        pythonProxyClient.enqueueCommand(controlCommand, from)
+      case ControlInvocation(commandID, command) =>
+        if (command.isInstanceOf[QueryCurrentInputTuple]) {
+          controlOutputPort.sendTo(from, ReturnPayload(commandID, null))
+        } else {
+          pythonProxyClient.enqueueCommand(controlPayload, from)
+        }
+      case ReturnPayload(_, _) =>
+        pythonProxyClient.enqueueCommand(controlPayload, from)
       case _ =>
         logger.logError(
           WorkflowRuntimeError(

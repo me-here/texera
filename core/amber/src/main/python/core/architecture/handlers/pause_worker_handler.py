@@ -17,7 +17,6 @@ class PauseWorkerHandler(Handler):
         if context.state_manager.confirm_states([Running(), Ready()]):
             context.pause_manager.pause()
             context.dp._input_queue.disable_slave()
-            # dataProcessor.disableDataQueue()
             context.state_manager.transit_to(Paused())
         state = context.state_manager.get_current_state()
         return WorkerStateInfo(state)

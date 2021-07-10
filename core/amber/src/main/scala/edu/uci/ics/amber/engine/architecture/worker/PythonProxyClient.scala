@@ -1,28 +1,17 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
-import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.{
-  DataSendingPolicy,
-  OneToOnePolicy,
-  RoundRobinPolicy
-}
+import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.{DataSendingPolicy, OneToOnePolicy, RoundRobinPolicy}
 import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2
 import edu.uci.ics.amber.engine.architecture.worker.PythonProxyClient.communicate
-import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{
-  ControlElement,
-  DataElement
-}
+import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{ControlElement, DataElement}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.PauseHandler.PauseWorker
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryCurrentInputTupleHandler.QueryCurrentInputTuple
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ResumeHandler.ResumeWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.StartHandler.StartWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.UpdateInputLinkingHandler.UpdateInputLinking
-import edu.uci.ics.amber.engine.common.ambermessage.{
-  ControlPayload,
-  DataFrame,
-  DataPayload,
-  EndOfUpstream
-}
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataFrame, DataPayload, EndOfUpstream}
 import edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
@@ -174,15 +163,18 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
             val action: Action = new Action("control", controlMessage.toByteArray)
             println(flightClient.doAction(action).next())
           case PauseWorker() =>
+            println("PYTHON-JAVA sending Pause")
             val protobufCommand = promisehandler2.PauseWorker()
             val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
             val action: Action = new Action("control", controlMessage.toByteArray)
             println(flightClient.doAction(action).next())
           case ResumeWorker() =>
+            println("PYTHON-JAVA sending Resume")
             val protobufCommand = promisehandler2.ResumeWorker()
             val controlMessage = toWorkflowControlMessage2(from, commandID, protobufCommand)
             val action: Action = new Action("control", controlMessage.toByteArray)
             println(flightClient.doAction(action).next())
+
         }
 
       }
