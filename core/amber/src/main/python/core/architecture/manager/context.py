@@ -7,7 +7,8 @@ from ..messaginglayer.tuple_to_batch_converter import TupleToBatchConverter
 
 
 class Context:
-    def __init__(self):
+    def __init__(self, dp):
+        self.dp = dp
         self.state_manager = StateManager({
             Uninitialized(): {Ready(), Recovering()},
             Ready(): {Paused(), Running(), Recovering()},
@@ -21,9 +22,8 @@ class Context:
                            Completed()}
 
         }, Uninitialized())
+
         self.statistics_manager = StatisticsManager()
         self.pause_manager = PauseManager()
         self.tuple_to_batch_converter = TupleToBatchConverter()
         self.batch_to_tuple_converter = BatchToTupleConverter()
-
-

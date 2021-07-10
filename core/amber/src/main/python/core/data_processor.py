@@ -12,9 +12,9 @@ class DataProcessor(StoppableThread):
 
         self._input_queue = InternalQueue()
         self._output_queue = InternalQueue()
-
-        self._network_receiver = NetworkReceiver(self._input_queue, host=host, port=input_port)
-        self._network_sender = NetworkSender(self._output_queue, host=host, port=output_port)
+        schema_map = dict()
+        self._network_receiver = NetworkReceiver(self._input_queue, host=host, port=input_port, schema_map=schema_map)
+        self._network_sender = NetworkSender(self._output_queue, host=host, port=output_port, schema_map=schema_map)
 
         self._dp_thread = DPThread(self._input_queue, self._output_queue, udf_operator)
 

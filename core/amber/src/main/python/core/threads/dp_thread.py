@@ -1,5 +1,6 @@
 from time import sleep
 
+from loguru import logger
 from queue import Queue
 from typing import Iterable, Union
 
@@ -21,13 +22,13 @@ class DPThread(StoppableQueueBlockingThread):
     def __init__(self, input_queue: InternalQueue, output_queue: InternalQueue, udf_operator: UDFOperator):
         super().__init__(self.__class__.__name__, queue=input_queue)
 
-        self._input_queue = input_queue
-        self._output_queue = output_queue
+        self._input_queue:InternalQueue = input_queue
+        self._output_queue:InternalQueue = output_queue
         self._udf_operator = udf_operator
         self._current_input_tuple: Union[ITuple, InputExhausted] = None
         self._current_input_link: LinkIdentity = None
 
-        self.context = Context()
+        self.context = Context(self)
         self._rpc_server = SyncRPCServer(output_queue, context=self.context)
 
         self._data_cache_queue = Queue()

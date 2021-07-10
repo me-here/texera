@@ -10,13 +10,17 @@ from proxy import ProxyServer
 
 
 class NetworkReceiver(StoppableThread):
-    def __init__(self, shared_queue: InternalQueue, host: str, port: int):
+    def __init__(self, shared_queue: InternalQueue, host: str, port: int, schema_map: dict[str, type]):
         super().__init__(self.__class__.__name__)
         self._proxy_server = ProxyServer(host=host, port=port)
 
         def data_handler(from_: ActorVirtualIdentity, table: Table):
 
             if table is not None:
+                input_schema = table.schema
+                # record input schema
+                for field in input_schema:
+                    schema_map[field.name] = field
                 shared_queue.put(InputDataElement(
                     payload=DataFrame([Tuple.from_series(row) for i, row in table.to_pandas().iterrows()])
                     , from_=from_))

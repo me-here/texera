@@ -1,12 +1,14 @@
 from dataclasses import dataclass
 
 from core.models.payload import DataPayload
-from core.util.stable_priority_queue import StablePriorityQueue, QueueElement
+from core.util.double_blocking_queue import DoubleBlockingQueue
+from core.util.stable_priority_queue import QueueElement
 from edu.uci.ics.amber.engine.common import ControlPayload, ActorVirtualIdentity
 
 
-class InternalQueue(StablePriorityQueue):
-    pass
+class InternalQueue(DoubleBlockingQueue):
+    def __init__(self):
+        super().__init__(InputDataElement, OutputDataElement)
 
 
 @dataclass

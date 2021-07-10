@@ -19,6 +19,7 @@ class ResumeWorkerHandler(Handler):
         if context.state_manager.confirm_states(Paused()):
             if context.pause_manager.is_paused():
                 context.pause_manager.resume()
+                context.dp._input_queue.enable_slave()
             # dataProcessor.enableDataQueue()
             context.state_manager.transit_to(Running())
         state = context.state_manager.get_current_state()

@@ -30,24 +30,12 @@ import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, ambermessage2}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
-import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType}
 import org.apache.arrow.flight._
 import org.apache.arrow.flight.example.InMemoryStore
 import org.apache.arrow.memory.{BufferAllocator, RootAllocator}
-import org.apache.arrow.vector.types.FloatingPointPrecision
-import org.apache.arrow.vector.types.pojo.ArrowType.ArrowTypeID
-import org.apache.arrow.vector.types.pojo.{ArrowType, Field, Schema}
-import org.apache.arrow.vector.{
-  BitVector,
-  FieldVector,
-  Float8Vector,
-  IntVector,
-  VarCharVector,
-  VectorSchemaRoot
-}
+import org.apache.arrow.vector.VectorSchemaRoot
 
 import java.nio.charset.StandardCharsets
-import java.util
 import scala.collection.mutable
 
 object MSG extends Enumeration {
@@ -255,7 +243,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
     if (values.nonEmpty) {
       val cachedTuple = values.front
       val schema = cachedTuple.getSchema
-      val arrowSchema = convertAmber2ArrowSchema(schema)
+      val arrowSchema = ArrowUtils.fromTexeraSchema(schema)
       val flightListener = new SyncPutListener
 
       val schemaRoot = VectorSchemaRoot.create(arrowSchema, allocator)
@@ -268,16 +256,9 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
 
       try {
         while (values.nonEmpty) {
-
           schemaRoot.allocateNew()
-          var indexThisChunk = 0
-          while ({
-            indexThisChunk < chunkSize && values.nonEmpty
-          }) {
-            convertAmber2ArrowTuple(values.dequeue(), indexThisChunk, schemaRoot)
-            indexThisChunk += 1
-          }
-          schemaRoot.setRowCount(indexThisChunk)
+          while (schemaRoot.getRowCount < chunkSize && values.nonEmpty)
+            ArrowUtils.appendTexeraTuple(values.dequeue(), schemaRoot)
           writer.putNext()
           schemaRoot.clear()
         }
@@ -289,7 +270,6 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
       } catch {
         case e: Exception =>
           e.printStackTrace()
-        //        closeAndThrow(client, e)
       }
     }
 
@@ -297,87 +277,6 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
 
   }
 
-  /**
-    * Does the actual conversion (serialization) of data tuples. This is a tuple-by-tuple method, because this method
-    * will be used in different places.
-    *
-    * @param tuple            Input tuple.
-    * @param index            Index of the input tuple in the table (buffer).
-    * @param vectorSchemaRoot This should store the Arrow schema, which should already been converted from Amber.
-    */ @throws[ClassCastException]
-  private def convertAmber2ArrowTuple(
-      tuple: Tuple,
-      index: Int,
-      vectorSchemaRoot: VectorSchemaRoot
-  ): Unit = {
-    val preDefinedFields = vectorSchemaRoot.getSchema.getFields
-    for (i <- 0 until preDefinedFields.size) {
-      val vector: FieldVector = vectorSchemaRoot.getVector(i)
-      preDefinedFields.get(i).getFieldType.getType.getTypeID match {
-        case ArrowTypeID.Int =>
-          vector.asInstanceOf[IntVector].set(index, tuple.get(i).asInstanceOf[Int])
-
-        case ArrowTypeID.Bool =>
-          vector
-            .asInstanceOf[BitVector]
-            .set(
-              index,
-              if (tuple.get(i).asInstanceOf[Boolean]) 1
-              else 0
-            )
-
-        case ArrowTypeID.FloatingPoint =>
-          vector.asInstanceOf[Float8Vector].set(index, tuple.get(i).asInstanceOf[Double])
-
-        case ArrowTypeID.Utf8 =>
-          vector
-            .asInstanceOf[VarCharVector]
-            .set(index, tuple.get(i).toString.getBytes(StandardCharsets.UTF_8))
-
-      }
-    }
-  }
-
-  /**
-    * Converts an Amber schema into Arrow schema.
-    *
-    * @param amberSchema The Amber Tuple Schema.
-    * @return An Arrow {@link org.apache.arrow.vector.types.pojo.Schema}.
-    */ @throws[RuntimeException]
-  private def convertAmber2ArrowSchema(
-      amberSchema: edu.uci.ics.texera.workflow.common.tuple.schema.Schema
-  ): Schema = {
-    val arrowFields = new util.ArrayList[Field]
-    import scala.collection.JavaConversions._
-    for (amberAttribute: Attribute <- amberSchema.getAttributes) {
-      val name = amberAttribute.getName
-      var field: Field = null
-      amberAttribute.getType match {
-        case AttributeType.INTEGER =>
-          field = Field.nullablePrimitive(name, new ArrowType.Int(32, true))
-
-        case AttributeType.LONG =>
-          field = Field.nullablePrimitive(name, new ArrowType.Int(64, true))
-
-        case AttributeType.DOUBLE =>
-          field = Field.nullablePrimitive(
-            name,
-            new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE)
-          )
-
-        case AttributeType.BOOLEAN =>
-          field = Field.nullablePrimitive(name, ArrowType.Bool.INSTANCE)
-
-        case AttributeType.STRING | AttributeType.ANY =>
-          field = Field.nullablePrimitive(name, ArrowType.Utf8.INSTANCE)
-
-        case _ =>
-          throw new RuntimeException("Unexpected value: " + amberAttribute.getType)
-      }
-      arrowFields.add(field)
-    }
-    new Schema(arrowFields)
-  }
-
   override def close(): Unit = ???
+
 }

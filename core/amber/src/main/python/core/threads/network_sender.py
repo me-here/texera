@@ -1,5 +1,7 @@
 import pandas
+from loguru import logger
 from pyarrow import Table
+from pyarrow.lib import Schema, schema
 
 from core.models.internal_queue import InternalQueue, ControlElement, OutputDataElement
 from core.models.payload import DataFrame, EndOfUpstream
@@ -10,10 +12,11 @@ from proxy import ProxyClient
 
 
 class NetworkSender(StoppableQueueBlockingThread):
-    def __init__(self, shared_queue: InternalQueue, host: str, port: int):
+    def __init__(self, shared_queue: InternalQueue, host: str, port: int, schema_map: dict[str, type]):
         super().__init__(self.__class__.__name__, queue=shared_queue)
         self._proxy_client = ProxyClient(host=host, port=port)
         self._batch = list()
+        self.schema_map = schema_map
 
     def main_loop(self):
         next_entry = self.interruptible_get()
@@ -27,9 +30,14 @@ class NetworkSender(StoppableQueueBlockingThread):
 
     def send_data(self, to: ActorVirtualIdentity, data_payload: DataPayload) -> None:
         if isinstance(data_payload, DataFrame):
+            df = pandas.DataFrame.from_records([tuple_.as_series() for tuple_ in data_payload.frame])
+            inferred_schema: Schema = Schema.from_pandas(df)
+            # create a output schema, use the original input schema if possible
+            output_schema = schema([self.schema_map.get(field.name, field) for field in inferred_schema])
+            logger.debug("output schema: " + str(output_schema))
+
             data_header = DataHeader(from_=to, is_end=False)
-            table = Table.from_pandas(
-                pandas.DataFrame.from_records([tuple_.as_series() for tuple_ in data_payload.frame]))
+            table = Table.from_pandas(df, output_schema)
             self._proxy_client.send_data(bytes(data_header), table)
         elif isinstance(data_payload, EndOfUpstream):
             data_header = DataHeader(from_=to, is_end=True)
