@@ -85,19 +85,23 @@ class WorkflowRewriter(
   }
 
   private def invalidateIfUpdated(operatorID: String): Unit = {
+    logger.info(
+      "Checking update status of operator {}.",
+      workflowDAG.getOperator(operatorID).toString
+    )
     if (isUpdated(operatorID)) {
       invalidateCache(operatorID)
-    } else {
-      workflowDAG
-        .getDownstream(operatorID)
-        .foreach(downstream => {
-          invalidateIfUpdated(downstream.operatorID)
-        })
     }
+    workflowDAG
+      .getDownstream(operatorID)
+      .foreach(downstream => {
+        invalidateIfUpdated(downstream.operatorID)
+      })
   }
 
   private def isUpdated(operatorID: String): Boolean = {
     if (!operatorRecord.contains(operatorID)) {
+      operatorRecord += ((operatorID, workflowDAG.getOperator(operatorID)))
       true
     } else if (!operatorRecord(operatorID).equals(workflowDAG.getOperator(operatorID))) {
       operatorRecord(operatorID) = workflowDAG.getOperator(operatorID)

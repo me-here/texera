@@ -251,4 +251,69 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
     assert(1.equals(rewrittenWorkflowInfo.links.size))
     assert(0.equals(rewrittenWorkflowInfo.breakpoints.size))
   }
+
+  it should "invalidate cache and replace no operator" in {
+    val operators = mutable.MutableList[OperatorDescriptor]()
+    val links = mutable.MutableList[OperatorLink]()
+    val breakpoints = mutable.MutableList[BreakpointInfo]()
+    val sourceOperator = new CSVScanSourceOpDesc()
+    val filterOperator = new RegexOpDesc()
+    val sinkOperator = new SimpleSinkOpDesc()
+    operators += sourceOperator
+    operators += filterOperator
+    operators += sinkOperator
+
+    val origin = OperatorPort(sourceOperator.operatorID, 0)
+    val destination = OperatorPort(filterOperator.operatorID, 0)
+    links += OperatorLink(origin, destination)
+
+    val origin2 = OperatorPort(filterOperator.operatorID, 0)
+    val destination2 = OperatorPort(sinkOperator.operatorID, 0)
+    links += OperatorLink(origin2, destination2)
+
+    val workflowInfo = WorkflowInfo(operators, links, breakpoints)
+
+    val tuples = mutable.MutableList[Tuple]()
+    val cacheSourceOperator = new CacheSourceOpDesc(tuples)
+    val cacheSinkOperator = new CacheSinkOpDesc(tuples)
+    val operatorOutputCache = mutable.HashMap[String, mutable.MutableList[Tuple]]()
+    cacheSinkOperator.schema = new Schema()
+
+    val cachedOperatorID = filterOperator.operatorID
+
+    workflowInfo.cachedOperatorIDs = mutable.MutableList(cachedOperatorID)
+    operatorOutputCache += ((cachedOperatorID, tuples))
+
+    val cachedOperators = mutable.HashMap[String, OperatorDescriptor]()
+    cachedOperators += ((cachedOperatorID, filterOperator))
+    val cacheSourceOperators = mutable.HashMap[String, CacheSourceOpDesc]()
+    cacheSourceOperators += ((cachedOperatorID, cacheSourceOperator))
+    val cacheSinkOperators = mutable.HashMap[String, CacheSinkOpDesc]()
+    cacheSinkOperators += ((cachedOperatorID, cacheSinkOperator))
+
+    val breakpointInfo = BreakpointInfo(sourceOperator.operatorID, CountBreakpoint(0))
+    breakpoints += breakpointInfo
+    rewriter = new WorkflowRewriter(
+      workflowInfo,
+      operatorOutputCache,
+      cachedOperators,
+      cacheSourceOperators,
+      cacheSinkOperators
+    )
+
+    rewriter.operatorRecord = mutable.HashMap[String, OperatorDescriptor]()
+    val modifiedSourceOperator = new CSVScanSourceOpDesc()
+    rewriter.operatorRecord += ((sourceOperator.operatorID, modifiedSourceOperator))
+    rewriter.operatorRecord += ((filterOperator.operatorID, filterOperator))
+
+    val rewrittenWorkflowInfo = rewriter.rewrite
+    assert(4.equals(rewrittenWorkflowInfo.operators.size))
+    assert(!rewrittenWorkflowInfo.operators.contains(cacheSourceOperator))
+    assert(rewrittenWorkflowInfo.operators.contains(sourceOperator))
+    assert(rewrittenWorkflowInfo.operators.contains(filterOperator))
+    assert(rewrittenWorkflowInfo.operators.contains(sinkOperator))
+    assert(3.equals(rewrittenWorkflowInfo.links.size))
+    assert(1.equals(rewrittenWorkflowInfo.breakpoints.size))
+    assert(3.equals(rewriter.operatorRecord.size))
+  }
 }
