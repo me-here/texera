@@ -1,16 +1,11 @@
 from __future__ import annotations
 
-from abc import ABC
 from dataclasses import dataclass
 from pandas import Series
 
 
-class ITuple(ABC):
-    pass
-
-
 @dataclass
-class Tuple(ITuple):
+class Tuple:
     """
     Python representation of the Texera.Tuple, as a pandas.Series.
     """
