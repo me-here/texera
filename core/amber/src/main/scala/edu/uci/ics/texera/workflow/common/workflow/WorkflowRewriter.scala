@@ -16,6 +16,9 @@ class WorkflowRewriter(
     cacheSourceOperators: mutable.HashMap[String, CacheSourceOpDesc],
     cacheSinkOperators: mutable.HashMap[String, CacheSinkOpDesc]
 ) {
+
+  private var operatorRecord: mutable.HashMap[String, OperatorDescriptor] = _
+
   private val logger = Logger(this.getClass.getName)
 
   private val workflowDAG: WorkflowDAG = if (workflowInfo != null) {
@@ -78,6 +81,29 @@ class WorkflowRewriter(
     sourceOperators.foreach(operator => {
       checkOperatorCacheValidity(operator)
     })
+  }
+
+  private def invalidateIfUpdated(operatorID: String): Unit = {
+    if (isUpdated(operatorID)) {
+      invalidateCache(operatorID)
+    } else {
+      workflowDAG
+        .getDownstream(operatorID)
+        .foreach(downstream => {
+          invalidateIfUpdated(downstream.operatorID)
+        })
+    }
+  }
+
+  private def isUpdated(operatorID: String): Boolean = {
+    if (!operatorRecord.contains(operatorID)) {
+      false
+    } else if (!operatorRecord(operatorID).equals(workflowDAG.getOperator(operatorID))) {
+      operatorRecord(operatorID) = workflowDAG.getOperator(operatorID)
+      false
+    } else {
+      true
+    }
   }
 
   private def checkOperatorCacheValidity(operatorID: String): Unit = {
@@ -182,6 +208,7 @@ class WorkflowRewriter(
   }
 
   private def isCacheValid(operator: OperatorDescriptor): Boolean = {
+    logger.debug("Checking the cache validity of operator {}.", operator.toString)
     assert(isCacheEnabled(operator))
     if (cachedOperators.contains(operator.operatorID)) {
       if (
@@ -192,8 +219,9 @@ class WorkflowRewriter(
         return true
       }
       logger.debug("Operator {} cache invalid.", operator)
+    } else {
+      logger.debug("Operator {} is never cached.", operator)
     }
-    logger.debug("Operator {} is never cached.", operator)
     false
   }
 
@@ -208,7 +236,7 @@ class WorkflowRewriter(
   ): mutable.MutableList[OperatorLink] = {
     val newLinks = mutable.MutableList[OperatorLink]()
     workflowDAG.jgraphtDag
-      .edgesOf(upstreamOp.operatorID)
+      .outgoingEdgesOf(upstreamOp.operatorID)
       .forEach(link => {
         val origin = OperatorPort(operator.operatorID, link.origin.portOrdinal)
         val newLink = OperatorLink(origin, link.destination)

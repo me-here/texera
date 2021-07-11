@@ -3,6 +3,7 @@ package edu.uci.ics.texera.workflow.common.workflow
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.Schema
+import edu.uci.ics.texera.workflow.operators.regex.RegexOpDesc
 import edu.uci.ics.texera.workflow.operators.sink.{CacheSinkOpDesc, SimpleSinkOpDesc}
 import edu.uci.ics.texera.workflow.operators.source.cache.CacheSourceOpDesc
 import edu.uci.ics.texera.workflow.operators.source.scan.csv.CSVScanSourceOpDesc
@@ -183,5 +184,62 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
     assert(rewrittenWorkflowInfo.operators.contains(sinkOperator))
     assert(3.equals(rewrittenWorkflowInfo.links.size))
     assert(1.equals(rewrittenWorkflowInfo.breakpoints.size))
+  }
+
+  it should "replace source and filter with cache" in {
+    val operators = mutable.MutableList[OperatorDescriptor]()
+    val links = mutable.MutableList[OperatorLink]()
+    val breakpoints = mutable.MutableList[BreakpointInfo]()
+    val sourceOperator = new CSVScanSourceOpDesc()
+    val filterOperator = new RegexOpDesc()
+    val sinkOperator = new SimpleSinkOpDesc()
+    operators += sourceOperator
+    operators += filterOperator
+    operators += sinkOperator
+
+    val origin = OperatorPort(sourceOperator.operatorID, 0)
+    val destination = OperatorPort(filterOperator.operatorID, 0)
+    links += OperatorLink(origin, destination)
+
+    val origin2 = OperatorPort(filterOperator.operatorID, 0)
+    val destination2 = OperatorPort(sinkOperator.operatorID, 0)
+    links += OperatorLink(origin2, destination2)
+
+    val workflowInfo = WorkflowInfo(operators, links, breakpoints)
+
+    val tuples = mutable.MutableList[Tuple]()
+    val cacheSourceOperator = new CacheSourceOpDesc(tuples)
+    val cacheSinkOperator = new CacheSinkOpDesc(tuples)
+    val operatorOutputCache = mutable.HashMap[String, mutable.MutableList[Tuple]]()
+    cacheSinkOperator.schema = new Schema()
+
+    val cachedOperatorID = filterOperator.operatorID
+
+    workflowInfo.cachedOperatorIDs = mutable.MutableList(cachedOperatorID)
+    operatorOutputCache += ((cachedOperatorID, tuples))
+
+    val cachedOperators = mutable.HashMap[String, OperatorDescriptor]()
+    cachedOperators += ((cachedOperatorID, filterOperator))
+    val cacheSourceOperators = mutable.HashMap[String, CacheSourceOpDesc]()
+    cacheSourceOperators += ((cachedOperatorID, cacheSourceOperator))
+    val cacheSinkOperators = mutable.HashMap[String, CacheSinkOpDesc]()
+    cacheSinkOperators += ((cachedOperatorID, cacheSinkOperator))
+
+    val breakpointInfo = BreakpointInfo(sourceOperator.operatorID, CountBreakpoint(0))
+    breakpoints += breakpointInfo
+    rewriter = new WorkflowRewriter(
+      workflowInfo,
+      operatorOutputCache,
+      cachedOperators,
+      cacheSourceOperators,
+      cacheSinkOperators
+    )
+
+    val rewrittenWorkflowInfo = rewriter.rewrite
+    assert(2.equals(rewrittenWorkflowInfo.operators.size))
+    assert(rewrittenWorkflowInfo.operators.contains(cacheSourceOperator))
+    assert(rewrittenWorkflowInfo.operators.contains(sinkOperator))
+    assert(1.equals(rewrittenWorkflowInfo.links.size))
+    assert(0.equals(rewrittenWorkflowInfo.breakpoints.size))
   }
 }
