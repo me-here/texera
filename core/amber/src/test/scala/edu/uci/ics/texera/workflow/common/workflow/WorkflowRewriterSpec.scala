@@ -83,7 +83,8 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
     cacheSourceOperators += ((sourceOperator.operatorID, cacheSourceOperator))
     val cacheSinkOperators = mutable.HashMap[String, CacheSinkOpDesc]()
     cacheSinkOperators += ((sourceOperator.operatorID, cacheSinkOperator))
-
+    val breakpointInfo = BreakpointInfo(sourceOperator.operatorID, CountBreakpoint(0))
+    breakpoints += breakpointInfo
     rewriter = new WorkflowRewriter(
       workflowInfo,
       operatorOutputCache,
@@ -97,6 +98,7 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
     assert(rewrittenWorkflowInfo.operators.contains(cacheSourceOperator))
     assert(rewrittenWorkflowInfo.operators.contains(sinkOperator))
     assert(1.equals(rewrittenWorkflowInfo.links.size))
+    assert(1.equals(rewrittenWorkflowInfo.breakpoints.size))
   }
 
   it should "add a CacheSinkOpDesc" in {
@@ -134,6 +136,7 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
     assert(rewrittenWorkflowInfo.operators(1).isInstanceOf[CacheSinkOpDesc])
     assert(rewrittenWorkflowInfo.operators.contains(sinkOperator))
     assert(2.equals(rewrittenWorkflowInfo.links.size))
+    assert(0.equals(rewrittenWorkflowInfo.breakpoints.size))
   }
 
   it should "add correct numbers of operators and links" in {
@@ -162,6 +165,9 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
     val cacheSourceOperators = mutable.HashMap[String, CacheSourceOpDesc]()
     val cacheSinkOperators = mutable.HashMap[String, CacheSinkOpDesc]()
 
+    val breakpointInfo = BreakpointInfo(sourceOperator.operatorID, CountBreakpoint(0))
+    breakpoints += breakpointInfo
+
     rewriter = new WorkflowRewriter(
       workflowInfo,
       operatorOutputCache,
@@ -176,5 +182,6 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
     assert(rewrittenWorkflowInfo.operators(2).isInstanceOf[CacheSinkOpDesc])
     assert(rewrittenWorkflowInfo.operators.contains(sinkOperator))
     assert(3.equals(rewrittenWorkflowInfo.links.size))
+    assert(1.equals(rewrittenWorkflowInfo.breakpoints.size))
   }
 }

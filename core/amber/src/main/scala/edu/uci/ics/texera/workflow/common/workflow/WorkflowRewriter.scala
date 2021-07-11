@@ -126,14 +126,15 @@ class WorkflowRewriter(
       opIDQueue.enqueue(upstreamOp.operatorID)
       // Add the upstream operator.
       newOperators += upstreamOp
+      // Add the old breakpoints.
+      addMatchingBreakpoints(upstreamOp.operatorID)
     }
-    // Add the old breakpoints.
-    addMatchingBreakpoints(upstreamOp.operatorID)
   }
 
-  private def addMatchingBreakpoints(sinkOpID: String): Unit = {
+  private def addMatchingBreakpoints(operatorID: String): Unit = {
     workflowInfo.breakpoints.foreach(breakpoint => {
-      if (sinkOpID.equals(breakpoint.operatorID)) {
+      if (operatorID.equals(breakpoint.operatorID)) {
+        logger.debug("Add breakpoint {} for operator {}", breakpoint, operatorID)
         newBreakpoints += breakpoint
       }
     })
