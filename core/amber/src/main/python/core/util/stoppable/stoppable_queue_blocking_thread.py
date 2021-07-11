@@ -3,7 +3,7 @@ from overrides import overrides
 from threading import Thread
 
 from core.util.queue.queue_base import IQueue
-from core.util.thread.stoppable_thread import Stoppable
+from core.util.stoppable.stoppable import Stoppable
 
 
 class StoppableQueueBlockingThread(Thread, Stoppable):
@@ -24,7 +24,7 @@ class StoppableQueueBlockingThread(Thread, Stoppable):
     block is true and timeout is None, this operation goes into an uninterruptible
     wait on an underlying lock."
 
-    Currently, there is no other workaround for interrupting a waiting thread, safely.
+    Currently, there is no other workaround for interrupting a waiting stoppable, safely.
 
     This implementation adds a special marker called
     `StoppableQueueBlockingThread.THREAD_STOP` into the queue, and when the marker is
@@ -72,5 +72,5 @@ class StoppableQueueBlockingThread(Thread, Stoppable):
 
     class InterruptThread(BaseException):
         """
-        Used to interrupt a thread.
+        Used to interrupt a stoppable.
         """

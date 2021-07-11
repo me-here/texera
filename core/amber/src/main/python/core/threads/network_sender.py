@@ -5,7 +5,7 @@ from pyarrow.lib import Schema, schema
 from core.models.internal_queue import ControlElement, InternalQueue, InternalQueueElement, OutputDataElement
 from core.models.payload import DataFrame, EndOfUpstream
 from core.proxy import ProxyClient
-from core.util.thread.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
+from core.util.stoppable.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ControlPayload, DataHeader, DataPayload, \
     WorkflowControlMessage
 

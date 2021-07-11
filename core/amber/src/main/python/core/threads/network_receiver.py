@@ -7,7 +7,7 @@ from core import Tuple
 from core.models.internal_queue import ControlElement, InputDataElement, InternalQueue
 from core.models.payload import DataFrame, EndOfUpstream
 from core.proxy import ProxyServer
-from core.util.thread.stoppable_thread import Stoppable
+from core.util.stoppable.stoppable import Stoppable
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, WorkflowControlMessage
 
 

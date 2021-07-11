@@ -6,7 +6,7 @@ from core.models.internal_queue import InternalQueue
 from core.threads.network_receiver import NetworkReceiver
 from core.threads.network_sender import NetworkSender
 from core.udf.udf_operator import UDFOperator
-from core.util.thread.stoppable_thread import Stoppable
+from core.util.stoppable.stoppable import Stoppable
 
 
 class DataProcessor(Thread, Stoppable):
@@ -23,6 +23,7 @@ class DataProcessor(Thread, Stoppable):
 
         self._network_receiver.register_shutdown(self.stop)
 
+    @overrides
     def run(self) -> None:
         self._network_receiver.start()
         self._network_sender.start()
