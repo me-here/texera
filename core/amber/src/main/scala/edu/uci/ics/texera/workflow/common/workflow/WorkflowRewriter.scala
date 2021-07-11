@@ -4,16 +4,17 @@ import com.typesafe.scalalogging.Logger
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.operators.sink.CacheSinkOpDesc
+import edu.uci.ics.texera.workflow.operators.source.cache.CacheSourceOpDesc
 
 import scala.collection.mutable
 
-//TODO: Support rule-based rewriting.
-//TODO: Refactor.
-//TODO: Add unit test.
+//TODO: Use WorkflowResultService.
 class WorkflowRewriter(
     workflowInfo: WorkflowInfo,
     operatorOutputCache: mutable.HashMap[String, mutable.MutableList[Tuple]],
-    cachedOperators: mutable.HashMap[String, OperatorDescriptor]
+    cachedOperators: mutable.HashMap[String, OperatorDescriptor],
+    cacheSourceOperators: mutable.HashMap[String, CacheSourceOpDesc],
+    cacheSinkOperators: mutable.HashMap[String, CacheSinkOpDesc]
 ) {
   private val logger = Logger(this.getClass.getName)
 
@@ -39,6 +40,11 @@ class WorkflowRewriter(
   }
   private val opIDQueue = if (workflowInfo != null) {
     new mutable.Queue[String]()
+  } else {
+    null
+  }
+  private val rewrittenToCacheOperator = if (null != workflowInfo) {
+    new mutable.HashSet[String]()
   } else {
     null
   }
@@ -134,21 +140,21 @@ class WorkflowRewriter(
   }
 
   private def rewriteToCacheOperator(opID: String, upstreamOp: OperatorDescriptor): Unit = {
-    // Rewrite To-cache operator.
-    val toCacheOperator = generateToCacheOperator(upstreamOp)
-    // Add the new operator.
-    newOperators += toCacheOperator
-    // Add the new links.
-    newLinks += workflowDAG.jgraphtDag.getEdge(upstreamOp.operatorID, opID)
-    // Add new links.
-    newLinks += generateToCacheLink(toCacheOperator, upstreamOp)
-    // Remove the old link from the old DAG.
-    workflowDAG.jgraphtDag.removeEdge(upstreamOp.operatorID, opID)
+    if (!rewrittenToCacheOperator.contains(upstreamOp.operatorID)) {
+      logger.debug("Rewrite operator {}.", upstreamOp.operatorID)
+      val toCacheOperator = generateCacheSinkOperator(upstreamOp)
+      newOperators += toCacheOperator
+      newLinks += generateToCacheLink(toCacheOperator, workflowDAG.getOperator(opID))
+      rewrittenToCacheOperator.add(upstreamOp.operatorID)
+    } else {
+      logger.debug("Operator {} is already rewritten.", upstreamOp.operatorID)
+    }
+    rewriteNormalOperator(opID, upstreamOp)
   }
 
   private def rewriteCachedOperator(upstreamOp: OperatorDescriptor): Unit = {
     // Rewrite cached operator.
-    val cachedOperator = getCachedOperator(upstreamOp)
+    val cachedOperator = getCacheSourceOperator(upstreamOp)
     //Add the new operator
     newOperators += cachedOperator
     // Add new links.
@@ -177,7 +183,7 @@ class WorkflowRewriter(
   private def isCacheValid(operator: OperatorDescriptor): Boolean = {
     assert(isCacheEnabled(operator))
     if (cachedOperators.contains(operator.operatorID)) {
-      if (cachedOperators(operator.operatorID).equals(operator)) {
+      if (getCachedOperator(operator).equals(operator) && !rewrittenToCacheOperator.contains(operator.operatorID)) {
         logger.debug("Operator {} cache valid.", operator)
         return true
       }
@@ -224,19 +230,27 @@ class WorkflowRewriter(
     workflowDAG.jgraphtDag.removeVertex(operator.operatorID)
   }
 
-  private def generateToCacheOperator(operator: OperatorDescriptor): OperatorDescriptor = {
-    //TODO: Generate an operator to save cache.
+  private def generateCacheSinkOperator(operator: OperatorDescriptor): CacheSinkOpDesc = {
     val outputCache = mutable.MutableList[Tuple]()
-    val cachedSourceOp = new CacheSinkOpDesc(outputCache)
-    cachedOperators.+=((operator.operatorID, cachedSourceOp))
-    new CacheSinkOpDesc(outputCache)
+    cachedOperators.+=((operator.operatorID, operator))
+    val cacheSinkOperator = new CacheSinkOpDesc(outputCache)
+    cacheSinkOperators += ((operator.operatorID, cacheSinkOperator))
+    val cacheSourceOperator = new CacheSourceOpDesc(outputCache)
+    cacheSourceOperators += ((operator.operatorID, cacheSourceOperator))
+    cacheSinkOperator
+  }
+
+  private def getCacheSourceOperator(operator: OperatorDescriptor): CacheSourceOpDesc = {
+    val cacheSourceOperator = cacheSourceOperators(operator.operatorID)
+    cacheSourceOperator.schema = cacheSinkOperators(operator.operatorID).schema
+    cacheSourceOperator
   }
 
   private def generateToCacheLink(
       toCacheOperator: OperatorDescriptor,
       upstream: OperatorDescriptor
   ): OperatorLink = {
-    //TODO: Port ordinal.
+    //TODO: How to set the port ordinal?
     val origin: OperatorPort = OperatorPort(upstream.operatorID, 0)
     val destination: OperatorPort = OperatorPort(toCacheOperator.operatorID, 0)
     OperatorLink(origin, destination)

@@ -15,7 +15,10 @@ import scala.collection.mutable
 
 class CacheSinkOpDesc(dest: mutable.MutableList[Tuple]) extends OperatorDescriptor {
 
+  var schema: Schema = _
+
   override def operatorExecutor(operatorSchemaInfo: OperatorSchemaInfo): OpExecConfig = {
+    schema = operatorSchemaInfo.outputSchema
     new CacheSinkOpExecConfig(operatorIdentifier, operatorSchemaInfo, dest)
   }
 
