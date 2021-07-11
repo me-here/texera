@@ -3,7 +3,7 @@ from pandas import DataFrame
 from pyarrow import ArrowNotImplementedError, Table
 from pyarrow.flight import FlightServerError
 from queue import Queue
-from typing import Iterable, List
+from typing import Iterator
 
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity
 from .proxy_client import ProxyClient
@@ -98,11 +98,11 @@ class TestProxyClient:
     def test_client_can_call_registered_lambdas_with_args_and_other_ack(self, server, client):
         class Extend:
             @ProxyServer.ack(msg="extended!")
-            def __call__(self, a: List, b: Iterable):
+            def __call__(self, a: list, b: Iterator):
                 a.extend(b)
                 return a
 
-        def extend(a: List, b: Iterable):
+        def extend(a: list, b: Iterator):
             a.extend(b)
             return a
 
