@@ -20,6 +20,7 @@ betterproto~=2.0.0b3
 typing~=3.7.4.3
 asyncio~=3.4.3
 pampy
+overrides
 
 sklearn~=0.0
 scikit-learn~=0.24.2

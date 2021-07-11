@@ -1,9 +1,11 @@
 import pytest
-from typing import Iterable, Union
+from overrides import overrides
+from typing import Iterator, Union
 
 from core import Tuple
 from core.models.tuple import InputExhausted
 from core.udf import UDFOperator
+from edu.uci.ics.amber.engine.common import LinkIdentity
 
 
 class TestDpTread:
@@ -11,7 +13,8 @@ class TestDpTread:
     @pytest.fixture
     def mock_udf(self):
         class EchoOperator(UDFOperator):
-            def process_texera_tuple(self, tuple_: Union[Tuple, InputExhausted], nth_child: int = 0) -> Iterable[Tuple]:
+            @overrides
+            def process_texera_tuple(self, tuple_: Union[Tuple, InputExhausted], input_: LinkIdentity) -> Iterator[Tuple]:
                 if isinstance(tuple_, InputExhausted):
                     return []
                 return [tuple_]

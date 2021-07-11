@@ -1,12 +1,14 @@
 from loguru import logger
+from overrides import overrides
+from threading import Thread
 
-from core.util.queue.queue_base import Queue, QueueControl, QueueElement
-from core.util.thread.stoppable_thread import StoppableThread
+from core.util.queue.queue_base import Queue
+from core.util.thread.stoppable_thread import Stoppable
 
 
-class StoppableQueueBlockingThread(StoppableThread):
+class StoppableQueueBlockingThread(Thread, Stoppable):
     """
-    An implementation of StoppableThread, assuming the Thread.run() would be blocked
+    An implementation of Stoppable, assuming the Thread.run() would be blocked
     by a blocking Queue.get(block=True, timeout=None).
 
     For example:
@@ -29,17 +31,19 @@ class StoppableQueueBlockingThread(StoppableThread):
     consumed, it should break the Thread.run().
 
     """
-    THREAD_STOP = QueueControl(msg="__THREAD__STOP__MARKER__")
+    THREAD_STOP = Queue.QueueControl(msg="__THREAD__STOP__MARKER__")
 
     def __init__(self, name: str, queue: Queue):
-        super().__init__(name=name)
+        super().__init__()
         self._internal_queue = queue
+        self.name = name
 
     @logger.catch
+    @overrides
     def run(self):
         self.pre_start()
         try:
-            while self.running():
+            while True:
                 self.receive(self.interruptible_get())
         except StoppableQueueBlockingThread.InterruptThread:
             # surpassed the expected interruption
@@ -47,7 +51,7 @@ class StoppableQueueBlockingThread(StoppableThread):
         finally:
             self.post_stop()
 
-    def receive(self, next_entry: QueueElement):
+    def receive(self, next_entry: Queue.QueueElement):
         pass
 
     def pre_start(self) -> None:
@@ -56,9 +60,9 @@ class StoppableQueueBlockingThread(StoppableThread):
     def post_stop(self) -> None:
         pass
 
+    @overrides
     def stop(self):
         self._internal_queue.put(StoppableQueueBlockingThread.THREAD_STOP)
-        super().stop()
 
     def interruptible_get(self):
         next_entry = self._internal_queue.get()

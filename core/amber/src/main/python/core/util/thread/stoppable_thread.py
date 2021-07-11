@@ -1,22 +1,9 @@
-from abc import ABC
-from loguru import logger
-from threading import Event, Thread
+from abc import abstractmethod
+from typing import Protocol
 
 
-class StoppableThread(Thread, ABC):
+class Stoppable(Protocol):
 
-    def __init__(self, name: str):
-        super().__init__(name=name)
-        self._running = Event()
-        self._running.set()  # Set to running, initially
-
-    def start(self) -> None:
-        super().start()
-        logger.debug(f"{self.name}-started")
-
+    @abstractmethod
     def stop(self):
-        self._running.clear()  # Set to False
-        logger.debug(f"{self.name}-stopped")
-
-    def running(self) -> bool:
-        return self._running.isSet()
+        """stop self"""

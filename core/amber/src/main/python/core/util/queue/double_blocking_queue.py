@@ -1,9 +1,12 @@
 import queue
+from overrides import overrides
 
 from typing_extensions import T
 
+from core.util.queue.queue_base import Queue
 
-class DoubleBlockingQueue:
+
+class DoubleBlockingQueue(Queue):
 
     def __init__(self, *slave_types: type):
         super().__init__()
@@ -12,12 +15,14 @@ class DoubleBlockingQueue:
         self._sub_types = slave_types
         self._sub_enabled = True
 
+    @overrides
     def get(self):
         if self._sub_enabled and self._main_queue.empty() and not self._sub_queue.empty():
             return self._sub_queue.get()
         else:
             return self._main_queue.get()
 
+    @overrides
     def put(self, item: T) -> None:
         if isinstance(item, self._sub_types):
             self._sub_queue.put(item)
@@ -30,6 +35,7 @@ class DoubleBlockingQueue:
     def enable_slave(self) -> None:
         self._sub_enabled = True
 
+    @overrides
     def empty(self) -> bool:
         if self._sub_enabled:
             return self._sub_queue.empty() and self._main_queue.empty()

@@ -1,14 +1,17 @@
+from overrides import overrides
+from threading import Thread
+
 from core import DPThread
 from core.models.internal_queue import InternalQueue
 from core.threads.network_receiver import NetworkReceiver
 from core.threads.network_sender import NetworkSender
 from core.udf.udf_operator import UDFOperator
-from core.util.thread.stoppable_thread import StoppableThread
+from core.util.thread.stoppable_thread import Stoppable
 
 
-class DataProcessor(StoppableThread):
+class DataProcessor(Thread, Stoppable):
     def __init__(self, host: str, input_port: int, output_port: int, udf_operator: UDFOperator):
-        super().__init__(f"{self.__class__.__name__}")
+        super().__init__()
 
         self._input_queue = InternalQueue()
         self._output_queue = InternalQueue()
@@ -28,8 +31,8 @@ class DataProcessor(StoppableThread):
         self._network_sender.join()
         self._network_receiver.join()
 
+    @overrides
     def stop(self):
         self._dp_thread.stop()
         self._network_sender.stop()
         self._network_receiver.stop()
-        super().stop()

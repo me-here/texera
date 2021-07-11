@@ -1,17 +1,19 @@
 from loguru import logger
+from overrides import overrides
 from pyarrow.lib import Table
+from threading import Thread
 
 from core import Tuple
 from core.models.internal_queue import ControlElement, InputDataElement, InternalQueue
 from core.models.payload import DataFrame, EndOfUpstream
 from core.proxy import ProxyServer
-from core.util.thread.stoppable_thread import StoppableThread
+from core.util.thread.stoppable_thread import Stoppable
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, WorkflowControlMessage
 
 
-class NetworkReceiver(StoppableThread):
+class NetworkReceiver(Thread, Stoppable):
     def __init__(self, shared_queue: InternalQueue, host: str, port: int, schema_map: dict[str, type]):
-        super().__init__(self.__class__.__name__)
+        super().__init__()
         self._proxy_server = ProxyServer(host=host, port=port)
 
         def data_handler(from_: ActorVirtualIdentity, table: Table):
@@ -47,7 +49,7 @@ class NetworkReceiver(StoppableThread):
     def run(self) -> None:
         self._proxy_server.serve()
 
+    @overrides
     def stop(self):
         self._proxy_server.shutdown()
         self._proxy_server.wait()
-        super(NetworkReceiver, self).stop()

@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Iterable, Union
+from typing import Iterator, Union
 
 from core.models.tuple import InputExhausted, Tuple
 from edu.uci.ics.amber.engine.common import LinkIdentity
@@ -14,7 +14,7 @@ class UDFOperator(ABC):
     def open(self, *args, **kwargs) -> None:
         pass
 
-    def process_texera_tuple(self, tuple_: Union[Tuple, InputExhausted], input_: LinkIdentity) -> Iterable[Tuple]:
+    def process_texera_tuple(self, tuple_: Union[Tuple, InputExhausted], input_: LinkIdentity) -> Iterator[Tuple]:
         pass
 
     def close(self) -> None:
