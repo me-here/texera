@@ -3,7 +3,6 @@ import time
 
 import pandas
 import random
-from loguru import logger
 from typing import Iterable, Union
 
 from core import Tuple
@@ -16,6 +15,7 @@ from edu.uci.ics.amber.engine.common import LinkIdentity
 class EchoOperator(UDFOperator):
     def process_texera_tuple(self, tuple_: Union[Tuple, InputExhausted], link: LinkIdentity) -> Iterable[Tuple]:
         if isinstance(tuple_, Tuple):
+            # time.sleep(0.1)
             yield tuple_
 
 
@@ -25,7 +25,7 @@ class TrainOperator(UDFOperator):
         self.records = list()
 
     def train(self) -> "model":
-        return {"predict": True, "f1-score":  random.random()}
+        return {"predict": True, "f1-score": random.random()}
 
     def process_texera_tuple(self, tuple_: Union[Tuple, InputExhausted], link: LinkIdentity) -> Iterable[Tuple]:
         if isinstance(tuple_, Tuple):

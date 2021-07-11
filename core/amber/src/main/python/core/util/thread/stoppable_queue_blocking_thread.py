@@ -1,6 +1,6 @@
 from loguru import logger
 
-from core.util.queue.queue_base import QueueControl, Queue
+from core.util.queue.queue_base import QueueControl, Queue, QueueElement
 from core.util.thread.stoppable_thread import StoppableThread
 
 
@@ -37,23 +37,23 @@ class StoppableQueueBlockingThread(StoppableThread):
 
     @logger.catch
     def run(self):
-        self.before_loop()
+        self.pre_start()
         try:
             while self.running():
-                self.main_loop()
+                self.receive(self.interruptible_get())
         except StoppableQueueBlockingThread.InterruptThread:
             # surpassed the expected interruption
             logger.debug(f"{self.name}-interrupting")
         finally:
-            self.after_loop()
+            self.post_stop()
 
-    def main_loop(self) -> None:
+    def receive(self, next_entry: QueueElement):
         pass
 
-    def before_loop(self) -> None:
+    def pre_start(self) -> None:
         pass
 
-    def after_loop(self) -> None:
+    def post_stop(self) -> None:
         pass
 
     def stop(self):
@@ -70,6 +70,3 @@ class StoppableQueueBlockingThread(StoppableThread):
         """
         Used to interrupt a thread.
         """
-
-    def has_next(self) -> bool:
-        return not self._internal_queue.empty()

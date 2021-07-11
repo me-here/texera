@@ -5,9 +5,11 @@ from core.architecture.managers.context import Context
 from core.architecture.packaging.batch_to_tuple_converter import EndMarker, EndOfAllMarker
 from core.architecture.sync_rpc.sync_rpc_server import SyncRPCServer
 from core.models.internal_queue import ControlElement, InputDataElement, OutputDataElement, InternalQueue
+from core.models.marker import SenderChangeMarker
 from core.models.tuple import ITuple, InputExhausted, Tuple
 from core.udf.udf_operator import UDFOperator
 from core.util.proto.proto_helper import get_oneof, set_oneof
+from core.util.queue.queue_base import QueueElement
 from core.util.thread.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
 from edu.uci.ics.amber.engine.architecture.worker import WorkerExecutionCompleted, ControlCommand
 from edu.uci.ics.amber.engine.common import ControlInvocation, ControlPayload, Uninitialized, Ready, Running, Completed, \
@@ -30,20 +32,18 @@ class DPThread(StoppableQueueBlockingThread):
 
         self._data_cache_queue = Queue()
 
-    def before_loop(self) -> None:
+    def pre_start(self) -> None:
         self._udf_operator.open()
         self.context.state_manager.assert_state(Uninitialized())
         self.context.state_manager.transit_to(Ready())
 
-    def after_loop(self) -> None:
+    def post_stop(self) -> None:
         pass
 
-    def main_loop(self) -> None:
+    def receive(self, next_entry: QueueElement) -> None:
 
-        next_entry = self.interruptible_get()
         # logger.info(f"PYTHON DP receive an entry from queue: {next_entry}")
         if isinstance(next_entry, InputDataElement):
-
             if self.context.state_manager.confirm_state(Ready()):
                 self.context.state_manager.transit_to(Running())
             # logger.info(f"PYTHON DP receive a DATA: {next_entry}")
@@ -53,8 +53,8 @@ class DPThread(StoppableQueueBlockingThread):
                     self._current_input_tuple = element
                     self.handle_input_tuple()
                     self.check_and_handle_control()
-                    # TODO: add self.check_and_handle_control()
-
+                elif isinstance(element, SenderChangeMarker):
+                    self._current_input_link = element.link
                 elif isinstance(element, EndMarker):
                     self._current_input_tuple = InputExhausted()
                     self.handle_input_tuple()
@@ -64,7 +64,8 @@ class DPThread(StoppableQueueBlockingThread):
                         self._output_queue.put(OutputDataElement(payload=batch, to=to))
                         self.check_and_handle_control()
                     self.complete()
-                # TODO: handle else
+                else:
+                    raise TypeError(f"unknown tuple/marker {element}")
 
         elif isinstance(next_entry, ControlElement):
             # logger.info(f"PYTHON DP receive a CONTROL: {next_entry}")

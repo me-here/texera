@@ -2,7 +2,7 @@ import pandas
 from pyarrow import Table
 from pyarrow.lib import Schema, schema
 
-from core.models.internal_queue import InternalQueue, ControlElement, OutputDataElement
+from core.models.internal_queue import InternalQueue, ControlElement, OutputDataElement, InternalQueueElement
 from core.models.payload import DataFrame, EndOfUpstream
 from core.proxy import ProxyClient
 from core.util.thread.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
@@ -17,9 +17,7 @@ class NetworkSender(StoppableQueueBlockingThread):
         self._batch = list()
         self.schema_map = schema_map
 
-    def main_loop(self):
-        next_entry = self.interruptible_get()
-
+    def receive(self, next_entry: InternalQueueElement):
         if isinstance(next_entry, OutputDataElement):
             self.send_data(next_entry.to, next_entry.payload)
         elif isinstance(next_entry, ControlElement):

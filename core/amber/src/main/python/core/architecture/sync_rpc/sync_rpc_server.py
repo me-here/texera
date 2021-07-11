@@ -1,5 +1,3 @@
-from loguru import logger
-
 from core.architecture.handlers.add_output_policy_handler import AddOutputPolicyHandler
 from core.architecture.handlers.handler_base import Handler
 from core.architecture.handlers.pause_worker_handler import PauseWorkerHandler
