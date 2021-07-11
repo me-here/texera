@@ -479,8 +479,10 @@ export class WorkflowEditorComponent implements AfterViewInit {
 
   private handleDisableOperator(): void {
     this.workflowActionService.getTexeraGraph().getDisabledOperatorsChangedStream().subscribe(event => {
-      event.newDisabled.forEach(op => this.jointUIService.changeOperatorDisableStatus(this.getJointPaper(), op, true));
-      event.newEnabled.forEach(op => this.jointUIService.changeOperatorDisableStatus(this.getJointPaper(), op, false));
+      event.newDisabled.concat(event.newEnabled).forEach(opID => {
+        const op = this.workflowActionService.getTexeraGraph().getOperator(opID);
+        this.jointUIService.changeOperatorDisableStatus(this.getJointPaper(), op);
+      });
     });
   }
 
