@@ -22,6 +22,7 @@ export interface OperatorPredicate extends Readonly<{
   outputPorts: {portID: string, displayName?: string}[];
   showAdvanced: boolean;
   isDisabled?: boolean;
+  isCached?: boolean;
 }> { }
 
 export interface OperatorLink extends Readonly<{

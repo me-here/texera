@@ -83,6 +83,14 @@
           (click)="onClickDisableOperators()" nz-button title="operators disabled, click to re-enable">
           <i nz-icon nzType="stop" nzTheme="twotone"></i>
         </button>
+        <button *ngIf="isCacheOperator || ! isCacheOperatorClickable" [disabled]="! isCacheOperatorClickable"
+          (click)="onClickCacheOperators()" nz-button title="cache operators">
+          <i nz-icon nzType="database" nzTheme="outline"></i>
+        </button>
+        <button *ngIf="! isCacheOperator && isCacheOperatorClickable" [disabled]="! isCacheOperatorClickable"
+          (click)="onClickCacheOperators()" nz-button title="operators cached, click to remove cache">
+          <i nz-icon nzType="database" nzTheme="twotone"></i>
+        </button>
       </nz-button-group>
     </div>
 

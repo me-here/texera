@@ -484,6 +484,12 @@ export class WorkflowEditorComponent implements AfterViewInit {
         this.jointUIService.changeOperatorDisableStatus(this.getJointPaper(), op);
       });
     });
+    this.workflowActionService.getTexeraGraph().getCachedOperatorsChangedStream().subscribe(event => {
+      event.newCached.concat(event.newUnCached).forEach(opID => {
+        const op = this.workflowActionService.getTexeraGraph().getOperator(opID);
+        this.jointUIService.changeOperatorCacheStatus(this.getJointPaper(), op);
+      });
+    });
   }
 
   /**

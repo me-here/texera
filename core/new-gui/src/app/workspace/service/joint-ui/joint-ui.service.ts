@@ -78,6 +78,7 @@ export const sourceOperatorHandle = 'M 0 0 L 0 8 L 8 8 L 8 0 z';
 export const targetOperatorHandle = 'M 12 0 L 0 6 L 12 12 z';
 
 export const operatorStateClass = 'texera-operator-state';
+export const operatorCacheClass = 'texera-operator-cache';
 
 export const operatorProcessedCountClass = 'texera-operator-processed-count';
 export const operatorOutputCountClass = 'texera-operator-output-count';
@@ -101,6 +102,7 @@ class TexeraCustomJointElement extends joint.shapes.devs.Model {
       <text class="${operatorProcessedCountClass}"></text>
       <text class="${operatorOutputCountClass}"></text>
       <text class="${operatorStateClass}"></text>
+      <text class="${operatorCacheClass}"></text>
     </g>`;
 }
 
@@ -346,6 +348,10 @@ export class JointUIService {
     jointPaper.getModelById(operator.operatorID).attr('rect/fill', JointUIService.getOperatorFillColor(operator));
   }
 
+  public changeOperatorCacheStatus(jointPaper: joint.dia.Paper, operator: OperatorPredicate): void {
+    jointPaper.getModelById(operator.operatorID).attr('.texera-operator-cache/text', JointUIService.getOperatorCacheDisplayText(operator));
+  }
+
   public getBreakpointButton(): (new () => joint.linkTools.Button) {
     return joint.linkTools.Button.extend({
       name: 'info-button',
@@ -557,6 +563,10 @@ export class JointUIService {
         text: operatorDisplayName, fill: '#595959', 'font-size': '14px',
         'ref-x': 0.5, 'ref-y': 80, ref: 'rect', 'y-alignment': 'middle', 'x-alignment': 'middle'
       },
+      '.texera-operator-cache': {
+        text: JointUIService.getOperatorCacheDisplayText(operator), fill: '#c61236', 'font-size': '12px',
+        'ref-x': 85, 'ref-y': 50, ref: 'rect', 'y-alignment': 'middle', 'x-alignment': 'middle'
+      },
       '.delete-button': {
         x: 60, y: -20, cursor: 'pointer',
         fill: '#D8656A', event: 'element:delete'
@@ -577,6 +587,11 @@ export class JointUIService {
   public static getOperatorFillColor(operator: OperatorPredicate): String {
     const isDisabled = operator.isDisabled ?? false;
     return isDisabled ? '#E0E0E0' : '#FFFFFF';
+  }
+
+  public static getOperatorCacheDisplayText(operator: OperatorPredicate): string {
+    const isCached = operator.isCached ?? false;
+    return isCached ? 'cached' : '';
   }
 
   /**
