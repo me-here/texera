@@ -50,6 +50,7 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
       mutable.HashMap[String, CacheSourceOpDesc](),
       mutable.HashMap[String, CacheSinkOpDesc]()
     )
+    rewriter.operatorRecord = mutable.HashMap[String, OperatorDescriptor]()
     val rewrittenWorkflowInfo = rewriter.rewrite
     rewrittenWorkflowInfo.operators.foreach(operator => {
       assert(operators.contains(operator))
@@ -94,6 +95,8 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
       cacheSinkOperators
     )
 
+    rewriter.operatorRecord = mutable.HashMap[String, OperatorDescriptor]()
+    rewriter.operatorRecord += ((sourceOperator.operatorID, sourceOperator))
     val rewrittenWorkflowInfo = rewriter.rewrite
     assert(2.equals(rewrittenWorkflowInfo.operators.size))
     assert(rewrittenWorkflowInfo.operators.contains(cacheSourceOperator))
@@ -131,6 +134,7 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
       cacheSinkOperators
     )
 
+    rewriter.operatorRecord = mutable.HashMap[String, OperatorDescriptor]()
     val rewrittenWorkflowInfo = rewriter.rewrite
     assert(3.equals(rewrittenWorkflowInfo.operators.size))
     assert(rewrittenWorkflowInfo.operators.contains(sourceOperator))
@@ -177,6 +181,7 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
       cacheSinkOperators
     )
 
+    rewriter.operatorRecord = mutable.HashMap[String, OperatorDescriptor]()
     val rewrittenWorkflowInfo = rewriter.rewrite
     assert(4.equals(rewrittenWorkflowInfo.operators.size))
     assert(rewrittenWorkflowInfo.operators.contains(sourceOperator))
@@ -234,6 +239,10 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
       cacheSourceOperators,
       cacheSinkOperators
     )
+
+    rewriter.operatorRecord = mutable.HashMap[String, OperatorDescriptor]()
+    rewriter.operatorRecord += ((sourceOperator.operatorID, sourceOperator))
+    rewriter.operatorRecord += ((filterOperator.operatorID, filterOperator))
 
     val rewrittenWorkflowInfo = rewriter.rewrite
     assert(2.equals(rewrittenWorkflowInfo.operators.size))

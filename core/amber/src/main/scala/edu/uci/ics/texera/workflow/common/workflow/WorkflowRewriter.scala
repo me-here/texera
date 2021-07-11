@@ -17,7 +17,7 @@ class WorkflowRewriter(
     cacheSinkOperators: mutable.HashMap[String, CacheSinkOpDesc]
 ) {
 
-  private var operatorRecord: mutable.HashMap[String, OperatorDescriptor] = _
+  var operatorRecord: mutable.HashMap[String, OperatorDescriptor] = _
 
   private val logger = Logger(this.getClass.getName)
 
@@ -78,8 +78,9 @@ class WorkflowRewriter(
 
   private def checkCacheValidity(): Unit = {
     val sourceOperators: List[String] = workflowDAG.getSourceOperators
-    sourceOperators.foreach(operator => {
-      checkOperatorCacheValidity(operator)
+    sourceOperators.foreach(operatorID => {
+      invalidateIfUpdated(operatorID)
+      checkOperatorCacheValidity(operatorID)
     })
   }
 
@@ -97,12 +98,12 @@ class WorkflowRewriter(
 
   private def isUpdated(operatorID: String): Boolean = {
     if (!operatorRecord.contains(operatorID)) {
-      false
+      true
     } else if (!operatorRecord(operatorID).equals(workflowDAG.getOperator(operatorID))) {
       operatorRecord(operatorID) = workflowDAG.getOperator(operatorID)
-      false
-    } else {
       true
+    } else {
+      false
     }
   }
 
