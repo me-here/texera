@@ -109,7 +109,7 @@ class DPThread(StoppableQueueBlockingThread):
 
     def check_and_handle_control(self):
 
-        while not self._input_queue.master_empty():
+        while not self._input_queue.master_empty() or self.context.pause_manager.is_paused():
             next_entry = self.interruptible_get()
 
             if isinstance(next_entry, ControlElement):
