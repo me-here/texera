@@ -584,7 +584,7 @@ export class JointUIService {
     return operatorStyleAttrs;
   }
 
-  public static getOperatorFillColor(operator: OperatorPredicate): String {
+  public static getOperatorFillColor(operator: OperatorPredicate): string {
     const isDisabled = operator.isDisabled ?? false;
     return isDisabled ? '#E0E0E0' : '#FFFFFF';
   }
