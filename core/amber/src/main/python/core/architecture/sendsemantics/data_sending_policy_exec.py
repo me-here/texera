@@ -2,7 +2,7 @@ from abc import ABC
 from typing import Optional
 
 from core import Tuple
-from core.models.payload import DataPayload, DataFrame
+from core.models.payload import DataFrame, DataPayload
 from edu.uci.ics.amber.engine.architecture.sendsemantics import DataSendingPolicy
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity
 

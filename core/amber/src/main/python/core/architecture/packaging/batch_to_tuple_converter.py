@@ -1,10 +1,10 @@
 from collections import defaultdict
 
-from typing import Set, Iterable, Union
+from typing import Iterable, Set, Union
 
 from core import Tuple
-from core.models.marker import Marker, SenderChangeMarker, EndMarker, EndOfAllMarker
-from core.models.payload import DataFrame, EndOfUpstream, DataPayload
+from core.models.marker import EndMarker, EndOfAllMarker, Marker, SenderChangeMarker
+from core.models.payload import DataFrame, DataPayload, EndOfUpstream
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, LinkIdentity
 
 

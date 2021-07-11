@@ -1,8 +1,7 @@
 from abc import ABC
-from loguru import logger
-from typing import Union, Iterable
+from typing import Iterable, Union
 
-from core.models.tuple import Tuple, InputExhausted
+from core.models.tuple import InputExhausted, Tuple
 from edu.uci.ics.amber.engine.common import LinkIdentity
 
 

@@ -1,6 +1,6 @@
 import pytest
 from pandas import DataFrame
-from pyarrow import Table, ArrowNotImplementedError
+from pyarrow import ArrowNotImplementedError, Table
 from pyarrow.flight import FlightServerError
 from queue import Queue
 from typing import Iterable, List
@@ -135,7 +135,7 @@ class TestProxyClient:
         with server:
             # send the pyarrow table to server as a flight
             with pytest.raises(ArrowNotImplementedError):
-                client.send_data(ActorVirtualIdentity(),table)
+                client.send_data(ActorVirtualIdentity(), table)
 
     def test_client_can_send_data_with_handler(self, data_queue: Queue, server_with_dp, client):
         # prepare a dataframe and convert to pyarrow table

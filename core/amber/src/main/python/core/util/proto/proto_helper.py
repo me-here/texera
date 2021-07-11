@@ -1,5 +1,5 @@
 import re
-from betterproto import which_one_of, Message
+from betterproto import Message, which_one_of
 from typing_extensions import T
 
 pattern = re.compile(r'(?<!^)(?=[A-Z])')

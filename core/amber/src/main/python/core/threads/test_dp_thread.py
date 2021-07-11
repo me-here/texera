@@ -1,15 +1,9 @@
-from time import sleep
-
 import pytest
-from queue import Queue
 from typing import Iterable, Union
 
-from core import DPThread, Tuple
-from core.models.internal_queue import InputDataElement
-from core.models.payload import DataFrame
+from core import Tuple
 from core.models.tuple import InputExhausted
 from core.udf import UDFOperator
-from edu.uci.ics.amber.engine.common import LinkIdentity, ActorVirtualIdentity
 
 
 class TestDpTread:

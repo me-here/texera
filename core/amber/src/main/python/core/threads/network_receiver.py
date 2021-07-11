@@ -2,13 +2,11 @@ from loguru import logger
 from pyarrow.lib import Table
 
 from core import Tuple
-from core.models.internal_queue import InternalQueue, ControlElement, InputDataElement
+from core.models.internal_queue import ControlElement, InputDataElement, InternalQueue
 from core.models.payload import DataFrame, EndOfUpstream
 from core.proxy import ProxyServer
 from core.util.thread.stoppable_thread import StoppableThread
-
-from edu.uci.ics.amber.engine.common import WorkflowControlMessage, ActorVirtualIdentity
-
+from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, WorkflowControlMessage
 
 
 class NetworkReceiver(StoppableThread):
@@ -44,7 +42,6 @@ class NetworkReceiver(StoppableThread):
 
     def register_shutdown(self, shutdown: callable) -> None:
         self._proxy_server.register("shutdown", ProxyServer.ack()(shutdown))
-
 
     @logger.catch
     def run(self) -> None:

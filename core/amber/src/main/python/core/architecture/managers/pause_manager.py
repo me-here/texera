@@ -16,5 +16,3 @@ class PauseManager:
 
     def is_paused(self) -> bool:
         return self.pause_privilege_level == PauseManager.Paused
-
-

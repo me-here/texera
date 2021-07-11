@@ -9,7 +9,7 @@
 from core.architecture.handlers.handler_base import Handler
 from core.architecture.managers.context import Context
 from edu.uci.ics.amber.engine.architecture.worker import PauseWorker, WorkerStateInfo
-from edu.uci.ics.amber.engine.common import Running, Ready, Paused
+from edu.uci.ics.amber.engine.common import Paused, Ready, Running
 
 
 class PauseWorkerHandler(Handler):

@@ -1,6 +1,6 @@
 from loguru import logger
 
-from core.util.queue.queue_base import QueueControl, Queue, QueueElement
+from core.util.queue.queue_base import Queue, QueueControl, QueueElement
 from core.util.thread.stoppable_thread import StoppableThread
 
 

@@ -1,4 +1,4 @@
-from edu.uci.ics.amber.engine.architecture.worker import WorkerStatistics, QueryStatistics
+from edu.uci.ics.amber.engine.architecture.worker import QueryStatistics, WorkerStatistics
 from .handler_base import Handler
 from ..managers.context import Context
 

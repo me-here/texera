@@ -1,5 +1,6 @@
-import pytest
 from time import sleep
+
+import pytest
 
 from core.models.internal_queue import InternalQueue
 from core.threads.network_receiver import NetworkReceiver

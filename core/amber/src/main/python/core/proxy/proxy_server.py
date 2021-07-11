@@ -5,11 +5,11 @@ import threading
 from functools import wraps
 from inspect import signature
 from loguru import logger
-from pyarrow import py_buffer, Table
-from pyarrow.flight import Action, FlightDescriptor, FlightServerBase, ServerCallContext, Result
-from pyarrow.flight import MetadataRecordBatchReader
+from pyarrow import Table, py_buffer
+from pyarrow.flight import Action, FlightDescriptor, FlightServerBase, MetadataRecordBatchReader, Result, \
+    ServerCallContext
 from pyarrow.ipc import RecordBatchStreamWriter
-from typing import Iterator, Tuple, Dict
+from typing import Dict, Iterator, Tuple
 
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity
 from .common import deserialize_arguments

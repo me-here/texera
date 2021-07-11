@@ -30,6 +30,7 @@ class StateManager:
 
     def confirm_states(self, states: list[WorkerState]) -> bool:
         return self._current_state in states
+
     def transit_to(self, state: WorkerState, discard_old_states: bool = True) -> None:
         if state == self._current_state:
             return

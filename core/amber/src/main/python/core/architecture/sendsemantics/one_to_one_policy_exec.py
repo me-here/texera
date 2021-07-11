@@ -1,10 +1,10 @@
-from typing import Optional, Iterable
+from typing import Iterable, Optional
 
 from core import Tuple
 from core.architecture.sendsemantics.data_sending_policy_exec import DataSendingPolicyExec
 from core.models.payload import DataFrame, EndOfUpstream
 from edu.uci.ics.amber.engine.architecture.sendsemantics import DataSendingPolicy
-from edu.uci.ics.amber.engine.common import LinkIdentity, ActorVirtualIdentity, DataPayload
+from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, DataPayload
 
 
 class OneToOnePolicyExec(DataSendingPolicyExec):
@@ -12,7 +12,6 @@ class OneToOnePolicyExec(DataSendingPolicyExec):
         super().__init__(policy)
         self.batch_size = 100
         self.batch: list[Tuple] = list()
-
 
     def add_tuple_to_batch(self, tuple_: Tuple) -> Optional[tuple[ActorVirtualIdentity, DataFrame]]:
         self.batch.append(tuple_)

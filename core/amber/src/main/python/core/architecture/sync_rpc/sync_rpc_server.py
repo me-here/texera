@@ -5,10 +5,10 @@ from core.architecture.handlers.query_statistics_handler import QueryStatisticsH
 from core.architecture.handlers.resume_worker_handler import ResumeWorkerHandler
 from core.architecture.handlers.update_input_linking_handler import UpdateInputLinkingHandler
 from core.architecture.managers.context import Context
-from core.models.internal_queue import InternalQueue, ControlElement
+from core.models.internal_queue import ControlElement, InternalQueue
 from core.util.proto.proto_helper import get_oneof, set_oneof
 from edu.uci.ics.amber.engine.architecture.worker import ControlCommand
-from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ReturnPayload, ControlInvocation, ControlPayload
+from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ControlInvocation, ControlPayload, ReturnPayload
 
 
 class SyncRPCServer:

@@ -1,4 +1,4 @@
-from edu.uci.ics.amber.engine.common import Uninitialized, Ready, Recovering, Paused, Running, Completed
+from edu.uci.ics.amber.engine.common import Completed, Paused, Ready, Recovering, Running, Uninitialized
 from .pause_manager import PauseManager
 from .state_manager import StateManager
 from .statistics_manager import StatisticsManager
@@ -11,15 +11,15 @@ class Context:
         self.dp = dp
         self.state_manager = StateManager({
             Uninitialized(): {Ready(), Recovering()},
-            Ready(): {Paused(), Running(), Recovering()},
-            Running(): {Paused(), Completed(), Recovering()},
-            Paused(): {Running(), Recovering()},
-            Completed(): {Recovering()},
-            Recovering(): {Uninitialized(),
-                           Ready(),
-                           Running(),
-                           Paused(),
-                           Completed()}
+            Ready():         {Paused(), Running(), Recovering()},
+            Running():       {Paused(), Completed(), Recovering()},
+            Paused():        {Running(), Recovering()},
+            Completed():     {Recovering()},
+            Recovering():    {Uninitialized(),
+                              Ready(),
+                              Running(),
+                              Paused(),
+                              Completed()}
 
         }, Uninitialized())
 

@@ -1,22 +1,20 @@
 import typing
 from pampy import match
-from queue import Queue
 from typing import Iterable, Union
 
 from core.architecture.managers.context import Context
 from core.architecture.packaging.batch_to_tuple_converter import EndMarker, EndOfAllMarker
 from core.architecture.sync_rpc.sync_rpc_server import SyncRPCServer
-from core.models.internal_queue import ControlElement, InputDataElement, OutputDataElement, InternalQueue, \
-    InternalQueueElement
+from core.models.internal_queue import ControlElement, InputDataElement, InternalQueue, InternalQueueElement, \
+    OutputDataElement
 from core.models.marker import SenderChangeMarker
 from core.models.tuple import InputExhausted, Tuple
 from core.udf.udf_operator import UDFOperator
 from core.util.proto.proto_helper import get_oneof, set_oneof
 from core.util.thread.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
-from edu.uci.ics.amber.engine.architecture.worker import WorkerExecutionCompleted, ControlCommand
-from edu.uci.ics.amber.engine.common import ControlInvocation, ControlPayload, Uninitialized, Ready, Running, Completed, \
-    ControllerVirtualIdentity
-from edu.uci.ics.amber.engine.common import LinkIdentity, ActorVirtualIdentity
+from edu.uci.ics.amber.engine.architecture.worker import ControlCommand, WorkerExecutionCompleted
+from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, Completed, ControlInvocation, ControlPayload, \
+    ControllerVirtualIdentity, LinkIdentity, Ready, Running, Uninitialized
 
 
 class DPThread(StoppableQueueBlockingThread):
@@ -32,15 +30,10 @@ class DPThread(StoppableQueueBlockingThread):
         self.context = Context(self)
         self._rpc_server = SyncRPCServer(output_queue, context=self.context)
 
-        self._data_cache_queue = Queue()
-
     def pre_start(self) -> None:
         self._udf_operator.open()
         self.context.state_manager.assert_state(Uninitialized())
         self.context.state_manager.transit_to(Ready())
-
-    def post_stop(self) -> None:
-        pass
 
     def receive(self, next_entry: InternalQueueElement) -> None:
 

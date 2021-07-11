@@ -1,6 +1,6 @@
 from abc import ABC
 from loguru import logger
-from threading import Thread, Event
+from threading import Event, Thread
 
 
 class StoppableThread(Thread, ABC):

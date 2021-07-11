@@ -11,7 +11,7 @@ if (stateManager.getCurrentState == Paused()) {
 from core.architecture.handlers.handler_base import Handler
 from core.architecture.managers.context import Context
 from edu.uci.ics.amber.engine.architecture.worker import ResumeWorker, WorkerStateInfo
-from edu.uci.ics.amber.engine.common import Running, Paused
+from edu.uci.ics.amber.engine.common import Paused, Running
 
 
 class ResumeWorkerHandler(Handler):
