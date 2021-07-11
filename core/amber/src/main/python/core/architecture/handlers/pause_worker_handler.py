@@ -16,7 +16,7 @@ class PauseWorkerHandler(Handler):
     cmd = PauseWorker
 
     def __call__(self, context: Context, command: PauseWorker, *args, **kwargs):
-        if context.state_manager.confirm_states([Running(), Ready()]):
+        if context.state_manager.confirm_state(Running(), Ready()):
             context.pause_manager.pause()
             context.dp._input_queue.disable_sub()
             context.state_manager.transit_to(Paused())

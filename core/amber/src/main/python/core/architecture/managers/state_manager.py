@@ -1,4 +1,4 @@
-from core.util.proto.proto_helper import set_oneof
+from core.util.proto.proto_helper import set_one_of
 from edu.uci.ics.amber.engine.common import WorkerState
 
 
@@ -22,14 +22,8 @@ class StateManager:
         if self._current_state != state:
             raise InvalidStateException(f"except state = {state} but current state = {self._current_state}")
 
-    def confirm_state(self, state: WorkerState) -> bool:
-        # if isinstance(state, WorkerState):
-        return self._current_state == state
-        # else:
-        #     return self._current_state in state
-
-    def confirm_states(self, states: list[WorkerState]) -> bool:
-        return self._current_state in states
+    def confirm_state(self, *states: WorkerState) -> bool:
+        return any([self._current_state == state for state in states])
 
     def transit_to(self, state: WorkerState, discard_old_states: bool = True) -> None:
         if state == self._current_state:
@@ -51,5 +45,4 @@ class StateManager:
         self._current_state = self._state_stack.pop(-1)
 
     def get_current_state(self) -> WorkerState:
-        # return self._current_state
-        return set_oneof(WorkerState, self._current_state)
+        return set_one_of(WorkerState, self._current_state)

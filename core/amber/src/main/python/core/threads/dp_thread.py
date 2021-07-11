@@ -1,7 +1,7 @@
 import typing
 from overrides import overrides
 from pampy import match
-from typing import Iterable, Iterator, Union
+from typing import Iterator, Union
 
 from core.architecture.managers.context import Context
 from core.architecture.packaging.batch_to_tuple_converter import EndMarker, EndOfAllMarker
@@ -10,7 +10,7 @@ from core.models.internal_queue import ControlElement, InputDataElement, Interna
 from core.models.marker import SenderChangeMarker
 from core.models.tuple import InputExhausted, Tuple
 from core.udf.udf_operator import UDFOperator
-from core.util.proto.proto_helper import get_oneof, set_oneof
+from core.util.proto.proto_helper import get_one_of, set_one_of
 from core.util.queue.queue_base import IQueue
 from core.util.stoppable.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
 from edu.uci.ics.amber.engine.architecture.worker import ControlCommand, WorkerExecutionCompleted
@@ -51,7 +51,7 @@ class DPThread(StoppableQueueBlockingThread):
         # logger.info(f"PYTHON DP processing one CONTROL: {cmd} from {from_}")
 
         match(
-            (get_oneof(cmd), from_),
+            (get_one_of(cmd), from_),
             typing.Tuple[ControlInvocation, ActorVirtualIdentity], self._process_control_invocation
             # TODO: handle ReturnPayload
         )
@@ -68,19 +68,19 @@ class DPThread(StoppableQueueBlockingThread):
     def process_tuple(self, tuple_: Union[Tuple, InputExhausted], link: LinkIdentity) -> Iterator[Tuple]:
         return self._udf_operator.process_texera_tuple(tuple_, link)
 
-    def pass_tuple_to_downstream(self, tuple_: Tuple)-> None:
+    def pass_tuple_to_downstream(self, tuple_: Tuple) -> None:
         for to, batch in self.context.tuple_to_batch_converter.tuple_to_batch(tuple_):
             self._output_queue.put(OutputDataElement(payload=batch, to=to))
 
-    def complete(self)-> None:
+    def complete(self) -> None:
         self._udf_operator.close()
         self.context.state_manager.transit_to(Completed())
-        control_command = set_oneof(ControlCommand, WorkerExecutionCompleted())
-        payload = set_oneof(ControlPayload, ControlInvocation(1, command=control_command))
-        from_ = set_oneof(ActorVirtualIdentity, ControllerVirtualIdentity())
+        control_command = set_one_of(ControlCommand, WorkerExecutionCompleted())
+        payload = set_one_of(ControlPayload, ControlInvocation(1, command=control_command))
+        from_ = set_one_of(ActorVirtualIdentity, ControllerVirtualIdentity())
         self._output_queue.put(ControlElement(from_=from_, cmd=payload))
 
-    def check_and_process_control(self)-> None:
+    def check_and_process_control(self) -> None:
 
         while not self._input_queue.main_empty() or self.context.pause_manager.is_paused():
             next_entry = self.interruptible_get()
