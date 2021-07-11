@@ -1,8 +1,9 @@
+from abc import abstractmethod
 from dataclasses import dataclass
 from typing_extensions import Protocol, T
 
 
-class Queue(Protocol):
+class IQueue(Protocol):
     @dataclass
     class QueueElement:
         pass
@@ -11,11 +12,14 @@ class Queue(Protocol):
     class QueueControl(QueueElement):
         msg: str
 
+    @abstractmethod
     def get(self) -> T:
         pass
 
+    @abstractmethod
     def put(self, item: T) -> None:
         pass
 
+    @abstractmethod
     def empty(self) -> bool:
         pass

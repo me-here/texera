@@ -11,7 +11,7 @@ from core.models.marker import SenderChangeMarker
 from core.models.tuple import InputExhausted, Tuple
 from core.udf.udf_operator import UDFOperator
 from core.util.proto.proto_helper import get_oneof, set_oneof
-from core.util.queue.queue_base import Queue
+from core.util.queue.queue_base import IQueue
 from core.util.thread.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
 from edu.uci.ics.amber.engine.architecture.worker import ControlCommand, WorkerExecutionCompleted
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, Completed, ControlInvocation, ControlPayload, \
@@ -38,7 +38,7 @@ class DPThread(StoppableQueueBlockingThread):
         self.context.state_manager.transit_to(Ready())
 
     @overrides
-    def receive(self, next_entry: Queue.QueueElement) -> None:
+    def receive(self, next_entry: IQueue.QueueElement) -> None:
 
         # logger.info(f"PYTHON DP receive an entry from queue: {next_entry}")
         match(
@@ -82,7 +82,7 @@ class DPThread(StoppableQueueBlockingThread):
 
     def check_and_process_control(self)-> None:
 
-        while not self._input_queue.master_empty() or self.context.pause_manager.is_paused():
+        while not self._input_queue.main_empty() or self.context.pause_manager.is_paused():
             next_entry = self.interruptible_get()
 
             match(

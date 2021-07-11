@@ -1,18 +1,30 @@
 import queue
 from overrides import overrides
+from typing import T
 
-from typing_extensions import T
-
-from core.util.queue.queue_base import Queue
+from core.util.queue.queue_base import IQueue
 
 
-class DoubleBlockingQueue(Queue):
+class DoubleBlockingQueue(IQueue):
 
-    def __init__(self, *slave_types: type):
+    def __init__(self, *sub_types: type):
         super().__init__()
         self._main_queue = queue.Queue()
         self._sub_queue = queue.Queue()
-        self._sub_types = slave_types
+        self._sub_types = sub_types
+        self._sub_enabled = True
+
+    def disable_sub(self) -> None:
+        self._sub_enabled = False
+
+    @overrides
+    def empty(self) -> bool:
+        if self._sub_enabled:
+            return self.main_empty() and self.sub_empty()
+        else:
+            return self.main_empty()
+
+    def enable_sub(self) -> None:
         self._sub_enabled = True
 
     @overrides
@@ -29,20 +41,10 @@ class DoubleBlockingQueue(Queue):
         else:
             self._main_queue.put(item)
 
-    def disable_slave(self) -> None:
-        self._sub_enabled = False
+    def main_empty(self) -> bool:
+        return self._main_queue.empty()
 
-    def enable_slave(self) -> None:
-        self._sub_enabled = True
-
-    @overrides
-    def empty(self) -> bool:
-        if self._sub_enabled:
-            return self._sub_queue.empty() and self._main_queue.empty()
-        else:
-            return self._main_queue.empty()
-
-    def master_empty(self) -> bool:
+    def sub_empty(self) -> bool:
         return self._main_queue.empty()
 
 
@@ -51,7 +53,7 @@ if __name__ == '__main__':
     q.put(1)
     q.put("control")
     print(q.get())
-    q.disable_slave()
+    q.disable_sub()
     print(q.empty())
     # q.disable_slave()
     print(q.get())

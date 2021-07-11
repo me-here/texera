@@ -2,7 +2,7 @@ from loguru import logger
 from overrides import overrides
 from threading import Thread
 
-from core.util.queue.queue_base import Queue
+from core.util.queue.queue_base import IQueue
 from core.util.thread.stoppable_thread import Stoppable
 
 
@@ -31,9 +31,9 @@ class StoppableQueueBlockingThread(Thread, Stoppable):
     consumed, it should break the Thread.run().
 
     """
-    THREAD_STOP = Queue.QueueControl(msg="__THREAD__STOP__MARKER__")
+    THREAD_STOP = IQueue.QueueControl(msg="__THREAD__STOP__MARKER__")
 
-    def __init__(self, name: str, queue: Queue):
+    def __init__(self, name: str, queue: IQueue):
         super().__init__()
         self._internal_queue = queue
         self.name = name
@@ -51,7 +51,7 @@ class StoppableQueueBlockingThread(Thread, Stoppable):
         finally:
             self.post_stop()
 
-    def receive(self, next_entry: Queue.QueueElement):
+    def receive(self, next_entry: IQueue.QueueElement):
         pass
 
     def pre_start(self) -> None:
