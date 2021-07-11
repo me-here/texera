@@ -829,7 +829,6 @@ export class WorkflowActionService {
     // collect workflow content
     const texeraGraph = this.getTexeraGraph();
     const operators = texeraGraph.getAllOperators();
-    const disabledOperators = Array.from(texeraGraph.getDisabledOperators());
     const links = texeraGraph.getAllLinks();
     const operatorPositions: { [key: string]: Point } = {};
 
