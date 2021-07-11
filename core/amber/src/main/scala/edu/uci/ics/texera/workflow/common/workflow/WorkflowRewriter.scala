@@ -170,7 +170,7 @@ class WorkflowRewriter(
   }
 
   private def isCacheEnabled(operator: OperatorDescriptor): Boolean = {
-    if (!workflowInfo.operatorsToCache.contains(operator.operatorID)) {
+    if (!workflowInfo.cachedOperatorIDs.contains(operator.operatorID)) {
       operatorOutputCache.remove(operator.operatorID)
       cachedOperators.remove(operator.operatorID)
       logger.debug("Operator {} cache not enabled.", operator)

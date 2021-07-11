@@ -41,7 +41,7 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
     val destination = OperatorPort(sinkOperator.operatorID, 0)
     links += OperatorLink(origin, destination)
     val workflowInfo = WorkflowInfo(operators, links, breakpoints)
-    workflowInfo.operatorsToCache = List[String]()
+    workflowInfo.cachedOperatorIDs = mutable.MutableList[String]()
     rewriter = new WorkflowRewriter(
       workflowInfo,
       mutable.HashMap[String, mutable.MutableList[Tuple]](),
@@ -69,7 +69,7 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
     links += OperatorLink(origin, destination)
 
     val workflowInfo = WorkflowInfo(operators, links, breakpoints)
-    workflowInfo.operatorsToCache = List[String](sourceOperator.operatorID)
+    workflowInfo.cachedOperatorIDs = mutable.MutableList(sourceOperator.operatorID)
 
     val tuples = mutable.MutableList[Tuple]()
     val cacheSourceOperator = new CacheSourceOpDesc(tuples)
@@ -113,7 +113,7 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
     links += OperatorLink(origin, destination)
 
     val workflowInfo = WorkflowInfo(operators, links, breakpoints)
-    workflowInfo.operatorsToCache = List[String](sourceOperator.operatorID)
+    workflowInfo.cachedOperatorIDs = mutable.MutableList(sourceOperator.operatorID)
 
     val operatorOutputCache = mutable.HashMap[String, mutable.MutableList[Tuple]]()
     val cachedOperators = mutable.HashMap[String, OperatorDescriptor]()
@@ -155,7 +155,7 @@ class WorkflowRewriterSpec extends AnyFlatSpec with BeforeAndAfter {
     links += OperatorLink(origin, destination2)
 
     val workflowInfo = WorkflowInfo(operators, links, breakpoints)
-    workflowInfo.operatorsToCache = List[String](sourceOperator.operatorID)
+    workflowInfo.cachedOperatorIDs = mutable.MutableList(sourceOperator.operatorID)
 
     val operatorOutputCache = mutable.HashMap[String, mutable.MutableList[Tuple]]()
     val cachedOperators = mutable.HashMap[String, OperatorDescriptor]()
