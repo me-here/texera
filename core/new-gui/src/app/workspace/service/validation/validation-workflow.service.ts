@@ -6,6 +6,7 @@ import { OperatorSchema } from '../../types/operator-schema.interface';
 import { WorkflowActionService } from './../workflow-graph/model/workflow-action.service';
 import * as Ajv from 'ajv';
 import { OperatorLink } from '../../types/workflow-common.interface';
+import { BehaviorSubject } from 'rxjs';
 
 export type ValidationError = { isValid: false, messages: Record<string, string> };
 export type Validation = { isValid: true } | ValidationError;
@@ -36,7 +37,7 @@ export class ValidationWorkflowService {
   // stream of an individual's validation status is updated, whether it's validation sucess or validation error
   private readonly operatorValidationStream = new Subject<{ operatorID: string, validation: Validation }>();
   // stream of global validation error status is updated, only errors will be reported
-  private readonly workflowValidationErrorStream = new Subject<{ errors: Record<string, ValidationError> }>();
+  private readonly workflowValidationErrorStream = new BehaviorSubject<{ errors: Record<string, ValidationError> }>( {errors: {}});
   private ajv = new Ajv({ schemaId: 'auto', allErrors: true });
 
   // this map record --> <operatorID, error string>
@@ -59,6 +60,10 @@ export class ValidationWorkflowService {
         this.operatorSchemaList = metadata.operators;
         this.initializeValidation();
       });
+  }
+
+  public getCurrentWorkflowValidationError(): { errors: Record<string, ValidationError> } {
+    return this.workflowValidationErrorStream.getValue();
   }
 
   /**

@@ -27,8 +27,6 @@ export class WorkflowGraph {
   private readonly operatorLinkMap = new Map<string, OperatorLink>();
   private readonly linkBreakpointMap = new Map<string, Breakpoint>();
 
-  private readonly disabledOperators = new Set<string>();
-
   private readonly operatorAddSubject = new Subject<OperatorPredicate>();
   private readonly operatorDeleteSubject = new Subject<{ deletedOperator: OperatorPredicate }>();
   private readonly disabledOperatorChangedSubject = new Subject<{ newDisabled: string[], newEnabled: string[] }>();
@@ -66,9 +64,6 @@ export class WorkflowGraph {
     if (!operator) {
       throw new Error(`operator with ID ${operatorID} doesn't exist`);
     }
-    if (this.isOperatorDisabled(operatorID)) {
-      this.enableOperator(operatorID);
-    }
     this.operatorIDMap.delete(operatorID);
     this.operatorDeleteSubject.next({ deletedOperator: operator });
   }
@@ -78,10 +73,11 @@ export class WorkflowGraph {
     if (!operator) {
       throw new Error(`operator with ID ${operatorID} doesn't exist`);
     }
-    if (! this.disabledOperators.has(operatorID)) {
-      this.disabledOperators.add(operatorID);
-      this.disabledOperatorChangedSubject.next({ newDisabled: [operatorID], newEnabled: [] });
+    if (this.isOperatorDisabled(operatorID)) {
+      return;
     }
+    this.operatorIDMap.set(operatorID, {...operator, isDisabled: true});
+    this.disabledOperatorChangedSubject.next({ newDisabled: [operatorID], newEnabled: [] });
   }
 
   public enableOperator(operatorID: string): void {
@@ -89,10 +85,11 @@ export class WorkflowGraph {
     if (!operator) {
       throw new Error(`operator with ID ${operatorID} doesn't exist`);
     }
-    if (this.disabledOperators.has(operatorID)) {
-      this.disabledOperators.delete(operatorID);
-      this.disabledOperatorChangedSubject.next({ newDisabled: [], newEnabled: [operatorID] });
+    if (! this.isOperatorDisabled(operatorID)) {
+      return;
     }
+    this.operatorIDMap.set(operatorID, {...operator, isDisabled: false});
+    this.disabledOperatorChangedSubject.next({ newDisabled: [], newEnabled: [operatorID] });
   }
 
   public isOperatorDisabled(operatorID: string): boolean {
@@ -100,11 +97,11 @@ export class WorkflowGraph {
     if (!operator) {
       throw new Error(`operator with ID ${operatorID} doesn't exist`);
     }
-    return this.disabledOperators.has(operatorID);
+    return operator.isDisabled ?? false;
   }
 
   public getDisabledOperators(): ReadonlySet<string> {
-    return this.disabledOperators;
+    return new Set(Array.from(this.operatorIDMap.keys()).filter(op => this.isOperatorDisabled(op)));
   }
 
   /**

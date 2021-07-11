@@ -17,7 +17,6 @@ import { Breakpoint, OperatorLink, OperatorPredicate, Point } from '../../worksp
 export interface WorkflowContent extends Readonly<{
   operators: OperatorPredicate[];
   operatorPositions: { [key: string]: Point };
-  disabledOperators: string[];
   links: OperatorLink[];
   groups: PlainGroup[];
   breakpoints: Record<string, Breakpoint>;

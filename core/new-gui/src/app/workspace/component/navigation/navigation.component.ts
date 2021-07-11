@@ -117,7 +117,7 @@ export class NavigationComponent implements OnInit {
 
     this.registerWorkflowMetadataDisplayRefresh();
 
-    this.handleDisableOperatorIconChange();
+    this.handleDisableOperatorStatusChange();
   }
 
   ngOnInit() {
@@ -332,6 +332,10 @@ export class NavigationComponent implements OnInit {
     }
   }
 
+  /**
+   * callback function when user clicks the "disable operator" icon:
+   * this.isDisableOperator indicates whether the operators should be disabled or enabled
+   */
   public onClickDisableOperators(): void {
     if (this.isDisableOperator) {
       this.effectivelyHighlightedOperators().forEach(op => {
@@ -391,7 +395,12 @@ export class NavigationComponent implements OnInit {
       });
   }
 
-  handleDisableOperatorIconChange() {
+  /**
+   * Updates the status of the disable operator icon:
+   * If all selected operators are disabled, then click it will re-enable the operators
+   * If any of the selected operator is not disabled, then click will disable all selected operators
+   */
+  handleDisableOperatorStatusChange() {
     Observable.merge(
       this.workflowActionService.getJointGraphWrapper().getJointOperatorHighlightStream(),
       this.workflowActionService.getJointGraphWrapper().getJointOperatorUnhighlightStream(),
@@ -399,17 +408,18 @@ export class NavigationComponent implements OnInit {
       this.workflowActionService.getJointGraphWrapper().getJointGroupUnhighlightStream(),
       this.workflowActionService.getTexeraGraph().getDisabledOperatorsChangedStream(),
     ).subscribe(event => {
-      this.isDisableOperator = this.calculateIsDisableOperator();
-      this.isDisableOperatorClickable = this.effectivelyHighlightedOperators().length !== 0;
+      const effectiveHighlightedOperators = this.effectivelyHighlightedOperators();
+      const allDisabled = this.effectivelyHighlightedOperators().every(
+        op => this.workflowActionService.getTexeraGraph().isOperatorDisabled(op));
+
+      this.isDisableOperator = ! allDisabled;
+      this.isDisableOperatorClickable = effectiveHighlightedOperators.length !== 0;
     });
   }
 
-  calculateIsDisableOperator(): boolean {
-    const allDisabled = this.effectivelyHighlightedOperators().every(
-      op => this.workflowActionService.getTexeraGraph().isOperatorDisabled(op));
-    return ! allDisabled;
-  }
-
+  /**
+   * Gets all highlighted operators, and all operators in the highlighted groups
+   */
   effectivelyHighlightedOperators(): readonly string[] {
     const highlightedOperators = this.workflowActionService.getJointGraphWrapper().getCurrentHighlightedOperatorIDs();
     const highlightedGroups = this.workflowActionService.getJointGraphWrapper().getCurrentHighlightedGroupIDs();

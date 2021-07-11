@@ -1063,7 +1063,8 @@ export class WorkflowEditorComponent implements AfterViewInit {
     const inputPorts = operator.inputPorts;
     const outputPorts = operator.outputPorts;
     const showAdvanced = operator.showAdvanced;
-    return {operatorID, operatorType, operatorProperties, inputPorts, outputPorts, showAdvanced};
+    const isDisabled = operator.isDisabled;
+    return {operatorID, operatorType, operatorProperties, inputPorts, outputPorts, showAdvanced, isDisabled};
   }
 
   private copyGroup(group: Group) {
