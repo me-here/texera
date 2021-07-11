@@ -48,9 +48,9 @@ class WorkflowDAG(workflowInfo: WorkflowInfo) {
 
   def getOperator(operatorID: String): OperatorDescriptor = operators(operatorID)
 
-  def getSourceOperators: List[String] = this.sourceOperators;
+  def getSourceOperators: List[String] = this.sourceOperators
 
-  def getSinkOperators: List[String] = this.sinkOperators;
+  def getSinkOperators: List[String] = this.sinkOperators
 
   def getUpstream(operatorID: String): List[OperatorDescriptor] = {
     val upstream = new mutable.MutableList[OperatorDescriptor]

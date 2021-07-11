@@ -183,7 +183,10 @@ class WorkflowRewriter(
   private def isCacheValid(operator: OperatorDescriptor): Boolean = {
     assert(isCacheEnabled(operator))
     if (cachedOperators.contains(operator.operatorID)) {
-      if (getCachedOperator(operator).equals(operator) && !rewrittenToCacheOperator.contains(operator.operatorID)) {
+      if (
+        getCachedOperator(operator)
+          .equals(operator) && !rewrittenToCacheOperator.contains(operator.operatorID)
+      ) {
         logger.debug("Operator {} cache valid.", operator)
         return true
       }

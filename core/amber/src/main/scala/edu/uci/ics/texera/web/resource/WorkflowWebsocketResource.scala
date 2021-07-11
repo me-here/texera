@@ -170,18 +170,14 @@ class WorkflowWebsocketResource {
   def executeWorkflow(session: Session, request: ExecuteWorkflowRequest): Unit = {
     val context = new WorkflowContext
     val jobID = Integer.toString(WorkflowWebsocketResource.nextJobID.incrementAndGet)
-    logger.info("zjs: request: {}", request.toString)
-    logger.info("zjs: request.operators: {}", request.operators)
     context.jobID = jobID
     context.userID = UserResource
       .getUser(sessionMap(session.getId)._2)
       .map(u => u.getUid)
 
-    val texeraWorkflowCompiler = new WorkflowCompiler(
-      WorkflowInfo(request.operators, request.links, request.breakpoints),
-      context
-    )
-    logger.info("zjs: workflowDAG: {}", texeraWorkflowCompiler.workflow)
+    val workflowInfo = WorkflowInfo(request.operators, request.links, request.breakpoints)
+    workflowInfo.cachedOperatorIDs = request.cachedOperatorIDs
+    val texeraWorkflowCompiler = new WorkflowCompiler(workflowInfo, context)
 
     val violations = texeraWorkflowCompiler.validate
     if (violations.nonEmpty) {
