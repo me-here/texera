@@ -26,7 +26,7 @@ class SyncRPCServer:
 
     def receive(self, control_invocation: ControlInvocation, from_: ActorVirtualIdentity):
         command = get_oneof(control_invocation.command)
-        logger.info(f"PYTHON receive a CONTROL: {control_invocation}")
+        # logger.info(f"PYTHON receive a CONTROL: {control_invocation}")
         handler = self._handlers[type(command)]
         result: ControlCommand = set_oneof(ControlCommand, handler(self._context, command))
 

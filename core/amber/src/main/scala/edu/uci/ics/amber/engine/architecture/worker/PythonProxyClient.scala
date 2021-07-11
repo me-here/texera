@@ -103,13 +103,11 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
 
       getElement match {
         case DataElement(dataPayload, from) =>
-          println("java got a dataPayload " + dataPayload)
           dataPayload match {
             case DataFrame(frame) =>
               val tuples = mutable.Queue(frame.map((t: ITuple) => t.asInstanceOf[Tuple]): _*)
               writeArrowStream(flightClient, tuples, 100, from)
             case EndOfUpstream() =>
-              println("JAVA receives EndOfUpstream from " + from)
               val q = mutable.Queue(
                 Tuple
                   .newBuilder(
@@ -266,6 +264,12 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
 
   }
 
-  override def close(): Unit = ???
+  override def close(): Unit = {
+
+    val action: Action = new Action("shutdown", "".getBytes)
+    flightClient.doAction(action) // do not expect reply
+
+    flightClient.close()
+  }
 
 }

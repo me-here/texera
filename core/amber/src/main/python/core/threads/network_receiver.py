@@ -43,7 +43,8 @@ class NetworkReceiver(StoppableThread):
         self._proxy_server.register_control_handler(control_handler, control_deserializer)
 
     def register_shutdown(self, shutdown: callable) -> None:
-        self._proxy_server.register("shutdown", shutdown)
+        self._proxy_server.register("shutdown", ProxyServer.ack()(shutdown))
+
 
     @logger.catch
     def run(self) -> None:

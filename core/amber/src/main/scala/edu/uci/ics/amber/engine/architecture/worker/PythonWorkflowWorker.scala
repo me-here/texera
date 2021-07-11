@@ -85,9 +85,16 @@ class PythonWorkflowWorker(
   }
 
   override def postStop(): Unit = {
-    // shutdown dp thread by sending a command
+
+    // try to send shutdown command so that it can gracefully shutdown
+    pythonProxyClient.close()
+
+    // wait for gracefully shutdown
+    Thread.sleep(100)
+
+    // destroy python process
     pythonServerProcess.destroyForcibly()
-    logger.logInfo("PYTHON process stopped!")
+    println("PYTHON process stopped!")
   }
 
   override def preStart(): Unit = {

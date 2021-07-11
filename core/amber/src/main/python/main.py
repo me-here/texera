@@ -16,8 +16,6 @@ from edu.uci.ics.amber.engine.common import LinkIdentity
 class EchoOperator(UDFOperator):
     def process_texera_tuple(self, tuple_: Union[Tuple, InputExhausted], link: LinkIdentity) -> Iterable[Tuple]:
         if isinstance(tuple_, Tuple):
-            # logger.debug(" processing tuple " + str(tuple_))
-            time.sleep(0.01)
             yield tuple_
 
 
