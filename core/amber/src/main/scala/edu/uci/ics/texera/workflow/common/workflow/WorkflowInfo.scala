@@ -27,7 +27,9 @@ case class WorkflowInfo(
     operators: mutable.MutableList[OperatorDescriptor],
     links: mutable.MutableList[OperatorLink],
     breakpoints: mutable.MutableList[BreakpointInfo]
-)
+) {
+  var operatorsToCache: List[String] = _
+}
 
 // helper class that converts the workflowInfo into a graph data structure
 class WorkflowDAG(workflowInfo: WorkflowInfo) {
@@ -60,7 +62,7 @@ class WorkflowDAG(workflowInfo: WorkflowInfo) {
     val downstream = new mutable.MutableList[OperatorDescriptor]
     jgraphtDag
       .outgoingEdgesOf(operatorID)
-      .forEach(e => downstream += operators(e.origin.operatorID))
+      .forEach(e => downstream += operators(e.destination.operatorID))
     downstream.toList
   }
 

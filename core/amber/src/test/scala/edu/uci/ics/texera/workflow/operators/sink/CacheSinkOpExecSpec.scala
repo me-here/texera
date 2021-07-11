@@ -53,4 +53,10 @@ class CacheSinkOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
     assert(tuple1.equals(dest.head))
     assert(tuple2.equals(dest(1)))
   }
+
+  it should "throw exception" in {
+    assertThrows[AssertionError] {
+      opExec = new CacheSinkOpExec(null)
+    }
+  }
 }

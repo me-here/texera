@@ -11,6 +11,8 @@ import com.typesafe.scalalogging.Logger
 
 class CacheSinkOpExec(dest: mutable.MutableList[Tuple]) extends ITupleSinkOperatorExecutor {
 
+  assert(null != dest)
+
   private val logger = Logger(this.getClass.getName)
 
   val results: mutable.MutableList[Tuple] = mutable.MutableList()

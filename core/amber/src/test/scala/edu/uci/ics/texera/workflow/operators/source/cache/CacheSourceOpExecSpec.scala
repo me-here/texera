@@ -47,4 +47,10 @@ class CacheSourceOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
     assert(src.head.equals(iterator.next()))
     assert(src(1).equals(iterator.next()))
   }
+
+  it should "throw exception" in {
+    assertThrows[AssertionError] {
+      opExec = new CacheSourceOpExec(null)
+    }
+  }
 }
