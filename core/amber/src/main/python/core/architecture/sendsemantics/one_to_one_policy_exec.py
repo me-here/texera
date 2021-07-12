@@ -33,4 +33,4 @@ class OneToOnePolicyExec(DataSendingPolicyExec):
 
     @overrides
     def reset(self) -> None:
-        self.batch.clear()
+        self.batch = list()

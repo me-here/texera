@@ -1,4 +1,5 @@
 import pandas
+from loguru import logger
 from pyarrow import Table
 from pyarrow.lib import Schema, schema
 
@@ -34,6 +35,7 @@ class NetworkSender(StoppableQueueBlockingThread):
             data_header = DataHeader(from_=to, is_end=False)
             table = Table.from_pandas(df, output_schema)
             self._proxy_client.send_data(bytes(data_header), table)
+
         elif isinstance(data_payload, EndOfUpstream):
             data_header = DataHeader(from_=to, is_end=True)
             self._proxy_client.send_data(bytes(data_header), None)
@@ -41,5 +43,5 @@ class NetworkSender(StoppableQueueBlockingThread):
         # TODO: handle else
 
     def send_control(self, to: ActorVirtualIdentity, cmd: ControlPayload):
-        workflow_control_message = WorkflowControlMessage(from_=to, sequence_number=1, payload=cmd)
+        workflow_control_message = WorkflowControlMessage(from_=to, sequence_number=1992, payload=cmd)
         self._proxy_client.call("control", workflow_control_message.SerializeToString())

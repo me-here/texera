@@ -1,3 +1,5 @@
+from loguru import logger
+
 from core.architecture.handlers.add_output_policy_handler import AddOutputPolicyHandler
 from core.architecture.handlers.handler_base import Handler
 from core.architecture.handlers.pause_worker_handler import PauseWorkerHandler
@@ -32,7 +34,7 @@ class SyncRPCServer:
                          ReturnPayload(original_command_id=control_invocation.command_id,
                                        return_value=return_command))
 
-        # logger.info(f"PYTHON returning control {payload}")
+        # logger.info(f"PYTHON returning control {cmd}")
         self._output_queue.put(ControlElement(from_=from_, cmd=cmd))
 
     def register(self, handler: Handler) -> None:

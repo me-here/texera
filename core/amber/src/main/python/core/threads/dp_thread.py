@@ -1,4 +1,5 @@
 import typing
+from loguru import logger
 from overrides import overrides
 from pampy import match
 from typing import Iterator, Union
@@ -116,7 +117,7 @@ class DPThread(StoppableQueueBlockingThread):
     def _process_input_data_element(self, input_data_element: InputDataElement) -> None:
         if self.context.state_manager.confirm_state(Ready()):
             self.context.state_manager.transit_to(Running())
-            # logger.info(f"PYTHON DP receive a DATA: {next_entry}")
+        logger.info(f"PYTHON DP receive a DATA: {input_data_element}")
         for element in self.context.batch_to_tuple_converter.process_data_payload(input_data_element.from_,
                                                                                   input_data_element.payload):
             match(

@@ -98,7 +98,6 @@ class PythonWorkflowWorker(
   }
 
   override def preStart(): Unit = {
-    super.preStart()
     start()
   }
 

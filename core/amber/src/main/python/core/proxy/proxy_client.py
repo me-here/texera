@@ -32,21 +32,21 @@ class ProxyClient(FlightClient):
         options = FlightCallOptions(timeout=self._timeout)
         return next(self.do_action(action, options)).body.to_pybytes()
 
-    def send_data(self, command: bytes, batch: Optional[Table]) -> None:
+    def send_data(self, command: bytes, table: Optional[Table]) -> None:
         """
         send data to the server
-        :param batch: a PyArrow.Table of column-stored records.
+        :param table: a PyArrow.Table of column-stored records.
         :return:
         """
 
         descriptor = FlightDescriptor.for_command(command)
-        # batch = Table.from_pandas(pandas.DataFrame({'str': ["EOF"]})) if batch is None else batch
-        batch = Table.from_arrays([]) if batch is None else batch
-        refs = self.do_put(descriptor, batch.schema)
+        table = Table.from_arrays([]) if table is None else table
+
+        refs = self.do_put(descriptor, table.schema)
         writer: FlightStreamWriter = refs[0]
         try:
             with writer:
-                writer.write_table(batch, max_chunksize=100)
+                writer.write_table(table)
         except Exception as err:
             logger.exception(err)
 
