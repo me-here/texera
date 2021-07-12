@@ -17,7 +17,6 @@ import edu.uci.ics.texera.workflow.operators.keywordSearch.KeywordSearchOpDesc
 import edu.uci.ics.texera.workflow.operators.limit.LimitOpDesc
 import edu.uci.ics.texera.workflow.operators.linearregression.LinearRegressionOpDesc
 import edu.uci.ics.texera.workflow.operators.projection.ProjectionOpDesc
-import edu.uci.ics.texera.workflow.operators.pythonUDF.PythonUDFOpDesc
 import edu.uci.ics.texera.workflow.operators.randomksampling.RandomKSamplingOpDesc
 import edu.uci.ics.texera.workflow.operators.regex.RegexOpDesc
 import edu.uci.ics.texera.workflow.operators.reservoirsampling.ReservoirSamplingOpDesc
@@ -38,6 +37,8 @@ import edu.uci.ics.texera.workflow.operators.visualization.lineChart.LineChartOp
 import edu.uci.ics.texera.workflow.operators.visualization.pieChart.PieChartOpDesc
 import edu.uci.ics.texera.workflow.operators.visualization.scatterplot.ScatterplotOpDesc
 import edu.uci.ics.texera.workflow.operators.visualization.wordCloud.WordCloudOpDesc
+import edu.uci.ics.texera.workflow.udf.python.PythonUDFOpDesc
+import edu.uci.ics.texera.workflow.udf.python.source.PythonUDFSourceOpDesc
 import org.apache.commons.lang3.builder.{EqualsBuilder, HashCodeBuilder, ToStringBuilder}
 
 import java.util.UUID
@@ -73,6 +74,7 @@ import java.util.UUID
     new Type(value = classOf[HtmlVizOpDesc], name = "HTMLVisualizer"),
     new Type(value = classOf[ScatterplotOpDesc], name = "Scatterplot"),
     new Type(value = classOf[PythonUDFOpDesc], name = "PythonUDF"),
+    new Type(value= classOf[PythonUDFSourceOpDesc], name = "PythonUDFSource"),
     new Type(value = classOf[MySQLSourceOpDesc], name = "MySQLSource"),
     new Type(value = classOf[PostgreSQLSourceOpDesc], name = "PostgreSQLSource"),
     new Type(value = classOf[AsterixDBSourceOpDesc], name = "AsterixDBSource"),

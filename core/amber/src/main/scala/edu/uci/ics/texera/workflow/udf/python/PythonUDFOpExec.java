@@ -1,4 +1,4 @@
-package edu.uci.ics.texera.workflow.operators.pythonUDF;
+package edu.uci.ics.texera.workflow.udf.python;
 
 import edu.uci.ics.amber.engine.common.InputExhausted;
 import edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity;
@@ -13,7 +13,7 @@ public class PythonUDFOpExec implements OperatorExecutor {
     private final String code;
 
 
-    PythonUDFOpExec(String code) {
+    public PythonUDFOpExec(String code) {
         this.code = code;
     }
 

@@ -34,7 +34,8 @@ message WorkerExecutionCompleted{
 }
 
 message SendPythonUDF{
-  string udf =1;
+  string udf = 1;
+  bool isSource = 2;
 }
 message ControlCommand {
   oneof sealed_value {

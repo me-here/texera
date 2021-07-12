@@ -58,6 +58,7 @@ class WorkerExecutionCompleted(betterproto.Message):
 @dataclass(eq=False, repr=False)
 class SendPythonUdf(betterproto.Message):
     udf: str = betterproto.string_field(1)
+    is_source: bool = betterproto.bool_field(2)
 
 
 @dataclass(eq=False, repr=False)

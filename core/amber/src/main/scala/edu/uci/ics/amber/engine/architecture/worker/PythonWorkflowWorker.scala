@@ -13,14 +13,14 @@ import edu.uci.ics.amber.engine.common.ambermessage.{
   WorkflowControlMessage,
   WorkflowDataMessage
 }
-import edu.uci.ics.amber.engine.common.{IOperatorExecutor, ambermessage2}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCHandlerInitializer
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.util.SELF
+import edu.uci.ics.amber.engine.common.{IOperatorExecutor, ISourceOperatorExecutor, ambermessage2}
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 import edu.uci.ics.texera.web.WebUtils
-import edu.uci.ics.texera.workflow.operators.pythonUDF.PythonUDFOpExec
+import edu.uci.ics.texera.workflow.udf.python.PythonUDFOpExec
 
 import java.io.IOException
 import java.net.ServerSocket
@@ -105,9 +105,17 @@ class PythonWorkflowWorker(
   }
 
   def sendUDF(): Unit = {
-    pythonProxyClient.enqueueCommand(ambermessage2
-        .ControlInvocation(999999L, SendPythonUDF(udf=operator.asInstanceOf[PythonUDFOpExec].getCode)),
-      SELF)
+    pythonProxyClient.enqueueCommand(
+      ambermessage2
+        .ControlInvocation(
+          999999L,
+          SendPythonUDF(
+            udf = operator.asInstanceOf[PythonUDFOpExec].getCode,
+            isSource = operator.isInstanceOf[ISourceOperatorExecutor]
+          )
+        ),
+      SELF
+    )
   }
 
   @throws[IOException]

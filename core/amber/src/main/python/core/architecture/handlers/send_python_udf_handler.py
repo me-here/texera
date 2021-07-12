@@ -22,5 +22,7 @@ class SendPythonUdfHandler(Handler):
                                 udf_module.__dict__.values()))
 
         assert len(operators) == 1, "There should be only one UDFOperator defined"
+        context.dp._udf_is_source = command.is_source
         context.dp._udf_operator = operators[0]()
+        context.dp._udf_operator.open()
         return None

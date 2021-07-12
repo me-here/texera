@@ -1,4 +1,4 @@
-package edu.uci.ics.texera.workflow.operators.pythonUDF;
+package edu.uci.ics.texera.workflow.udf.python;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;

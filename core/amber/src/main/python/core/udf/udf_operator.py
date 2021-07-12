@@ -11,7 +11,7 @@ class UDFOperator(ABC):
     before using.
     """
 
-    def open(self, *args, **kwargs) -> None:
+    def open(self) -> None:
         pass
 
     @abstractmethod

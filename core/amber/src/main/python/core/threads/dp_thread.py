@@ -24,16 +24,17 @@ class DPThread(StoppableQueueBlockingThread):
 
         self._input_queue: InternalQueue = input_queue
         self._output_queue: InternalQueue = output_queue
-        self._udf_operator = udf_operator
-        self._current_input_tuple: Union[Tuple, InputExhausted]
-        self._current_input_link: LinkIdentity
+        self._udf_operator: UDFOperator = udf_operator
+        self._udf_is_source: bool = False
+        self._current_input_tuple: Union[Tuple, InputExhausted] = None
+        self._current_input_link: LinkIdentity = None
 
         self.context = Context(self)
         self._rpc_server = SyncRPCServer(output_queue, context=self.context)
 
     @overrides
     def pre_start(self) -> None:
-        self._udf_operator.open()
+
         self.context.state_manager.assert_state(Uninitialized())
         self.context.state_manager.transit_to(Ready())
 
@@ -45,6 +46,8 @@ class DPThread(StoppableQueueBlockingThread):
             next_entry,
             InputDataElement, self._process_input_data_element,
             ControlElement, self._process_control_element,
+            EndMarker, self._process_end_marker,
+            EndOfAllMarker, self._process_end_of_all_marker
         )
 
     def process_control_command(self, cmd: ControlPayload, from_: ActorVirtualIdentity):
