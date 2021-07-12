@@ -42,7 +42,6 @@ describe('WorkflowGrantAccessService', () => {
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
-
   it('GrantWorkflowAccess works as expected', () => {
     service.grantWorkflowAccess(TestWorkflow, username, accessType).first().subscribe()
     console.log(httpMock)

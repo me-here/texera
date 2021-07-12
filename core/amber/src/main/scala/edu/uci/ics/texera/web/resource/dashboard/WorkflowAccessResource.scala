@@ -19,6 +19,8 @@ import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.collection.immutable.HashMap
+
 
 /**
   * An enum class identifying the specific workflow access level
@@ -44,7 +46,6 @@ class WorkflowAccessResponse(uid: UInteger, wid: UInteger, level: String)
 object WorkflowAccessResource {
 
   final private val userDao = new UserDao(SqlServer.createDSLContext().configuration())
-
   /**
     * Returns a short workflow access description in string
     *
@@ -93,17 +94,6 @@ object WorkflowAccessResource {
   }
 
   /**
-    * Identifies whether the given user has read-only access over the given workflow
-    *
-    * @param wid     workflow id
-    * @param uid     user id, works with workflow id as primary keys in database
-    * @return boolean value indicating yes/no
-    */
-  def hasReadAccess(wid: UInteger, uid: UInteger): Boolean = {
-    WorkflowAccessResource.checkAccessLevel(wid, uid).eq(WorkflowAccess.READ)
-  }
-
-  /**
     * Returns an Access Object based on given wid and uid
     * Searches in database for the given uid-wid pair, and returns Access Object based on search result
     *
@@ -125,6 +115,17 @@ object WorkflowAccessResource {
     } else {
       WorkflowAccess.NONE
     }
+  }
+
+  /**
+    * Identifies whether the given user has read-only access over the given workflow
+    *
+    * @param wid     workflow id
+    * @param uid     user id, works with workflow id as primary keys in database
+    * @return boolean value indicating yes/no
+    */
+  def hasReadAccess(wid: UInteger, uid: UInteger): Boolean = {
+    WorkflowAccessResource.checkAccessLevel(wid, uid).eq(WorkflowAccess.READ)
   }
 
   /**
@@ -171,8 +172,8 @@ class WorkflowAccessResource {
   final private val workflowUserAccessDao = new WorkflowUserAccessDao(
     SqlServer.createDSLContext().configuration()
   )
-  final private val userDao = new UserDao(SqlServer.createDSLContext().configuration())
 
+  final private val userDao = new UserDao(SqlServer.createDSLContext().configuration())
   /**
     * This method identifies the user access level of the given workflow
     *
