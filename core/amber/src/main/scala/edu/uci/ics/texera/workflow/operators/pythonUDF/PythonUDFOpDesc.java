@@ -28,8 +28,8 @@ public class PythonUDFOpDesc extends OperatorDescriptor {
 
     @JsonProperty(required = true)
     @JsonSchemaTitle("Python script")
-    @JsonPropertyDescription("input your code here")
-    public String pythonScriptText;
+    @JsonPropertyDescription("Input your code here")
+    public String code;
 
     @JsonProperty(required = true)
     @JsonSchemaTitle("Parallel")
@@ -38,14 +38,14 @@ public class PythonUDFOpDesc extends OperatorDescriptor {
 
     @JsonProperty()
     @JsonSchemaTitle("Extra output column(s)")
-    @JsonPropertyDescription("name of the newly added output columns that the UDF will produce, if any")
+    @JsonPropertyDescription("Name of the newly added output columns that the UDF will produce, if any")
     public List<Attribute> outputColumns;
 
 
     @Override
     public OpExecConfig operatorExecutor(OperatorSchemaInfo operatorSchemaInfo) {
         Function1<Object, IOperatorExecutor> exec = (i) ->
-                new PythonUDFOpExec(pythonScriptText);
+                new PythonUDFOpExec(code);
         if (parallel) {
             return new OneToOneOpExecConfig(operatorIdentifier(), exec);
         } else {
