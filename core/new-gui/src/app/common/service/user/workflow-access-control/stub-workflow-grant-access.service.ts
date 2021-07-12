@@ -25,27 +25,23 @@ export class StubWorkflowGrantAccessService implements PublicInterfaceOf<Workflo
 
   public message: string = "This is testing"
 
-  public mapstrstr: Map<string, string> = new Map<string, string>()
+  public mapString: Map<string, string> = new Map<string, string>()
 
   constructor() {
     this.workflow = MOCK_WORKFLOW
   }
 
   public getSharedAccess(workflow: Workflow): Observable<Map<string, string>> {
-    return of(this.mapstrstr)
+    return of(this.mapString)
   }
 
-  public grantWorkflowAccess(workflow: Workflow, username: string, accessType: string): Observable<String> {
-    return of(this.message)
+  public grantWorkflowAccess(workflow: Workflow, username: string, accessType: string): Observable<Map<string, string>> {
+    return of(this.mapString)
   }
 
 
-  public removeAccess(workflow: Workflow, username: string): Observable<String> {
-    return of(this.message)
-  }
-
-  public testConnection(): void {
-    throw new Error("no")
+  public removeAccess(workflow: Workflow, username: string): Observable<Map<string, string>> {
+    return of(this.mapString)
   }
 
 

@@ -61,6 +61,13 @@ object WorkflowAccessResource {
     }
   }
 
+  /**
+    * Returns information about all current shared access of the given workflow
+    *
+    * @param wid     workflow id
+    * @param uid     user id of current user, used to identify ownership
+    * @return a HashMap with corresponding information Ex: {"Jim": "Read"}
+    */
   def getAllCurrentShares(wid: UInteger, uid: UInteger): mutable.HashMap[String, String] = {
     val shares = SqlServer.createDSLContext
       .select(
@@ -185,13 +192,19 @@ class WorkflowAccessResource {
         val uid = user.getUid
         val workflowAccessLevel = WorkflowAccessResource.getWorkflowAccessDesc(wid, uid)
         val resultData = mutable.HashMap("uid" -> uid, "wid" -> wid, "level" -> workflowAccessLevel)
-//        Response.ok(new WorkflowAccessResponse(uid, wid, workflowAccessLevel)).build()
         Response.ok(resultData).build()
       case None =>
         Response.status(Response.Status.UNAUTHORIZED).build()
     }
   }
 
+  /**
+    * This method returns all current shared accesses of the given workflow
+    *
+    * @param wid     the given workflow
+    * @param session the session indicating current User
+    * @return json object indicating user with access and access type, ex: {"Jim": "Write"}
+    */
   @GET
   @Path("/currentShare/{wid}")
   def getCurrentShare(@PathParam("wid") wid: UInteger, @Session session: HttpSession): Response = {
@@ -214,6 +227,14 @@ class WorkflowAccessResource {
     }
   }
 
+  /**
+    * This method identifies the user access level of the given workflow
+    *
+    * @param wid     the given workflow
+    * @param username the username of the use whose access is about to be removed
+    * @param session the session indicating current User
+    * @return json object indicating successful removal Ex: {"removing access" -> "Successful"}
+    */
   @POST
   @Path("/remove/{wid}/{username}")
   @Produces(Array(MediaType.APPLICATION_JSON))
@@ -240,7 +261,7 @@ class WorkflowAccessResource {
             .delete(WORKFLOW_USER_ACCESS)
             .where(WORKFLOW_USER_ACCESS.UID.eq(uid).and(WORKFLOW_USER_ACCESS.WID.eq(wid)))
             .execute()
-          Response.ok("Successfully Removed").build()
+          Response.ok(respJSON).build()
         }
 
       case None =>

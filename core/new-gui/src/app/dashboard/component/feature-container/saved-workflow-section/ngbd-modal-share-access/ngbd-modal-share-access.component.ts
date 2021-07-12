@@ -40,6 +40,11 @@ export class NgbdModalShareAccessComponent implements OnInit {
     this.onClickGetAllSharedAccess(this.workflow)
   }
 
+
+  /**
+   * get all shared access of current workflow
+   * @param workflow target/current workflow
+   */
   public onClickGetAllSharedAccess(workflow: Workflow): void {
     this.workflowGrantAccessService.getSharedAccess(workflow).subscribe(res => {
       this.currentShare = new Map(Object.entries(res));
@@ -49,11 +54,21 @@ export class NgbdModalShareAccessComponent implements OnInit {
       }
     });
   }
-
+  /**
+   * offer a specific type of access to a user
+   * @param workflow the given/target workflow
+   * @param userToShareWith the target user
+   * @param accessType the type of access to be given
+   */
   public onClickShareWorkflow(workflow: Workflow, userToShareWith: string, accessType: string): void {
     this.workflowGrantAccessService.grantWorkflowAccess(workflow, userToShareWith, accessType).subscribe(resp => this.onClickGetAllSharedAccess(workflow));
   }
 
+  /**
+   * remove any type of access of the target used
+   * @param workflow the given/target workflow
+   * @param userToRemove the target user
+   */
   public onClickRemoveAccess(workflow: Workflow, userToRemove: string): void {
     this.workflowGrantAccessService.removeAccess(workflow, userToRemove).subscribe(res => {
       console.log(res)
@@ -61,12 +76,19 @@ export class NgbdModalShareAccessComponent implements OnInit {
     });
   }
 
+  /**
+   * change form information based on user behavior on UI
+   * @param e selected value
+   */
   changeType(e: any) {
     console.log(e.value)
     this.shareForm.setValue(["accessType"], e.target.value)
   }
 
-
+  /**
+   * triggered by clicking the SUBMIT button, offers access based on the input information
+   * @param workflow target/current workflow
+   */
   onSubmit(workflow: Workflow): any {
     this.onClickShareWorkflow(workflow, this.shareForm.get("username")?.value, this.shareForm.get("accessType")?.value)
   }

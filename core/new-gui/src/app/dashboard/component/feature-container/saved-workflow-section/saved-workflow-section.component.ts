@@ -58,7 +58,9 @@ export class SavedWorkflowSectionComponent implements OnInit {
     );
   }
 
-
+  /**
+   * open the Modal based on the workflow clicked on
+   */
   public onClickOpenShareAccess(workflow: Workflow): void {
     const modalRef = this.modalService.open(NgbdModalShareAccessComponent);
     modalRef.componentInstance.workflow = workflow;
@@ -122,6 +124,9 @@ export class SavedWorkflowSectionComponent implements OnInit {
     });
   }
 
+  /**
+   * jump to the target workflow canvas
+   */
   jumpToWorkflow(workflow: Workflow) {
     this.router.navigate([`/workflow/${workflow.wid}`]).then(null);
   }
