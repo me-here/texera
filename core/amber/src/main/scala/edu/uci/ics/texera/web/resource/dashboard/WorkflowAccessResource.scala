@@ -19,8 +19,6 @@ import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.collection.immutable.HashMap
-
 
 /**
   * An enum class identifying the specific workflow access level
@@ -46,6 +44,7 @@ class WorkflowAccessResponse(uid: UInteger, wid: UInteger, level: String)
 object WorkflowAccessResource {
 
   final private val userDao = new UserDao(SqlServer.createDSLContext().configuration())
+
   /**
     * Returns a short workflow access description in string
     *
@@ -59,6 +58,30 @@ object WorkflowAccessResource {
       case WorkflowAccess.WRITE     => "Write"
       case WorkflowAccess.NONE      => "None"
       case WorkflowAccess.NO_RECORD => "NoRecord"
+    }
+  }
+
+  /**
+    * Returns an Access Object based on given wid and uid
+    * Searches in database for the given uid-wid pair, and returns Access Object based on search result
+    *
+    * @param wid     workflow id
+    * @param uid     user id, works with workflow id as primary keys in database
+    * @return Access Object indicating the access level
+    */
+  def checkAccessLevel(wid: UInteger, uid: UInteger): WorkflowAccess.Value = {
+    val accessDetail = SqlServer.createDSLContext
+      .select(WORKFLOW_USER_ACCESS.READ_PRIVILEGE, WORKFLOW_USER_ACCESS.WRITE_PRIVILEGE)
+      .from(WORKFLOW_USER_ACCESS)
+      .where(WORKFLOW_USER_ACCESS.WID.eq(wid).and(WORKFLOW_USER_ACCESS.UID.eq(uid)))
+      .fetch()
+    if (accessDetail.isEmpty) return WorkflowAccess.NO_RECORD
+    if (accessDetail.getValue(0, 1) == true) {
+      WorkflowAccess.WRITE
+    } else if (accessDetail.getValue(0, 0) == true) {
+      WorkflowAccess.READ
+    } else {
+      WorkflowAccess.NONE
     }
   }
 
@@ -91,30 +114,6 @@ object WorkflowAccessResource {
         }
     }
     currShares
-  }
-
-  /**
-    * Returns an Access Object based on given wid and uid
-    * Searches in database for the given uid-wid pair, and returns Access Object based on search result
-    *
-    * @param wid     workflow id
-    * @param uid     user id, works with workflow id as primary keys in database
-    * @return Access Object indicating the access level
-    */
-  def checkAccessLevel(wid: UInteger, uid: UInteger): WorkflowAccess.Value = {
-    val accessDetail = SqlServer.createDSLContext
-      .select(WORKFLOW_USER_ACCESS.READ_PRIVILEGE, WORKFLOW_USER_ACCESS.WRITE_PRIVILEGE)
-      .from(WORKFLOW_USER_ACCESS)
-      .where(WORKFLOW_USER_ACCESS.WID.eq(wid).and(WORKFLOW_USER_ACCESS.UID.eq(uid)))
-      .fetch()
-    if (accessDetail.isEmpty) return WorkflowAccess.NO_RECORD
-    if (accessDetail.getValue(0, 1) == true) {
-      WorkflowAccess.WRITE
-    } else if (accessDetail.getValue(0, 0) == true) {
-      WorkflowAccess.READ
-    } else {
-      WorkflowAccess.NONE
-    }
   }
 
   /**
@@ -174,6 +173,7 @@ class WorkflowAccessResource {
   )
 
   final private val userDao = new UserDao(SqlServer.createDSLContext().configuration())
+
   /**
     * This method identifies the user access level of the given workflow
     *
