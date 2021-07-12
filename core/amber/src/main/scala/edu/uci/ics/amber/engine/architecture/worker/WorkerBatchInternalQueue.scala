@@ -1,10 +1,10 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
-import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{CONTROL_QUEUE, ControlElement, DATA_QUEUE, InternalQueueElement}
+import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue._
 import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload}
+import edu.uci.ics.amber.engine.common.ambermessage2
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import lbmq.LinkedBlockingMultiQueue
-
 object WorkerBatchInternalQueue {
   final val DATA_QUEUE = 1
   final val CONTROL_QUEUE = 0
@@ -15,10 +15,11 @@ object WorkerBatchInternalQueue {
   case class DataElement(dataPayload: DataPayload, from: ActorVirtualIdentity)
       extends InternalQueueElement
 
-
   case class ControlElement(cmd: ControlPayload, from: ActorVirtualIdentity)
       extends InternalQueueElement
 
+  case class ControlElementV2(cmd: ambermessage2.ControlPayload, from: ActorVirtualIdentity)
+      extends InternalQueueElement
 }
 
 /** Inspired by the mailbox-ed thread, the internal queue should
@@ -44,6 +45,9 @@ trait WorkerBatchInternalQueue {
 
   def enqueueCommand(cmd: ControlPayload, from: ActorVirtualIdentity): Unit = {
     controlQueue.add(ControlElement(cmd, from))
+  }
+  def enqueueCommand(cmd: ambermessage2.ControlPayload, from: ActorVirtualIdentity): Unit = {
+    controlQueue.add(ControlElementV2(cmd, from))
   }
 
   def getElement: InternalQueueElement = lbmq.take()

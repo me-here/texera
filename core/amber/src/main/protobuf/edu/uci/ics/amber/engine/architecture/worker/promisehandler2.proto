@@ -6,8 +6,9 @@ import "edu/uci/ics/amber/engine/common/virtualidentity.proto";
 import "edu/uci/ics/amber/engine/common/statetransition2.proto";
 message PauseWorker{}
 message ResumeWorker{}
-message QueryStatistics{}
 message StartWorker{}
+message QueryStatistics{}
+
 message WorkerStatistics{
   edu.uci.ics.amber.engine.common.WorkerState workerState = 1;
   int64 inputRowCount = 2;
@@ -31,6 +32,10 @@ message AddOutputPolicy{
 message WorkerExecutionCompleted{
 
 }
+
+message SendPythonUDF{
+  string udf =1;
+}
 message ControlCommand {
   oneof sealed_value {
     PauseWorker pauseWorker = 1;
@@ -42,7 +47,7 @@ message ControlCommand {
     QueryStatistics queryStatistics = 6;
     WorkerStatistics workerStatistics = 7;
     WorkerStateInfo workerStateInfo = 8;
-
+    SendPythonUDF sendPythonUDF = 9;
 
 
     WorkerExecutionCompleted workerExecutionCompleted = 101;

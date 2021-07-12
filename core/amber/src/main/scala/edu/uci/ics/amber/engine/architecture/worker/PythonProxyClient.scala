@@ -9,6 +9,7 @@ import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2
 import edu.uci.ics.amber.engine.architecture.worker.PythonProxyClient.communicate
 import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{
   ControlElement,
+  ControlElementV2,
   DataElement
 }
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
@@ -23,7 +24,7 @@ import edu.uci.ics.amber.engine.common.ambermessage.{
   EndOfUpstream
 }
 import edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage
-import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
+import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
@@ -119,6 +120,8 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
           }
         case ControlElement(cmd, from) =>
           sendControl(cmd, from)
+        case ControlElementV2(cmd, from) =>
+          sendControl(cmd.asInstanceOf[ambermessage2.ControlInvocation], from)
 
       }
     }
@@ -128,6 +131,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
   def sendControl(cmd: ControlPayload, from: ActorVirtualIdentity): Unit = {
     cmd match {
       case ControlInvocation(commandID: Long, command: ControlCommand[_]) =>
+        println(" JAVA send command " + commandID + " " + command)
         command match {
           case AddOutputPolicy(policy: DataSendingPolicy) =>
             var protobufPolicy: datatransferpolicy2.DataSendingPolicy = null
@@ -167,8 +171,14 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
           case ResumeWorker() =>
             send(from, commandID, promisehandler2.ResumeWorker())
         }
+      case ReturnPayload(originalCommandID, returnValue) =>
+        println("JAVA receive return payload " + originalCommandID + " " + returnValue)
     }
   }
+
+  def sendControl(cmd: ambermessage2.ControlInvocation, from: ActorVirtualIdentity): Unit =
+    send(from, cmd.commandID, cmd.command)
+
   def send(
       from: ActorVirtualIdentity,
       commandID: Long,
@@ -204,6 +214,14 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
       controlCommand: promisehandler2.ControlCommand
   ): ambermessage2.ControlInvocation = {
     ambermessage2.ControlInvocation(commandID = commandID, command = controlCommand)
+  }
+
+  override def close(): Unit = {
+
+    val action: Action = new Action("shutdown", "".getBytes)
+    flightClient.doAction(action) // do not expect reply
+
+    flightClient.close()
   }
 
   /**
@@ -262,14 +280,6 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
       }
     }
 
-  }
-
-  override def close(): Unit = {
-
-    val action: Action = new Action("shutdown", "".getBytes)
-    flightClient.doAction(action) // do not expect reply
-
-    flightClient.close()
   }
 
 }

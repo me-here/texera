@@ -5,24 +5,26 @@ import com.typesafe.config.Config
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.NetworkMessage
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{DataOutputPort, NetworkInputPort}
+import edu.uci.ics.amber.engine.architecture.worker.promisehandler2.SendPythonUDF
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryCurrentInputTupleHandler.QueryCurrentInputTuple
-import edu.uci.ics.amber.engine.common.IOperatorExecutor
 import edu.uci.ics.amber.engine.common.ambermessage.{
   ControlPayload,
   DataPayload,
   WorkflowControlMessage,
   WorkflowDataMessage
 }
+import edu.uci.ics.amber.engine.common.{IOperatorExecutor, ambermessage2}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCHandlerInitializer
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
+import edu.uci.ics.amber.engine.common.virtualidentity.util.SELF
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 import edu.uci.ics.texera.web.WebUtils
+import edu.uci.ics.texera.workflow.operators.pythonUDF.PythonUDFOpExec
 
 import java.io.IOException
 import java.net.ServerSocket
 import java.util.concurrent.{ExecutorService, Executors}
-
 class PythonWorkflowWorker(
     identifier: ActorVirtualIdentity,
     operator: IOperatorExecutor,
@@ -99,6 +101,13 @@ class PythonWorkflowWorker(
 
   override def preStart(): Unit = {
     start()
+    sendUDF()
+  }
+
+  def sendUDF(): Unit = {
+    pythonProxyClient.enqueueCommand(ambermessage2
+        .ControlInvocation(999999L, SendPythonUDF(udf=operator.asInstanceOf[PythonUDFOpExec].getCode)),
+      SELF)
   }
 
   @throws[IOException]

@@ -28,7 +28,7 @@ class DPThread(StoppableQueueBlockingThread):
         self._current_input_tuple: Union[Tuple, InputExhausted]
         self._current_input_link: LinkIdentity
 
-        self.context = Context(self)
+        self.context = Context(self, udf_operator)
         self._rpc_server = SyncRPCServer(output_queue, context=self.context)
 
     @overrides

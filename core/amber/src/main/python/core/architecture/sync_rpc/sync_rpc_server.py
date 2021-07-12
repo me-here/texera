@@ -5,6 +5,7 @@ from core.architecture.handlers.handler_base import Handler
 from core.architecture.handlers.pause_worker_handler import PauseWorkerHandler
 from core.architecture.handlers.query_statistics_handler import QueryStatisticsHandler
 from core.architecture.handlers.resume_worker_handler import ResumeWorkerHandler
+from core.architecture.handlers.send_python_udf_handler import SendPythonUdfHandler
 from core.architecture.handlers.update_input_linking_handler import UpdateInputLinkingHandler
 from core.architecture.managers.context import Context
 from core.models.internal_queue import ControlElement, InternalQueue
@@ -22,6 +23,7 @@ class SyncRPCServer:
         self.register(QueryStatisticsHandler())
         self.register(PauseWorkerHandler())
         self.register(ResumeWorkerHandler())
+        self.register(SendPythonUdfHandler())
         self._context = context
 
     def receive(self, control_invocation: ControlInvocation, from_: ActorVirtualIdentity):

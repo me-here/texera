@@ -18,12 +18,12 @@ class ResumeWorker(betterproto.Message):
 
 
 @dataclass(eq=False, repr=False)
-class QueryStatistics(betterproto.Message):
+class StartWorker(betterproto.Message):
     pass
 
 
 @dataclass(eq=False, repr=False)
-class StartWorker(betterproto.Message):
+class QueryStatistics(betterproto.Message):
     pass
 
 
@@ -56,6 +56,11 @@ class WorkerExecutionCompleted(betterproto.Message):
 
 
 @dataclass(eq=False, repr=False)
+class SendPythonUdf(betterproto.Message):
+    udf: str = betterproto.string_field(1)
+
+
+@dataclass(eq=False, repr=False)
 class ControlCommand(betterproto.Message):
     pause_worker: "PauseWorker" = betterproto.message_field(1, group="sealed_value")
     resume_worker: "ResumeWorker" = betterproto.message_field(2, group="sealed_value")
@@ -74,6 +79,9 @@ class ControlCommand(betterproto.Message):
     )
     worker_state_info: "WorkerStateInfo" = betterproto.message_field(
         8, group="sealed_value"
+    )
+    send_python_udf: "SendPythonUdf" = betterproto.message_field(
+        9, group="sealed_value"
     )
     worker_execution_completed: "WorkerExecutionCompleted" = betterproto.message_field(
         101, group="sealed_value"

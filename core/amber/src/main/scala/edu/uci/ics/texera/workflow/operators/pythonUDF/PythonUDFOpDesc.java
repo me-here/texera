@@ -14,8 +14,8 @@ import edu.uci.ics.texera.workflow.common.operators.OneToOneOpExecConfig;
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor;
 import edu.uci.ics.texera.workflow.common.tuple.schema.Attribute;
 import edu.uci.ics.texera.workflow.common.tuple.schema.AttributeType;
-import edu.uci.ics.texera.workflow.common.tuple.schema.Schema;
 import edu.uci.ics.texera.workflow.common.tuple.schema.OperatorSchemaInfo;
+import edu.uci.ics.texera.workflow.common.tuple.schema.Schema;
 import scala.Function1;
 
 import java.util.List;
@@ -33,15 +33,6 @@ public class PythonUDFOpDesc extends OperatorDescriptor {
     @JsonPropertyDescription("input your code here")
     public String pythonScriptText;
 
-    @JsonProperty()
-    @JsonSchemaTitle("Python script file")
-    @JsonPropertyDescription("name of the UDF script file")
-    public String pythonScriptFile;
-
-    @JsonProperty()
-    @JsonSchemaTitle("Input column(s)")
-    @JsonPropertyDescription("name of the input column(s) that the UDF will use, if any")
-    public List<String> inputColumns;
 
     @JsonProperty(required = true)
     @JsonSchemaTitle("pythonUDFType")
@@ -52,36 +43,11 @@ public class PythonUDFOpDesc extends OperatorDescriptor {
     @JsonPropertyDescription("name of the newly added output columns that the UDF will produce, if any")
     public List<Attribute> outputColumns;
 
-    @JsonProperty()
-    @JsonSchemaTitle("Arguments")
-    @JsonPropertyDescription("arguments to be passed, if any")
-    public List<String> arguments;
-
-
-    @JsonProperty()
-    @JsonSchemaTitle("Outer file(s)")
-    @JsonPropertyDescription("name(s) of outer file(s) to be used, if any")
-    public List<String> outerFiles;
-
-
-    @JsonProperty(required = true, defaultValue = "100")
-    @JsonSchemaTitle("Batch size")
-    @JsonPropertyDescription("size of every batch of tuples to pass to python")
-    public int batchSize;
-
 
     @Override
     public OpExecConfig operatorExecutor(OperatorSchemaInfo operatorSchemaInfo) {
         Function1<Object, IOperatorExecutor> exec = (i) ->
-                new PythonUDFOpExec(
-                        pythonScriptText,
-                        pythonScriptFile,
-                        inputColumns,
-                        outputColumns,
-                        arguments,
-                        outerFiles,
-                        batchSize
-                );
+                new PythonUDFOpExec(pythonScriptText);
         if (PythonUDFType.supportsParallel.contains(pythonUDFType)) {
             return new OneToOneOpExecConfig(operatorIdentifier(), exec);
         } else {
@@ -104,12 +70,6 @@ public class PythonUDFOpDesc extends OperatorDescriptor {
     public Schema getOutputSchema(Schema[] schemas) {
         Schema inputSchema = schemas[0];
 
-        // check if inputColumns are presented in inputSchema.
-        if (inputColumns != null) {
-            for (String column : inputColumns) {
-                if (!inputSchema.containsAttribute(column)) throw new RuntimeException("No such column:" + column + ".");
-            }
-        }
 
         Schema.Builder outputSchemaBuilder = Schema.newBuilder();
         if (pythonUDFType == SupervisedTraining) {
@@ -128,8 +88,9 @@ public class PythonUDFOpDesc extends OperatorDescriptor {
         // for any pythonUDFType, it can add custom output columns (attributes).
         if (outputColumns != null) {
             for (Attribute column : outputColumns) {
-                if (inputSchema.containsAttribute(column.getName())) throw new RuntimeException("Column name " + column.getName()
-                        + " already exists!");
+                if (inputSchema.containsAttribute(column.getName()))
+                    throw new RuntimeException("Column name " + column.getName()
+                            + " already exists!");
             }
             outputSchemaBuilder.add(outputColumns).build();
         }
