@@ -2,6 +2,7 @@ package edu.uci.ics.texera.workflow.operators.pythonUDF;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.google.common.base.Preconditions;
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle;
 import edu.uci.ics.amber.engine.common.IOperatorExecutor;
 import edu.uci.ics.amber.engine.operators.OpExecConfig;
@@ -13,30 +14,27 @@ import edu.uci.ics.texera.workflow.common.operators.ManyToOneOpExecConfig;
 import edu.uci.ics.texera.workflow.common.operators.OneToOneOpExecConfig;
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor;
 import edu.uci.ics.texera.workflow.common.tuple.schema.Attribute;
-import edu.uci.ics.texera.workflow.common.tuple.schema.AttributeType;
 import edu.uci.ics.texera.workflow.common.tuple.schema.OperatorSchemaInfo;
 import edu.uci.ics.texera.workflow.common.tuple.schema.Schema;
 import scala.Function1;
 
 import java.util.List;
 
-import static edu.uci.ics.texera.workflow.operators.pythonUDF.PythonUDFType.SupervisedTraining;
-import static edu.uci.ics.texera.workflow.operators.pythonUDF.PythonUDFType.UnsupervisedTraining;
 import static java.util.Collections.singletonList;
 import static scala.collection.JavaConverters.asScalaBuffer;
 
 
 public class PythonUDFOpDesc extends OperatorDescriptor {
 
-    @JsonProperty()
+    @JsonProperty(required = true)
     @JsonSchemaTitle("Python script")
     @JsonPropertyDescription("input your code here")
     public String pythonScriptText;
 
-
     @JsonProperty(required = true)
-    @JsonSchemaTitle("pythonUDFType")
-    public PythonUDFType pythonUDFType;
+    @JsonSchemaTitle("Parallel")
+    @JsonPropertyDescription("Run with multiple workers?")
+    public Boolean parallel;
 
     @JsonProperty()
     @JsonSchemaTitle("Extra output column(s)")
@@ -48,12 +46,12 @@ public class PythonUDFOpDesc extends OperatorDescriptor {
     public OpExecConfig operatorExecutor(OperatorSchemaInfo operatorSchemaInfo) {
         Function1<Object, IOperatorExecutor> exec = (i) ->
                 new PythonUDFOpExec(pythonScriptText);
-        if (PythonUDFType.supportsParallel.contains(pythonUDFType)) {
+        if (parallel) {
             return new OneToOneOpExecConfig(operatorIdentifier(), exec);
         } else {
-            // changed it to 1 because training with python needs all data in one node.
             return new ManyToOneOpExecConfig(operatorIdentifier(), exec);
         }
+
     }
 
     @Override
@@ -62,28 +60,19 @@ public class PythonUDFOpDesc extends OperatorDescriptor {
                 "Python UDF",
                 "User-defined function operator in Python script",
                 OperatorGroupConstants.UDF_GROUP(),
-                asScalaBuffer(singletonList(new InputPort("", false))).toList(),
+                asScalaBuffer(singletonList(new InputPort("", true))).toList(),
                 asScalaBuffer(singletonList(new OutputPort(""))).toList());
     }
 
     @Override
     public Schema getOutputSchema(Schema[] schemas) {
+        Preconditions.checkArgument(schemas.length == 1);
         Schema inputSchema = schemas[0];
 
-
         Schema.Builder outputSchemaBuilder = Schema.newBuilder();
-        if (pythonUDFType == SupervisedTraining) {
-            outputSchemaBuilder.add("class", AttributeType.STRING);
-            outputSchemaBuilder.add("precision", AttributeType.STRING);
-            outputSchemaBuilder.add("recall", AttributeType.STRING);
-            outputSchemaBuilder.add("f1-score", AttributeType.STRING);
-            outputSchemaBuilder.add("support", AttributeType.STRING);
-        } else if (pythonUDFType == UnsupervisedTraining) {
-            outputSchemaBuilder.add("output", AttributeType.STRING);
-        } else {
-            // for pythonUDFType with map and filter, keep the same schema from input
-            outputSchemaBuilder.add(inputSchema);
-        }
+
+        // keep the same schema from input
+        outputSchemaBuilder.add(inputSchema);
 
         // for any pythonUDFType, it can add custom output columns (attributes).
         if (outputColumns != null) {
