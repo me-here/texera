@@ -3,7 +3,6 @@ from overrides import overrides
 from pyarrow.lib import Table
 from threading import Thread
 
-from core import Tuple
 from core.models.internal_queue import ControlElement, InputDataElement, InternalQueue
 from core.models.payload import DataFrame, EndOfUpstream
 from core.proxy import ProxyServer
@@ -24,7 +23,7 @@ class NetworkReceiver(Thread, Stoppable):
                 for field in input_schema:
                     schema_map[field.name] = field
                 shared_queue.put(InputDataElement(
-                    payload=DataFrame([Tuple.from_series(row) for i, row in table.to_pandas().iterrows()])
+                    payload=DataFrame([row for _, row in table.to_pandas().iterrows()])
                     , from_=from_))
             else:
                 shared_queue.put(InputDataElement(payload=EndOfUpstream(), from_=from_))

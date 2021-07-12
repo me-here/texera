@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Iterator, Union
 
 from core.models.tuple import InputExhausted, Tuple
@@ -14,6 +14,7 @@ class UDFOperator(ABC):
     def open(self, *args, **kwargs) -> None:
         pass
 
+    @abstractmethod
     def process_texera_tuple(self, tuple_: Union[Tuple, InputExhausted], input_: LinkIdentity) -> Iterator[Tuple]:
         pass
 

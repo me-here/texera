@@ -1,25 +1,25 @@
 from __future__ import annotations
 
+import pandas
+from abc import ABC
 from dataclasses import dataclass
-from pandas import Series
 
 
 @dataclass
-class Tuple:
+class Tuple(ABC):
     """
-    Python representation of the Texera.Tuple, as a pandas.Series.
+    Python representation of the Texera.Tuple
     """
 
-    _internal_storage: Series
 
-    @staticmethod
-    def from_series(series: Series) -> Tuple:
-        return Tuple(_internal_storage=series)
-
-    def as_series(self) -> Series:
-        return self._internal_storage
+# Use pandas.Series as a Tuple.
+Tuple.register(pandas.Series)
 
 
 @dataclass
 class InputExhausted:
     pass
+
+
+if __name__ == '__main__':
+    assert issubclass(pandas.Series, Tuple)

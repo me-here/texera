@@ -7,7 +7,7 @@ from ..packaging.tuple_to_batch_converter import TupleToBatchConverter
 
 
 class Context:
-    def __init__(self, dp, udf):
+    def __init__(self, dp):
         self.dp = dp
         self.state_manager = StateManager({
             Uninitialized(): {Ready(), Recovering()},
@@ -27,4 +27,3 @@ class Context:
         self.pause_manager = PauseManager()
         self.tuple_to_batch_converter = TupleToBatchConverter()
         self.batch_to_tuple_converter = BatchToTupleConverter()
-        self.udf = udf

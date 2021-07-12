@@ -1,5 +1,4 @@
 import pandas
-from loguru import logger
 from pyarrow import Table
 from pyarrow.lib import Schema, schema
 
@@ -28,7 +27,7 @@ class NetworkSender(StoppableQueueBlockingThread):
 
     def send_data(self, to: ActorVirtualIdentity, data_payload: DataPayload) -> None:
         if isinstance(data_payload, DataFrame):
-            df = pandas.DataFrame.from_records([tuple_.as_series() for tuple_ in data_payload.frame])
+            df = pandas.DataFrame.from_records(data_payload.frame)
             inferred_schema: Schema = Schema.from_pandas(df)
             # create a output schema, use the original input schema if possible
             output_schema = schema([self.schema_map.get(field.name, field) for field in inferred_schema])

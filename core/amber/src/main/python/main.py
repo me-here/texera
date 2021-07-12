@@ -36,7 +36,7 @@ class TrainOperator(UDFOperator):
             time.sleep(0.01)
         elif isinstance(tuple_, InputExhausted):
             model = self.train()
-            yield Tuple.from_series(pandas.concat([self.records[-1].as_series(), pandas.Series(model)]))
+            yield pandas.concat([self.records[-1], pandas.Series(model)])
 
 
 if __name__ == '__main__':
