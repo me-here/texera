@@ -1,7 +1,6 @@
 from collections import OrderedDict
 from itertools import chain
 
-import typing
 from typing import Iterable, Iterator
 
 from core import Tuple
@@ -33,8 +32,7 @@ class TupleToBatchConverter:
         self._policy_execs.update({the_policy.policy_tag: policy_exec_instance})
 
     def tuple_to_batch(self, tuple_: Tuple) -> Iterator[tuple[ActorVirtualIdentity, DataFrame]]:
-        return chain(*filter(lambda x: x,
-                             (policy_exec.add_tuple_to_batch(tuple_) for policy_exec in self._policy_execs.values())))
+        return chain(*(policy_exec.add_tuple_to_batch(tuple_) for policy_exec in self._policy_execs.values()))
 
     def emit_end_of_upstream(self) -> Iterable[tuple[ActorVirtualIdentity, DataPayload]]:
-        return chain(*filter(lambda x: x, (policy_exec.no_more() for policy_exec in self._policy_execs.values())))
+        return chain(*(policy_exec.no_more() for policy_exec in self._policy_execs.values()))
