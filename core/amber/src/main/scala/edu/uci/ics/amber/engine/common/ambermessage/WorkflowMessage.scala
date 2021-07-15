@@ -10,6 +10,7 @@ sealed trait WorkflowMessage extends Serializable {
 case class WorkflowControlMessage(
     from: ActorVirtualIdentity,
     sequenceNumber: Long,
+    // TODO: DELETE sequenceNumber
     payload: ControlPayload
 ) extends WorkflowMessage
 

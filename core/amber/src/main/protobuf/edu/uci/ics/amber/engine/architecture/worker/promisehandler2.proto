@@ -37,6 +37,9 @@ message SendPythonUDF{
   string udf = 1;
   bool isSource = 2;
 }
+message PythonPrint{
+  string content = 1;
+}
 message ControlCommand {
   oneof sealed_value {
     PauseWorker pauseWorker = 1;
@@ -52,6 +55,8 @@ message ControlCommand {
 
 
     WorkerExecutionCompleted workerExecutionCompleted = 101;
+
+    PythonPrint pythonPrint = 201;
 
   }
 

@@ -36,6 +36,7 @@ private class AmberProducer(
         workflowControlMessage.payload match {
           case returnPayload: edu.uci.ics.amber.engine.common.ambermessage2.ReturnPayload =>
             val k = returnPayload.returnValue match {
+                // TODO: change to some response base
               case workerStateInfo: WorkerStateInfo =>
                 workerStateInfo.workerState
               case a => a

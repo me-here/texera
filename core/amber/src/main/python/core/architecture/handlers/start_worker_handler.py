@@ -11,7 +11,6 @@ class StartWorkerHandler(Handler):
     cmd = StartWorker
 
     def __call__(self, context: Context, command: StartWorker, *args, **kwargs):
-        logger.info(f" receive {command}")
         if context.dp._udf_is_source:
             context.state_manager.transit_to(Running())
             context.dp._input_queue.put(EndMarker())

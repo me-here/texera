@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.NetworkMessage
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{DataOutputPort, NetworkInputPort}
+import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.DataElement
 import edu.uci.ics.amber.engine.architecture.worker.promisehandler2.SendPythonUDF
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryCurrentInputTupleHandler.QueryCurrentInputTuple
 import edu.uci.ics.amber.engine.common.ambermessage.{
@@ -30,12 +31,16 @@ class PythonWorkflowWorker(
     operator: IOperatorExecutor,
     parentNetworkCommunicationActorRef: ActorRef
 ) extends WorkflowActor(identifier, parentNetworkCommunicationActorRef) {
+
   lazy val dataInputPort: NetworkInputPort[DataPayload] =
     new NetworkInputPort[DataPayload](this.logger, this.handleDataPayload)
   lazy val controlInputPort: NetworkInputPort[ControlPayload] =
     new NetworkInputPort[ControlPayload](this.logger, this.handleControlPayload)
+
   lazy val dataOutputPort: DataOutputPort = wire[DataOutputPort]
+
   override val rpcHandlerInitializer: AsyncRPCHandlerInitializer = null
+
   val config: Config = WebUtils.config
   val pythonPath: String = config.getString("python.path").trim
   private val serverThreadExecutor: ExecutorService = Executors.newSingleThreadExecutor
@@ -59,7 +64,8 @@ class PythonWorkflowWorker(
 
   final def handleDataPayload(from: ActorVirtualIdentity, dataPayload: DataPayload): Unit = {
 //    println("JAVA handing a DATA payload " + dataPayload)
-    pythonProxyClient.sendData(dataPayload, from)
+    pythonProxyClient.enqueueData(DataElement(dataPayload, from))
+//    pythonProxyClient.sendData(dataPayload, from)
   }
 
   final def handleControlPayload(
@@ -91,9 +97,6 @@ class PythonWorkflowWorker(
     // try to send shutdown command so that it can gracefully shutdown
     pythonProxyClient.close()
 
-    // wait for gracefully shutdown
-    Thread.sleep(100)
-
     // destroy python process
     pythonServerProcess.destroyForcibly()
     println("PYTHON process stopped!")
@@ -122,13 +125,24 @@ class PythonWorkflowWorker(
   private def start(): Unit = {
     val outputPortNumber = getFreeLocalPort
     val inputPortNumber = getFreeLocalPort
-    // Start Flight server (Python process)
+
     val udfMainScriptPath =
       "/Users/yicong-huang/IdeaProjects/texera/core/amber/src/main/python/main.py"
     // TODO: find a better way to do default conf values.
 
-    startRPCServer(inputPortNumber)
+    startProxyServer(inputPortNumber)
 
+    startPythonProcess(outputPortNumber, inputPortNumber, udfMainScriptPath)
+
+    startProxyClient(outputPortNumber)
+
+  }
+
+  private def startPythonProcess(
+      outputPortNumber: Int,
+      inputPortNumber: Int,
+      udfMainScriptPath: String
+  ): Unit = {
     pythonServerProcess = new ProcessBuilder(
       if (pythonPath.isEmpty) "python3"
       else pythonPath, // add fall back in case of empty
@@ -137,12 +151,9 @@ class PythonWorkflowWorker(
       Integer.toString(outputPortNumber),
       Integer.toString(inputPortNumber)
     ).inheritIO.start
-    startRPCClient(outputPortNumber)
-
   }
 
-  def startRPCServer(outputPortNumber: Int): Unit = {
-
+  def startProxyServer(outputPortNumber: Int): Unit = {
     serverThreadExecutor.submit(
       new PythonProxyServer(outputPortNumber, controlOutputPort, dataOutputPort)
     )
@@ -170,8 +181,7 @@ class PythonWorkflowWorker(
     }
   }
 
-  def startRPCClient(inputPortNumber: Int): Unit = {
-
+  def startProxyClient(inputPortNumber: Int): Unit = {
     pythonProxyClient = new PythonProxyClient(inputPortNumber, operator)
     clientThreadExecutor.submit(pythonProxyClient)
   }

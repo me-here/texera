@@ -31,6 +31,7 @@ object ControlCommand {
       case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerStateInfo => __v.value
       case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.SendPythonUDF => __v.value
       case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerExecutionCompleted => __v.value
+      case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.PythonPrint => __v.value
       case edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.Empty => Empty
     }
     override def toBase(__custom: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommand): edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage(__custom match {
@@ -44,6 +45,7 @@ object ControlCommand {
       case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStateInfo => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerStateInfo(__v)
       case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.SendPythonUDF => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.SendPythonUDF(__v)
       case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerExecutionCompleted(__v)
+      case __v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.PythonPrint(__v)
       case Empty => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.Empty
     })
   }
@@ -95,6 +97,10 @@ final case class ControlCommandMessage(
       };
       if (sealedValue.workerExecutionCompleted.isDefined) {
         val __value = sealedValue.workerExecutionCompleted.get
+        __size += 2 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(__value.serializedSize) + __value.serializedSize
+      };
+      if (sealedValue.pythonPrint.isDefined) {
+        val __value = sealedValue.pythonPrint.get
         __size += 2 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(__value.serializedSize) + __value.serializedSize
       };
       __size += unknownFields.serializedSize
@@ -169,6 +175,12 @@ final case class ControlCommandMessage(
         _output__.writeUInt32NoTag(__m.serializedSize)
         __m.writeTo(_output__)
       };
+      sealedValue.pythonPrint.foreach { __v =>
+        val __m = __v
+        _output__.writeTag(201, 2)
+        _output__.writeUInt32NoTag(__m.serializedSize)
+        __m.writeTo(_output__)
+      };
       unknownFields.writeTo(_output__)
     }
     def getPauseWorker: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PauseWorker = sealedValue.pauseWorker.getOrElse(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PauseWorker.defaultInstance)
@@ -191,6 +203,8 @@ final case class ControlCommandMessage(
     def withSendPythonUDF(__v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.SendPythonUDF): ControlCommandMessage = copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.SendPythonUDF(__v))
     def getWorkerExecutionCompleted: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted = sealedValue.workerExecutionCompleted.getOrElse(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted.defaultInstance)
     def withWorkerExecutionCompleted(__v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted): ControlCommandMessage = copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerExecutionCompleted(__v))
+    def getPythonPrint: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint = sealedValue.pythonPrint.getOrElse(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint.defaultInstance)
+    def withPythonPrint(__v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint): ControlCommandMessage = copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.PythonPrint(__v))
     def clearSealedValue: ControlCommandMessage = copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.Empty)
     def withSealedValue(__v: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue): ControlCommandMessage = copy(sealedValue = __v)
     def withUnknownFields(__v: _root_.scalapb.UnknownFieldSet) = copy(unknownFields = __v)
@@ -207,6 +221,7 @@ final case class ControlCommandMessage(
         case 8 => sealedValue.workerStateInfo.orNull
         case 9 => sealedValue.sendPythonUDF.orNull
         case 101 => sealedValue.workerExecutionCompleted.orNull
+        case 201 => sealedValue.pythonPrint.orNull
       }
     }
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = {
@@ -222,6 +237,7 @@ final case class ControlCommandMessage(
         case 8 => sealedValue.workerStateInfo.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
         case 9 => sealedValue.sendPythonUDF.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
         case 101 => sealedValue.workerExecutionCompleted.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
+        case 201 => sealedValue.pythonPrint.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
@@ -260,6 +276,8 @@ object ControlCommandMessage extends scalapb.GeneratedMessageCompanion[edu.uci.i
           __sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.SendPythonUDF(__sealedValue.sendPythonUDF.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.SendPythonUDF](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
         case 810 =>
           __sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerExecutionCompleted(__sealedValue.workerExecutionCompleted.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
+        case 1610 =>
+          __sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.PythonPrint(__sealedValue.pythonPrint.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
         case tag =>
           if (_unknownFields__ == null) {
             _unknownFields__ = new _root_.scalapb.UnknownFieldSet.Builder()
@@ -286,12 +304,13 @@ object ControlCommandMessage extends scalapb.GeneratedMessageCompanion[edu.uci.i
             .orElse[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue](__fieldsMap.get(scalaDescriptor.findFieldByNumber(8).get).flatMap(_.as[_root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStateInfo]]).map(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerStateInfo(_)))
             .orElse[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue](__fieldsMap.get(scalaDescriptor.findFieldByNumber(9).get).flatMap(_.as[_root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.SendPythonUDF]]).map(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.SendPythonUDF(_)))
             .orElse[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue](__fieldsMap.get(scalaDescriptor.findFieldByNumber(101).get).flatMap(_.as[_root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted]]).map(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerExecutionCompleted(_)))
+            .orElse[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue](__fieldsMap.get(scalaDescriptor.findFieldByNumber(201).get).flatMap(_.as[_root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint]]).map(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.PythonPrint(_)))
             .getOrElse(edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.Empty)
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(10)
-  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(10)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(11)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(11)
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = {
     var __out: _root_.scalapb.GeneratedMessageCompanion[_] = null
     (__number: @_root_.scala.unchecked) match {
@@ -305,6 +324,7 @@ object ControlCommandMessage extends scalapb.GeneratedMessageCompanion[edu.uci.i
       case 8 => __out = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStateInfo
       case 9 => __out = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.SendPythonUDF
       case 101 => __out = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted
+      case 201 => __out = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint
     }
     __out
   }
@@ -326,6 +346,7 @@ object ControlCommandMessage extends scalapb.GeneratedMessageCompanion[edu.uci.i
     def isWorkerStateInfo: _root_.scala.Boolean = false
     def isSendPythonUDF: _root_.scala.Boolean = false
     def isWorkerExecutionCompleted: _root_.scala.Boolean = false
+    def isPythonPrint: _root_.scala.Boolean = false
     def pauseWorker: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PauseWorker] = _root_.scala.None
     def resumeWorker: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ResumeWorker] = _root_.scala.None
     def addOutputPolicy: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.AddOutputPolicy] = _root_.scala.None
@@ -336,6 +357,7 @@ object ControlCommandMessage extends scalapb.GeneratedMessageCompanion[edu.uci.i
     def workerStateInfo: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStateInfo] = _root_.scala.None
     def sendPythonUDF: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.SendPythonUDF] = _root_.scala.None
     def workerExecutionCompleted: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted] = _root_.scala.None
+    def pythonPrint: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint] = _root_.scala.None
   }
   object SealedValue {
     @SerialVersionUID(0L)
@@ -417,6 +439,13 @@ object ControlCommandMessage extends scalapb.GeneratedMessageCompanion[edu.uci.i
       override def workerExecutionCompleted: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted] = Some(value)
       override def number: _root_.scala.Int = 101
     }
+    @SerialVersionUID(0L)
+    final case class PythonPrint(value: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint) extends edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue {
+      type ValueType = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint
+      override def isPythonPrint: _root_.scala.Boolean = true
+      override def pythonPrint: _root_.scala.Option[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint] = Some(value)
+      override def number: _root_.scala.Int = 201
+    }
   }
   implicit class ControlCommandMessageLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage](_l) {
     def pauseWorker: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PauseWorker] = field(_.getPauseWorker)((c_, f_) => c_.copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.PauseWorker(f_)))
@@ -429,6 +458,7 @@ object ControlCommandMessage extends scalapb.GeneratedMessageCompanion[edu.uci.i
     def workerStateInfo: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStateInfo] = field(_.getWorkerStateInfo)((c_, f_) => c_.copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerStateInfo(f_)))
     def sendPythonUDF: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.SendPythonUDF] = field(_.getSendPythonUDF)((c_, f_) => c_.copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.SendPythonUDF(f_)))
     def workerExecutionCompleted: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted] = field(_.getWorkerExecutionCompleted)((c_, f_) => c_.copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.WorkerExecutionCompleted(f_)))
+    def pythonPrint: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint] = field(_.getPythonPrint)((c_, f_) => c_.copy(sealedValue = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue.PythonPrint(f_)))
     def sealedValue: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue] = field(_.sealedValue)((c_, f_) => c_.copy(sealedValue = f_))
   }
   final val PAUSEWORKER_FIELD_NUMBER = 1
@@ -441,6 +471,7 @@ object ControlCommandMessage extends scalapb.GeneratedMessageCompanion[edu.uci.i
   final val WORKERSTATEINFO_FIELD_NUMBER = 8
   final val SENDPYTHONUDF_FIELD_NUMBER = 9
   final val WORKEREXECUTIONCOMPLETED_FIELD_NUMBER = 101
+  final val PYTHONPRINT_FIELD_NUMBER = 201
   def of(
     sealedValue: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage.SealedValue
   ): _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage = _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage(
@@ -1520,4 +1551,114 @@ object WorkerExecutionCompleted extends scalapb.GeneratedMessageCompanion[edu.uc
   ): _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted = _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted(
   )
   // @@protoc_insertion_point(GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.WorkerExecutionCompleted])
+}
+
+@SerialVersionUID(0L)
+final case class PythonPrint(
+    content: _root_.scala.Predef.String = "",
+    unknownFields: _root_.scalapb.UnknownFieldSet = _root_.scalapb.UnknownFieldSet.empty
+    ) extends scalapb.GeneratedMessage with edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommand.NonEmpty with scalapb.lenses.Updatable[PythonPrint] {
+    @transient
+    private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
+    private[this] def __computeSerializedValue(): _root_.scala.Int = {
+      var __size = 0
+      
+      {
+        val __value = content
+        if (!__value.isEmpty) {
+          __size += _root_.com.google.protobuf.CodedOutputStream.computeStringSize(1, __value)
+        }
+      };
+      __size += unknownFields.serializedSize
+      __size
+    }
+    override def serializedSize: _root_.scala.Int = {
+      var read = __serializedSizeCachedValue
+      if (read == 0) {
+        read = __computeSerializedValue()
+        __serializedSizeCachedValue = read
+      }
+      read
+    }
+    def writeTo(`_output__`: _root_.com.google.protobuf.CodedOutputStream): _root_.scala.Unit = {
+      {
+        val __v = content
+        if (!__v.isEmpty) {
+          _output__.writeString(1, __v)
+        }
+      };
+      unknownFields.writeTo(_output__)
+    }
+    def withContent(__v: _root_.scala.Predef.String): PythonPrint = copy(content = __v)
+    def withUnknownFields(__v: _root_.scalapb.UnknownFieldSet) = copy(unknownFields = __v)
+    def discardUnknownFields = copy(unknownFields = _root_.scalapb.UnknownFieldSet.empty)
+    def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = {
+      (__fieldNumber: @_root_.scala.unchecked) match {
+        case 1 => {
+          val __t = content
+          if (__t != "") __t else null
+        }
+      }
+    }
+    def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = {
+      _root_.scala.Predef.require(__field.containingMessage eq companion.scalaDescriptor)
+      (__field.number: @_root_.scala.unchecked) match {
+        case 1 => _root_.scalapb.descriptors.PString(content)
+      }
+    }
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint
+    // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.PythonPrint])
+}
+
+object PythonPrint extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint] {
+  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint] = this
+  def parseFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint = {
+    var __content: _root_.scala.Predef.String = ""
+    var `_unknownFields__`: _root_.scalapb.UnknownFieldSet.Builder = null
+    var _done__ = false
+    while (!_done__) {
+      val _tag__ = _input__.readTag()
+      _tag__ match {
+        case 0 => _done__ = true
+        case 10 =>
+          __content = _input__.readStringRequireUtf8()
+        case tag =>
+          if (_unknownFields__ == null) {
+            _unknownFields__ = new _root_.scalapb.UnknownFieldSet.Builder()
+          }
+          _unknownFields__.parseField(tag, _input__)
+      }
+    }
+    edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint(
+        content = __content,
+        unknownFields = if (_unknownFields__ == null) _root_.scalapb.UnknownFieldSet.empty else _unknownFields__.result()
+    )
+  }
+  implicit def messageReads: _root_.scalapb.descriptors.Reads[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint] = _root_.scalapb.descriptors.Reads{
+    case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
+      _root_.scala.Predef.require(__fieldsMap.keys.forall(_.containingMessage eq scalaDescriptor), "FieldDescriptor does not match message type.")
+      edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint(
+        content = __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[_root_.scala.Predef.String]).getOrElse("")
+      )
+    case _ => throw new RuntimeException("Expected PMessage")
+  }
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = Promisehandler2Proto.javaDescriptor.getMessageTypes().get(10)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = Promisehandler2Proto.scalaDescriptor.messages(10)
+  def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = throw new MatchError(__number)
+  lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]] = Seq.empty
+  def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
+  lazy val defaultInstance = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint(
+    content = ""
+  )
+  implicit class PythonPrintLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint](_l) {
+    def content: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Predef.String] = field(_.content)((c_, f_) => c_.copy(content = f_))
+  }
+  final val CONTENT_FIELD_NUMBER = 1
+  def of(
+    content: _root_.scala.Predef.String
+  ): _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint = _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint(
+    content
+  )
+  // @@protoc_insertion_point(GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.PythonPrint])
 }
