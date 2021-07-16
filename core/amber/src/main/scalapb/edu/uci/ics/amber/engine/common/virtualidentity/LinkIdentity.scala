@@ -13,8 +13,7 @@ package edu.uci.ics.amber.engine.common.virtualidentity
 @SerialVersionUID(0L)
 final case class LinkIdentity(
     from: _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity] = _root_.scala.None,
-    to: _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity] = _root_.scala.None,
-    unknownFields: _root_.scalapb.UnknownFieldSet = _root_.scalapb.UnknownFieldSet.empty
+    to: _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity] = _root_.scala.None
     ) extends scalapb.GeneratedMessage with scalapb.lenses.Updatable[LinkIdentity] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
@@ -28,7 +27,6 @@ final case class LinkIdentity(
         val __value = to.get
         __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(__value.serializedSize) + __value.serializedSize
       };
-      __size += unknownFields.serializedSize
       __size
     }
     override def serializedSize: _root_.scala.Int = {
@@ -52,7 +50,6 @@ final case class LinkIdentity(
         _output__.writeUInt32NoTag(__m.serializedSize)
         __m.writeTo(_output__)
       };
-      unknownFields.writeTo(_output__)
     }
     def getFrom: edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity = from.getOrElse(edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity.defaultInstance)
     def clearFrom: LinkIdentity = copy(from = _root_.scala.None)
@@ -60,8 +57,6 @@ final case class LinkIdentity(
     def getTo: edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity = to.getOrElse(edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity.defaultInstance)
     def clearTo: LinkIdentity = copy(to = _root_.scala.None)
     def withTo(__v: edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity): LinkIdentity = copy(to = Option(__v))
-    def withUnknownFields(__v: _root_.scalapb.UnknownFieldSet) = copy(unknownFields = __v)
-    def discardUnknownFields = copy(unknownFields = _root_.scalapb.UnknownFieldSet.empty)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => from.orNull
@@ -75,7 +70,7 @@ final case class LinkIdentity(
         case 2 => to.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
       }
     }
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.common.LinkIdentity])
 }
@@ -85,7 +80,6 @@ object LinkIdentity extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.
   def parseFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity = {
     var __from: _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity] = _root_.scala.None
     var __to: _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity] = _root_.scala.None
-    var `_unknownFields__`: _root_.scalapb.UnknownFieldSet.Builder = null
     var _done__ = false
     while (!_done__) {
       val _tag__ = _input__.readTag()
@@ -95,17 +89,12 @@ object LinkIdentity extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.
           __from = Option(__from.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
         case 18 =>
           __to = Option(__to.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
-        case tag =>
-          if (_unknownFields__ == null) {
-            _unknownFields__ = new _root_.scalapb.UnknownFieldSet.Builder()
-          }
-          _unknownFields__.parseField(tag, _input__)
+        case tag => _input__.skipField(tag)
       }
     }
     edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity(
         from = __from,
-        to = __to,
-        unknownFields = if (_unknownFields__ == null) _root_.scalapb.UnknownFieldSet.empty else _unknownFields__.result()
+        to = __to
     )
   }
   implicit def messageReads: _root_.scalapb.descriptors.Reads[edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity] = _root_.scalapb.descriptors.Reads{
@@ -117,8 +106,8 @@ object LinkIdentity extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = VirtualidentityProto.javaDescriptor.getMessageTypes().get(6)
-  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = VirtualidentityProto.scalaDescriptor.messages(6)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = VirtualidentityProto.javaDescriptor.getMessageTypes().get(2)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = VirtualidentityProto.scalaDescriptor.messages(2)
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = {
     var __out: _root_.scalapb.GeneratedMessageCompanion[_] = null
     (__number: @_root_.scala.unchecked) match {

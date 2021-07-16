@@ -61,13 +61,6 @@ class AsyncRPCClient(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
     p
   }
 
-  private def createPromise[T](): (Promise[T], Long) = {
-    promiseID += 1
-    val promise = new WorkflowPromise[T]()
-    unfulfilledPromises(promiseID) = promise
-    (promise, promiseID)
-  }
-
   def fulfillPromise(ret: ReturnPayload): Unit = {
     if (unfulfilledPromises.contains(ret.originalCommandID)) {
       val p = unfulfilledPromises(ret.originalCommandID)
@@ -77,7 +70,6 @@ class AsyncRPCClient(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
   }
 
   def logControlReply(ret: ReturnPayload, sender: ActorVirtualIdentity): Unit = {
-
     if (ret.originalCommandID == AsyncRPCClient.IgnoreReplyAndDoNotLog) {
       return
     }
@@ -93,6 +85,13 @@ class AsyncRPCClient(controlOutputPort: ControlOutputPort, logger: WorkflowLogge
         s"receive reply: null from ${sender.toString} (controlID: ${ret.originalCommandID})"
       )
     }
+  }
+
+  private def createPromise[T](): (Promise[T], Long) = {
+    promiseID += 1
+    val promise = new WorkflowPromise[T]()
+    unfulfilledPromises(promiseID) = promise
+    (promise, promiseID)
   }
 
 }

@@ -181,7 +181,7 @@ class DataProcessorSpec extends AnyFlatSpec with MockFactory with BeforeAndAfter
   }
 
   "data processor" should "process only control commands while paused" in {
-    val id = WorkerActorVirtualIdentity("test")
+    val id = ActorVirtualIdentity("test")
     val operator = mock[OperatorExecutor]
     (operator.open _).expects().once()
     val ctx: ActorContext = null

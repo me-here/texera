@@ -8,8 +8,17 @@ import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunication
 import edu.uci.ics.amber.engine.architecture.worker.WorkflowWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics
 import edu.uci.ics.amber.engine.common.IOperatorExecutor
+import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{
+  Uninitialized,
+  WorkerState
+}
+import edu.uci.ics.amber.engine.common.virtualidentity.{
+  ActorVirtualIdentity,
+  LayerIdentity,
+  LinkIdentity
+}
+import edu.uci.ics.amber.engine.operators.OpExecConfig
 import edu.uci.ics.amber.engine.common.statetransition2.{Uninitialized, WorkerState}
-import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LayerIdentity, LinkIdentity, WorkerActorVirtualIdentity}
 import edu.uci.ics.amber.engine.operators.OpExecConfig
 
 import scala.collection.mutable
@@ -55,7 +64,7 @@ class WorkerLayer(
     deployStrategy.initialize(deploymentFilter.filter(prev, all, context.self.path.address))
     workers = (0 until numWorkers).map { i =>
       val m = metadata(i)
-      val workerID = WorkerActorVirtualIdentity(id.toString + s"[$i]")
+      val workerID = ActorVirtualIdentity(s"Worker-$id-[$i]")
       val d = deployStrategy.next()
       val ref = context.actorOf(
         WorkflowWorker

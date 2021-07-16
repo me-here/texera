@@ -11,8 +11,7 @@ package edu.uci.ics.amber.engine.common.virtualidentity
   */
 @SerialVersionUID(0L)
 final case class WorkflowIdentity(
-    id: _root_.scala.Predef.String = "",
-    unknownFields: _root_.scalapb.UnknownFieldSet = _root_.scalapb.UnknownFieldSet.empty
+    id: _root_.scala.Predef.String = ""
     ) extends scalapb.GeneratedMessage with scalapb.lenses.Updatable[WorkflowIdentity] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
@@ -25,7 +24,6 @@ final case class WorkflowIdentity(
           __size += _root_.com.google.protobuf.CodedOutputStream.computeStringSize(1, __value)
         }
       };
-      __size += unknownFields.serializedSize
       __size
     }
     override def serializedSize: _root_.scala.Int = {
@@ -43,11 +41,8 @@ final case class WorkflowIdentity(
           _output__.writeString(1, __v)
         }
       };
-      unknownFields.writeTo(_output__)
     }
     def withId(__v: _root_.scala.Predef.String): WorkflowIdentity = copy(id = __v)
-    def withUnknownFields(__v: _root_.scalapb.UnknownFieldSet) = copy(unknownFields = __v)
-    def discardUnknownFields = copy(unknownFields = _root_.scalapb.UnknownFieldSet.empty)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => {
@@ -62,7 +57,7 @@ final case class WorkflowIdentity(
         case 1 => _root_.scalapb.descriptors.PString(id)
       }
     }
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.common.virtualidentity.WorkflowIdentity
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.common.WorkflowIdentity])
 }
@@ -71,7 +66,6 @@ object WorkflowIdentity extends scalapb.GeneratedMessageCompanion[edu.uci.ics.am
   implicit def messageCompanion: scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.engine.common.virtualidentity.WorkflowIdentity] = this
   def parseFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): edu.uci.ics.amber.engine.common.virtualidentity.WorkflowIdentity = {
     var __id: _root_.scala.Predef.String = ""
-    var `_unknownFields__`: _root_.scalapb.UnknownFieldSet.Builder = null
     var _done__ = false
     while (!_done__) {
       val _tag__ = _input__.readTag()
@@ -79,16 +73,11 @@ object WorkflowIdentity extends scalapb.GeneratedMessageCompanion[edu.uci.ics.am
         case 0 => _done__ = true
         case 10 =>
           __id = _input__.readStringRequireUtf8()
-        case tag =>
-          if (_unknownFields__ == null) {
-            _unknownFields__ = new _root_.scalapb.UnknownFieldSet.Builder()
-          }
-          _unknownFields__.parseField(tag, _input__)
+        case tag => _input__.skipField(tag)
       }
     }
     edu.uci.ics.amber.engine.common.virtualidentity.WorkflowIdentity(
-        id = __id,
-        unknownFields = if (_unknownFields__ == null) _root_.scalapb.UnknownFieldSet.empty else _unknownFields__.result()
+        id = __id
     )
   }
   implicit def messageReads: _root_.scalapb.descriptors.Reads[edu.uci.ics.amber.engine.common.virtualidentity.WorkflowIdentity] = _root_.scalapb.descriptors.Reads{
@@ -99,8 +88,8 @@ object WorkflowIdentity extends scalapb.GeneratedMessageCompanion[edu.uci.ics.am
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = VirtualidentityProto.javaDescriptor.getMessageTypes().get(8)
-  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = VirtualidentityProto.scalaDescriptor.messages(8)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = VirtualidentityProto.javaDescriptor.getMessageTypes().get(4)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = VirtualidentityProto.scalaDescriptor.messages(4)
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = throw new MatchError(__number)
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)

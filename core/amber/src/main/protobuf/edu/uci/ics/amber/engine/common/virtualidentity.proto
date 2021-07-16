@@ -2,35 +2,15 @@ syntax = "proto3";
 
 package edu.uci.ics.amber.engine.common;
 
-// sealed trait ActorVirtualIdentity
+import "scalapb/scalapb.proto";
+
+option (scalapb.options) = {
+  scope: FILE,
+  preserve_unknown_fields: false
+};
+
+// final case class ActorVirtualIdentity
 message ActorVirtualIdentity {
-  oneof sealed_value {
-    WorkerActorVirtualIdentity workerActorVirtualIdentity = 1;
-    ControllerVirtualIdentity controllerVirtualIdentity = 2;
-    SelfVirtualIdentity selfVirtualIdentity = 3;
-    ClientVirtualIdentity clientVirtualIdentity = 4;
-  }
-}
-
-// final case class WorkerActorVirtualIdentity (
-//    name: String
-// ) extends ActorVirtualIdentity
-message WorkerActorVirtualIdentity {
-  string name = 1;
-}
-
-// final case class ControllerVirtualIdentity extends ActorVirtualIdentity
-message ControllerVirtualIdentity {
-  string name = 1;
-}
-
-// final case class SelfVirtualIdentity extends ActorVirtualIdentity
-message SelfVirtualIdentity {
-  string name = 1;
-}
-
-// final case class ClientVirtualIdentity extends ActorVirtualIdentity
-message ClientVirtualIdentity {
   string name = 1;
 }
 

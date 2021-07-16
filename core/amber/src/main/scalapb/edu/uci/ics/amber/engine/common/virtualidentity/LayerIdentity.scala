@@ -15,8 +15,7 @@ package edu.uci.ics.amber.engine.common.virtualidentity
 final case class LayerIdentity(
     workflow: _root_.scala.Predef.String = "",
     operator: _root_.scala.Predef.String = "",
-    layerID: _root_.scala.Predef.String = "",
-    unknownFields: _root_.scalapb.UnknownFieldSet = _root_.scalapb.UnknownFieldSet.empty
+    layerID: _root_.scala.Predef.String = ""
     ) extends scalapb.GeneratedMessage with scalapb.lenses.Updatable[LayerIdentity] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
@@ -43,7 +42,6 @@ final case class LayerIdentity(
           __size += _root_.com.google.protobuf.CodedOutputStream.computeStringSize(3, __value)
         }
       };
-      __size += unknownFields.serializedSize
       __size
     }
     override def serializedSize: _root_.scala.Int = {
@@ -73,13 +71,10 @@ final case class LayerIdentity(
           _output__.writeString(3, __v)
         }
       };
-      unknownFields.writeTo(_output__)
     }
     def withWorkflow(__v: _root_.scala.Predef.String): LayerIdentity = copy(workflow = __v)
     def withOperator(__v: _root_.scala.Predef.String): LayerIdentity = copy(operator = __v)
     def withLayerID(__v: _root_.scala.Predef.String): LayerIdentity = copy(layerID = __v)
-    def withUnknownFields(__v: _root_.scalapb.UnknownFieldSet) = copy(unknownFields = __v)
-    def discardUnknownFields = copy(unknownFields = _root_.scalapb.UnknownFieldSet.empty)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => {
@@ -104,7 +99,7 @@ final case class LayerIdentity(
         case 3 => _root_.scalapb.descriptors.PString(layerID)
       }
     }
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.common.LayerIdentity])
 }
@@ -115,7 +110,6 @@ object LayerIdentity extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amber
     var __workflow: _root_.scala.Predef.String = ""
     var __operator: _root_.scala.Predef.String = ""
     var __layerID: _root_.scala.Predef.String = ""
-    var `_unknownFields__`: _root_.scalapb.UnknownFieldSet.Builder = null
     var _done__ = false
     while (!_done__) {
       val _tag__ = _input__.readTag()
@@ -127,18 +121,13 @@ object LayerIdentity extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amber
           __operator = _input__.readStringRequireUtf8()
         case 26 =>
           __layerID = _input__.readStringRequireUtf8()
-        case tag =>
-          if (_unknownFields__ == null) {
-            _unknownFields__ = new _root_.scalapb.UnknownFieldSet.Builder()
-          }
-          _unknownFields__.parseField(tag, _input__)
+        case tag => _input__.skipField(tag)
       }
     }
     edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity(
         workflow = __workflow,
         operator = __operator,
-        layerID = __layerID,
-        unknownFields = if (_unknownFields__ == null) _root_.scalapb.UnknownFieldSet.empty else _unknownFields__.result()
+        layerID = __layerID
     )
   }
   implicit def messageReads: _root_.scalapb.descriptors.Reads[edu.uci.ics.amber.engine.common.virtualidentity.LayerIdentity] = _root_.scalapb.descriptors.Reads{
@@ -151,8 +140,8 @@ object LayerIdentity extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amber
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = VirtualidentityProto.javaDescriptor.getMessageTypes().get(5)
-  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = VirtualidentityProto.scalaDescriptor.messages(5)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = VirtualidentityProto.javaDescriptor.getMessageTypes().get(1)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = VirtualidentityProto.scalaDescriptor.messages(1)
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = throw new MatchError(__number)
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
