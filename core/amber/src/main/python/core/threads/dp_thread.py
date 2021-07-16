@@ -16,7 +16,7 @@ from core.util.queue.queue_base import IQueue
 from core.util.stoppable.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
 from edu.uci.ics.amber.engine.architecture.worker import ControlCommand, PythonPrint, WorkerExecutionCompleted
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, Completed, ControlInvocation, ControlPayload, \
-    ControllerVirtualIdentity, LinkIdentity, Ready, Running, Uninitialized
+     LinkIdentity, Ready, Running, Uninitialized
 
 
 class PrintWriter:
@@ -98,7 +98,7 @@ class DPThread(StoppableQueueBlockingThread):
     def send_control(self, control_command: ControlCommand):
         logger.info(f"prepared control command {control_command}")
         payload = set_one_of(ControlPayload, ControlInvocation(self.send_sequence, command=control_command))
-        from_ = set_one_of(ActorVirtualIdentity, ControllerVirtualIdentity())
+        from_ = set_one_of(ActorVirtualIdentity, ActorVirtualIdentity(name="CONTROLLER"))
         self._output_queue.put(ControlElement(from_=from_, cmd=payload))
         self.send_sequence +=1
 

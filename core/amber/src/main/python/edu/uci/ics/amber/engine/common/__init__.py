@@ -9,51 +9,7 @@ from betterproto.grpc.grpclib_server import ServiceBase
 
 @dataclass(eq=False, repr=False)
 class ActorVirtualIdentity(betterproto.Message):
-    """sealed trait ActorVirtualIdentity"""
-
-    worker_actor_virtual_identity: "WorkerActorVirtualIdentity" = (
-        betterproto.message_field(1, group="sealed_value")
-    )
-    controller_virtual_identity: "ControllerVirtualIdentity" = (
-        betterproto.message_field(2, group="sealed_value")
-    )
-    self_virtual_identity: "SelfVirtualIdentity" = betterproto.message_field(
-        3, group="sealed_value"
-    )
-    client_virtual_identity: "ClientVirtualIdentity" = betterproto.message_field(
-        4, group="sealed_value"
-    )
-
-
-@dataclass(eq=False, repr=False)
-class WorkerActorVirtualIdentity(betterproto.Message):
-    """
-    final case class WorkerActorVirtualIdentity (    name: String ) extends
-    ActorVirtualIdentity
-    """
-
-    name: str = betterproto.string_field(1)
-
-
-@dataclass(eq=False, repr=False)
-class ControllerVirtualIdentity(betterproto.Message):
-    """
-    final case class ControllerVirtualIdentity extends ActorVirtualIdentity
-    """
-
-    name: str = betterproto.string_field(1)
-
-
-@dataclass(eq=False, repr=False)
-class SelfVirtualIdentity(betterproto.Message):
-    """final case class SelfVirtualIdentity extends ActorVirtualIdentity"""
-
-    name: str = betterproto.string_field(1)
-
-
-@dataclass(eq=False, repr=False)
-class ClientVirtualIdentity(betterproto.Message):
-    """final case class ClientVirtualIdentity extends ActorVirtualIdentity"""
+    """final case class ActorVirtualIdentity"""
 
     name: str = betterproto.string_field(1)
 

@@ -1,7 +1,6 @@
 from collections import defaultdict
 
-from loguru import logger
-from typing import Iterable, Iterator, Set, Union
+from typing import Iterator, Set, Union
 
 from core import Tuple
 from core.models.marker import EndMarker, EndOfAllMarker, Marker, SenderChangeMarker
