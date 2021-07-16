@@ -1,18 +1,18 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
-import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.{
-  DataSendingPolicy,
-  OneToOnePolicy,
-  RoundRobinPolicy
-}
 import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy2
+import edu.uci.ics.amber.engine.architecture.sendsemantics.partitionings.{
+  OneToOnePartitioning,
+  Partitioning,
+  RoundRobinPartitioning
+}
 import edu.uci.ics.amber.engine.architecture.worker.PythonProxyClient.communicate
 import edu.uci.ics.amber.engine.architecture.worker.WorkerBatchInternalQueue.{
   ControlElement,
   ControlElementV2,
   DataElement
 }
-import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddPartitioningHandler.AddPartitioning
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.PauseHandler.PauseWorker
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatisticsHandler.QueryStatistics
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ResumeHandler.ResumeWorker
@@ -23,7 +23,7 @@ import edu.uci.ics.amber.engine.common.ambermessage2.WorkflowControlMessage
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnPayload}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.amber.engine.common.tuple.ITuple
-import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
 import edu.uci.ics.amber.engine.common.{IOperatorExecutor, ambermessage2}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import org.apache.arrow.flight._
@@ -121,21 +121,21 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
       case ControlInvocation(commandID: Long, command: ControlCommand[_]) =>
         println(" JAVA send command " + commandID + " " + command)
         command match {
-          case AddOutputPolicy(policy: DataSendingPolicy) =>
+          case AddPartitioning(link: LinkIdentity, partitioning: Partitioning) =>
             var protobufPolicy: datatransferpolicy2.DataSendingPolicy = null
-            policy match {
-              case _: OneToOnePolicy =>
+            partitioning match {
+              case _: OneToOnePartitioning =>
                 protobufPolicy = datatransferpolicy2.OneToOnePolicy(
-                  Option(policy.policyTag),
-                  policy.batchSize,
-                  policy.receivers
+                  Option(link),
+                  partitioning.batchSize,
+                  partitioning.receivers
                 )
 
-              case _: RoundRobinPolicy =>
+              case _: RoundRobinPartitioning =>
                 protobufPolicy = datatransferpolicy2.RoundRobinPolicy(
-                  Option(policy.policyTag),
-                  policy.batchSize,
-                  policy.receivers
+                  Option(link),
+                  partitioning.batchSize,
+                  partitioning.receivers
                 )
               case _ => throw new UnsupportedOperationException("not supported data policy")
             }
@@ -146,7 +146,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
               from,
               commandID,
               promisehandler2.UpdateInputLinking(
-                identifier = identifier,
+                identifier = Option(identifier),
                 inputLink = Option(inputLink)
               )
             )
@@ -160,7 +160,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
             send(from, commandID, promisehandler2.StartWorker())
         }
       case ReturnPayload(originalCommandID, _) =>
-        println("JAVA receive return payload " + originalCommandID )
+        println("JAVA receive return payload " + originalCommandID)
     }
   }
 
@@ -191,7 +191,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
       controlPayload: ambermessage2.ControlPayload
   ): WorkflowControlMessage = {
     ambermessage2.WorkflowControlMessage(
-      from = from,
+      from = Option(from),
       sequenceNumber = 0L,
       payload = controlPayload
     )
@@ -226,7 +226,7 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
       val schemaRoot = VectorSchemaRoot.create(arrowSchema, allocator)
       val writer =
         client.startPut(
-          FlightDescriptor.command(from.asMessage.toByteArray),
+          FlightDescriptor.command(from.toByteArray),
           schemaRoot,
           flightListener
         )

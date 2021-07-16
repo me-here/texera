@@ -43,7 +43,7 @@ private class AmberProducer(
               case a => a
             }
             controlOutputPort.sendTo(
-              to = workflowControlMessage.from,
+              to = workflowControlMessage.from.get,
               payload = ReturnPayload(
                 originalCommandID = returnPayload.originalCommandID,
                 returnValue = k
@@ -89,7 +89,7 @@ private class AmberProducer(
 
       val dataHeader: DataHeader = DataHeader
         .parseFrom(flightStream.getDescriptor.getCommand)
-      val to: ActorVirtualIdentity = dataHeader.from
+      val to: ActorVirtualIdentity = dataHeader.from.get
       val isEnd: Boolean = dataHeader.isEnd
 
       val root = flightStream.getRoot

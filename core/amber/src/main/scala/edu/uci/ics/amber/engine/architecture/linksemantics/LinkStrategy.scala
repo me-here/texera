@@ -10,10 +10,8 @@ abstract class LinkStrategy(
     val batchSize: Int
 ) extends Serializable {
 
-  val id: LinkIdentity = LinkIdentity(Option(Option(from.id), Option(to.id))
+  val id: LinkIdentity = LinkIdentity(Option(from.id), Option(to.id))
   private var currentCompletedCount = 0
-
-  def totalReceiversCount: Long = to.numWorkers
 
   def incrementCompletedReceiversCount(): Unit = currentCompletedCount += 1
 

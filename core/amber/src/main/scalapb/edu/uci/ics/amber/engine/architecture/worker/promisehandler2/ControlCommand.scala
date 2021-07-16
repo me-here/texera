@@ -240,7 +240,7 @@ final case class ControlCommandMessage(
         case 201 => sealedValue.pythonPrint.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
       }
     }
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommandMessage
     def toControlCommand: edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommand = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommand.ControlCommandTypeMapper.toCustom(this)
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.ControlCommand])
@@ -506,7 +506,7 @@ final case class PauseWorker(
     def discardUnknownFields = copy(unknownFields = _root_.scalapb.UnknownFieldSet.empty)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = throw new MatchError(__fieldNumber)
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = throw new MatchError(__field)
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PauseWorker
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.PauseWorker])
 }
@@ -579,7 +579,7 @@ final case class ResumeWorker(
     def discardUnknownFields = copy(unknownFields = _root_.scalapb.UnknownFieldSet.empty)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = throw new MatchError(__fieldNumber)
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = throw new MatchError(__field)
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ResumeWorker
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.ResumeWorker])
 }
@@ -681,7 +681,7 @@ final case class AddOutputPolicy(
         case 1 => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.AddOutputPolicy._typemapper_policy.toBase(policy).toPMessage
       }
     }
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.AddOutputPolicy
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.AddOutputPolicy])
 }
@@ -772,7 +772,7 @@ final case class StartWorker(
     def discardUnknownFields = copy(unknownFields = _root_.scalapb.UnknownFieldSet.empty)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = throw new MatchError(__fieldNumber)
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = throw new MatchError(__field)
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.StartWorker
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.StartWorker])
 }
@@ -821,7 +821,7 @@ object StartWorker extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.e
 
 @SerialVersionUID(0L)
 final case class UpdateInputLinking(
-    identifier: edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking._typemapper_identifier.toCustom(edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage.defaultInstance),
+    identifier: _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity] = _root_.scala.None,
     inputLink: _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity] = _root_.scala.None,
     unknownFields: _root_.scalapb.UnknownFieldSet = _root_.scalapb.UnknownFieldSet.empty
     ) extends scalapb.GeneratedMessage with edu.uci.ics.amber.engine.architecture.worker.promisehandler2.ControlCommand.NonEmpty with scalapb.lenses.Updatable[UpdateInputLinking] {
@@ -829,12 +829,9 @@ final case class UpdateInputLinking(
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
     private[this] def __computeSerializedValue(): _root_.scala.Int = {
       var __size = 0
-      
-      {
-        val __value = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking._typemapper_identifier.toBase(identifier)
-        if (__value != edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage.defaultInstance) {
-          __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(__value.serializedSize) + __value.serializedSize
-        }
+      if (identifier.isDefined) {
+        val __value = identifier.get
+        __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(__value.serializedSize) + __value.serializedSize
       };
       if (inputLink.isDefined) {
         val __value = inputLink.get
@@ -852,13 +849,11 @@ final case class UpdateInputLinking(
       read
     }
     def writeTo(`_output__`: _root_.com.google.protobuf.CodedOutputStream): _root_.scala.Unit = {
-      {
-        val __v = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking._typemapper_identifier.toBase(identifier)
-        if (__v != edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage.defaultInstance) {
-          _output__.writeTag(1, 2)
-          _output__.writeUInt32NoTag(__v.serializedSize)
-          __v.writeTo(_output__)
-        }
+      identifier.foreach { __v =>
+        val __m = __v
+        _output__.writeTag(1, 2)
+        _output__.writeUInt32NoTag(__m.serializedSize)
+        __m.writeTo(_output__)
       };
       inputLink.foreach { __v =>
         val __m = __v
@@ -868,7 +863,9 @@ final case class UpdateInputLinking(
       };
       unknownFields.writeTo(_output__)
     }
-    def withIdentifier(__v: edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity): UpdateInputLinking = copy(identifier = __v)
+    def getIdentifier: edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity = identifier.getOrElse(edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.defaultInstance)
+    def clearIdentifier: UpdateInputLinking = copy(identifier = _root_.scala.None)
+    def withIdentifier(__v: edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity): UpdateInputLinking = copy(identifier = Option(__v))
     def getInputLink: edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity = inputLink.getOrElse(edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity.defaultInstance)
     def clearInputLink: UpdateInputLinking = copy(inputLink = _root_.scala.None)
     def withInputLink(__v: edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity): UpdateInputLinking = copy(inputLink = Option(__v))
@@ -876,21 +873,18 @@ final case class UpdateInputLinking(
     def discardUnknownFields = copy(unknownFields = _root_.scalapb.UnknownFieldSet.empty)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
-        case 1 => {
-          val __t = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking._typemapper_identifier.toBase(identifier)
-          if (__t != edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage.defaultInstance) __t else null
-        }
+        case 1 => identifier.orNull
         case 2 => inputLink.orNull
       }
     }
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = {
       _root_.scala.Predef.require(__field.containingMessage eq companion.scalaDescriptor)
       (__field.number: @_root_.scala.unchecked) match {
-        case 1 => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking._typemapper_identifier.toBase(identifier).toPMessage
+        case 1 => identifier.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
         case 2 => inputLink.map(_.toPMessage).getOrElse(_root_.scalapb.descriptors.PEmpty)
       }
     }
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.UpdateInputLinking])
 }
@@ -898,7 +892,7 @@ final case class UpdateInputLinking(
 object UpdateInputLinking extends scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking] {
   implicit def messageCompanion: scalapb.GeneratedMessageCompanion[edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking] = this
   def parseFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking = {
-    var __identifier: _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage] = _root_.scala.None
+    var __identifier: _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity] = _root_.scala.None
     var __inputLink: _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity] = _root_.scala.None
     var `_unknownFields__`: _root_.scalapb.UnknownFieldSet.Builder = null
     var _done__ = false
@@ -907,7 +901,7 @@ object UpdateInputLinking extends scalapb.GeneratedMessageCompanion[edu.uci.ics.
       _tag__ match {
         case 0 => _done__ = true
         case 10 =>
-          __identifier = _root_.scala.Some(__identifier.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
+          __identifier = Option(__identifier.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
         case 18 =>
           __inputLink = Option(__inputLink.fold(_root_.scalapb.LiteParser.readMessage[edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity](_input__))(_root_.scalapb.LiteParser.readMessage(_input__, _)))
         case tag =>
@@ -918,7 +912,7 @@ object UpdateInputLinking extends scalapb.GeneratedMessageCompanion[edu.uci.ics.
       }
     }
     edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking(
-        identifier = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking._typemapper_identifier.toCustom(__identifier.getOrElse(edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage.defaultInstance)),
+        identifier = __identifier,
         inputLink = __inputLink,
         unknownFields = if (_unknownFields__ == null) _root_.scalapb.UnknownFieldSet.empty else _unknownFields__.result()
     )
@@ -927,7 +921,7 @@ object UpdateInputLinking extends scalapb.GeneratedMessageCompanion[edu.uci.ics.
     case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
       _root_.scala.Predef.require(__fieldsMap.keys.forall(_.containingMessage eq scalaDescriptor), "FieldDescriptor does not match message type.")
       edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking(
-        identifier = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking._typemapper_identifier.toCustom(__fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage]).getOrElse(edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage.defaultInstance)),
+        identifier = __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).flatMap(_.as[_root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity]]),
         inputLink = __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).flatMap(_.as[_root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity]])
       )
     case _ => throw new RuntimeException("Expected PMessage")
@@ -937,7 +931,7 @@ object UpdateInputLinking extends scalapb.GeneratedMessageCompanion[edu.uci.ics.
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = {
     var __out: _root_.scalapb.GeneratedMessageCompanion[_] = null
     (__number: @_root_.scala.unchecked) match {
-      case 1 => __out = edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage
+      case 1 => __out = edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
       case 2 => __out = edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity
     }
     __out
@@ -945,20 +939,19 @@ object UpdateInputLinking extends scalapb.GeneratedMessageCompanion[edu.uci.ics.
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
   lazy val defaultInstance = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking(
-    identifier = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking._typemapper_identifier.toCustom(edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage.defaultInstance),
+    identifier = _root_.scala.None,
     inputLink = _root_.scala.None
   )
   implicit class UpdateInputLinkingLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking](_l) {
-    def identifier: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity] = field(_.identifier)((c_, f_) => c_.copy(identifier = f_))
+    def identifier: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity] = field(_.getIdentifier)((c_, f_) => c_.copy(identifier = Option(f_)))
+    def optionalIdentifier: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity]] = field(_.identifier)((c_, f_) => c_.copy(identifier = f_))
     def inputLink: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity] = field(_.getInputLink)((c_, f_) => c_.copy(inputLink = Option(f_)))
     def optionalInputLink: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity]] = field(_.inputLink)((c_, f_) => c_.copy(inputLink = f_))
   }
   final val IDENTIFIER_FIELD_NUMBER = 1
   final val INPUTLINK_FIELD_NUMBER = 2
-  @transient
-  private[promisehandler2] val _typemapper_identifier: _root_.scalapb.TypeMapper[edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage, edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity] = implicitly[_root_.scalapb.TypeMapper[edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentityMessage, edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity]]
   def of(
-    identifier: edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity,
+    identifier: _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity],
     inputLink: _root_.scala.Option[edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity]
   ): _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking = _root_.edu.uci.ics.amber.engine.architecture.worker.promisehandler2.UpdateInputLinking(
     identifier,
@@ -993,7 +986,7 @@ final case class QueryStatistics(
     def discardUnknownFields = copy(unknownFields = _root_.scalapb.UnknownFieldSet.empty)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = throw new MatchError(__fieldNumber)
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = throw new MatchError(__field)
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.QueryStatistics
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.QueryStatistics])
 }
@@ -1135,7 +1128,7 @@ final case class WorkerStatistics(
         case 3 => _root_.scalapb.descriptors.PLong(outputRowCount)
       }
     }
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStatistics
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.WorkerStatistics])
 }
@@ -1275,7 +1268,7 @@ final case class WorkerStateInfo(
         case 1 => edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStateInfo._typemapper_workerState.toBase(workerState).toPMessage
       }
     }
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStateInfo
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.WorkerStateInfo])
 }
@@ -1413,7 +1406,7 @@ final case class SendPythonUDF(
         case 2 => _root_.scalapb.descriptors.PBoolean(isSource)
       }
     }
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.SendPythonUDF
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.SendPythonUDF])
 }
@@ -1506,7 +1499,7 @@ final case class WorkerExecutionCompleted(
     def discardUnknownFields = copy(unknownFields = _root_.scalapb.UnknownFieldSet.empty)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = throw new MatchError(__fieldNumber)
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = throw new MatchError(__field)
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerExecutionCompleted
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.WorkerExecutionCompleted])
 }
@@ -1606,7 +1599,7 @@ final case class PythonPrint(
         case 1 => _root_.scalapb.descriptors.PString(content)
       }
     }
-    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
+    def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
     def companion = edu.uci.ics.amber.engine.architecture.worker.promisehandler2.PythonPrint
     // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.amber.engine.architecture.worker.PythonPrint])
 }

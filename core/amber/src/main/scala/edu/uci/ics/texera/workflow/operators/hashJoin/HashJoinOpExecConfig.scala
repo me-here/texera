@@ -43,7 +43,7 @@ class HashJoinOpExecConfig[K](
     val buildLink = inputToOrdinalMapping.find(pair => pair._2 == 0).get._1
     buildTable = buildLink
     val probeLink = inputToOrdinalMapping.find(pair => pair._2 == 1).get._1
-    workflow.getSources(toOperatorIdentity(probeLink.from.get)).foreach { source =>
+    workflow.getSources(toOperatorIdentity(probeLink.from)).foreach { source =>
       workflow.getOperator(source).topology.layers.head.startAfter(buildLink)
     }
     topology.layers.head.metadata = _ =>
