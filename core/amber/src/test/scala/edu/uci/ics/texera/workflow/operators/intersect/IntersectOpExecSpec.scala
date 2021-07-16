@@ -4,7 +4,6 @@ import edu.uci.ics.amber.engine.common.InputExhausted
 import edu.uci.ics.amber.engine.common.virtualidentity.{LayerIdentity, LinkIdentity}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType, Schema}
-import edu.uci.ics.texera.workflow.operators.intersect.IntersectOpExec
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 
@@ -27,8 +26,6 @@ class IntersectOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
     counter += 1
     LayerIdentity("" + counter, "" + counter, "" + counter)
   }
-
-  def linkID(): LinkIdentity = LinkIdentity(Option(layerID()), Option(layerID()))
 
   def tuple(): Tuple = {
     counter += 1
