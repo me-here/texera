@@ -1,4 +1,5 @@
 import typing
+from loguru import logger
 from overrides import overrides
 from pampy import match
 from typing import Iterator, Union
@@ -13,12 +14,22 @@ from core.udf.udf_operator import UDFOperator
 from core.util.proto.proto_helper import get_one_of, set_one_of
 from core.util.queue.queue_base import IQueue
 from core.util.stoppable.stoppable_queue_blocking_thread import StoppableQueueBlockingThread
-from edu.uci.ics.amber.engine.architecture.worker import ControlCommand, WorkerExecutionCompleted
+from edu.uci.ics.amber.engine.architecture.worker import ControlCommand, PythonPrint, WorkerExecutionCompleted
 from edu.uci.ics.amber.engine.common import ActorVirtualIdentity, Completed, ControlInvocation, ControlPayload, \
     ControllerVirtualIdentity, LinkIdentity, Ready, Running, Uninitialized
 
 
+class PrintWriter:
+    def __init__(self, dp):
+        self.dp = dp
+
+    def write(self, content):
+        control_command = set_one_of(ControlCommand, PythonPrint(content=content))
+        self.dp.send_control(control_command)
+
+
 class DPThread(StoppableQueueBlockingThread):
+
     def __init__(self, input_queue: InternalQueue, output_queue: InternalQueue, udf_operator: UDFOperator):
         super().__init__(self.__class__.__name__, queue=input_queue)
 
@@ -31,6 +42,8 @@ class DPThread(StoppableQueueBlockingThread):
 
         self.context = Context(self)
         self._rpc_server = SyncRPCServer(output_queue, context=self.context)
+        logger.add(PrintWriter(self), level='PRINT')
+        self.send_sequence = 0
 
     @overrides
     def pre_start(self) -> None:
@@ -78,10 +91,16 @@ class DPThread(StoppableQueueBlockingThread):
     def complete(self) -> None:
         self._udf_operator.close()
         self.context.state_manager.transit_to(Completed())
+
         control_command = set_one_of(ControlCommand, WorkerExecutionCompleted())
-        payload = set_one_of(ControlPayload, ControlInvocation(1, command=control_command))
+        self.send_control(control_command)
+
+    def send_control(self, control_command: ControlCommand):
+        logger.info(f"prepared control command {control_command}")
+        payload = set_one_of(ControlPayload, ControlInvocation(self.send_sequence, command=control_command))
         from_ = set_one_of(ActorVirtualIdentity, ControllerVirtualIdentity())
         self._output_queue.put(ControlElement(from_=from_, cmd=payload))
+        self.send_sequence +=1
 
     def check_and_process_control(self) -> None:
 

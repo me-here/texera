@@ -159,8 +159,8 @@ case class PythonProxyClient(portNumber: Int, operator: IOperatorExecutor)
           case StartWorker() =>
             send(from, commandID, promisehandler2.StartWorker())
         }
-      case ReturnPayload(originalCommandID, returnValue) =>
-        println("JAVA receive return payload " + originalCommandID + " " + returnValue)
+      case ReturnPayload(originalCommandID, _) =>
+        println("JAVA receive return payload " + originalCommandID )
     }
   }
 

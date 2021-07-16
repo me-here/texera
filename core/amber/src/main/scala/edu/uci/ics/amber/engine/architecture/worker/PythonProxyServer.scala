@@ -1,5 +1,6 @@
 package edu.uci.ics.amber.engine.architecture.worker
 
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.PrintPythonHandler.PrintPython
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
 import edu.uci.ics.amber.engine.architecture.messaginglayer.{ControlOutputPort, DataOutputPort}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandler2.WorkerStateInfo
@@ -36,7 +37,7 @@ private class AmberProducer(
         workflowControlMessage.payload match {
           case returnPayload: edu.uci.ics.amber.engine.common.ambermessage2.ReturnPayload =>
             val k = returnPayload.returnValue match {
-                // TODO: change to some response base
+              // TODO: change to some response base
               case workerStateInfo: WorkerStateInfo =>
                 workerStateInfo.workerState
               case a => a
@@ -57,6 +58,15 @@ private class AmberProducer(
                   payload = ControlInvocation(
                     controlInvocation.commandID,
                     command = WorkerExecutionCompleted()
+                  )
+                )
+              case print: promisehandler2.PythonPrint =>
+                println(s" try to send to controller ${print.content}")
+                controlOutputPort.sendTo(
+                  to = CONTROLLER,
+                  payload = ControlInvocation(
+                    controlInvocation.commandID,
+                    command = PrintPython(print.content)
                   )
                 )
             }

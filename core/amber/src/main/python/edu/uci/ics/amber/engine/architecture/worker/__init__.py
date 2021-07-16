@@ -62,6 +62,11 @@ class SendPythonUdf(betterproto.Message):
 
 
 @dataclass(eq=False, repr=False)
+class PythonPrint(betterproto.Message):
+    content: str = betterproto.string_field(1)
+
+
+@dataclass(eq=False, repr=False)
 class ControlCommand(betterproto.Message):
     pause_worker: "PauseWorker" = betterproto.message_field(1, group="sealed_value")
     resume_worker: "ResumeWorker" = betterproto.message_field(2, group="sealed_value")
@@ -87,6 +92,7 @@ class ControlCommand(betterproto.Message):
     worker_execution_completed: "WorkerExecutionCompleted" = betterproto.message_field(
         101, group="sealed_value"
     )
+    python_print: "PythonPrint" = betterproto.message_field(201, group="sealed_value")
 
 
 from .. import sendsemantics as _sendsemantics__

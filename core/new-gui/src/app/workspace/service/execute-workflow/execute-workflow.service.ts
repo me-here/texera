@@ -76,7 +76,7 @@ export class ExecuteWorkflowService {
           } default: {
             // workflow status related event
             if (event.type !== 'WebWorkflowStatusUpdateEvent') {
-              console.log(event);
+              // console.log(event);
             }
             const newState = this.handleExecutionEvent(event);
             this.updateExecutionState(newState);
@@ -122,6 +122,9 @@ export class ExecuteWorkflowService {
         return {state: ExecutionState.Running};
       case 'BreakpointTriggeredEvent':
         return {state: ExecutionState.BreakpointTriggered, breakpoint: event};
+      case 'PythonPrintTriggeredEvent':
+        console.log(event.content);
+        return this.currentState;
       case 'WorkflowErrorEvent':
         const errorMessages: Record<string, string> = {};
         Object.entries(event.operatorErrors).forEach(entry => {

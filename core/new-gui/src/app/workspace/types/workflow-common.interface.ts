@@ -65,3 +65,9 @@ export type BreakpointTriggerInfo = Readonly<{
   report: ReadonlyArray<BreakpointFault>;
   operatorID: string;
 }>;
+
+export type PythonPrintTriggeredInfo = Readonly<{
+  content: Readonly<string>;
+  operatorID: string;
+}>;
+
