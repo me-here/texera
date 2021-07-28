@@ -1,11 +1,10 @@
 import { Subject } from 'rxjs/Subject';
 import { Observable } from 'rxjs/Observable';
 import { Injectable } from '@angular/core';
-import { OperatorMetadataService } from './../operator-metadata/operator-metadata.service';
+import { OperatorMetadataService } from '../operator-metadata/operator-metadata.service';
 import { OperatorSchema } from '../../types/operator-schema.interface';
-import { WorkflowActionService } from './../workflow-graph/model/workflow-action.service';
+import { WorkflowActionService } from '../workflow-graph/model/workflow-action.service';
 import * as Ajv from 'ajv';
-import { OperatorLink } from '../../types/workflow-common.interface';
 import { BehaviorSubject } from 'rxjs';
 
 export type ValidationError = { isValid: false, messages: Record<string, string> };
@@ -34,23 +33,23 @@ export class ValidationWorkflowService {
   public static readonly VALIDATION_OPERATOR_OUTPUT_MESSAGE = 'outputs';
 
   private operatorSchemaList: ReadonlyArray<OperatorSchema> = [];
-  // stream of an individual's validation status is updated, whether it's validation sucess or validation error
+  // stream of an individual's validation status is updated, whether it's validation success or validation error
   private readonly operatorValidationStream = new Subject<{ operatorID: string, validation: Validation }>();
   // stream of global validation error status is updated, only errors will be reported
-  private readonly workflowValidationErrorStream = new BehaviorSubject<{ errors: Record<string, ValidationError> }>( {errors: {}});
-  private ajv = new Ajv({ schemaId: 'auto', allErrors: true });
+  private readonly workflowValidationErrorStream = new BehaviorSubject<{ errors: Record<string, ValidationError> }>({errors: {}});
+  private ajv = new Ajv({schemaId: 'auto', allErrors: true});
 
   // this map record --> <operatorID, error string>
   private workflowErrors: Record<string, ValidationError> = {};
 
   /**
-   * subcribe the add opertor event, delete operator event, add link event, delete link event
+   * subscribe the add operator event, delete operator event, add link event, delete link event
    * and change operator property event. observe each change and record changes in operatorValidationStream
-   * @param texeraGraph
+   * @param operatorMetadataService
    * @param workflowActionService
    */
   constructor(private operatorMetadataService: OperatorMetadataService,
-    private workflowActionService: WorkflowActionService) {
+              private workflowActionService: WorkflowActionService) {
 
 
     // fetch operator schema list
@@ -85,10 +84,9 @@ export class ValidationWorkflowService {
     return this.operatorValidationStream.asObservable();
   }
 
-
   public validateOperator(operatorID: string): Validation {
     if (this.workflowActionService.getTexeraGraph().isOperatorDisabled(operatorID)) {
-      return { isValid: true };
+      return {isValid: true};
     }
     const jsonSchemaValidation = this.validateJsonSchema(operatorID);
     const operatorConnectionValidation = this.validateOperatorConnection(operatorID);
@@ -96,19 +94,19 @@ export class ValidationWorkflowService {
   }
 
   private updateValidationState(operatorID: string, validation: Validation) {
-    this.operatorValidationStream.next({ validation, operatorID });
+    this.operatorValidationStream.next({validation, operatorID});
     if (!validation.isValid) {
       this.workflowErrors[operatorID] = validation;
     } else {
       delete this.workflowErrors[operatorID];
-      this.workflowValidationErrorStream.next({ errors: this.workflowErrors });
+      this.workflowValidationErrorStream.next({errors: this.workflowErrors});
     }
-    this.workflowValidationErrorStream.next({ errors: this.workflowErrors });
+    this.workflowValidationErrorStream.next({errors: this.workflowErrors});
   }
 
   private updateValidationStateOnDelete(operatorID: string) {
     delete this.workflowErrors[operatorID];
-    this.workflowValidationErrorStream.next({ errors: this.workflowErrors });
+    this.workflowValidationErrorStream.next({errors: this.workflowErrors});
   }
 
   /**
@@ -181,7 +179,7 @@ export class ValidationWorkflowService {
 
     const isValid = this.ajv.validate(operatorSchema.jsonSchema, operator.operatorProperties);
     if (isValid) {
-      return { isValid: true };
+      return {isValid: true};
     }
 
     const errors = this.ajv.errors;
@@ -189,7 +187,7 @@ export class ValidationWorkflowService {
     if (errors) {
       errors.forEach(error => validationError[error.keyword] = error.message ? error.message : '');
     }
-    return { isValid: false, messages: validationError };
+    return {isValid: false, messages: validationError};
   }
 
   /**
@@ -243,25 +241,24 @@ export class ValidationWorkflowService {
       .filter(link => texeraGraph.isLinkEnabled(link.linkID)).length;
 
     // If the operator is the sink operator, the actual output number must be equal to required number.
-    const satisyOutput = this.operatorMetadataService.
-      getOperatorSchema(operator.operatorType).
-      additionalMetadata.
-      operatorGroupName === 'View Results' ?
+    const satisfyOutput = this.operatorMetadataService.getOperatorSchema(operator.operatorType)
+      .additionalMetadata.operatorGroupName === 'View Results' ?
       requiredOutputNum === actualOutputNum : requiredOutputNum <= actualOutputNum;
 
-    const outputPortsViolationMessage = satisyOutput ? '' : `requires ${requiredOutputNum} outputs, has ${actualOutputNum} outputs`;
+    const outputPortsViolationMessage = satisfyOutput ? '' : `requires ${requiredOutputNum} outputs, has ${actualOutputNum} outputs`;
 
-    if (satisfyInput && satisyOutput) {
-      return { isValid: true };
+    if (satisfyInput && satisfyOutput) {
+      return {isValid: true};
     } else {
       const messages: Record<string, string> = {};
       if (!satisfyInput) {
         messages[ValidationWorkflowService.VALIDATION_OPERATOR_INPUT_MESSAGE] = inputPortsViolationMessage;
       }
-      if (!satisyOutput) {
+      if (!satisfyOutput) {
         messages[ValidationWorkflowService.VALIDATION_OPERATOR_OUTPUT_MESSAGE] = outputPortsViolationMessage;
       }
-      return { isValid: false, messages: messages };
+      console.log({isValid: false, messages: messages});
+      return {isValid: false, messages: messages};
     }
 
   }
@@ -272,13 +269,13 @@ export class ValidationWorkflowService {
     validations.forEach(validation => {
       isValid = isValid && validation.isValid;
       if (!validation.isValid) {
-        messages = { ...messages, ...validation.messages };
+        messages = {...messages, ...validation.messages};
       }
     });
     if (isValid) {
-      return { isValid };
+      return {isValid};
     } else {
-      return { isValid, messages };
+      return {isValid, messages};
     }
   }
 }
