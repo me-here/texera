@@ -4,15 +4,26 @@ import { FieldType } from '@ngx-formly/core';
 @Component({
   // selector: 'formly-object-type',
   template: `
-    <div class="mb-3">
+    <div>
       <legend *ngIf="to.label">{{ to.label }}</legend>
       <p *ngIf="to.description">{{ to.description }}</p>
       <div class="alert alert-danger" role="alert" *ngIf="showError && formControl.errors">
         <formly-validation-message [field]="field"></formly-validation-message>
       </div>
-      <formly-field *ngFor="let f of field.fieldGroup" [field]="f"></formly-field>
+<!--      <span class="formly-object-field">-->
+<!--        <formly-field *ngFor="let f of field.fieldGroup" [field]="f"></formly-field>-->
+<!--        <button *ngFor="let group of groups; let i = index" (click)="changeGroup(i)">{{group}}{{i}}</button>-->
+<!--      </span>-->
+      <div class="formly-object-field">
+        <span *ngFor="let f of field.fieldGroup">
+          <formly-field  [field]="f" ></formly-field>
+        </span>
+
+      </div>
+
     </div>
   `,
+  styles: ['.formly-object-field { width: 20%}']
 })
 export class ObjectTypeComponent extends FieldType {
   defaultOptions = {
@@ -22,5 +33,5 @@ export class ObjectTypeComponent extends FieldType {
 
 
 /**  Copyright 2018 Google Inc. All Rights Reserved.
-    Use of this source code is governed by an MIT-style license that
-    can be found in the LICENSE file at http://angular.io/license */
+ Use of this source code is governed by an MIT-style license that
+ can be found in the LICENSE file at http://angular.io/license */
