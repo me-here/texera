@@ -229,25 +229,12 @@ export type OperatorInputSchema = ReadonlyArray<ReadonlyArray<SchemaAttribute> |
  *
  * An example data format for AutocompleteSuccessResult will look like:
  * {
- *  code: 0,
- *  result: {
  *    'operatorID1' : [ ['attribute1','attribute2','attribute3'] ],
  *    'operatorID2' : [ [ {attributeName: 'name', attributeType: 'string'},
  *                      {attributeName: 'text', attributeType: 'string'},
  *                      {attributeName: 'follower_count', attributeType: 'string'} ] ]
- *
- *  }
  * }
  */
 export interface SchemaPropagationResponse extends Readonly<{
   [key: string]: OperatorInputSchema
-}> {}
-
-/**
- * The backend interface of the return object of a failed execution of
- * autocomplete API
- */
-export interface SchemaPropagationError extends Readonly<{
-  code: -1,
-  message: string
 }> {}
