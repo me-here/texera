@@ -50,10 +50,9 @@ export class SchemaPropagationService {
       .merge(
         this.workflowActionService.getTexeraGraph().getLinkAddStream(),
         this.workflowActionService.getTexeraGraph().getLinkDeleteStream(),
-        this.workflowActionService.getTexeraGraph().getOperatorPropertyChangeStream()
-          .debounceTime(SCHEMA_PROPAGATION_DEBOUNCE_TIME_MS),
-        this.workflowActionService.getTexeraGraph().getDisabledOperatorsChangedStream(),
-        )
+        this.workflowActionService.getTexeraGraph().getOperatorPropertyChangeStream(),
+        this.workflowActionService.getTexeraGraph().getDisabledOperatorsChangedStream()
+      ).debounceTime(SCHEMA_PROPAGATION_DEBOUNCE_TIME_MS)
       .flatMap(() => this.invokeSchemaPropagationAPI())
       .filter(response => response.code === 0)
       .subscribe(response => {
