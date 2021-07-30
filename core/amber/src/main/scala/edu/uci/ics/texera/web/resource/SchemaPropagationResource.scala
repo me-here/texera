@@ -8,8 +8,8 @@ import edu.uci.ics.texera.workflow.common.workflow.{WorkflowCompiler, WorkflowIn
 import io.dropwizard.jersey.sessions.Session
 
 import javax.servlet.http.HttpSession
-import javax.ws.rs.{Consumes, POST, Path, Produces}
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.{Consumes, POST, Path, Produces}
 case class SchemaPropagationResponse(
     code: Int,
     result: Map[String, List[Option[List[Attribute]]]],
@@ -33,16 +33,20 @@ class SchemaPropagationResource {
       val context = new WorkflowContext
       context.userID = UserResource
         .getUser(httpSession)
-        .map(u => u.getUid)
+        .map(_.getUid)
 
       val texeraWorkflowCompiler = new WorkflowCompiler(
         WorkflowInfo(workflow.operators, workflow.links, workflow.breakpoints),
         context
       )
 
-      val schemaPropagationResult = texeraWorkflowCompiler
-        .propagateWorkflowSchema()
-        .map(e => (e._1.operatorID, e._2.map(s => s.map(o => o.getAttributesScala))))
+      val schemaPropagationResult: Map[String, List[Option[List[Attribute]]]] =
+        texeraWorkflowCompiler
+          .propagateWorkflowSchema()
+          .map({
+            case (opDesc, schemas) => (opDesc.operatorID, schemas.map(_.map(_.getAttributesScala)))
+          })
+
       SchemaPropagationResponse(0, schemaPropagationResult, null)
     } catch {
       case e: Throwable =>
