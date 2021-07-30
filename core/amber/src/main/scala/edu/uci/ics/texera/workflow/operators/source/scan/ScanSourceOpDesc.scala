@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.{JsonIgnore, JsonProperty, JsonPropertyD
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle
 import edu.uci.ics.texera.web.resource.dashboard.file.UserFileUtils
+import edu.uci.ics.texera.web.resource.dashboard.file.UserFileUtils.FileIOException
 import edu.uci.ics.texera.workflow.common.WorkflowContext
 import edu.uci.ics.texera.workflow.common.metadata.{
   OperatorGroupConstants,
@@ -13,6 +14,7 @@ import edu.uci.ics.texera.workflow.common.metadata.{
 import edu.uci.ics.texera.workflow.common.operators.source.SourceOperatorDescriptor
 import edu.uci.ics.texera.workflow.common.tuple.schema.Schema
 
+import java.io.FileNotFoundException
 import java.util.Collections.singletonList
 import scala.collection.JavaConverters.asScalaBuffer
 import scala.collection.immutable.List
@@ -49,8 +51,13 @@ abstract class ScanSourceOpDesc extends SourceOperatorDescriptor {
   var offset: Option[Int] = None
 
   override def sourceSchema(): Schema = {
-    if (filePath.isEmpty) return null
-    inferSchema()
+    if (filePath.isEmpty) throw new RuntimeException("No file path detected.")
+    try {
+      inferSchema()
+    } catch {
+      case _: FileIOException | _:FileNotFoundException =>
+        throw new RuntimeException(s"Error opening/reading file $fileName.")
+    }
 
   }
 
