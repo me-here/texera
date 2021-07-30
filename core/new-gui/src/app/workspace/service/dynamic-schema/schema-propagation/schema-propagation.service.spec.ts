@@ -35,6 +35,7 @@ import {
   SchemaPropagationService
 } from './schema-propagation.service';
 import { NzMessageModule, NzMessageService } from 'ng-zorro-antd/message';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 /* tslint:disable: no-non-null-assertion */
 fdescribe('SchemaPropagationService', () => {
@@ -47,6 +48,7 @@ fdescribe('SchemaPropagationService', () => {
       imports: [
         HttpClientTestingModule,
         NzMessageModule,
+        NoopAnimationsModule,
         LoggerModule.forRoot(undefined)
       ],
       providers: [
