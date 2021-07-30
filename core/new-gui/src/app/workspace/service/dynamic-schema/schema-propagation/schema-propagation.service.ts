@@ -17,7 +17,7 @@ import { catchError } from 'rxjs/operators';
 // endpoint for schema propagation
 export const SCHEMA_PROPAGATION_ENDPOINT = 'queryplan/autocomplete';
 
-export const SCHEMA_PROPAGATION_DEBOUNCE_TIME_MS = 500;
+export const SCHEMA_PROPAGATION_DEBOUNCE_TIME_MS = 300;
 
 /**
  * Schema Propagation Service provides autocomplete functionality for attribute property of operators.
