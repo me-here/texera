@@ -10,6 +10,7 @@ import { OperatorSchema } from '../../../types/operator-schema.interface';
 import { ExecuteWorkflowService } from '../../execute-workflow/execute-workflow.service';
 import { WorkflowActionService } from '../../workflow-graph/model/workflow-action.service';
 import { DynamicSchemaService } from '../dynamic-schema.service';
+import { NzMessageService } from "ng-zorro-antd/message";
 
 // endpoint for schema propagation
 export const SCHEMA_PROPAGATION_ENDPOINT = 'queryplan/autocomplete';
@@ -37,7 +38,8 @@ export class SchemaPropagationService {
     private httpClient: HttpClient,
     private workflowActionService: WorkflowActionService,
     private dynamicSchemaService: DynamicSchemaService,
-    private logger: NGXLogger
+    private logger: NGXLogger,
+    private nzMessage: NzMessageService
   ) {
     // do nothing if schema propagation is not enabled
     if (!environment.schemaPropagationEnabled) {
@@ -59,7 +61,7 @@ export class SchemaPropagationService {
           this.operatorInputSchemaMap = response;
           this._applySchemaPropagationResult(this.operatorInputSchemaMap);
         },
-        err => alert(err.error));
+        err => this.nzMessage.error(err.error));
 
   }
 
