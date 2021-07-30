@@ -82,8 +82,8 @@ import { WorkflowEditorComponent } from './workspace/component/workflow-editor/w
 import { WorkspaceComponent } from './workspace/component/workspace.component';
 import { ResultDownloadComponent } from './workspace/component/navigation/result-download/result-download.component';
 import { GoogleApiModule, NG_GAPI_CONFIG } from 'ng-gapi';
-import {NgbdModalShareAccessComponent} from './dashboard/component/feature-container/saved-workflow-section/ngbd-modal-share-access/ngbd-modal-share-access.component';
-import { NzMessageService } from "ng-zorro-antd/message";
+import { NgbdModalShareAccessComponent } from './dashboard/component/feature-container/saved-workflow-section/ngbd-modal-share-access/ngbd-modal-share-access.component';
+import { NzMessageModule } from "ng-zorro-antd/message";
 
 registerLocaleData(en);
 
@@ -175,6 +175,7 @@ registerLocaleData(en);
     NzSliderModule,
     NzSpaceModule,
     NzBadgeModule,
+    NzMessageModule,
     NgxAceModule,
     MatDialogModule
   ],
@@ -197,7 +198,6 @@ registerLocaleData(en);
     UserDictionaryService,
     UserDictionaryUploadService,
     {provide: NZ_I18N, useValue: en_US},
-    NzMessageService
   ],
   bootstrap: [AppComponent]
   // dynamically created component must be placed in the entryComponents attribute
