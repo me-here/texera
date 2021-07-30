@@ -34,7 +34,7 @@ import {
   SCHEMA_PROPAGATION_ENDPOINT,
   SchemaPropagationService
 } from './schema-propagation.service';
-import { NzMessageService } from 'ng-zorro-antd/message';
+import { NzMessageModule, NzMessageService } from 'ng-zorro-antd/message';
 
 /* tslint:disable: no-non-null-assertion */
 fdescribe('SchemaPropagationService', () => {
@@ -46,6 +46,7 @@ fdescribe('SchemaPropagationService', () => {
     TestBed.configureTestingModule({
       imports: [
         HttpClientTestingModule,
+        NzMessageModule,
         LoggerModule.forRoot(undefined)
       ],
       providers: [
@@ -90,7 +91,7 @@ fdescribe('SchemaPropagationService', () => {
     httpTestingController.match(`${AppSettings.getApiEndpoint()}/${SCHEMA_PROPAGATION_ENDPOINT}`);
     httpTestingController.verify();
 
-    // disable opeator
+    // disable operator
     workflowActionService.getTexeraGraph().disableOperator(mockScanPredicate.operatorID);
     httpTestingController.match(`${AppSettings.getApiEndpoint()}/${SCHEMA_PROPAGATION_ENDPOINT}`);
     httpTestingController.verify();
@@ -105,7 +106,7 @@ fdescribe('SchemaPropagationService', () => {
     // verify debounce time: no request before debounce time ticks
     httpTestingController.verify();
     tick(SCHEMA_PROPAGATION_DEBOUNCE_TIME_MS);
-    // reqeuest should be made after debounce time
+    // request should be made after debounce time
     httpTestingController.match(`${AppSettings.getApiEndpoint()}/${SCHEMA_PROPAGATION_ENDPOINT}`);
     httpTestingController.verify();
 
