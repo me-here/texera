@@ -56,7 +56,7 @@ abstract class ScanSourceOpDesc extends SourceOperatorDescriptor {
       inferSchema()
     } catch {
       case _: FileIOException | _:FileNotFoundException =>
-        throw new RuntimeException(s"Error opening/reading file $fileName.")
+        throw new RuntimeException(s"Error opening/reading file ${fileName.getOrElse("[NO FILE NAME]")}.")
     }
 
   }

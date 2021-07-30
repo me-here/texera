@@ -61,7 +61,10 @@ export class SchemaPropagationService {
           this.operatorInputSchemaMap = response;
           this._applySchemaPropagationResult(this.operatorInputSchemaMap);
         },
-        err => this.nzMessage.error(err.error));
+        err => {
+          this.nzMessage.error(err.error);
+          this._applySchemaPropagationResult(this.operatorInputSchemaMap);
+        });
 
   }
 
@@ -86,7 +89,7 @@ export class SchemaPropagationService {
 
       // if operator input attributes are in the result, set them in dynamic schema
       let newDynamicSchema: OperatorSchema;
-      if (schemaPropagationResult[operatorID]) {
+      if (operatorID in schemaPropagationResult) {
         newDynamicSchema = SchemaPropagationService.setOperatorInputAttrs(
           currentDynamicSchema, schemaPropagationResult[operatorID]);
       } else {
