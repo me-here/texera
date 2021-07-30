@@ -34,6 +34,7 @@ import {
   SCHEMA_PROPAGATION_ENDPOINT,
   SchemaPropagationService
 } from './schema-propagation.service';
+import { NzMessageService } from 'ng-zorro-antd/message';
 
 /* tslint:disable: no-non-null-assertion */
 fdescribe('SchemaPropagationService', () => {
@@ -54,7 +55,8 @@ fdescribe('SchemaPropagationService', () => {
         WorkflowUtilService,
         UndoRedoService,
         DynamicSchemaService,
-        SchemaPropagationService
+        SchemaPropagationService,
+        NzMessageService
       ]
     });
 
