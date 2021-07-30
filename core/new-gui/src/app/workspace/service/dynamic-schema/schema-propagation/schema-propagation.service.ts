@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { isEqual } from 'lodash';
 import { NGXLogger } from 'ngx-logger';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { CustomJSONSchema7 } from 'src/app/workspace/types/custom-json-schema.interface';
 import { environment } from '../../../../../environments/environment';
 import { AppSettings } from '../../../../common/app-setting';
@@ -10,7 +10,9 @@ import { OperatorSchema } from '../../../types/operator-schema.interface';
 import { ExecuteWorkflowService } from '../../execute-workflow/execute-workflow.service';
 import { WorkflowActionService } from '../../workflow-graph/model/workflow-action.service';
 import { DynamicSchemaService } from '../dynamic-schema.service';
-import { NzMessageService } from "ng-zorro-antd/message";
+import { NzMessageService } from 'ng-zorro-antd/message';
+import 'rxjs-compat/add/operator/concatMap';
+import { catchError } from 'rxjs/operators';
 
 // endpoint for schema propagation
 export const SCHEMA_PROPAGATION_ENDPOINT = 'queryplan/autocomplete';
@@ -32,7 +34,7 @@ export const SCHEMA_PROPAGATION_DEBOUNCE_TIME_MS = 500;
 })
 export class SchemaPropagationService {
 
-  private operatorInputSchemaMap: Readonly<{ [key: string]: OperatorInputSchema }> = {};
+  private operatorInputSchemaMap: SchemaPropagationResponse = {};
 
   constructor(
     private httpClient: HttpClient,
@@ -55,16 +57,18 @@ export class SchemaPropagationService {
         this.workflowActionService.getTexeraGraph().getOperatorPropertyChangeStream(),
         this.workflowActionService.getTexeraGraph().getDisabledOperatorsChangedStream()
       ).debounceTime(SCHEMA_PROPAGATION_DEBOUNCE_TIME_MS)
-      .flatMap(() => this.invokeSchemaPropagationAPI())
+      .mergeMap(() => this.invokeSchemaPropagationAPI().pipe(catchError(err => {
+          this.nzMessage.error(err.error);
+          return of(this.operatorInputSchemaMap);
+        }
+        ))
+      )
       .subscribe(
         response => {
           this.operatorInputSchemaMap = response;
           this._applySchemaPropagationResult(this.operatorInputSchemaMap);
-        },
-        err => {
-          this.nzMessage.error(err.error);
-          this._applySchemaPropagationResult(this.operatorInputSchemaMap);
-        });
+        }
+      );
 
   }
 
