@@ -7,23 +7,36 @@ import { AppSettings } from '../../../../common/app-setting';
 import { OperatorPredicate } from '../../../types/workflow-common.interface';
 import { JointUIService } from '../../joint-ui/joint-ui.service';
 import {
-  mockAggregationSchema, mockKeywordSearchSchema, mockNlpSentimentSchema
+  mockAggregationSchema,
+  mockKeywordSearchSchema,
+  mockNlpSentimentSchema
 } from '../../operator-metadata/mock-operator-metadata.data';
 import { OperatorMetadataService } from '../../operator-metadata/operator-metadata.service';
 
 import { StubOperatorMetadataService } from '../../operator-metadata/stub-operator-metadata.service';
 import { UndoRedoService } from '../../undo-redo/undo-redo.service';
-import { mockPoint, mockScanPredicate, mockScanSentimentLink, mockSentimentPredicate } from '../../workflow-graph/model/mock-workflow-data';
+import {
+  mockPoint,
+  mockScanPredicate,
+  mockScanSentimentLink,
+  mockSentimentPredicate
+} from '../../workflow-graph/model/mock-workflow-data';
 import { WorkflowActionService } from '../../workflow-graph/model/workflow-action.service';
 import { WorkflowUtilService } from '../../workflow-graph/util/workflow-util.service';
 import { DynamicSchemaService } from '../dynamic-schema.service';
 import {
-  mockEmptySchemaPropagationResponse, mockSchemaPropagationOperatorID, mockSchemaPropagationResponse
+  mockEmptySchemaPropagationResponse,
+  mockSchemaPropagationOperatorID,
+  mockSchemaPropagationResponse
 } from './mock-schema-propagation.data';
-import { SCHEMA_PROPAGATION_DEBOUNCE_TIME_MS, SCHEMA_PROPAGATION_ENDPOINT, SchemaPropagationService } from './schema-propagation.service';
+import {
+  SCHEMA_PROPAGATION_DEBOUNCE_TIME_MS,
+  SCHEMA_PROPAGATION_ENDPOINT,
+  SchemaPropagationService
+} from './schema-propagation.service';
 
 /* tslint:disable: no-non-null-assertion */
-describe('SchemaPropagationService', () => {
+fdescribe('SchemaPropagationService', () => {
 
   let httpClient: HttpClient;
   let httpTestingController: HttpTestingController;
@@ -168,7 +181,7 @@ describe('SchemaPropagationService', () => {
 
     const schema = dynamicSchemaService.getDynamicSchema(mockSentimentPredicate.operatorID);
     const attributeInSchema = schema.jsonSchema!.properties!['attribute'];
-    const expectedEnum = mockSchemaPropagationResponse.result[mockOperator.operatorID][0]?.map(attr => attr.attributeName);
+    const expectedEnum = mockSchemaPropagationResponse[mockOperator.operatorID][0]?.map(attr => attr.attributeName);
 
     expect(attributeInSchema).toEqual({
       ...(mockNlpSentimentSchema.jsonSchema.properties!['attribute'] as object),
@@ -211,7 +224,7 @@ describe('SchemaPropagationService', () => {
 
     const schema = dynamicSchemaService.getDynamicSchema(mockSentimentPredicate.operatorID);
     const attributeInSchema = schema.jsonSchema!.properties!['attribute'];
-    const expectedEnum = mockSchemaPropagationResponse.result[mockOperator.operatorID][0]?.map(attr => attr.attributeName);
+    const expectedEnum = mockSchemaPropagationResponse[mockOperator.operatorID][0]?.map(attr => attr.attributeName);
 
     expect(attributeInSchema).toEqual({
       ...(mockNlpSentimentSchema.jsonSchema.properties!['attribute'] as object),
@@ -283,7 +296,7 @@ describe('SchemaPropagationService', () => {
 
     const schema = dynamicSchemaService.getDynamicSchema(mockSentimentPredicate.operatorID);
     const attributeInSchema = schema.jsonSchema!.properties!['attributes'];
-    const expectedEnum = mockSchemaPropagationResponse.result[mockKeywordSearchOperator.operatorID][0]?.map(attr => attr.attributeName);
+    const expectedEnum = mockSchemaPropagationResponse[mockKeywordSearchOperator.operatorID][0]?.map(attr => attr.attributeName);
 
     expect(attributeInSchema).toEqual({
       type: 'array',
@@ -337,7 +350,7 @@ describe('SchemaPropagationService', () => {
     httpTestingController.verify();
 
     const schema = dynamicSchemaService.getDynamicSchema(mockSentimentPredicate.operatorID);
-    const expectedEnum = mockSchemaPropagationResponse.result[mockAggregationPredicate.operatorID][0]?.map(attr => attr.attributeName);
+    const expectedEnum = mockSchemaPropagationResponse[mockAggregationPredicate.operatorID][0]?.map(attr => attr.attributeName);
 
     expect(schema.jsonSchema!.properties).toEqual({
       listOfAggregations: {
