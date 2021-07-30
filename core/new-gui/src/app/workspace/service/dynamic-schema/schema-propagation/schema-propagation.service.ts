@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { isEqual } from 'lodash';
 import { NGXLogger } from 'ngx-logger';
-import { EMPTY, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { CustomJSONSchema7 } from 'src/app/workspace/types/custom-json-schema.interface';
 import { environment } from '../../../../../environments/environment';
 import { AppSettings } from '../../../../common/app-setting';
@@ -54,11 +54,12 @@ export class SchemaPropagationService {
         this.workflowActionService.getTexeraGraph().getDisabledOperatorsChangedStream()
       ).debounceTime(SCHEMA_PROPAGATION_DEBOUNCE_TIME_MS)
       .flatMap(() => this.invokeSchemaPropagationAPI())
-      .filter(response => response.code === 0)
-      .subscribe(response => {
-        this.operatorInputSchemaMap = response.result;
-        this._applySchemaPropagationResult(this.operatorInputSchemaMap);
-      });
+      .subscribe(
+        response => {
+          this.operatorInputSchemaMap = response;
+          this._applySchemaPropagationResult(this.operatorInputSchemaMap);
+        },
+        err => alert(err.error));
 
   }
 
@@ -118,11 +119,7 @@ export class SchemaPropagationService {
     return this.httpClient.post<SchemaPropagationResponse>(
       `${AppSettings.getApiEndpoint()}/${SCHEMA_PROPAGATION_ENDPOINT}`,
       JSON.stringify(body),
-      {headers: {'Content-Type': 'application/json'}})
-      .catch(err => {
-        this.logger.error('schema propagation API returns error', err);
-        return EMPTY;
-      });
+      {headers: {'Content-Type': 'application/json'}});
   }
 
   /**
@@ -243,10 +240,7 @@ export type OperatorInputSchema = ReadonlyArray<ReadonlyArray<SchemaAttribute> |
  * }
  */
 export interface SchemaPropagationResponse extends Readonly<{
-  code: 0,
-  result: {
-    [key: string]: OperatorInputSchema
-  }
+  [key: string]: OperatorInputSchema
 }> {}
 
 /**

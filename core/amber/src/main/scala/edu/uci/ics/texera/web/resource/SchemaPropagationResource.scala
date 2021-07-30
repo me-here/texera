@@ -8,7 +8,7 @@ import edu.uci.ics.texera.workflow.common.workflow.{WorkflowCompiler, WorkflowIn
 import io.dropwizard.jersey.sessions.Session
 
 import javax.servlet.http.HttpSession
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{MediaType, Response}
 import javax.ws.rs.{Consumes, POST, Path, Produces}
 case class SchemaPropagationResponse(
     code: Int,
@@ -26,7 +26,7 @@ class SchemaPropagationResource {
   def suggestAutocompleteSchema(
       @Session httpSession: HttpSession,
       workflowStr: String
-  ): SchemaPropagationResponse = {
+  ): Response = {
     try {
       val workflow = Utils.objectMapper.readValue(workflowStr, classOf[WorkflowInfo])
 
@@ -47,11 +47,13 @@ class SchemaPropagationResource {
             case (opDesc, schemas) => (opDesc.operatorID, schemas.map(_.map(_.getAttributesScala)))
           })
 
-      SchemaPropagationResponse(0, schemaPropagationResult, null)
+      Response.ok().entity(schemaPropagationResult).build()
     } catch {
-      case e: Throwable =>
-        e.printStackTrace()
-        SchemaPropagationResponse(1, null, e.getMessage)
+      case e: Exception =>
+        Response
+          .status(Response.Status.BAD_REQUEST)
+          .entity(e.getMessage)
+          .build()
     }
   }
 
