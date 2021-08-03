@@ -1,3 +1,5 @@
+import traceback
+import traceback
 import typing
 from typing import Iterator, Optional, Union
 
@@ -14,7 +16,8 @@ from core.models.marker import SenderChangeMarker
 from core.models.tuple import InputExhausted, Tuple
 from core.udf.udf_operator import UDFOperator
 from core.util import IQueue, StoppableQueueBlockingRunnable, get_one_of, set_one_of
-from proto.edu.uci.ics.amber.engine.architecture.worker import ControlCommandV2, WorkerExecutionCompletedV2, WorkerState
+from proto.edu.uci.ics.amber.engine.architecture.worker import ControlCommandV2, LocalOperatorExceptionV2, \
+    WorkerExecutionCompletedV2, WorkerState
 from proto.edu.uci.ics.amber.engine.common import ActorVirtualIdentity, ControlInvocationV2, ControlPayloadV2, \
     LinkIdentity, ReturnInvocationV2
 
@@ -69,6 +72,7 @@ class DataProcessor(StoppableQueueBlockingRunnable):
             typing.Tuple[ActorVirtualIdentity, ReturnInvocationV2], self._async_rpc_client.receive
         )
 
+    @logger.catch
     def process_input_tuple(self) -> None:
         """
         Process the current input tuple with the current input link. Send all result Tuples
@@ -78,16 +82,41 @@ class DataProcessor(StoppableQueueBlockingRunnable):
         """
         if isinstance(self._current_input_tuple, Tuple):
             self.context.statistics_manager.increase_input_tuple_count()
-
-        for tuple_ in self.process_tuple_with_udf(self._current_input_tuple, self._current_input_link):
+        try:
+            for tuple_ in self.process_tuple_with_udf(self._current_input_tuple, self._current_input_link):
                 self.check_and_process_control()
                 if tuple_ is not None:
                     self.context.statistics_manager.increase_output_tuple_count()
                     for to, batch in self.context.tuple_to_batch_converter.tuple_to_batch(tuple_):
                         self._output_queue.put(DataElement(tag=to, payload=batch))
+        except Exception:
+            tb = traceback.format_exc(limit=1)
+            control_command = set_one_of(ControlCommandV2, LocalOperatorExceptionV2(message=tb))
+            self._async_rpc_client.send(ActorVirtualIdentity(name="CONTROLLER"), control_command)
+            self._pause()
+
+    def _pause(self) -> None:
+        """
+        Pause the data processing.
+        """
+        if self.context.state_manager.confirm_state(WorkerState.RUNNING, WorkerState.READY):
+            self.context.pause_manager.pause()
+            self.context.state_manager.transit_to(WorkerState.PAUSED)
+            self._input_queue.disable_sub()
+
+    def _resume(self) -> None:
+        """
+        Resume the data processing.
+        """
+        if self.context.state_manager.confirm_state(WorkerState.PAUSED):
+            if self.context.pause_manager.is_paused():
+                self.context.pause_manager.resume()
+                self.context.input_queue.enable_sub()
+            self.context.state_manager.transit_to(WorkerState.RUNNING)
+
 
     def process_tuple_with_udf(self, tuple_: Union[Tuple, InputExhausted], link: LinkIdentity) \
-                -> Iterator[Optional[Tuple]]:
+            -> Iterator[Optional[Tuple]]:
         """
         Process the Tuple/InputExhausted with the current link.
 
