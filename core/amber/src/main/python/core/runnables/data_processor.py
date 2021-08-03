@@ -1,5 +1,4 @@
 import traceback
-import traceback
 import typing
 from typing import Iterator, Optional, Union
 
@@ -36,6 +35,17 @@ class DataProcessor(StoppableQueueBlockingRunnable):
         self.context = Context(self)
         self._async_rpc_server = AsyncRPCServer(output_queue, context=self.context)
         self._async_rpc_client = AsyncRPCClient(output_queue, context=self.context)
+
+    def handle_exception(self, exception: Optional[Exception] = None):
+        """
+        Handle the exception
+        :param: exception, Optional[Exception], if provided, report its message
+        """
+        tb: str = traceback.format_exc(limit=-1)
+        message = tb + str(exception) if exception else ""
+        control_command = set_one_of(ControlCommandV2, LocalOperatorExceptionV2(message=message))
+        self._async_rpc_client.send(ActorVirtualIdentity(name="CONTROLLER"), control_command)
+        self._pause()
 
     @overrides
     def pre_start(self) -> None:
@@ -82,6 +92,7 @@ class DataProcessor(StoppableQueueBlockingRunnable):
         """
         if isinstance(self._current_input_tuple, Tuple):
             self.context.statistics_manager.increase_input_tuple_count()
+
         try:
             for tuple_ in self.process_tuple_with_udf(self._current_input_tuple, self._current_input_link):
                 self.check_and_process_control()
@@ -89,31 +100,8 @@ class DataProcessor(StoppableQueueBlockingRunnable):
                     self.context.statistics_manager.increase_output_tuple_count()
                     for to, batch in self.context.tuple_to_batch_converter.tuple_to_batch(tuple_):
                         self._output_queue.put(DataElement(tag=to, payload=batch))
-        except Exception:
-            tb = traceback.format_exc(limit=1)
-            control_command = set_one_of(ControlCommandV2, LocalOperatorExceptionV2(message=tb))
-            self._async_rpc_client.send(ActorVirtualIdentity(name="CONTROLLER"), control_command)
-            self._pause()
-
-    def _pause(self) -> None:
-        """
-        Pause the data processing.
-        """
-        if self.context.state_manager.confirm_state(WorkerState.RUNNING, WorkerState.READY):
-            self.context.pause_manager.pause()
-            self.context.state_manager.transit_to(WorkerState.PAUSED)
-            self._input_queue.disable_sub()
-
-    def _resume(self) -> None:
-        """
-        Resume the data processing.
-        """
-        if self.context.state_manager.confirm_state(WorkerState.PAUSED):
-            if self.context.pause_manager.is_paused():
-                self.context.pause_manager.resume()
-                self.context.input_queue.enable_sub()
-            self.context.state_manager.transit_to(WorkerState.RUNNING)
-
+        except Exception as exception:
+            self.handle_exception(exception)
 
     def process_tuple_with_udf(self, tuple_: Union[Tuple, InputExhausted], link: LinkIdentity) \
             -> Iterator[Optional[Tuple]]:
@@ -218,3 +206,22 @@ class DataProcessor(StoppableQueueBlockingRunnable):
                 EndMarker, self._process_end_marker,
                 EndOfAllMarker, self._process_end_of_all_marker
             )
+
+    def _pause(self) -> None:
+        """
+        Pause the data processing.
+        """
+        if self.context.state_manager.confirm_state(WorkerState.RUNNING, WorkerState.READY):
+            self.context.pause_manager.pause()
+            self.context.state_manager.transit_to(WorkerState.PAUSED)
+            self._input_queue.disable_sub()
+
+    def _resume(self) -> None:
+        """
+        Resume the data processing.
+        """
+        if self.context.state_manager.confirm_state(WorkerState.PAUSED):
+            if self.context.pause_manager.is_paused():
+                self.context.pause_manager.resume()
+                self.context.input_queue.enable_sub()
+            self.context.state_manager.transit_to(WorkerState.RUNNING)
