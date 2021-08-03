@@ -102,6 +102,7 @@ class DataProcessor(StoppableQueueBlockingRunnable):
                         self._output_queue.put(DataElement(tag=to, payload=batch))
         except Exception as exception:
             self.handle_exception(exception)
+            self._pause()
 
     def process_tuple_with_udf(self, tuple_: Union[Tuple, InputExhausted], link: LinkIdentity) \
             -> Iterator[Optional[Tuple]]:

@@ -90,41 +90,45 @@ class Controller(
 
   // build whole workflow
   workflow.build(availableNodes, networkCommunicationActor, context)
-
   Future
-    .collect(
-      // activate all links
-      workflow.getAllLinks.map { link =>
-        asyncRPCClient.send(
-          LinkWorkers(link),
-          CONTROLLER
-        )
-      }.toSeq ++
-        // send python udf code
-        workflow.getPythonWorkerToOperatorExec
-          .map({
-            case (workerId: ActorVirtualIdentity, pythonOperatorExec: PythonUDFOpExecV2) =>
-              asyncRPCClient.send(
-                SendPythonUdf(
-                  pythonOperatorExec.getCode,
-                  pythonOperatorExec.isInstanceOf[ISourceOperatorExecutor]
-                ),
-                workerId
-              )
-          })
-          .toSeq
+    .collect( // send python udf code
+      workflow.getPythonWorkerToOperatorExec
+        .map({
+          case (workerId: ActorVirtualIdentity, pythonOperatorExec: PythonUDFOpExecV2) =>
+            asyncRPCClient.send(
+              SendPythonUdf(
+                pythonOperatorExec.getCode,
+                pythonOperatorExec.isInstanceOf[ISourceOperatorExecutor]
+              ),
+              workerId
+            )
+        })
+        .toSeq
     )
-    .onSuccess { _ =>
-      workflow.getAllOperators.foreach(_.setAllWorkerState(READY))
-      if (eventListener.workflowStatusUpdateListener != null) {
-        eventListener.workflowStatusUpdateListener
-          .apply(WorkflowStatusUpdate(workflow.getWorkflowStatus))
-      }
-      // for testing, report ready state to parent
-      context.parent ! ControllerState.Ready
-      context.become(running)
-      unstashAll()
-    }
+    .onSuccess(_ =>
+      Future
+        .collect(
+          // activate all links
+          workflow.getAllLinks.map { link =>
+            asyncRPCClient.send(
+              LinkWorkers(link),
+              CONTROLLER
+            )
+          }.toSeq
+        )
+        .onSuccess { _ =>
+          workflow.getAllOperators.foreach(_.setAllWorkerState(READY))
+          if (eventListener.workflowStatusUpdateListener != null) {
+            eventListener.workflowStatusUpdateListener
+              .apply(WorkflowStatusUpdate(workflow.getWorkflowStatus))
+          }
+          // for testing, report ready state to parent
+          context.parent ! ControllerState.Ready
+          context.become(running)
+          unstashAll()
+        }
+    )
+    .onFailure(x => throw x)
 
   override def receive: Receive = initializing
 

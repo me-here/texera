@@ -109,11 +109,17 @@ class CurrentInputTupleInfo(betterproto.Message):
 
 
 @dataclass(eq=False, repr=False)
+class ControlException(betterproto.Message):
+    msg: str = betterproto.string_field(1)
+
+
+@dataclass(eq=False, repr=False)
 class ControlReturnV2(betterproto.Message):
-    worker_statistics: "WorkerStatistics" = betterproto.message_field(1, group="value")
-    worker_state: "WorkerState" = betterproto.enum_field(2, group="value")
+    control_exception: "ControlException" = betterproto.message_field(1, group="value")
+    worker_statistics: "WorkerStatistics" = betterproto.message_field(2, group="value")
+    worker_state: "WorkerState" = betterproto.enum_field(3, group="value")
     current_input_tuple_info: "CurrentInputTupleInfo" = betterproto.message_field(
-        3, group="value"
+        4, group="value"
     )
 
 
