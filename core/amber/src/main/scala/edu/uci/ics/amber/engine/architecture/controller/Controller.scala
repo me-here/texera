@@ -17,13 +17,16 @@ import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunication
   RegisterActorRef
 }
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkInputPort
+import edu.uci.ics.amber.engine.architecture.pythonworker.promisehandlers.SendPythonUdfHandler.SendPythonUdf
 import edu.uci.ics.amber.engine.architecture.worker.statistics.WorkerState.READY
+import edu.uci.ics.amber.engine.common.ISourceOperatorExecutor
 import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, WorkflowControlMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnInvocation}
 import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, WorkflowIdentity}
 import edu.uci.ics.amber.error.ErrorUtils.safely
 import edu.uci.ics.amber.error.WorkflowRuntimeError
+import edu.uci.ics.texera.workflow.operators.udf.pythonV2.PythonUDFOpExecV2
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
@@ -97,15 +100,33 @@ class Controller(
       )
     }.toSeq)
     .onSuccess { ret =>
-      workflow.getAllOperators.foreach(_.setAllWorkerState(READY))
-      if (eventListener.workflowStatusUpdateListener != null) {
-        eventListener.workflowStatusUpdateListener
-          .apply(WorkflowStatusUpdate(workflow.getWorkflowStatus))
-      }
-      // for testing, report ready state to parent
-      context.parent ! ControllerState.Ready
-      context.become(running)
-      unstashAll()
+      Future
+        .collect(
+          workflow.getPythonWorkerToOperatorExec
+            .map({
+              case (workerId: ActorVirtualIdentity, pythonOperatorExec: PythonUDFOpExecV2) =>
+                asyncRPCClient.send(
+                  SendPythonUdf(
+                    pythonOperatorExec.getCode,
+                    pythonOperatorExec.isInstanceOf[ISourceOperatorExecutor]
+                  ),
+                  workerId
+                )
+            })
+            .toSeq
+        )
+        .onSuccess { ret =>
+          workflow.getAllOperators.foreach(_.setAllWorkerState(READY))
+          if (eventListener.workflowStatusUpdateListener != null) {
+            eventListener.workflowStatusUpdateListener
+              .apply(WorkflowStatusUpdate(workflow.getWorkflowStatus))
+          }
+          // for testing, report ready state to parent
+          context.parent ! ControllerState.Ready
+          context.become(running)
+          unstashAll()
+        }
+
     }
 
   override def receive: Receive = initializing

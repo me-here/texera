@@ -12,8 +12,9 @@ import edu.uci.ics.amber.engine.common.virtualidentity.{
   LinkIdentity,
   OperatorIdentity
 }
-import edu.uci.ics.amber.engine.common.{AmberUtils, Constants}
+import edu.uci.ics.amber.engine.common.{AmberUtils, Constants, IOperatorExecutor}
 import edu.uci.ics.amber.engine.operators.{OpExecConfig, SinkOpExecConfig}
+import edu.uci.ics.texera.workflow.operators.udf.pythonV2.PythonUDFOpExecV2
 
 import scala.collection.mutable
 
@@ -35,6 +36,8 @@ class Workflow(
     new mutable.HashMap[OperatorIdentity, mutable.ArrayBuffer[LinkStrategy]]
   }
   private val idToLink = new mutable.HashMap[LinkIdentity, LinkStrategy]()
+
+  private val workerToOperatorExec = new mutable.HashMap[ActorVirtualIdentity, IOperatorExecutor]()
 
   def getSources(operator: OperatorIdentity): Set[OperatorIdentity] = {
     var result = Set[OperatorIdentity]()
@@ -97,6 +100,12 @@ class Workflow(
 
   def getLink(linkID: LinkIdentity): LinkStrategy = idToLink(linkID)
 
+  def getPythonWorkerToOperatorExec: Iterable[(ActorVirtualIdentity, IOperatorExecutor)] =
+    workerToOperatorExec.filter({
+      case (_: ActorVirtualIdentity, operatorExecutor: IOperatorExecutor) =>
+        operatorExecutor.isInstanceOf[PythonUDFOpExecV2]
+    })
+
   def isCompleted: Boolean = operatorToOpExecConfig.values.forall(op => op.getState == Completed)
 
   def build(
@@ -142,7 +151,14 @@ class Workflow(
     }
     if (opExecConfig.topology.links.isEmpty) {
       opExecConfig.topology.layers.foreach(workerLayer => {
-        workerLayer.build(prev, allNodes, communicationActor.ref, ctx, workerToLayer)
+        workerLayer.build(
+          prev,
+          allNodes,
+          communicationActor.ref,
+          ctx,
+          workerToLayer,
+          workerToOperatorExec
+        )
         layerToOperatorExecConfig(workerLayer.id) = opExecConfig
       })
     } else {
@@ -155,7 +171,14 @@ class Workflow(
           )
           .map(_.from)
       layers.foreach(workerLayer => {
-        workerLayer.build(prev, allNodes, communicationActor.ref, ctx, workerToLayer)
+        workerLayer.build(
+          prev,
+          allNodes,
+          communicationActor.ref,
+          ctx,
+          workerToLayer,
+          workerToOperatorExec
+        )
         layerToOperatorExecConfig(workerLayer.id) = opExecConfig
       })
       layers = operatorInLinks.filter(x => x._2.forall(_.isBuilt)).keys
@@ -166,7 +189,8 @@ class Workflow(
             allNodes,
             communicationActor.ref,
             ctx,
-            workerToLayer
+            workerToLayer,
+            workerToOperatorExec
           )
           layerToOperatorExecConfig(layer.id) = opExecConfig
         })

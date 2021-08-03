@@ -51,21 +51,20 @@ class WorkerLayer(
 
   def statistics: Array[WorkerStatistics] = workers.values.map(_.stats).toArray
 
-  def workerToOperatorExec: mutable.HashMap[ActorVirtualIdentity, IOperatorExecutor] =
-    mutable.HashMap()
-
   def build(
       prev: Array[(OpExecConfig, WorkerLayer)],
       all: Array[Address],
       parentNetworkCommunicationActorRef: ActorRef,
       context: ActorContext,
-      workerToLayer: mutable.HashMap[ActorVirtualIdentity, WorkerLayer]
+      workerToLayer: mutable.HashMap[ActorVirtualIdentity, WorkerLayer],
+      workerToOperatorExec: mutable.HashMap[ActorVirtualIdentity, IOperatorExecutor]
   ): Unit = {
     deployStrategy.initialize(deploymentFilter.filter(prev, all, context.self.path.address))
     workers = (0 until numWorkers).map { i =>
       val operatorExecutor: IOperatorExecutor = initIOperatorExecutor(i)
       val workerId: ActorVirtualIdentity = ActorVirtualIdentity(s"Worker-$id-[$i]")
       val address: Address = deployStrategy.next()
+      workerToOperatorExec(workerId) = operatorExecutor
       val ref: ActorRef = context.actorOf(
         if (operatorExecutor.isInstanceOf[PythonUDFOpExecV2]) {
           PythonWorkflowWorker
