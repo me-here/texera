@@ -128,7 +128,9 @@ class Controller(
           unstashAll()
         }
     )
-    .onFailure(x => throw x)
+    .onFailure((x: Throwable) =>
+      logger.logError(new WorkflowRuntimeError(x.getMessage, "PythonUDFV2", Map.empty))
+    )
 
   override def receive: Receive = initializing
 

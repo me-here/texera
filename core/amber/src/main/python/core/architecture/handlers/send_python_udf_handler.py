@@ -13,7 +13,6 @@ class SendPythonUdfHandler(Handler):
     cmd = SendPythonUdfV2
 
     def __call__(self, context: Context, command: SendPythonUdfV2, *args, **kwargs):
-
         try:
             spec = util.spec_from_loader('udf_module', loader=None)
             udf_module = util.module_from_spec(spec)
@@ -27,8 +26,7 @@ class SendPythonUdfHandler(Handler):
             context.dp._udf_operator = operators[0]()
             context.dp._udf_operator.is_source = command.is_source
             context.dp._udf_operator.open()
+            return None
         except Exception as exception:
-            context.dp.handle_exception(exception)
-            context.dp._pause()
             return ControlException(str(exception))
-        return None
+
