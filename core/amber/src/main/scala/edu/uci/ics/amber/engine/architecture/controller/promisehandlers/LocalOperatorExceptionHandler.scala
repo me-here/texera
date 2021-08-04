@@ -1,15 +1,13 @@
 package edu.uci.ics.amber.engine.architecture.controller.promisehandlers
 
-import edu.uci.ics.amber.engine.architecture.breakpoint.FaultedTuple
 import edu.uci.ics.amber.engine.architecture.controller.ControllerAsyncRPCHandlerInitializer
-import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.BreakpointTriggered
+import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.ErrorOccurred
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.KillWorkflowHandler.KillWorkflow
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.LocalOperatorExceptionHandler.LocalOperatorException
-import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.PauseHandler.PauseWorkflow
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
-
-import scala.collection.mutable
+import edu.uci.ics.amber.error.WorkflowRuntimeError
 
 object LocalOperatorExceptionHandler {
   final case class LocalOperatorException(triggeredTuple: ITuple, e: Throwable)
@@ -33,20 +31,15 @@ trait LocalOperatorExceptionHandler {
   registerHandler { (msg: LocalOperatorException, sender) =>
     {
       // report the faulted tuple to the frontend with the exception
-      if (eventListener.breakpointTriggeredListener != null) {
-        eventListener.breakpointTriggeredListener.apply(
-          BreakpointTriggered(
-            mutable.HashMap(
-              (sender, FaultedTuple(msg.triggeredTuple, 0)) -> Array(
-                msg.e.toString
-              )
-            ),
-            workflow.getOperator(sender).id.operator
+      if (eventListener.workflowExecutionErrorListener != null) {
+        eventListener.workflowExecutionErrorListener.apply(
+          ErrorOccurred(
+            new WorkflowRuntimeError(msg.e.toString, "", Map())
           )
         )
       }
-      // then pause the workflow
-      execute(PauseWorkflow(), CONTROLLER)
+      // then kill the workflow
+      execute(KillWorkflow(), CONTROLLER)
     }
   }
 }
