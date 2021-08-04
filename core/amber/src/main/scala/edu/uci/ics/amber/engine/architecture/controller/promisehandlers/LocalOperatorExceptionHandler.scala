@@ -19,10 +19,10 @@ object LocalOperatorExceptionHandler {
   * 1. operator.processTuple
   * 2. operator.hasNext
   * 3. operator.Next
-  * The triggeredTuple of this message will always be the current input tuple
-  * note that this message will be sent for each faulted input tuple, so the frontend
-  * need to update incrementally since there can be multiple faulted tuple
-  * from different workers at the same time.
+//  * The triggeredTuple of this message will always be the current input tuple
+//  * note that this message will be sent for each faulted input tuple, so the frontend
+//  * need to update incrementally since there can be multiple faulted tuple
+//  * from different workers at the same time.
   *
   * possible sender: worker
   */
@@ -30,7 +30,7 @@ trait LocalOperatorExceptionHandler {
   this: ControllerAsyncRPCHandlerInitializer =>
   registerHandler { (msg: LocalOperatorException, sender) =>
     {
-      // report the faulted tuple to the frontend with the exception
+      // report the exception to the frontend
       if (eventListener.workflowExecutionErrorListener != null) {
         eventListener.workflowExecutionErrorListener.apply(
           ErrorOccurred(
