@@ -1,8 +1,5 @@
 import { Component } from '@angular/core';
-import { FormlyJsonschema } from '@ngx-formly/core/json-schema';
 import '../../../common/rxjs-operators';
-import { ExecuteWorkflowService } from '../../service/execute-workflow/execute-workflow.service';
-import { WorkflowActionService } from '../../service/workflow-graph/model/workflow-action.service';
 import { PropertyEditService } from '../../service/property-editor/property-edit.service';
 
 /**
@@ -35,12 +32,8 @@ import { PropertyEditService } from '../../service/property-editor/property-edit
 })
 export class PropertyEditorComponent {
 
-
   constructor(
     public propertyEditService: PropertyEditService,
-    public formlyJsonschema: FormlyJsonschema,
-    public workflowActionService: WorkflowActionService,
-    public executeWorkflowService: ExecuteWorkflowService,
   ) {}
 
 }
