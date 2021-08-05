@@ -87,6 +87,7 @@ import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzStatisticModule } from 'ng-zorro-antd/statistic';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzAvatarModule } from 'ng-zorro-antd/avatar';
+import { BreakpointControlPanelComponent } from './workspace/component/property-editor/breakpoint-control-panel/breakpoint-control-panel.component';
 
 registerLocaleData(en);
 
@@ -132,7 +133,8 @@ registerLocaleData(en);
     CodeEditorDialogComponent,
     TypeCastingDisplayComponent,
     ResultDownloadComponent,
-    NgbdModalShareAccessComponent
+    NgbdModalShareAccessComponent,
+    BreakpointControlPanelComponent
   ],
   imports: [
     BrowserModule,

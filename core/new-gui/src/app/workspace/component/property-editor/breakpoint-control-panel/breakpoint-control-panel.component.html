@@ -1,0 +1,27 @@
+<button
+  *ngIf="propertyEditService.currentLinkID !== undefined && !propertyEditService.hasBreakpoint(propertyEditService.currentLinkID)"
+  type="button" class="breakpointRemoveButton"
+  (click)="propertyEditService.handleAddBreakpoint(propertyEditService.currentLinkID, propertyEditService.formData)">
+  Add Breakpoint
+</button>
+
+<button
+  *ngIf="propertyEditService.currentLinkID !== undefined && !propertyEditService.hasBreakpoint(propertyEditService.currentLinkID)"
+  type="button" class="breakpointRemoveButton"
+  (click)="handleRemoveBreakpoint()">
+  Remove Breakpoint
+</button>
+
+<button
+  *ngIf="propertyEditService.isPausedState(this.propertyEditService.currentLinkID) && this.propertyEditService.interactive === false"
+  type="button" class="breakpointRemoveButton"
+  (click)="allowChangeOperatorLogic()">
+  Change Logic
+</button>
+
+<button
+  *ngIf="propertyEditService.isPausedState(this.propertyEditService.currentLinkID) && this.propertyEditService.interactive === true"
+  type="button" class="breakpointRemoveButton"
+  (click)="confirmChangeOperatorLogic()">
+  Confirm Change
+</button>

@@ -1,38 +1,22 @@
 <div class="texera-workspace-property-editor-body texera-workflow-component-body">
-  <div *ngIf="displayForm">
-    <h3 *ngIf="formTitle" class="texera-workspace-property-editor-title" mat-subheader>
-      {{formTitle}}
+  <div *ngIf="propertyEditService.displayForm">
+    <h3 *ngIf="propertyEditService.formTitle" class="texera-workspace-property-editor-title" mat-subheader>
+      {{propertyEditService.formTitle}}
     </h3>
 
-    <form class="texera-workspace-property-editor-form" [formGroup]="formlyFormGroup" *ngIf="formlyFields">
-      <formly-form [model]="formData"
-                   [fields]="formlyFields"
-                   [options]="formlyOptions"
-                   [form]="formlyFormGroup"
-                   (modelChange)="onFormChanges($event)">
+    <form class="texera-workspace-property-editor-form" [formGroup]="propertyEditService.formlyFormGroup"
+          *ngIf="propertyEditService.formlyFields">
+      <formly-form [model]="propertyEditService.formData"
+                   [fields]="propertyEditService.formlyFields"
+                   [options]="propertyEditService.formlyOptions"
+                   [form]="propertyEditService.formlyFormGroup"
+                   (modelChange)="propertyEditService.onFormChanges($event)">
       </formly-form>
     </form>
 
-    <texera-type-casting-display [operatorID]='currentOperatorID'></texera-type-casting-display>
+    <texera-type-casting-display [operatorID]='propertyEditService.currentOperatorID'></texera-type-casting-display>
 
-    <button *ngIf="currentLinkID !== undefined && !propertyEditService.hasBreakpoint(this.currentLinkID)" type="button"
-            class="breakpointRemoveButton"
-            (click)="propertyEditService.handleAddBreakpoint(this.currentLinkID, formData)">Add Breakpoint
-    </button>
+    <texera-breakpoint-control-panel></texera-breakpoint-control-panel>
 
-    <button *ngIf="currentLinkID !== undefined && !propertyEditService.hasBreakpoint(this.currentLinkID)" type="button"
-            class="breakpointRemoveButton"
-            (click)="handleRemoveBreakpoint()">Remove Breakpoint
-    </button>
-
-    <button *ngIf="propertyEditService.isPausedState(this.currentOperatorID) && this.interactive === false"
-            type="button" class="breakpointRemoveButton"
-            (click)="allowChangeOperatorLogic()">Change Logic
-    </button>
-
-    <button *ngIf="propertyEditService.isPausedState(this.currentOperatorID) && this.interactive === true"
-            type="button" class="breakpointRemoveButton"
-            (click)="confirmChangeOperatorLogic()">Confirm Change
-    </button>
   </div>
 </div>
