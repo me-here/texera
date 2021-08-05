@@ -15,7 +15,6 @@ export const TYPE_CASTING_OPERATOR_TYPE = 'TypeCasting';
   styleUrls: ['./type-casting-display.component.scss']
 })
 
-
 export class TypeCastingDisplayComponent implements OnChanges {
 
   public schemaToDisplay: Partial<SchemaAttribute>[] = [];
@@ -28,13 +27,7 @@ export class TypeCastingDisplayComponent implements OnChanges {
     private workflowActionService: WorkflowActionService,
     private schemaPropagationService: SchemaPropagationService,
   ) {
-    this.workflowActionService.getTexeraGraph().getOperatorPropertyChangeStream()
-      .filter(op => op.operator.operatorID === this.operatorID)
-      .filter(op => op.operator.operatorType === TYPE_CASTING_OPERATOR_TYPE)
-      .map(event => event.operator)
-      .subscribe(op => {
-        this.updateComponent(op);
-      });
+    this.registerOperatorPropertyChangeHandler();
   }
 
   // invoke on first init and every time the input binding is changed
@@ -76,6 +69,14 @@ export class TypeCastingDisplayComponent implements OnChanges {
       }
     }));
 
+  }
+
+  private registerOperatorPropertyChangeHandler() {
+    this.workflowActionService.getTexeraGraph().getOperatorPropertyChangeStream()
+      .filter(op => op.operator.operatorID === this.operatorID &&
+        op.operator.operatorType === TYPE_CASTING_OPERATOR_TYPE)
+      .map(event => event.operator)
+      .subscribe(op => this.updateComponent(op));
   }
 }
 

@@ -6,34 +6,33 @@
 
     <form class="texera-workspace-property-editor-form" [formGroup]="formlyFormGroup" *ngIf="formlyFields">
       <formly-form [model]="formData"
-      [fields]="formlyFields"
-      [options]="formlyOptions"
-      [form]="formlyFormGroup"
-      (modelChange) = "onFormChanges($event)">
+                   [fields]="formlyFields"
+                   [options]="formlyOptions"
+                   [form]="formlyFormGroup"
+                   (modelChange)="onFormChanges($event)">
       </formly-form>
     </form>
 
-    <texera-type-casting-display [operatorID]='currentOperatorID' ></texera-type-casting-display>
+    <texera-type-casting-display [operatorID]='currentOperatorID'></texera-type-casting-display>
 
+    <button *ngIf="currentLinkID !== undefined && !propertyEditService.hasBreakpoint(this.currentLinkID)" type="button"
+            class="breakpointRemoveButton"
+            (click)="propertyEditService.handleAddBreakpoint(this.currentLinkID, formData)">Add Breakpoint
+    </button>
 
-    <button *ngIf="currentLinkID !== undefined && !hasBreakpoint()" type="button" class="breakpointRemoveButton"
-    (click)="handleAddBreakpoint()">Add Breakpoint</button>
+    <button *ngIf="currentLinkID !== undefined && !propertyEditService.hasBreakpoint(this.currentLinkID)" type="button"
+            class="breakpointRemoveButton"
+            (click)="handleRemoveBreakpoint()">Remove Breakpoint
+    </button>
 
-    <button *ngIf="currentLinkID !== undefined && hasBreakpoint()" type="button" class="breakpointRemoveButton"
-    (click)="handleRemoveBreakpoint()">Remove Breakpoint</button>
+    <button *ngIf="propertyEditService.isPausedState(this.currentOperatorID) && this.interactive === false"
+            type="button" class="breakpointRemoveButton"
+            (click)="allowChangeOperatorLogic()">Change Logic
+    </button>
 
-    <button *ngIf="currentOperatorID !== undefined &&
-    (this.executeWorkflowService.getExecutionState().state === ExecutionState.Paused ||
-      this.executeWorkflowService.getExecutionState().state === ExecutionState.BreakpointTriggered) &&
-    this.interactive === false"
-    type="button" class="breakpointRemoveButton"
-    (click)="allowChangeOperatorLogic()">Change Logic</button>
-
-    <button *ngIf="currentOperatorID !== undefined &&
-    (this.executeWorkflowService.getExecutionState().state === ExecutionState.Paused ||
-      this.executeWorkflowService.getExecutionState().state === ExecutionState.BreakpointTriggered) &&
-    this.interactive === true"
-    type="button" class="breakpointRemoveButton"
-    (click)="confirmChangeOperatorLogic()">Confirm Change</button>
+    <button *ngIf="propertyEditService.isPausedState(this.currentOperatorID) && this.interactive === true"
+            type="button" class="breakpointRemoveButton"
+            (click)="confirmChangeOperatorLogic()">Confirm Change
+    </button>
   </div>
 </div>

@@ -45,7 +45,7 @@ export const EXECUTION_TIMEOUT = 3000;
  *  in order to capture the event of workflow graph starts executing.
  *
  * Components and Services subscribe to getExecuteEndedStream()
- *  for the event of the execution result (or errro) returned by the backend.
+ *  for the event of the execution result (or error) returned by the backend.
  *
  * @author Zuozhi Wang
  * @author Henry Chen
