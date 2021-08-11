@@ -31,13 +31,13 @@
             <button (click)="onClickOpenShareAccess(dashboardUserFileEntry)" type="button" nz-button
                     nz-tooltip="Share the file {{dashboardUserFileEntry.file.name}} to others"
                     nzTooltipPlacement="bottom"
-                    [disabled]="dashboardUserFileEntry.accessLevel!=='Write'">
+                    [disabled]="dashboardUserFileEntry.accessLevel!=='Write' && !dashboardUserFileEntry.isOwner">
               <i nz-icon nzType="share-alt" nzTheme="outline"></i>
             </button>
           </nz-list-item-action>
           <nz-list-item-action>
             <button nz-button nz-tooltip="Delete the file {{dashboardUserFileEntry.file.name}}"
-                    nzTooltipPlacement="bottom" (click)="deleteFile(dashboardUserFileEntry)" type="button" [disabled]="dashboardUserFileEntry.accessLevel!=='Write'">
+                    nzTooltipPlacement="bottom" (click)="deleteFile(dashboardUserFileEntry)" type="button" [disabled]="dashboardUserFileEntry.accessLevel!=='Write' && !dashboardUserFileEntry.isOwner">
               <i nz-icon nzType="delete" nzTheme="outline"></i>
             </button>
           </nz-list-item-action>

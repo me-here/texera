@@ -360,6 +360,24 @@ export class WorkflowActionService {
     this.executeAndStoreCommand(command);
   }
 
+
+  public addComments(): void {
+    const currentHighlights = this.jointGraphWrapper.getCurrentHighlights();
+    console.log('adding comment in action service');
+    const command: Command = {
+      modifiesWorkflow: true,
+      execute: () => {
+        this.jointGraphWrapper.unhighlightElements(currentHighlights);
+        this.jointGraphWrapper.setMultiSelectMode(false);
+        this.addCommentInternal();
+
+      },
+      undo: () => {
+        console.log('haha, just kidding');
+      }
+    };
+    this.executeAndStoreCommand(command);
+  }
   /**
    * Adds given operators and links to the workflow graph.
    * @param operatorsAndPositions
@@ -864,6 +882,13 @@ export class WorkflowActionService {
     this.reloadWorkflow(undefined);
     this.undoRedoService.clearUndoStack();
     this.undoRedoService.clearRedoStack();
+  }
+
+  private addCommentInternal(): void {
+    console.log('adding comment internally');
+    const commentElement = this.jointUIService.getCommentElement(800, 400);
+    this.jointGraph.addCell(commentElement);
+    console.log(this.jointGraph.getCells());
   }
 
   private addOperatorInternal(operator: OperatorPredicate, point: Point): void {

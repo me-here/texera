@@ -1,4 +1,3 @@
-import { UserIconComponent } from './../../../dashboard/component/top-bar/user-icon/user-icon.component';
 import { DatePipe, Location } from '@angular/common';
 import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { TourService } from 'ngx-tour-ng-bootstrap';
@@ -14,7 +13,7 @@ import { JointGraphWrapper } from '../../service/workflow-graph/model/joint-grap
 import { WorkflowActionService } from '../../service/workflow-graph/model/workflow-action.service';
 import { WorkflowStatusService } from '../../service/workflow-status/workflow-status.service';
 import { ExecutionState } from '../../types/execute-workflow.interface';
-import { NgbActiveModal, NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { ResultDownloadComponent } from './result-download/result-download.component';
 import { WorkflowWebsocketService } from '../../service/workflow-websocket/workflow-websocket.service';
 import { Observable } from 'rxjs';
@@ -196,6 +195,12 @@ export class NavigationComponent implements OnInit {
     }
   }
 
+
+  public onClickAddComment(): void {
+    console.log('adding a comment....');
+    this.workflowActionService.addComments();
+  }
+
   public handleKill(): void {
     this.executeWorkflowService.killWorkflow();
   }
@@ -232,7 +237,7 @@ export class NavigationComponent implements OnInit {
 
     // make the ratio small.
     this.workflowActionService.getJointGraphWrapper()
-        .setZoomProperty(this.workflowActionService.getJointGraphWrapper().getZoomRatio() - JointGraphWrapper.ZOOM_CLICK_DIFF);
+      .setZoomProperty(this.workflowActionService.getJointGraphWrapper().getZoomRatio() - JointGraphWrapper.ZOOM_CLICK_DIFF);
   }
 
   /**
@@ -251,7 +256,7 @@ export class NavigationComponent implements OnInit {
 
     // make the ratio big.
     this.workflowActionService.getJointGraphWrapper()
-        .setZoomProperty(this.workflowActionService.getJointGraphWrapper().getZoomRatio() + JointGraphWrapper.ZOOM_CLICK_DIFF);
+      .setZoomProperty(this.workflowActionService.getJointGraphWrapper().getZoomRatio() + JointGraphWrapper.ZOOM_CLICK_DIFF);
   }
 
   /**
@@ -269,7 +274,9 @@ export class NavigationComponent implements OnInit {
     this.downloadResultPopup = this.modalService.open(ResultDownloadComponent);
     this.downloadResultPopup.componentInstance.message = 'Collecting results. It may takes a while';
     // set the variable to undefined when user closes the popup
-    this.downloadResultPopup.result.then(() => {this.downloadResultPopup = undefined; });
+    this.downloadResultPopup.result.then(() => {
+      this.downloadResultPopup = undefined;
+    });
   }
 
   /**
@@ -390,7 +397,7 @@ export class NavigationComponent implements OnInit {
         this.currentWorkflowName = this.workflowActionService.getWorkflowMetadata()?.name;
         this.autoSaveState = this.workflowActionService.getWorkflowMetadata().lastModifiedTime === undefined ?
           '' : 'Saved at ' + this.datePipe.transform(this.workflowActionService.getWorkflowMetadata().lastModifiedTime,
-            'MM/dd/yyyy HH:mm:ss zzz', Intl.DateTimeFormat().resolvedOptions().timeZone, 'en');
+          'MM/dd/yyyy HH:mm:ss zzz', Intl.DateTimeFormat().resolvedOptions().timeZone, 'en');
 
       });
   }
@@ -412,7 +419,7 @@ export class NavigationComponent implements OnInit {
       const allDisabled = this.effectivelyHighlightedOperators().every(
         op => this.workflowActionService.getTexeraGraph().isOperatorDisabled(op));
 
-      this.isDisableOperator = ! allDisabled;
+      this.isDisableOperator = !allDisabled;
       this.isDisableOperatorClickable = effectiveHighlightedOperators.length !== 0;
     });
   }

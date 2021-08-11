@@ -6,6 +6,7 @@ import * as joint from 'jointjs';
 import { Point, OperatorPredicate, OperatorLink } from '../../types/workflow-common.interface';
 import { Group, GroupBoundingBox } from '../workflow-graph/model/operator-group';
 import { OperatorState, OperatorStatistics } from '../../types/execute-workflow.interface';
+import { jitOnlyGuardedExpression } from '@angular/compiler/src/render3/util';
 
 /**
  * Defines the SVG element for the breakpoint button
@@ -117,6 +118,12 @@ class TexeraCustomGroupElement extends joint.shapes.devs.Model {
     </g>`;
 }
 
+class TexeraCustomCommentElement extends joint.shapes.devs.Model {
+  markup = `<g class = "element-node">
+  <rect class = "body"></rect>
+  <image></image>
+  </g>`;
+}
 /**
  * JointUIService controls the shape of an operator and a link
  *  when they are displayed by JointJS.
@@ -145,6 +152,9 @@ export class JointUIService {
 
   public static readonly DEFAULT_GROUP_MARGIN = 50;
   public static readonly DEFAULT_GROUP_MARGIN_BOTTOM = 40;
+
+  public static readonly DEFAULT_COMMENT_WIDTH = 32;
+  public static readonly DEFAULT_COMMENT_HEIGHT = 32;
 
   private operators: ReadonlyArray<OperatorSchema> = [];
 
@@ -177,6 +187,20 @@ export class JointUIService {
    *
    * @returns JointJS Element
    */
+
+  public getCommentElement(x: number, y: number): joint.dia.Element {
+    console.log('adding a comment in UI service');
+    const point: Point = {x: x, y: y};
+    const basic = new joint.shapes.standard.Rectangle;
+    basic.position(point.x, point.y);
+    basic.resize(120, 50);
+    const commentElement = new TexeraCustomCommentElement({
+      position: point,
+      size: {width: JointUIService.DEFAULT_COMMENT_WIDTH, height: JointUIService.DEFAULT_COMMENT_HEIGHT},
+      attrs: JointUIService.getCustomCommentStyleAttrs()
+    });
+    return commentElement;
+  }
   public getJointOperatorElement(
     operator: OperatorPredicate, point: Point
   ): joint.dia.Element {
@@ -608,6 +632,24 @@ export class JointUIService {
       }
     };
     return groupStyleAttrs;
+  }
+
+  public static getCustomCommentStyleAttrs(): joint.shapes.devs.ModelSelectors {
+    const commentStyleAttrs = {
+      'rect': {
+        fill: '#F2F4F5', 'follow-scale': true, stroke: '#CED4D9', 'stroke-width': '0',
+        rx: '5px', ry: '5px'
+      },
+      'image': {
+        'xlink:href': 'assets/operator_images/icons8-chat_bubble.png',
+        width: 32, height: 32,
+        'ref-x': .5, 'ref-y': .5,
+        ref: 'rect',
+        'x-alignment': 'middle',
+        'y-alignment': 'middle',
+      }
+    };
+    return commentStyleAttrs;
   }
 
 }
