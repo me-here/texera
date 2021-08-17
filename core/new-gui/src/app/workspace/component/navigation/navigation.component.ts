@@ -17,6 +17,7 @@ import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { ResultDownloadComponent } from './result-download/result-download.component';
 import { WorkflowWebsocketService } from '../../service/workflow-websocket/workflow-websocket.service';
 import { Observable } from 'rxjs';
+import { WorkflowUtilService } from '../../service/workflow-graph/util/workflow-util.service';
 
 /**
  * NavigationComponent is the top level navigation bar that shows
@@ -77,7 +78,8 @@ export class NavigationComponent implements OnInit {
     public userService: UserService,
     private workflowCacheService: WorkflowCacheService,
     private datePipe: DatePipe,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    public workflowUtilService: WorkflowUtilService
   ) {
     this.executionState = executeWorkflowService.getExecutionState().state;
     // return the run button after the execution is finished, either
@@ -196,9 +198,9 @@ export class NavigationComponent implements OnInit {
   }
 
 
-  public onClickAddComment(): void {
+  public onClickAddCommentBox(): void {
     console.log('adding a comment....');
-    this.workflowActionService.addComments();
+    this.workflowActionService.addCommentBox(this.workflowUtilService.getNewCommentBox(), {x: 800, y: 400});
   }
 
   public handleKill(): void {

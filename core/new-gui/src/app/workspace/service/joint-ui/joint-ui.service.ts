@@ -3,7 +3,7 @@ import { OperatorMetadataService } from '../operator-metadata/operator-metadata.
 import { OperatorSchema } from '../../types/operator-schema.interface';
 
 import * as joint from 'jointjs';
-import { Point, OperatorPredicate, OperatorLink } from '../../types/workflow-common.interface';
+import { Point, OperatorPredicate, OperatorLink, CommentBox } from '../../types/workflow-common.interface';
 import { Group, GroupBoundingBox } from '../workflow-graph/model/operator-group';
 import { OperatorState, OperatorStatistics } from '../../types/execute-workflow.interface';
 import { jitOnlyGuardedExpression } from '@angular/compiler/src/render3/util';
@@ -188,9 +188,7 @@ export class JointUIService {
    * @returns JointJS Element
    */
 
-  public getCommentElement(x: number, y: number): joint.dia.Element {
-    console.log('adding a comment in UI service');
-    const point: Point = {x: x, y: y};
+  public getCommentElement(commentBox: CommentBox, point: Point): joint.dia.Element {
     const basic = new joint.shapes.standard.Rectangle;
     basic.position(point.x, point.y);
     basic.resize(120, 50);
@@ -199,8 +197,10 @@ export class JointUIService {
       size: {width: JointUIService.DEFAULT_COMMENT_WIDTH, height: JointUIService.DEFAULT_COMMENT_HEIGHT},
       attrs: JointUIService.getCustomCommentStyleAttrs()
     });
+    commentElement.set('id', commentBox.commentBoxID);
     return commentElement;
   }
+  
   public getJointOperatorElement(
     operator: OperatorPredicate, point: Point
   ): joint.dia.Element {

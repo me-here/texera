@@ -1,7 +1,8 @@
 import { Subject } from 'rxjs/Subject';
 import { Observable } from 'rxjs/Observable';
-import { OperatorPredicate, OperatorLink, OperatorPort, Breakpoint, Point } from '../../../types/workflow-common.interface';
+import { OperatorPredicate, OperatorLink, OperatorPort, Breakpoint, Point, CommentBox} from '../../../types/workflow-common.interface';
 import { isEqual } from 'lodash';
+import { StringMap } from '@angular/compiler/src/compiler_facade_interface';
 
 // define the restricted methods that could change the graph
 type restrictedMethods =
@@ -25,6 +26,7 @@ export class WorkflowGraph {
 
   private readonly operatorIDMap = new Map<string, OperatorPredicate>();
   private readonly operatorLinkMap = new Map<string, OperatorLink>();
+  private readonly commentBoxMap = new Map<string, CommentBox>();
   private readonly linkBreakpointMap = new Map<string, Breakpoint>();
 
   private readonly operatorAddSubject = new Subject<OperatorPredicate>();
@@ -34,13 +36,17 @@ export class WorkflowGraph {
   private readonly linkDeleteSubject = new Subject<{ deletedLink: OperatorLink }>();
   private readonly operatorPropertyChangeSubject = new Subject<{ oldProperty: object, operator: OperatorPredicate }>();
   private readonly breakpointChangeSubject = new Subject<{ oldBreakpoint: object | undefined, linkID: string }>();
+  private readonly commentBoxAddSubject = new Subject<CommentBox>();
+  private readonly commentBoxDeleteSubject = new Subject<{deletedCommentBox: CommentBox}>();
 
   constructor(
     operatorPredicates: OperatorPredicate[] = [],
-    operatorLinks: OperatorLink[] = []
+    operatorLinks: OperatorLink[] = [],
+    commentBoxes: CommentBox[] = [] 
   ) {
     operatorPredicates.forEach(op => this.operatorIDMap.set(op.operatorID, op));
     operatorLinks.forEach(link => this.operatorLinkMap.set(link.linkID, link));
+    commentBoxes.forEach(commentBox => this.commentBoxMap.set(commentBox.commentBoxID, commentBox));
   }
 
   /**
@@ -52,6 +58,12 @@ export class WorkflowGraph {
     this.assertOperatorNotExists(operator.operatorID);
     this.operatorIDMap.set(operator.operatorID, operator);
     this.operatorAddSubject.next(operator);
+  }
+
+  public addCommentBox(commentBox: CommentBox): void{
+    this.assertCommentBoxNotExists(commentBox.commentBoxID);
+    this.commentBoxMap.set(commentBox.commentBoxID, commentBox);
+    this.commentBoxAddSubject.next(commentBox);
   }
 
   /**
@@ -66,6 +78,15 @@ export class WorkflowGraph {
     }
     this.operatorIDMap.delete(operatorID);
     this.operatorDeleteSubject.next({ deletedOperator: operator });
+  }
+
+  public deleteCommentBox(commentBoxID: string) : void{
+    const commentBox = this.getCommentBox(commentBoxID);
+    if(!commentBox){
+      throw new Error(`CommentBox with ID ${commentBoxID} does not exist`);
+    }
+    this.commentBoxMap.delete(commentBoxID);
+    this.commentBoxDeleteSubject.next({deletedCommentBox: commentBox});
   }
 
   public disableOperator(operatorID: string): void {
@@ -112,6 +133,10 @@ export class WorkflowGraph {
     return this.operatorIDMap.has(operatorID);
   }
 
+  public hasCommentBox(commentBoxId: string): boolean {
+    return this.commentBoxMap.has(commentBoxId);
+  }
+
   /**
    * Gets the operator with the operatorID.
    * Throws an Error if the operator doesn't exist.
@@ -125,6 +150,13 @@ export class WorkflowGraph {
     return operator;
   }
 
+  public getCommentBox(commentBoxID: string): CommentBox {
+    const commentBox = this.commentBoxMap.get(commentBoxID);
+    if(!commentBox) {
+      throw new Error(`commentBox ${commentBoxID} does not exist`);
+    }
+    return commentBox;
+  }
   /**
    * Returns an array of all operators in the graph
    */
@@ -356,6 +388,13 @@ export class WorkflowGraph {
     return this.disabledOperatorChangedSubject.asObservable();
   }
 
+  public getCommentBoxAddStream(): Observable<CommentBox> {
+    return this.commentBoxAddSubject.asObservable();
+  }
+
+  public getCommentBoxDeleteStream(): Observable<{deletedCommentBox: CommentBox}> {
+    return this.commentBoxDeleteSubject.asObservable();
+  }
   /**
    *ets the observable event stream of a link being added into the graph.
    */
@@ -398,6 +437,11 @@ export class WorkflowGraph {
     }
   }
 
+  public assertCommentBoxExists(commentBoxID: string): void{
+    if(!this.hasCommentBox(commentBoxID)) {
+      throw new Error(`commentBox with ID ${commentBoxID} does not exist`);
+    }
+  }
   /**
    * Checks if an operator
    * Throws an Error if there's a duplicate operator ID
@@ -407,6 +451,13 @@ export class WorkflowGraph {
   public assertOperatorNotExists(operatorID: string): void {
     if (this.hasOperator(operatorID)) {
       throw new Error(`operator with ID ${operatorID} already exists`);
+    }
+  }
+
+
+  public assertCommentBoxNotExists(commentBoxID: string): void{
+    if(this.hasCommentBox(commentBoxID)) {
+      throw new Error(`commentBox with ID ${commentBoxID} already exists`);
     }
   }
 

@@ -14,6 +14,11 @@ export interface OperatorPort extends Readonly<{
   portID: string;
 }> { }
 
+export interface CommentBox {
+  commentBoxID: string;
+  comments: string[];
+}
+
 export interface OperatorPredicate extends Readonly<{
   operatorID: string;
   operatorType: string;

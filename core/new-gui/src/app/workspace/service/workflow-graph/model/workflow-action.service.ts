@@ -6,7 +6,7 @@ import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { Workflow, WorkflowContent } from '../../../../common/type/workflow';
 import { mapToRecord, recordToMap } from '../../../../common/util/map';
 import { WorkflowMetadata } from '../../../../dashboard/type/workflow-metadata.interface';
-import { Breakpoint, OperatorLink, OperatorPort, OperatorPredicate, Point } from '../../../types/workflow-common.interface';
+import { Breakpoint, CommentBox, OperatorLink, OperatorPort, OperatorPredicate, Point } from '../../../types/workflow-common.interface';
 import { JointUIService } from '../../joint-ui/joint-ui.service';
 import { OperatorMetadataService } from '../../operator-metadata/operator-metadata.service';
 import { UndoRedoService } from '../../undo-redo/undo-redo.service';
@@ -361,15 +361,14 @@ export class WorkflowActionService {
   }
 
 
-  public addComments(): void {
+  public addCommentBox(commentBox: CommentBox, point: Point): void {
     const currentHighlights = this.jointGraphWrapper.getCurrentHighlights();
-    console.log('adding comment in action service');
     const command: Command = {
       modifiesWorkflow: true,
       execute: () => {
         this.jointGraphWrapper.unhighlightElements(currentHighlights);
         this.jointGraphWrapper.setMultiSelectMode(false);
-        this.addCommentInternal();
+        this.addCommentInternal(commentBox, point);
 
       },
       undo: () => {
@@ -884,11 +883,11 @@ export class WorkflowActionService {
     this.undoRedoService.clearRedoStack();
   }
 
-  private addCommentInternal(): void {
-    console.log('adding comment internally');
-    const commentElement = this.jointUIService.getCommentElement(800, 400);
+  private addCommentInternal(commentBox: CommentBox, point: Point): void {
+    const commentElement = this.jointUIService.getCommentElement(commentBox, point);
     this.jointGraph.addCell(commentElement);
     console.log(this.jointGraph.getCells());
+    this.texeraGraph.addCommentBox(commentBox);
   }
 
   private addOperatorInternal(operator: OperatorPredicate, point: Point): void {

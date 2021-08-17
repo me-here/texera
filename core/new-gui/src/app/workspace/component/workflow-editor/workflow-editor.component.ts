@@ -21,6 +21,8 @@ import { WorkflowUtilService } from '../../service/workflow-graph/util/workflow-
 import { WorkflowStatusService } from '../../service/workflow-status/workflow-status.service';
 import { ExecutionState, OperatorState } from '../../types/execute-workflow.interface';
 import { OperatorLink, OperatorPredicate, Point } from '../../types/workflow-common.interface';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbdModalCommentBoxComponent } from './comment-box-modal/ngbd-modal-comment-box.component';
 
 // argument type of callback event on a JointJS Paper
 // which is a 4-element tuple:
@@ -106,7 +108,8 @@ export class WorkflowEditorComponent implements AfterViewInit {
     private jointUIService: JointUIService,
     private workflowStatusService: WorkflowStatusService,
     private workflowUtilService: WorkflowUtilService,
-    private executeWorkflowService: ExecuteWorkflowService
+    private executeWorkflowService: ExecuteWorkflowService,
+    private modalService: NgbModal
   ) {
   }
 
@@ -468,6 +471,7 @@ export class WorkflowEditorComponent implements AfterViewInit {
   }
 
   private handleCellHighlight(): void {
+    this.handleHighlightMouseDBClickInput();
     this.handleHighlightMouseInput();
     this.handleElementHightlightEvent();
   }
@@ -481,28 +485,39 @@ export class WorkflowEditorComponent implements AfterViewInit {
     });
   }
 
+
+  private handleHighlightMouseDBClickInput(): void {
+    Observable.fromEvent<JointPaperEvent>(this.getJointPaper(), 'cell:pointerdblclick')
+      .filter(event => event[0].model.isElement())
+      .filter(event => this.workflowActionService.getTexeraGraph().hasCommentBox(event[0].model.id.toString()))
+      .subscribe(event => {
+        this.workflowActionService.getJointGraphWrapper().setMultiSelectMode(<boolean>event[1].shiftKey);
+        const elementID = event[0].model.id.toString();
+        if (this.workflowActionService.getTexeraGraph().hasCommentBox(elementID)){
+            this.workflowActionService.getJointGraphWrapper().highlightCommentBoxes(elementID);
+        }
+      })
+  }
   /**
    * Handles user mouse down events to trigger logically highlight and unhighlight an operator or group.
    * If user clicks the operator/group while pressing the shift key, multiselect mode is turned on.
    * When pressing the shift key, user can unhighlight a highlighted operator/group by clicking on it.
    * User can also unhighlight all operators and groups by clicking on the blank area of the graph.
-   */
+   */ 
   private handleHighlightMouseInput(): void {
     // on user mouse clicks an operator/group cell, highlight that operator/group
     // operator status tooltips should never be highlighted
     Observable.fromEvent<JointPaperEvent>(this.getJointPaper(), 'cell:pointerdown')
       // event[0] is the JointJS CellView; event[1] is the original JQuery Event
-      .filter(event => event[0].model.isElement())
+      .filter(event =>  event[0].model.isElement())
       .filter(event => this.workflowActionService.getTexeraGraph().hasOperator(event[0].model.id.toString()) ||
         this.workflowActionService.getOperatorGroup().hasGroup(event[0].model.id.toString()))
       .subscribe(event => {
         // multiselect mode on if holding shift
         this.workflowActionService.getJointGraphWrapper().setMultiSelectMode(<boolean>event[1].shiftKey);
-
         const elementID = event[0].model.id.toString();
         const highlightedOperatorIDs = this.workflowActionService.getJointGraphWrapper().getCurrentHighlightedOperatorIDs();
         const highlightedGroupIDs = this.workflowActionService.getJointGraphWrapper().getCurrentHighlightedGroupIDs();
-
         if (event[1].shiftKey) { // if in multiselect toggle highlights on click
           if (highlightedOperatorIDs.includes(elementID)) {
             this.workflowActionService.getJointGraphWrapper().unhighlightOperators(elementID);
@@ -513,7 +528,7 @@ export class WorkflowEditorComponent implements AfterViewInit {
           } else if (this.workflowActionService.getOperatorGroup().hasGroup(elementID)) {
             this.workflowActionService.getJointGraphWrapper().highlightGroups(elementID);
           }
-        } else { // else only highlight a single operator or group
+        } else { // else only highlight a single operator or group  
           if (this.workflowActionService.getTexeraGraph().hasOperator(elementID)) {
             this.workflowActionService.getJointGraphWrapper().highlightOperators(elementID);
           } else if (this.workflowActionService.getOperatorGroup().hasGroup(elementID)) {
@@ -564,6 +579,16 @@ export class WorkflowEditorComponent implements AfterViewInit {
       this.getJointPaper().findViewByModel(elementID).unhighlight(
         'rect', {highlighter: highlightOptions}
       )));
+
+    this.workflowActionService.getJointGraphWrapper().getJointCommentBoxHighlightStream().subscribe(commentBoxIDs => {
+      this.openCommentBox(commentBoxIDs[0]);
+    });
+  }
+
+  private openCommentBox(commentBoxID: string): void {
+    const commentBox = this.workflowActionService.getTexeraGraph().getCommentBox(commentBoxID);
+    const modalRef = this.modalService.open(NgbdModalCommentBoxComponent);
+    modalRef.componentInstance.commentBox = commentBox;
   }
 
   private handleOperatorSuggestionHighlightEvent(): void {

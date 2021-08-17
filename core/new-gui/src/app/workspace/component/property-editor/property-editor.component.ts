@@ -403,19 +403,25 @@ export class PropertyEditorComponent {
       this.workflowActionService.getJointGraphWrapper().getJointGroupHighlightStream(),
       this.workflowActionService.getJointGraphWrapper().getJointGroupUnhighlightStream(),
       this.workflowActionService.getJointGraphWrapper().getLinkHighlightStream(),
-      this.workflowActionService.getJointGraphWrapper().getLinkUnhighlightStream()
+      this.workflowActionService.getJointGraphWrapper().getLinkUnhighlightStream(),
+      this.workflowActionService.getJointGraphWrapper().getJointCommentBoxHighlightStream(),
+      this.workflowActionService.getJointGraphWrapper().getJointCommentBoxUnhighlightStream()
     ).subscribe(() => {
       const highlightedOperators = this.workflowActionService.getJointGraphWrapper().getCurrentHighlightedOperatorIDs();
       const highlightedGroups = this.workflowActionService.getJointGraphWrapper().getCurrentHighlightedGroupIDs();
       const highlightLinks = this.workflowActionService.getJointGraphWrapper().getCurrentHighlightedLinkIDs();
+      const highlightCommentBoxes = this.workflowActionService.getJointGraphWrapper().getCurrentHighlightedCommentBoxIDs();
 
-      if (highlightedOperators.length === 1 && highlightedGroups.length === 0 && highlightLinks.length === 0) {
+      if (highlightedOperators.length === 1 && highlightedGroups.length === 0 && highlightLinks.length === 0 && highlightCommentBoxes.length === 0) {
         const operator = this.workflowActionService.getTexeraGraph().getOperator(highlightedOperators[0]);
         this.clearPropertyEditor();
         this.showOperatorPropertyEditor(operator);
-      } else if (highlightLinks.length === 1 && highlightedGroups.length === 0 && highlightedOperators.length === 0) {
+      } else if (highlightLinks.length === 1 && highlightedGroups.length === 0 && highlightedOperators.length === 0 && highlightCommentBoxes.length === 0) {
         this.clearPropertyEditor();
         this.showBreakpointEditor(highlightLinks[0]);
+      } else if(highlightCommentBoxes.length === 1 && highlightLinks.length === 0 && highlightedGroups.length === 0 && highlightedOperators.length === 0) {
+        this.clearPropertyEditor();
+        console.log("clicked a comment");
       } else {
         this.clearPropertyEditor();
       }
