@@ -10,5 +10,13 @@
   </button>
 </div>
 <div class="modal-body">
-  <h1>Welcome to Comment Box!!</h1>
+  <ul class = 'current-comment-box'>
+    <li *ngFor = "let savedComment of savedComments">
+      {{savedComment}}
+    </li>
+  </ul>
+  <form (ngSubmit) = "onClickAddComment()" [formGroup]="commentForm">
+    <input type="text" formControlName = "comment">
+    <button class="btn btn-primary" type="submit">Share</button>
+  </form>
 </div>

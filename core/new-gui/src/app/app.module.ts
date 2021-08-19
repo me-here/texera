@@ -88,6 +88,7 @@ import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzStatisticModule } from 'ng-zorro-antd/statistic';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzAvatarModule } from 'ng-zorro-antd/avatar';
+import { NgbdModalCommentBoxComponent } from "./workspace/component/workflow-editor/comment-box-modal/ngbd-modal-comment-box.component";
 
 registerLocaleData(en);
 
@@ -134,7 +135,8 @@ registerLocaleData(en);
     TypeCastingDisplayComponent,
     ResultDownloadComponent,
     NgbdModalWorkflowShareAccessComponent,
-    NgbdModalUserFileShareAccessComponent
+    NgbdModalUserFileShareAccessComponent,
+    NgbdModalCommentBoxComponent
   ],
   imports: [
     BrowserModule,

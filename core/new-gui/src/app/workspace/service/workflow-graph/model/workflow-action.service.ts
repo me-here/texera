@@ -826,6 +826,8 @@ export class WorkflowActionService {
       this.getTexeraGraph().getBreakpointChangeStream(),
       this.getJointGraphWrapper().getElementPositionChangeEvent(),
       this.getTexeraGraph().getDisabledOperatorsChangedStream(),
+      this.getTexeraGraph().getCommentBoxAddStream(),
+      this.getTexeraGraph().getCommentBoxDeleteStream()
     );
   }
 
@@ -848,6 +850,8 @@ export class WorkflowActionService {
     const operators = texeraGraph.getAllOperators();
     const links = texeraGraph.getAllLinks();
     const operatorPositions: { [key: string]: Point } = {};
+    const commentsPositions: { [key: string]: Point } = {};
+    const comments = texeraGraph.getAllCommentBoxes();
 
     const groups = this.getOperatorGroup().getAllGroups().map(group => {
       return {
@@ -861,9 +865,10 @@ export class WorkflowActionService {
     breakpointsMap.forEach((value, key) => (breakpoints[key] = value));
     texeraGraph.getAllOperators().forEach(op => operatorPositions[op.operatorID] =
       this.getJointGraphWrapper().getElementPosition(op.operatorID));
-
+    texeraGraph.getAllCommentBoxes().forEach(commentBox => commentsPositions[commentBox.commentBoxID]
+       = this.getJointGraphWrapper().getElementPosition(commentBox.commentBoxID));
     const workflowContent: WorkflowContent = {
-      operators, operatorPositions, links, groups, breakpoints
+      operators, operatorPositions, links, groups, breakpoints, comments, commentsPositions
     };
     return workflowContent;
   }

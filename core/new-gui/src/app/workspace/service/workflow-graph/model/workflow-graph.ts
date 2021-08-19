@@ -168,6 +168,10 @@ export class WorkflowGraph {
     return Array.from(this.operatorIDMap.values()).filter(op => ! this.isOperatorDisabled(op.operatorID));
   }
 
+  public getAllCommentBoxes(): CommentBox[] {
+    return Array.from(this.commentBoxMap.values());
+  }
+
   /**
    * Adds a link to the operator graph.
    * Throws an error if

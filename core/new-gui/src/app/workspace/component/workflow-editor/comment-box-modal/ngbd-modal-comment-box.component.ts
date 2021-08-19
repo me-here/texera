@@ -12,13 +12,36 @@ import { WorkflowActionService } from 'src/app/workspace/service/workflow-graph/
 export class NgbdModalCommentBoxComponent implements OnInit {
     @Input() commentBox!: CommentBox;
 
+    public savedComments: string[] = [];
+
+    public commentForm = this.formBuilder.group({
+        comment: ['', [Validators.required]]
+    });
     constructor(
         public workflowActionService: WorkflowActionService,
-        public activeModal: NgbActiveModal
-    ){};
+        public activeModal: NgbActiveModal,
+        private formBuilder: FormBuilder
+    ) {}
+    ngOnInit(): void {
+        this.refreshSavedComments(this.commentBox.comments);
+    }
 
-    ngOnInit() : void {
-        console.log("CommentBoxModalSetUpDone");
+    public refreshSavedComments(comments: string[]): void {
+        this.savedComments = comments;
+    }
+
+    public onClickAddComment(): void {
+        if (this.commentForm.get('comment')?.invalid) {
+            alert('Cannot Submit Empty Comment!!');
+            return;
+        }
+        const newComment = this.commentForm.get('comment')?.value;
+        this.updateComments(newComment);
+    }
+
+    public updateComments(newComment: string): void {
+        this.savedComments.push(newComment);
+        this.refreshSavedComments(this.savedComments);
     }
 
 }
