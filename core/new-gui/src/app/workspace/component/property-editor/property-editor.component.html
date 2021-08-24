@@ -4,6 +4,11 @@
       {{formTitle}}
     </h3>
 
+    <form (ngSubmit) = "onClickChangeName()" [formGroup]="operatorNameForm" >
+      <input type="text" formControlName="opName" placeholder={{formTitle}} value={{currOperatorName}}>
+      <button type="submit">Change</button>
+    </form>
+
     <form class="texera-workspace-property-editor-form" [formGroup]="formlyFormGroup" *ngIf="formlyFields">
       <formly-form [model]="formData"
       [fields]="formlyFields"

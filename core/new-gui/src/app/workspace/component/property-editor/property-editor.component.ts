@@ -1,5 +1,7 @@
+import { WorkflowEditorComponent } from './../workflow-editor/workflow-editor.component';
+import { JointUIService } from './../../service/joint-ui/joint-ui.service';
 import { Component } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { FormGroup, FormBuilder } from '@angular/forms';
 import { FormlyFieldConfig, FormlyFormOptions } from '@ngx-formly/core';
 import { FormlyJsonschema } from '@ngx-formly/core/json-schema';
 import * as Ajv from 'ajv';
@@ -81,6 +83,11 @@ export class PropertyEditorComponent {
   public formlyOptions: FormlyFormOptions | undefined;
   public formlyFields: FormlyFieldConfig[] | undefined;
   public formTitle: string | undefined;
+  public currOperatorName: string | undefined;
+
+  public operatorNameForm = this.formBuilder.group({
+    opName: ''
+});
 
   // show TypeInformation only when operator type is TypeCasting
   public showTypeCastingTypeInformation = false;
@@ -93,7 +100,8 @@ export class PropertyEditorComponent {
     public workflowActionService: WorkflowActionService,
     public autocompleteService: DynamicSchemaService,
     public executeWorkflowService: ExecuteWorkflowService,
-    private schemaPropagationService: SchemaPropagationService
+    private schemaPropagationService: SchemaPropagationService,
+    private formBuilder: FormBuilder
   ) {
     // listen to the autocomplete event, remove invalid properties, and update the schema displayed on the form
     this.handleOperatorSchemaChange();
@@ -189,6 +197,7 @@ export class PropertyEditorComponent {
     this.formData = undefined;
     this.formlyFields = undefined;
     this.formTitle = undefined;
+    this.currOperatorName = undefined;
   }
 
   public showBreakpointEditor(linkID: string): void {
@@ -214,6 +223,19 @@ export class PropertyEditorComponent {
     this.setInteractivity(interactive);
   }
 
+
+  public operatorNameChange(opName: string): void {
+    if (this.currentOperatorID) {
+      this.workflowActionService.getTexeraGraph().changeName(this.currentOperatorID, opName);
+    }
+  }
+
+  public onClickChangeName(): void {
+      const newName = this.operatorNameForm.get('opName')?.value;
+      this.operatorNameChange(newName);
+  }
+
+
   /**
    * Changes the property editor to use the new operator data.
    * Sets all the data needed by the json schema form and displays the form.
@@ -225,6 +247,8 @@ export class PropertyEditorComponent {
     const currentOperatorSchema = this.autocompleteService.getDynamicSchema(this.currentOperatorID);
     this.setFormlyFormBinding(currentOperatorSchema.jsonSchema);
     this.formTitle = currentOperatorSchema.additionalMetadata.userFriendlyName;
+    // currentOperatorSchema.additionalMetadata.userFriendlyName;
+    this.currOperatorName = operator.customOperatorName;
 
     /**
      * Important: make a deep copy of the initial property data object.

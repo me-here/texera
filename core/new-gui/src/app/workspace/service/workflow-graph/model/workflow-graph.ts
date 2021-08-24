@@ -30,6 +30,7 @@ export class WorkflowGraph {
   private readonly operatorAddSubject = new Subject<OperatorPredicate>();
   private readonly operatorDeleteSubject = new Subject<{ deletedOperator: OperatorPredicate }>();
   private readonly disabledOperatorChangedSubject = new Subject<{ newDisabled: string[], newEnabled: string[] }>();
+  private readonly operatorNameChangeSubject = new Subject<{ operatorID: string, opName: string }>();
   private readonly linkAddSubject = new Subject<OperatorLink>();
   private readonly linkDeleteSubject = new Subject<{ deletedLink: OperatorLink }>();
   private readonly operatorPropertyChangeSubject = new Subject<{ oldProperty: object, operator: OperatorPredicate }>();
@@ -90,6 +91,15 @@ export class WorkflowGraph {
     }
     this.operatorIDMap.set(operatorID, {...operator, isDisabled: false});
     this.disabledOperatorChangedSubject.next({ newDisabled: [], newEnabled: [operatorID] });
+  }
+
+  public changeName(operatorID: string, opName: string): void {
+    const operator = this.getOperator(operatorID);
+    // if (!operator) {
+    //   throw new Error(`operator with ID ${operatorID} doesn't exist`);
+    // }
+    this.operatorIDMap.set(operatorID, {...operator, customOperatorName: opName});
+    this.operatorNameChangeSubject.next({ operatorID, opName });
   }
 
   public isOperatorDisabled(operatorID: string): boolean {
@@ -354,6 +364,10 @@ export class WorkflowGraph {
 
   public getDisabledOperatorsChangedStream(): Observable<{ newDisabled: ReadonlyArray<string>, newEnabled: ReadonlyArray<string> }> {
     return this.disabledOperatorChangedSubject.asObservable();
+  }
+
+  public getOperatorNameChangeStream(): Observable<{ operatorID: string, opName: string }> {
+    return this.operatorNameChangeSubject.asObservable();
   }
 
   /**

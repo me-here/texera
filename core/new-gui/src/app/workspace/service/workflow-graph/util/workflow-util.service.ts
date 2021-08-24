@@ -75,6 +75,9 @@ export class WorkflowUtilService {
     // by default, the operator is not disabled
     const isDisabled = false;
 
+    // by default, the operator name is the user friendly name
+    const customOperatorName = operatorSchema.additionalMetadata.userFriendlyName;
+
     for (let i = 0; i < operatorSchema.additionalMetadata.inputPorts.length; i++) {
       const portID = 'input-' + i.toString();
       const displayName = operatorSchema.additionalMetadata.inputPorts[i].displayName;
@@ -87,7 +90,7 @@ export class WorkflowUtilService {
       outputPorts.push({ portID, displayName });
     }
 
-    return { operatorID, operatorType, operatorProperties, inputPorts, outputPorts, showAdvanced, isDisabled };
+    return { operatorID, operatorType, operatorProperties, inputPorts, outputPorts, showAdvanced, isDisabled, customOperatorName };
 
   }
 

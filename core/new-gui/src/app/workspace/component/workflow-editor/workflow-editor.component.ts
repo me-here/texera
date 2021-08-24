@@ -129,6 +129,7 @@ export class WorkflowEditorComponent implements AfterViewInit {
     this.handleViewDeleteOperator();
     this.handleCellHighlight();
     this.handleDisableOperator();
+    this.handleOperatorNameChange();
     this.handleViewDeleteLink();
     this.handleViewCollapseGroup();
     this.handleViewExpandGroup();
@@ -478,6 +479,15 @@ export class WorkflowEditorComponent implements AfterViewInit {
         const op = this.workflowActionService.getTexeraGraph().getOperator(opID);
         this.jointUIService.changeOperatorDisableStatus(this.getJointPaper(), op);
       });
+    });
+  }
+
+  private handleOperatorNameChange(): void {
+    this.workflowActionService.getTexeraGraph().getOperatorNameChangeStream().subscribe
+    (event => {
+        const op = this.workflowActionService.getTexeraGraph().getOperator(event.operatorID);
+        const newName = event.opName;
+        this.jointUIService.changeOperatorCustomName(op, this.getJointPaper(), newName);
     });
   }
 
@@ -1055,7 +1065,7 @@ export class WorkflowEditorComponent implements AfterViewInit {
           this.workflowActionService.addOperatorsAndLinks(operatorsAndPositions, links, groups, new Map());
         }
       });
-  }
+      }
 
   /**
    * Utility function to create a new operator that contains same
@@ -1070,7 +1080,8 @@ export class WorkflowEditorComponent implements AfterViewInit {
     const outputPorts = operator.outputPorts;
     const showAdvanced = operator.showAdvanced;
     const isDisabled = operator.isDisabled;
-    return {operatorID, operatorType, operatorProperties, inputPorts, outputPorts, showAdvanced, isDisabled};
+    const customOperatorName = operator.operatorType;
+    return {operatorID, operatorType, operatorProperties, inputPorts, outputPorts, showAdvanced, isDisabled, customOperatorName};
   }
 
   private copyGroup(group: Group) {

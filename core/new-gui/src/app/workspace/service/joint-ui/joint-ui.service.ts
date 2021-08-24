@@ -346,6 +346,10 @@ export class JointUIService {
     jointPaper.getModelById(operator.operatorID).attr('rect/fill', JointUIService.getOperatorFillColor(operator));
   }
 
+    public changeOperatorCustomName(operator: OperatorPredicate, jointPaper: joint.dia.Paper, opName: string): void {
+      jointPaper.getModelById(operator.operatorID).attr(`.${operatorNameClass}/text`, opName);
+  }
+
   public getBreakpointButton(): (new () => joint.linkTools.Button) {
     return joint.linkTools.Button.extend({
       name: 'info-button',
