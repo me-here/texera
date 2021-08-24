@@ -237,6 +237,7 @@ export class PropertyEditorComponent {
   public onClickChangeName(): void {
       const newName = this.operatorNameForm.get('opName')?.value;
       this.jointOperatorNameChange(newName);
+      this.currOperatorName = '';
   }
     /*********** CODE PART 2-2: operatorNameChange *******/
 
