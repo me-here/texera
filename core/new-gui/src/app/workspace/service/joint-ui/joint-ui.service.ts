@@ -192,7 +192,8 @@ export class JointUIService {
     const operatorElement = new TexeraCustomJointElement({
       position: point,
       size: { width: JointUIService.DEFAULT_OPERATOR_WIDTH, height: JointUIService.DEFAULT_OPERATOR_HEIGHT },
-      attrs: JointUIService.getCustomOperatorStyleAttrs(operator, operatorSchema.additionalMetadata.userFriendlyName, operatorSchema.operatorType),
+      attrs: JointUIService.getCustomOperatorStyleAttrs(operator, operator.customOperatorName, operatorSchema.operatorType),
+      // operatorSchema.additionalMetadata.userFriendlyName
       ports: {
         groups: {
           'in': { attrs: JointUIService.getCustomPortStyleAttrs() },
@@ -346,6 +347,8 @@ export class JointUIService {
     jointPaper.getModelById(operator.operatorID).attr('rect/fill', JointUIService.getOperatorFillColor(operator));
   }
 
+
+  /********* CODE PART 5: Actually Changing the Name *******/
     public changeOperatorCustomName(operator: OperatorPredicate, jointPaper: joint.dia.Paper, opName: string): void {
       jointPaper.getModelById(operator.operatorID).attr(`.${operatorNameClass}/text`, opName);
   }

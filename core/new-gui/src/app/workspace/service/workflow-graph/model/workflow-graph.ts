@@ -94,12 +94,9 @@ export class WorkflowGraph {
   }
 
   public changeName(operatorID: string, opName: string): void {
-    const operator = this.getOperator(operatorID);
-    // if (!operator) {
-    //   throw new Error(`operator with ID ${operatorID} doesn't exist`);
-    // }
-    this.operatorIDMap.set(operatorID, {...operator, customOperatorName: opName});
     this.operatorNameChangeSubject.next({ operatorID, opName });
+    const operator = this.getOperator(operatorID);
+    this.operatorIDMap.set(operatorID, {...operator, customOperatorName: opName});
   }
 
   public isOperatorDisabled(operatorID: string): boolean {

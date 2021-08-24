@@ -85,9 +85,12 @@ export class PropertyEditorComponent {
   public formTitle: string | undefined;
   public currOperatorName: string | undefined;
 
+  /**********CODE PART 2-1 FORM BUILDER  ***********/
   public operatorNameForm = this.formBuilder.group({
     opName: ''
 });
+
+  /**********CODE PART 2-1 FORM BUILDER  ***********/
 
   // show TypeInformation only when operator type is TypeCasting
   public showTypeCastingTypeInformation = false;
@@ -224,7 +227,8 @@ export class PropertyEditorComponent {
   }
 
 
-  public operatorNameChange(opName: string): void {
+  /*********** CODE PART 2-2: operatorNameChange *******/
+  public jointOperatorNameChange(opName: string): void {
     if (this.currentOperatorID) {
       this.workflowActionService.getTexeraGraph().changeName(this.currentOperatorID, opName);
     }
@@ -232,8 +236,10 @@ export class PropertyEditorComponent {
 
   public onClickChangeName(): void {
       const newName = this.operatorNameForm.get('opName')?.value;
-      this.operatorNameChange(newName);
+      this.jointOperatorNameChange(newName);
   }
+    /*********** CODE PART 2-2: operatorNameChange *******/
+
 
 
   /**
@@ -406,7 +412,6 @@ export class PropertyEditorComponent {
       // set the operator property to be the new form data
       if (this.currentOperatorID) {
         const operator = this.workflowActionService.getTexeraGraph().getOperator(this.currentOperatorID);
-
         this.workflowActionService.setOperatorProperty(this.currentOperatorID, formData);
         this.workflowActionService.setOperatorProperty(this.currentOperatorID, cloneDeep(formData));
       }
