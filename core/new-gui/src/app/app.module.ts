@@ -1,5 +1,5 @@
 import { registerLocaleData } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import en from '@angular/common/locales/en';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -22,6 +22,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzListModule } from 'ng-zorro-antd/list';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
+import { NzMessageModule } from 'ng-zorro-antd/message';
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
@@ -30,7 +31,6 @@ import { NzSliderModule } from 'ng-zorro-antd/slider';
 import { NzSpaceModule } from 'ng-zorro-antd/space';
 import { NzBadgeModule } from 'ng-zorro-antd/badge';
 import { FileUploadModule } from 'ng2-file-upload';
-import { NgxAceModule } from 'ngx-ace-icy';
 import { NgxJsonViewerModule } from 'ngx-json-viewer';
 import { LoggerModule, NgxLoggerLevel } from 'ngx-logger';
 import { TourNgBootstrapModule } from 'ngx-tour-ng-bootstrap';
@@ -75,12 +75,11 @@ import { ProductTourComponent } from './workspace/component/product-tour/product
 import { PropertyEditorComponent } from './workspace/component/property-editor/property-editor.component';
 import { TypeCastingDisplayComponent } from './workspace/component/property-editor/typecasting-display/type-casting-display.component';
 import { ResultPanelToggleComponent } from './workspace/component/result-panel-toggle/result-panel-toggle.component';
-import { ResultPanelComponent, RowModalComponent } from './workspace/component/result-panel/result-panel.component';
-import { VisualizationPanelContentComponent } from './workspace/component/visualization-panel-content/visualization-panel-content.component';
-import { VisualizationPanelComponent } from './workspace/component/visualization-panel/visualization-panel.component';
+import { ResultPanelComponent } from './workspace/component/result-panel/result-panel.component';
+import { VisualizationFrameContentComponent } from './workspace/component/visualization-panel-content/visualization-frame-content.component';
+import { VisualizationFrameComponent } from './workspace/component/result-panel/visualization-frame/visualization-frame.component';
 import { WorkflowEditorComponent } from './workspace/component/workflow-editor/workflow-editor.component';
 import { WorkspaceComponent } from './workspace/component/workspace.component';
-import { ResultDownloadComponent } from './workspace/component/navigation/result-download/result-download.component';
 import { GoogleApiModule, NG_GAPI_CONFIG } from 'ng-gapi';
 import { NgbdModalWorkflowShareAccessComponent } from './dashboard/component/feature-container/saved-workflow-section/ngbd-modal-share-access/ngbd-modal-workflow-share-access.component';
 import { NgbdModalUserFileShareAccessComponent } from './dashboard/component/feature-container/user-file-section/ngbd-modal-file-share-access/ngbd-modal-user-file-share-access.component';
@@ -88,6 +87,13 @@ import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzStatisticModule } from 'ng-zorro-antd/statistic';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzAvatarModule } from 'ng-zorro-antd/avatar';
+import { BlobErrorHttpInterceptor } from './common/service/blob-error-http-interceptor.service';
+import { ConsoleFrameComponent } from './workspace/component/result-panel/console-frame/console-frame.component';
+import { ResultTableFrameComponent } from './workspace/component/result-panel/result-table-frame/result-table-frame.component';
+import { DynamicModule } from 'ng-dynamic-component';
+import { RowModalComponent } from './workspace/component/result-panel/result-panel-modal.component';
+import { MonacoEditorModule } from 'ngx-monaco-editor';
+import { NotificationComponent } from './common/component/notification/notification/notification.component';
 import { NgbdModalCommentBoxComponent } from './workspace/component/workflow-editor/comment-box-modal/ngbd-modal-comment-box.component';
 import { NzCommentModule } from 'ng-zorro-antd/comment';
 
@@ -129,13 +135,16 @@ registerLocaleData(en);
     ObjectTypeComponent,
     MultiSchemaTypeComponent,
     NullTypeComponent,
-    VisualizationPanelComponent,
-    VisualizationPanelContentComponent,
+    VisualizationFrameComponent,
+    VisualizationFrameContentComponent,
     CodeareaCustomTemplateComponent,
     CodeEditorDialogComponent,
     TypeCastingDisplayComponent,
-    ResultDownloadComponent,
     NgbdModalWorkflowShareAccessComponent,
+    NgbdModalUserFileShareAccessComponent,
+    ConsoleFrameComponent,
+    ResultTableFrameComponent,
+    NotificationComponent,
     NgbdModalUserFileShareAccessComponent,
     NgbdModalCommentBoxComponent,
   ],
@@ -175,6 +184,7 @@ registerLocaleData(en);
     NzListModule,
     NzInputModule,
     NzMenuModule,
+    NzMessageModule,
     NzCollapseModule,
     NzToolTipModule,
     NzTableModule,
@@ -183,11 +193,13 @@ registerLocaleData(en);
     NzSliderModule,
     NzSpaceModule,
     NzBadgeModule,
-    NgxAceModule,
     MatDialogModule,
     NzCardModule,
     NzStatisticModule,
     NzTagModule,
+    NzAvatarModule,
+    DynamicModule,
+    MonacoEditorModule.forRoot(),
     NzAvatarModule,
     NzCommentModule
   ],
@@ -204,13 +216,17 @@ registerLocaleData(en);
     NgbdModalCommentBoxComponent
   ],
   providers: [
-    HttpClientModule,
     UserService,
     UserFileService,
     UserFileUploadService,
     UserDictionaryService,
     UserDictionaryUploadService,
-    {provide: NZ_I18N, useValue: en_US}
+    { provide: NZ_I18N, useValue: en_US },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: BlobErrorHttpInterceptor,
+      multi: true
+    }
   ],
   bootstrap: [AppComponent]
   // dynamically created component must be placed in the entryComponents attribute

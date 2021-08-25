@@ -1,23 +1,24 @@
 package edu.uci.ics.texera.web.resource.dashboard.file
 
+import com.google.common.io.Files
 import edu.uci.ics.texera.web.SqlServer
 import edu.uci.ics.texera.web.model.jooq.generated.Tables.{FILE, USER_FILE_ACCESS}
 import edu.uci.ics.texera.web.model.jooq.generated.tables.daos.{FileDao, UserDao, UserFileAccessDao}
-import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.{File, User, UserFileAccess}
+import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.{File, User}
 import edu.uci.ics.texera.web.resource.auth.UserResource
-import edu.uci.ics.texera.web.resource.dashboard.file.UserFileResource.context
+import edu.uci.ics.texera.web.resource.dashboard.file.UserFileResource.{context, saveUserFileSafe}
 import io.dropwizard.jersey.sessions.Session
 import org.apache.commons.lang3.tuple.Pair
 import org.glassfish.jersey.media.multipart.{FormDataContentDisposition, FormDataParam}
 import org.jooq.DSLContext
 import org.jooq.types.UInteger
 
-import java.io.InputStream
+import java.io.{IOException, InputStream, OutputStream}
 import java.nio.file.Paths
 import java.util
 import javax.servlet.http.HttpSession
-import javax.ws.rs._
-import javax.ws.rs.core.{MediaType, Response}
+import javax.ws.rs.core.{MediaType, Response, StreamingOutput}
+import javax.ws.rs.{WebApplicationException, _}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -33,6 +34,40 @@ case class DashboardFileEntry(
 
 object UserFileResource {
   private val context: DSLContext = SqlServer.createDSLContext
+  private val fileDao = new FileDao(context.configuration)
+
+  def saveUserFileSafe(
+      uid: UInteger,
+      fileName: String,
+      uploadedInputStream: InputStream,
+      size: UInteger,
+      description: String
+  ): String = {
+
+    val fileNameStored = UserFileUtils.storeFileSafe(uploadedInputStream, fileName, uid)
+
+    // insert record after completely storing the file on the file system.
+    fileDao.insert(
+      new File(
+        uid,
+        null,
+        size,
+        fileNameStored,
+        UserFileUtils.getFilePath(uid, fileNameStored).toString,
+        description
+      )
+    )
+
+    // insert UserFileAccess record to grant write access
+    val fid = context
+      .select(FILE.FID)
+      .from(FILE)
+      .where(FILE.UID.eq(uid).and(FILE.NAME.eq(fileNameStored)))
+      .fetchOneInto(FILE)
+      .getFid
+    UserFileAccessResource.grantAccess(uid, fid, "write")
+    fileNameStored
+  }
 }
 
 @Path("/user/file")
@@ -60,38 +95,16 @@ class UserFileResource {
   ): Response = {
     UserResource.getUser(session) match {
       case Some(user) =>
-        val userID = user.getUid
+        val uid = user.getUid
         val fileName = fileDetail.getFileName
-        val validationResult = validateFileName(fileName, userID)
-        if (!validationResult.getLeft)
+        val validationResult = validateFileName(fileName, uid)
+        if (!validationResult.getLeft) {
           return Response
             .status(Response.Status.BAD_REQUEST)
             .entity(validationResult.getRight)
             .build()
-
-        UserFileUtils.storeFile(uploadedInputStream, fileName, userID.toString)
-
-        // insert record after completely storing the file on the file system.
-        fileDao.insert(
-          new File(
-            userID,
-            null,
-            size,
-            fileName,
-            UserFileUtils.getFilePath(userID.toString, fileName).toString,
-            description
-          )
-        )
-        val fid = context
-          .select(FILE.FID)
-          .from(FILE)
-          .where(FILE.UID.eq(userID).and(FILE.NAME.eq(fileName)))
-          .fetch()
-          .getValue(0, 0)
-          .asInstanceOf[UInteger]
-        userFileAccessDao.insert(
-          new UserFileAccess(userID, fid, true, true)
-        )
+        }
+        saveUserFileSafe(uid, fileName, uploadedInputStream, size, description)
         Response.ok().build()
       case None =>
         Response.status(Response.Status.UNAUTHORIZED).build()
@@ -100,6 +113,7 @@ class UserFileResource {
 
   /**
     * This method returns a list fo all files accessible by the current user
+    *
     * @param session the session indicating current logged-in user
     * @return
     */
@@ -213,4 +227,56 @@ class UserFileResource {
         .selectFrom(FILE)
         .where(FILE.UID.equal(userID).and(FILE.NAME.equal(fileName)))
     )
+
+  @GET
+  @Path("/download/{fileId}")
+  def downloadFile(
+      @PathParam("fileId") fileId: UInteger,
+      @Session session: HttpSession
+  ): Response = {
+    UserResource.getUser(session) match {
+      case Some(user) =>
+        val filePath: Option[java.nio.file.Path] =
+          UserFileUtils.getFilePathByIds(user.getUid, fileId)
+        if (filePath.isDefined) {
+          val fileObject = filePath.get.toFile
+
+          // sending a FileOutputStream/ByteArrayOutputStream directly will cause MessageBodyWriter
+          // not found issue for jersey
+          // so we create our own stream.
+          val fileStream = new StreamingOutput() {
+            @throws[IOException]
+            @throws[WebApplicationException]
+            def write(output: OutputStream): Unit = {
+              val data = Files.toByteArray(fileObject)
+              output.write(data)
+              output.flush()
+            }
+          }
+          Response
+            .ok(fileStream, MediaType.APPLICATION_OCTET_STREAM)
+            .header(
+              "content-disposition",
+              String.format("attachment; filename=%s", fileObject.getName)
+            )
+            .build
+        } else {
+
+          Response
+            .status(Response.Status.BAD_REQUEST)
+            .`type`(MediaType.TEXT_PLAIN)
+            .entity(s"Could not find file $fileId of ${user.getName}")
+            .build()
+        }
+
+      case None =>
+        Response
+          .status(Response.Status.UNAUTHORIZED)
+          .`type`(MediaType.TEXT_PLAIN)
+          .entity(s"You do not have permission to download file $fileId")
+          .build()
+    }
+
+  }
+
 }

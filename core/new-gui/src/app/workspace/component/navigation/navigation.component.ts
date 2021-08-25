@@ -11,12 +11,12 @@ import { ValidationWorkflowService } from '../../service/validation/validation-w
 import { WorkflowCacheService } from '../../service/workflow-cache/workflow-cache.service';
 import { JointGraphWrapper } from '../../service/workflow-graph/model/joint-graph-wrapper';
 import { WorkflowActionService } from '../../service/workflow-graph/model/workflow-action.service';
-import { WorkflowStatusService } from '../../service/workflow-status/workflow-status.service';
 import { ExecutionState } from '../../types/execute-workflow.interface';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { ResultDownloadComponent } from './result-download/result-download.component';
 import { WorkflowWebsocketService } from '../../service/workflow-websocket/workflow-websocket.service';
 import { Observable } from 'rxjs';
+import { WorkflowResultExportService } from '../../service/workflow-result-export/workflow-result-export.service';
 import { WorkflowUtilService } from '../../service/workflow-graph/util/workflow-util.service';
 
 /**
@@ -59,8 +59,6 @@ export class NavigationComponent implements OnInit {
   public userSystemEnabled: boolean = environment.userSystemEnabled;
   public onClickRunHandler: () => void;
 
-  public downloadResultPopup: NgbModalRef | undefined;
-
   // whether the disable operator button should be enabled
   public isDisableOperatorClickable: boolean = false;
   public isDisableOperator: boolean = true;
@@ -69,7 +67,6 @@ export class NavigationComponent implements OnInit {
     public executeWorkflowService: ExecuteWorkflowService,
     public tourService: TourService,
     public workflowActionService: WorkflowActionService,
-    public workflowStatusService: WorkflowStatusService,
     public workflowWebsocketService: WorkflowWebsocketService,
     private location: Location,
     public undoRedoService: UndoRedoService,
@@ -78,6 +75,7 @@ export class NavigationComponent implements OnInit {
     public userService: UserService,
     private workflowCacheService: WorkflowCacheService,
     private datePipe: DatePipe,
+    public workflowResultExportService: WorkflowResultExportService,
     private modalService: NgbModal,
     public workflowUtilService: WorkflowUtilService
   ) {
@@ -95,17 +93,6 @@ export class NavigationComponent implements OnInit {
       event => {
         this.executionState = event.current.state;
         this.applyRunButtonBehavior(this.getRunButtonBehavior(this.executionState, this.isWorkflowValid));
-      }
-    );
-
-    executeWorkflowService.getResultDownloadStream().subscribe(
-      response => {
-        if (!this.downloadResultPopup) {
-          this.downloadResultPopup = this.modalService.open(ResultDownloadComponent);
-        }
-        this.downloadResultPopup.componentInstance.message = response.message;
-        this.downloadResultPopup.componentInstance.link = response.link;
-        this.downloadResultPopup.componentInstance.openInNewTab();
       }
     );
 
@@ -261,11 +248,11 @@ export class NavigationComponent implements OnInit {
   }
 
   /**
-   * This is the handler for the execution result download button.
+   * This is the handler for the execution result export button.
    *
-   * This sends the finished execution result ID to the backend to download execution result in
-   *  excel format.
    */
+  public onClickExportExecutionResult(exportType: string): void {
+    this.workflowResultExportService.exportWorkflowExecutionResult(exportType, this.currentWorkflowName);
   public onClickDownloadExecutionResult(downloadType: string): void {
     // exit if the workflow is not finished
     if (this.isDownloadDisabled()) {
@@ -280,12 +267,6 @@ export class NavigationComponent implements OnInit {
     });
   }
 
-  /**
-   * enable result downloading only when the workflow completes executing
-   */
-  public isDownloadDisabled(): boolean {
-    return !(this.executionState === ExecutionState.Completed && environment.downloadExecutionResultEnabled);
-  }
 
   /**
    * Restore paper default zoom ratio and paper offset
