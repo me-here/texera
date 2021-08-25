@@ -199,8 +199,7 @@ export class NavigationComponent implements OnInit {
 
 
   public onClickAddCommentBox(): void {
-    console.log('adding a comment....');
-    this.workflowActionService.addCommentBox(this.workflowUtilService.getNewCommentBox(), {x: 800, y: 400});
+    this.workflowActionService.addCommentBox(this.workflowUtilService.getNewCommentBox());
   }
 
   public handleKill(): void {

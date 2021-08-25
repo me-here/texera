@@ -121,6 +121,7 @@ class TexeraCustomGroupElement extends joint.shapes.devs.Model {
 class TexeraCustomCommentElement extends joint.shapes.devs.Model {
   markup = `<g class = "element-node">
   <rect class = "body"></rect>
+  ${deleteButtonSVG}
   <image></image>
   </g>`;
 }
@@ -180,27 +181,24 @@ export class JointUIService {
    *  which are specified in getCustomOperatorStyleAttrs() and getCustomPortStyleAttrs()
    *
    *
-   * @param operatorType the type of the operator
-   * @param operatorID the ID of the operator, the JointJS element ID would be the same as operatorID
-   * @param xPosition the topleft x position of the operator element (relative to JointJS paper, not absolute position)
-   * @param yPosition the topleft y position of the operator element (relative to JointJS paper, not absolute position)
    *
    * @returns JointJS Element
+   * @param commentBox
    */
 
-  public getCommentElement(commentBox: CommentBox, point: Point): joint.dia.Element {
+  public getCommentElement(commentBox: CommentBox): joint.dia.Element {
     const basic = new joint.shapes.standard.Rectangle;
-    basic.position(point.x, point.y);
+    basic.position(commentBox.commentBoxPosition.x, commentBox.commentBoxPosition.y);
     basic.resize(120, 50);
     const commentElement = new TexeraCustomCommentElement({
-      position: point,
+      position: commentBox.commentBoxPosition,
       size: {width: JointUIService.DEFAULT_COMMENT_WIDTH, height: JointUIService.DEFAULT_COMMENT_HEIGHT},
       attrs: JointUIService.getCustomCommentStyleAttrs()
     });
     commentElement.set('id', commentBox.commentBoxID);
     return commentElement;
   }
-  
+
   public getJointOperatorElement(
     operator: OperatorPredicate, point: Point
   ): joint.dia.Element {
@@ -216,7 +214,11 @@ export class JointUIService {
     const operatorElement = new TexeraCustomJointElement({
       position: point,
       size: { width: JointUIService.DEFAULT_OPERATOR_WIDTH, height: JointUIService.DEFAULT_OPERATOR_HEIGHT },
-      attrs: JointUIService.getCustomOperatorStyleAttrs(operator, operatorSchema.additionalMetadata.userFriendlyName, operatorSchema.operatorType),
+      attrs: JointUIService.getCustomOperatorStyleAttrs(
+        operator,
+        operatorSchema.additionalMetadata.userFriendlyName,
+        operatorSchema.operatorType
+      ),
       ports: {
         groups: {
           'in': { attrs: JointUIService.getCustomPortStyleAttrs() },
@@ -647,6 +649,10 @@ export class JointUIService {
         ref: 'rect',
         'x-alignment': 'middle',
         'y-alignment': 'middle',
+      },
+      '.delete-button': {
+        x: 22, y: -16, cursor: 'pointer',
+        fill: '#D8656A', event: 'element:delete'
       }
     };
     return commentStyleAttrs;

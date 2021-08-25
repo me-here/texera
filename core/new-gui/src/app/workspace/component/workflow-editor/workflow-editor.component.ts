@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy } from '@angular/core';
 import * as joint from 'jointjs';
 // if jQuery needs to be used: 1) use jQuery instead of `$`, and
 // 2) always add this import statement even if TypeScript doesn't show an error https://github.com/Microsoft/TypeScript/issues/22016
@@ -23,6 +23,7 @@ import { ExecutionState, OperatorState } from '../../types/execute-workflow.inte
 import { OperatorLink, OperatorPredicate, Point } from '../../types/workflow-common.interface';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { NgbdModalCommentBoxComponent } from './comment-box-modal/ngbd-modal-comment-box.component';
+import { Subscription } from 'rxjs';
 
 // argument type of callback event on a JointJS Paper
 // which is a 4-element tuple:
@@ -80,7 +81,7 @@ export const WORKFLOW_EDITOR_JOINTJS_ID = 'texera-workflow-editor-jointjs-body-i
   templateUrl: './workflow-editor.component.html',
   styleUrls: ['./workflow-editor.component.scss']
 })
-export class WorkflowEditorComponent implements AfterViewInit {
+export class WorkflowEditorComponent implements AfterViewInit, OnDestroy {
   // the DOM element ID of the main editor. It can be used by jQuery and jointJS to find the DOM element
   // in the HTML template, the div element ID is set using this variable
   public readonly WORKFLOW_EDITOR_JOINTJS_WRAPPER_ID = WORKFLOW_EDITOR_JOINTJS_WRAPPER_ID;
@@ -93,6 +94,7 @@ export class WorkflowEditorComponent implements AfterViewInit {
 
   // private ifMouseDown: boolean = false;
   private mouseDown: Point | undefined;
+  private subscriptions: Subscription = new Subscription();
 
   // dictionary of {operatorID, CopiedOperator} pairs
   private copiedOperators = new Map<string, CopiedOperator>(); // References to operators that will be copied
@@ -156,6 +158,10 @@ export class WorkflowEditorComponent implements AfterViewInit {
     if (environment.linkBreakpointEnabled) {
       this.handleLinkBreakpoint();
     }
+  }
+
+  public ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   private initializeJointPaper(): void {
@@ -493,17 +499,17 @@ export class WorkflowEditorComponent implements AfterViewInit {
       .subscribe(event => {
         this.workflowActionService.getJointGraphWrapper().setMultiSelectMode(<boolean>event[1].shiftKey);
         const elementID = event[0].model.id.toString();
-        if (this.workflowActionService.getTexeraGraph().hasCommentBox(elementID)){
+        if (this.workflowActionService.getTexeraGraph().hasCommentBox(elementID)) {
             this.workflowActionService.getJointGraphWrapper().highlightCommentBoxes(elementID);
         }
-      })
+      });
   }
   /**
    * Handles user mouse down events to trigger logically highlight and unhighlight an operator or group.
    * If user clicks the operator/group while pressing the shift key, multiselect mode is turned on.
    * When pressing the shift key, user can unhighlight a highlighted operator/group by clicking on it.
    * User can also unhighlight all operators and groups by clicking on the blank area of the graph.
-   */ 
+   */
   private handleHighlightMouseInput(): void {
     // on user mouse clicks an operator/group cell, highlight that operator/group
     // operator status tooltips should never be highlighted
@@ -528,7 +534,7 @@ export class WorkflowEditorComponent implements AfterViewInit {
           } else if (this.workflowActionService.getOperatorGroup().hasGroup(elementID)) {
             this.workflowActionService.getJointGraphWrapper().highlightGroups(elementID);
           }
-        } else { // else only highlight a single operator or group  
+        } else { // else only highlight a single operator or group
           if (this.workflowActionService.getTexeraGraph().hasOperator(elementID)) {
             this.workflowActionService.getJointGraphWrapper().highlightOperators(elementID);
           } else if (this.workflowActionService.getOperatorGroup().hasGroup(elementID)) {
@@ -580,9 +586,10 @@ export class WorkflowEditorComponent implements AfterViewInit {
         'rect', {highlighter: highlightOptions}
       )));
 
-    this.workflowActionService.getJointGraphWrapper().getJointCommentBoxHighlightStream().subscribe(commentBoxIDs => {
+    this.subscriptions.add(this.workflowActionService.getJointGraphWrapper().getJointCommentBoxHighlightStream().subscribe(commentBoxIDs => {
       this.openCommentBox(commentBoxIDs[0]);
-    });
+    }));
+
   }
 
   private openCommentBox(commentBoxID: string): void {
@@ -655,7 +662,12 @@ export class WorkflowEditorComponent implements AfterViewInit {
       .map(value => value[0])
       .subscribe(
         elementView => {
-          this.workflowActionService.deleteOperator(elementView.model.id.toString());
+          if (this.workflowActionService.getTexeraGraph().hasOperator(elementView.model.id.toString())) {
+            this.workflowActionService.deleteOperator(elementView.model.id.toString());
+          }
+          if (this.workflowActionService.getTexeraGraph().hasCommentBox(elementView.model.id.toString())) {
+            this.workflowActionService.deleteCommentBox(elementView.model.id.toString());
+          }
         }
       );
   }

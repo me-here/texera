@@ -1,8 +1,7 @@
 import { Subject } from 'rxjs/Subject';
 import { Observable } from 'rxjs/Observable';
-import { OperatorPredicate, OperatorLink, OperatorPort, Breakpoint, Point, CommentBox} from '../../../types/workflow-common.interface';
+import { OperatorPredicate, OperatorLink, OperatorPort, Breakpoint, Point, CommentBox, Comment} from '../../../types/workflow-common.interface';
 import { isEqual } from 'lodash';
-import { StringMap } from '@angular/compiler/src/compiler_facade_interface';
 
 // define the restricted methods that could change the graph
 type restrictedMethods =
@@ -38,11 +37,12 @@ export class WorkflowGraph {
   private readonly breakpointChangeSubject = new Subject<{ oldBreakpoint: object | undefined, linkID: string }>();
   private readonly commentBoxAddSubject = new Subject<CommentBox>();
   private readonly commentBoxDeleteSubject = new Subject<{deletedCommentBox: CommentBox}>();
+  private readonly commentBoxAddCommentSubject = new Subject<{addedComment: Comment, commentBox: CommentBox}>();
 
   constructor(
     operatorPredicates: OperatorPredicate[] = [],
     operatorLinks: OperatorLink[] = [],
-    commentBoxes: CommentBox[] = [] 
+    commentBoxes: CommentBox[] = []
   ) {
     operatorPredicates.forEach(op => this.operatorIDMap.set(op.operatorID, op));
     operatorLinks.forEach(link => this.operatorLinkMap.set(link.linkID, link));
@@ -60,12 +60,21 @@ export class WorkflowGraph {
     this.operatorAddSubject.next(operator);
   }
 
-  public addCommentBox(commentBox: CommentBox): void{
+  public addCommentBox(commentBox: CommentBox): void {
     this.assertCommentBoxNotExists(commentBox.commentBoxID);
     this.commentBoxMap.set(commentBox.commentBoxID, commentBox);
     this.commentBoxAddSubject.next(commentBox);
   }
 
+  public addCommentToCommentBox(addedComment: Comment, commentBoxID: string): void {
+    this.assertCommentBoxExists(commentBoxID);
+    const commentBox = this.commentBoxMap.get(commentBoxID);
+    if (commentBox != null) {
+      commentBox.comments.push(addedComment);
+      this.commentBoxMap.set(commentBoxID, commentBox);
+      this.commentBoxAddCommentSubject.next({addedComment: addedComment, commentBox: commentBox});
+    }
+  }
   /**
    * Deletes the operator from the graph by its ID.
    * Throws an Error if the operator doesn't exist.
@@ -80,9 +89,9 @@ export class WorkflowGraph {
     this.operatorDeleteSubject.next({ deletedOperator: operator });
   }
 
-  public deleteCommentBox(commentBoxID: string) : void{
+  public deleteCommentBox(commentBoxID: string): void {
     const commentBox = this.getCommentBox(commentBoxID);
-    if(!commentBox){
+    if (!commentBox) {
       throw new Error(`CommentBox with ID ${commentBoxID} does not exist`);
     }
     this.commentBoxMap.delete(commentBoxID);
@@ -152,7 +161,7 @@ export class WorkflowGraph {
 
   public getCommentBox(commentBoxID: string): CommentBox {
     const commentBox = this.commentBoxMap.get(commentBoxID);
-    if(!commentBox) {
+    if (!commentBox) {
       throw new Error(`commentBox ${commentBoxID} does not exist`);
     }
     return commentBox;
@@ -399,6 +408,10 @@ export class WorkflowGraph {
   public getCommentBoxDeleteStream(): Observable<{deletedCommentBox: CommentBox}> {
     return this.commentBoxDeleteSubject.asObservable();
   }
+
+  public getCommentBoxAddCommentStream(): Observable<{addedComment: Comment, commentBox: CommentBox}> {
+    return this.commentBoxAddCommentSubject.asObservable();
+  }
   /**
    *ets the observable event stream of a link being added into the graph.
    */
@@ -441,8 +454,8 @@ export class WorkflowGraph {
     }
   }
 
-  public assertCommentBoxExists(commentBoxID: string): void{
-    if(!this.hasCommentBox(commentBoxID)) {
+  public assertCommentBoxExists(commentBoxID: string): void {
+    if (!this.hasCommentBox(commentBoxID)) {
       throw new Error(`commentBox with ID ${commentBoxID} does not exist`);
     }
   }
@@ -459,8 +472,8 @@ export class WorkflowGraph {
   }
 
 
-  public assertCommentBoxNotExists(commentBoxID: string): void{
-    if(this.hasCommentBox(commentBoxID)) {
+  public assertCommentBoxNotExists(commentBoxID: string): void {
+    if (this.hasCommentBox(commentBoxID)) {
       throw new Error(`commentBox with ID ${commentBoxID} already exists`);
     }
   }

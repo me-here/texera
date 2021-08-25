@@ -6,7 +6,7 @@ import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { Workflow, WorkflowContent } from '../../../../common/type/workflow';
 import { mapToRecord, recordToMap } from '../../../../common/util/map';
 import { WorkflowMetadata } from '../../../../dashboard/type/workflow-metadata.interface';
-import { Breakpoint, CommentBox, OperatorLink, OperatorPort, OperatorPredicate, Point } from '../../../types/workflow-common.interface';
+import { Breakpoint, CommentBox, OperatorLink, OperatorPort, OperatorPredicate, Point, Comment } from '../../../types/workflow-common.interface';
 import { JointUIService } from '../../joint-ui/joint-ui.service';
 import { OperatorMetadataService } from '../../operator-metadata/operator-metadata.service';
 import { UndoRedoService } from '../../undo-redo/undo-redo.service';
@@ -361,14 +361,14 @@ export class WorkflowActionService {
   }
 
 
-  public addCommentBox(commentBox: CommentBox, point: Point): void {
+  public addCommentBox(commentBox: CommentBox): void {
     const currentHighlights = this.jointGraphWrapper.getCurrentHighlights();
     const command: Command = {
       modifiesWorkflow: true,
       execute: () => {
         this.jointGraphWrapper.unhighlightElements(currentHighlights);
         this.jointGraphWrapper.setMultiSelectMode(false);
-        this.addCommentInternal(commentBox, point);
+        this.addCommentBoxInternal(commentBox);
 
       },
       undo: () => {
@@ -419,6 +419,8 @@ export class WorkflowActionService {
 
       },
       undo: () => {
+        console.log('somehow it is undoing');
+
         if (groups) {
           groups.forEach(group => {
             this.unGroupInternal(group.groupID);
@@ -443,6 +445,11 @@ export class WorkflowActionService {
     };
     this.executeAndStoreCommand(command);
   }
+
+  public deleteCommentBox(commentBoxID: string): void {
+    this.deleteCommentBoxInternal(commentBoxID);
+  }
+
 
   /**
    * Deletes given operators and links from the workflow graph.
@@ -774,7 +781,7 @@ export class WorkflowActionService {
     // remove the existing operators on the paper currently
     this.deleteOperatorsAndLinks(
       this.getTexeraGraph().getAllOperators().map(op => op.operatorID), []);
-
+    this.getTexeraGraph().getAllCommentBoxes().forEach(commentBox => this.deleteCommentBox(commentBox.commentBoxID));
     if (workflow === undefined) {
       return;
     }
@@ -799,6 +806,8 @@ export class WorkflowActionService {
         collapsed: group.collapsed
       };
     });
+
+    workflowContent.commentBoxes.forEach(commentBox => this.addCommentBox(commentBox));
 
     const breakpoints = new Map(Object.entries(workflowContent.breakpoints));
 
@@ -827,7 +836,8 @@ export class WorkflowActionService {
       this.getJointGraphWrapper().getElementPositionChangeEvent(),
       this.getTexeraGraph().getDisabledOperatorsChangedStream(),
       this.getTexeraGraph().getCommentBoxAddStream(),
-      this.getTexeraGraph().getCommentBoxDeleteStream()
+      this.getTexeraGraph().getCommentBoxDeleteStream(),
+      this.getTexeraGraph().getCommentBoxAddCommentStream()
     );
   }
 
@@ -850,8 +860,7 @@ export class WorkflowActionService {
     const operators = texeraGraph.getAllOperators();
     const links = texeraGraph.getAllLinks();
     const operatorPositions: { [key: string]: Point } = {};
-    const commentsPositions: { [key: string]: Point } = {};
-    const comments = texeraGraph.getAllCommentBoxes();
+    const commentBoxes = texeraGraph.getAllCommentBoxes();
 
     const groups = this.getOperatorGroup().getAllGroups().map(group => {
       return {
@@ -865,16 +874,20 @@ export class WorkflowActionService {
     breakpointsMap.forEach((value, key) => (breakpoints[key] = value));
     texeraGraph.getAllOperators().forEach(op => operatorPositions[op.operatorID] =
       this.getJointGraphWrapper().getElementPosition(op.operatorID));
-    texeraGraph.getAllCommentBoxes().forEach(commentBox => commentsPositions[commentBox.commentBoxID]
+    commentBoxes.forEach(commentBox => commentBox.commentBoxPosition
        = this.getJointGraphWrapper().getElementPosition(commentBox.commentBoxID));
     const workflowContent: WorkflowContent = {
-      operators, operatorPositions, links, groups, breakpoints, comments, commentsPositions
+      operators, operatorPositions, links, groups, breakpoints, commentBoxes
     };
     return workflowContent;
   }
 
   public getWorkflow(): Workflow {
     return {...this.workflowMetadata, ...{content: this.getWorkflowContent()}};
+  }
+
+  public addComment(comment: Comment, commentBoxID: string): void {
+    this.texeraGraph.addCommentToCommentBox(comment, commentBoxID);
   }
 
   public setWorkflowName(name: string): void {
@@ -888,12 +901,14 @@ export class WorkflowActionService {
     this.undoRedoService.clearRedoStack();
   }
 
-  private addCommentInternal(commentBox: CommentBox, point: Point): void {
-    const commentElement = this.jointUIService.getCommentElement(commentBox, point);
+  private addCommentBoxInternal(commentBox: CommentBox): void {
+    const commentElement = this.jointUIService.getCommentElement(commentBox);
     this.jointGraph.addCell(commentElement);
     console.log(this.jointGraph.getCells());
     this.texeraGraph.addCommentBox(commentBox);
   }
+
+
 
   private addOperatorInternal(operator: OperatorPredicate, point: Point): void {
     // check that the operator doesn't exist
@@ -1040,6 +1055,12 @@ export class WorkflowActionService {
   // use this to modify properties
   private setOperatorPropertyInternal(operatorID: string, newProperty: object) {
     this.texeraGraph.setOperatorProperty(operatorID, newProperty);
+  }
+
+  private deleteCommentBoxInternal(commentBoxID: string): void {
+    this.texeraGraph.assertCommentBoxExists(commentBoxID);
+    this.texeraGraph.deleteCommentBox(commentBoxID);
+    this.jointGraph.getCell(commentBoxID).remove();
   }
 
   private executeAndStoreCommand(command: Command): void {

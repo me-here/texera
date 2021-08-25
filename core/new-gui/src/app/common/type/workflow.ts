@@ -20,8 +20,7 @@ export interface WorkflowContent extends Readonly<{
   links: OperatorLink[];
   groups: PlainGroup[];
   breakpoints: Record<string, Breakpoint>;
-  comments: CommentBox[];
-  commentsPositions: {[key: string] : Point};
+  commentBoxes: CommentBox[];
 }> { }
 
 export type Workflow = { content: WorkflowContent } & WorkflowMetadata;

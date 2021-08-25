@@ -14,9 +14,16 @@ export interface OperatorPort extends Readonly<{
   portID: string;
 }> { }
 
+export interface Comment extends Readonly<{
+  content: string;
+  creationTime: string;
+  creator: string | undefined;
+}> { }
+
 export interface CommentBox {
   commentBoxID: string;
-  comments: string[];
+  comments: Comment[];
+  commentBoxPosition: Point;
 }
 
 export interface OperatorPredicate extends Readonly<{

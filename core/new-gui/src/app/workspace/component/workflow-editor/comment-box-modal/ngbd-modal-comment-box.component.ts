@@ -1,18 +1,18 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { FormBuilder, Validators } from '@angular/forms';
-import { CommentBox } from 'src/app/workspace/types/workflow-common.interface';
+import { CommentBox, Comment } from 'src/app/workspace/types/workflow-common.interface';
 import { WorkflowActionService } from 'src/app/workspace/service/workflow-graph/model/workflow-action.service';
+import { UserService } from 'src/app/common/service/user/user.service';
+
 
 @Component({
     selector: 'texera-ngbd-modal-comment-box',
     templateUrl: './ngbd-modal-comment-box.component.html',
     styleUrls: ['./ngbd-modal-comment-box.component.scss']
 })
-export class NgbdModalCommentBoxComponent implements OnInit {
+export class NgbdModalCommentBoxComponent {
     @Input() commentBox!: CommentBox;
-
-    public savedComments: string[] = [];
 
     public commentForm = this.formBuilder.group({
         comment: ['', [Validators.required]]
@@ -20,15 +20,9 @@ export class NgbdModalCommentBoxComponent implements OnInit {
     constructor(
         public workflowActionService: WorkflowActionService,
         public activeModal: NgbActiveModal,
-        private formBuilder: FormBuilder
+        private formBuilder: FormBuilder,
+        public userService: UserService
     ) {}
-    ngOnInit(): void {
-        this.refreshSavedComments(this.commentBox.comments);
-    }
-
-    public refreshSavedComments(comments: string[]): void {
-        this.savedComments = comments;
-    }
 
     public onClickAddComment(): void {
         if (this.commentForm.get('comment')?.invalid) {
@@ -37,11 +31,17 @@ export class NgbdModalCommentBoxComponent implements OnInit {
         }
         const newComment = this.commentForm.get('comment')?.value;
         this.updateComments(newComment);
+        this.commentForm.get('comment')?.setValue('');
     }
 
     public updateComments(newComment: string): void {
-        this.savedComments.push(newComment);
-        this.refreshSavedComments(this.savedComments);
+        const currentTime: string = new Date().toISOString();
+        const creator = this.userService.getUser()?.name;
+        this.workflowActionService.addComment(
+          {content: newComment, creationTime: currentTime, creator: creator},
+          this.commentBox.commentBoxID
+        );
+        console.log(this.commentBox);
     }
 
 }

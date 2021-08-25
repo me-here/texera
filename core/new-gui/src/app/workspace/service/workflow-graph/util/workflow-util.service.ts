@@ -1,4 +1,4 @@
-import { CommentBox, OperatorPredicate } from './../../../types/workflow-common.interface';
+import { CommentBox, OperatorPredicate, Comment, Point } from './../../../types/workflow-common.interface';
 import { OperatorMetadataService } from './../../operator-metadata/operator-metadata.service';
 import { OperatorSchema } from './../../../types/operator-schema.interface';
 import { Injectable } from '@angular/core';
@@ -43,14 +43,15 @@ export class WorkflowUtilService {
     return 'operator-' + uuid();
   }
 
-  public getCommentBoxRandomUUID(): string{
+  public getCommentBoxRandomUUID(): string {
     return 'commentBox-' + uuid();
   }
 
   public getNewCommentBox(): CommentBox {
     const commentBoxID = this.getCommentBoxRandomUUID();
-    const comments : string[] = [];
-    return {commentBoxID, comments};
+    const comments: Comment[] = [];
+    const commentBoxPosition: Point = {x: 800, y: 400};
+    return {commentBoxID, comments, commentBoxPosition};
   }
   /**
    * This method will use a unique ID and a operatorType to create and return a
