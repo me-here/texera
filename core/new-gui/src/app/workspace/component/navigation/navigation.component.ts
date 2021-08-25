@@ -13,7 +13,6 @@ import { JointGraphWrapper } from '../../service/workflow-graph/model/joint-grap
 import { WorkflowActionService } from '../../service/workflow-graph/model/workflow-action.service';
 import { ExecutionState } from '../../types/execute-workflow.interface';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
-import { ResultDownloadComponent } from './result-download/result-download.component';
 import { WorkflowWebsocketService } from '../../service/workflow-websocket/workflow-websocket.service';
 import { Observable } from 'rxjs';
 import { WorkflowResultExportService } from '../../service/workflow-result-export/workflow-result-export.service';
@@ -253,20 +252,7 @@ export class NavigationComponent implements OnInit {
    */
   public onClickExportExecutionResult(exportType: string): void {
     this.workflowResultExportService.exportWorkflowExecutionResult(exportType, this.currentWorkflowName);
-  public onClickDownloadExecutionResult(downloadType: string): void {
-    // exit if the workflow is not finished
-    if (this.isDownloadDisabled()) {
-      return;
-    }
-    this.executeWorkflowService.downloadWorkflowExecutionResult(downloadType, this.currentWorkflowName);
-    this.downloadResultPopup = this.modalService.open(ResultDownloadComponent);
-    this.downloadResultPopup.componentInstance.message = 'Collecting results. It may takes a while';
-    // set the variable to undefined when user closes the popup
-    this.downloadResultPopup.result.then(() => {
-      this.downloadResultPopup = undefined;
-    });
   }
-
 
   /**
    * Restore paper default zoom ratio and paper offset
