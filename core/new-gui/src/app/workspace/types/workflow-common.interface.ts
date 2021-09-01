@@ -1,19 +1,21 @@
-import { JSONSchema7 } from 'json-schema';
+import { JSONSchema7 } from "json-schema";
 
 /**
  * This file contains multiple type declarations related to workflow-graph.
  * These type declarations should be identical to the backend API.
  */
 
-export interface Point extends Readonly<{
-  x: number;
-  y: number;
-}> {}
+export interface Point
+  extends Readonly<{
+    x: number;
+    y: number;
+  }> {}
 
-export interface OperatorPort extends Readonly<{
-  operatorID: string;
-  portID: string;
-}> { }
+export interface OperatorPort
+  extends Readonly<{
+    operatorID: string;
+    portID: string;
+  }> {}
 
 export interface Comment extends Readonly<{
   content: string;
@@ -37,19 +39,29 @@ export interface OperatorPredicate extends Readonly<{
   isDisabled?: boolean;
 }> { }
 
-export interface OperatorLink extends Readonly<{
-  linkID: string;
-  source: OperatorPort;
-  target: OperatorPort;
-}> { }
+export interface OperatorLink
+  extends Readonly<{
+    linkID: string;
+    source: OperatorPort;
+    target: OperatorPort;
+  }> {}
 
-export interface BreakpointSchema extends Readonly<{
-  jsonSchema: Readonly<JSONSchema7>;
-}> {}
+export interface BreakpointSchema
+  extends Readonly<{
+    jsonSchema: Readonly<JSONSchema7>;
+  }> {}
 
 type ConditionBreakpoint = Readonly<{
   column: number;
-  condition: '=' | '>' | '>=' | '<' | '<=' | '!=' | 'contains' | 'does not contain';
+  condition:
+    | "="
+    | ">"
+    | ">="
+    | "<"
+    | "<="
+    | "!="
+    | "contains"
+    | "does not contain";
   value: string;
 }>;
 
@@ -60,8 +72,8 @@ type CountBreakpoint = Readonly<{
 export type Breakpoint = ConditionBreakpoint | CountBreakpoint;
 
 export type BreakpointRequest =
-  Readonly<{type: 'ConditionBreakpoint'} & ConditionBreakpoint>
-  | Readonly<{type: 'CountBreakpoint'} & CountBreakpoint>;
+  | Readonly<{ type: "ConditionBreakpoint" } & ConditionBreakpoint>
+  | Readonly<{ type: "CountBreakpoint" } & CountBreakpoint>;
 
 export type BreakpointFaultedTuple = Readonly<{
   tuple: ReadonlyArray<string>;
