@@ -7,7 +7,6 @@ import { fromEvent, merge } from "rxjs";
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { NgbdModalCommentBoxComponent } from './comment-box-modal/ngbd-modal-comment-box.component';
 import { Subscription } from 'rxjs';
-import '../../../common/rxjs-operators';
 import { Observable } from 'rxjs/Observable';
 import { assertType } from "src/app/common/util/assert";
 import { environment } from "../../../../environments/environment";
@@ -106,7 +105,7 @@ export const WORKFLOW_EDITOR_JOINTJS_ID =
   templateUrl: "./workflow-editor.component.html",
   styleUrls: ["./workflow-editor.component.scss"]
 })
-export class WorkflowEditorComponent implements AfterViewInit, OnDestroy {
+export class WorkflowEditorComponent implements AfterViewInit {
   // the DOM element ID of the main editor. It can be used by jQuery and jointJS to find the DOM element
   // in the HTML template, the div element ID is set using this variable
   public readonly WORKFLOW_EDITOR_JOINTJS_WRAPPER_ID =
@@ -120,7 +119,6 @@ export class WorkflowEditorComponent implements AfterViewInit, OnDestroy {
 
   // private ifMouseDown: boolean = false;
   private mouseDown: Point | undefined;
-  private subscriptions: Subscription = new Subscription();
 
   // dictionary of {operatorID, CopiedOperator} pairs
   private copiedOperators = new Map<string, CopiedOperator>(); // References to operators that will be copied
@@ -186,9 +184,6 @@ export class WorkflowEditorComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  public ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
-  }
 
   private initializeJointPaper(): void {
     // get the custom paper options
@@ -614,15 +609,17 @@ export class WorkflowEditorComponent implements AfterViewInit, OnDestroy {
 
 
   private handleHighlightMouseDBClickInput(): void {
-    Observable.fromEvent<JointPaperEvent>(this.getJointPaper(), 'cell:pointerdblclick')
-      .filter(event => event[0].model.isElement())
-      .filter(event => this.workflowActionService.getTexeraGraph().hasCommentBox(event[0].model.id.toString()))
+    fromEvent<JointPaperEvent>(this.getJointPaper(), 'cell:pointerdblclick')
+      .pipe(untilDestroyed(this))
       .subscribe(event => {
-        this.workflowActionService.getJointGraphWrapper().setMultiSelectMode(<boolean>event[1].shiftKey);
-        const elementID = event[0].model.id.toString();
-        if (this.workflowActionService.getTexeraGraph().hasCommentBox(elementID)) {
+        if(event[0].model.isElement() && this.workflowActionService.getTexeraGraph().hasCommentBox(event[0].model.id.toString())){
+          this.workflowActionService.getJointGraphWrapper().setMultiSelectMode(<boolean>event[1].shiftKey);
+          const elementID = event[0].model.id.toString();
+          if (this.workflowActionService.getTexeraGraph().hasCommentBox(elementID)) {
             this.workflowActionService.getJointGraphWrapper().highlightCommentBoxes(elementID);
+          }
         }
+
       });
   }
   /**
@@ -778,9 +775,13 @@ export class WorkflowEditorComponent implements AfterViewInit, OnDestroy {
         )
       );
 
-    this.subscriptions.add(this.workflowActionService.getJointGraphWrapper().getJointCommentBoxHighlightStream().subscribe(commentBoxIDs => {
-      this.openCommentBox(commentBoxIDs[0]);
-    }));
+    this.workflowActionService
+      .getJointGraphWrapper()
+      .getJointCommentBoxHighlightStream()
+      .pipe(untilDestroyed(this))
+      .subscribe(commentBoxIDs => {
+        this.openCommentBox(commentBoxIDs[0]);
+      });
 
   }
 

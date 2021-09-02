@@ -5,7 +5,8 @@ import { OperatorSchema } from "../../types/operator-schema.interface";
 import {
   Point,
   OperatorPredicate,
-  OperatorLink
+  OperatorLink,
+  CommentBox
 } from "../../types/workflow-common.interface";
 import {
   Group,
