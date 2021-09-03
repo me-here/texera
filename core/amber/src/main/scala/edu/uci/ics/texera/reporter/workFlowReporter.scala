@@ -20,9 +20,9 @@ import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.asScalaBufferConverter
 
 class workFlowReporter(
-    @volatile private var configuration: Configuration,
-    var reportName: String,
-    var id: ActorVirtualIdentity
+                        @volatile private var configuration: Configuration,
+                        var relateActorPath: String,
+                        var relateWorkerIdentity: ActorVirtualIdentity
 ) extends MetricReporter {
   val expectedMetrics = configuration.metricList
   import workFlowReporter._
@@ -36,14 +36,14 @@ class workFlowReporter(
   ) // Just in case there is some weird locale config we are not aware of.
 
   override def stop(): Unit = {
-    logger.info(reportName + " Stopped the workFlowWorker API reporter.")
-    val metricList = actorMetrics.getOrElse(reportName, null)
+    logger.info(relateActorPath + " Stopped the workFlowWorker API reporter.")
+    val metricList = actorMetrics.getOrElse(relateActorPath, null)
 
     if (metricList != null) {
       logger.info(
         s"""
-          | ActorId:$id
-          | ActorPath:$reportName
+          | ActorId:$relateWorkerIdentity
+          | ActorPath:$relateActorPath
           | Metric:
           | ${metricList.mkString(
           "-------------------",
@@ -67,7 +67,7 @@ class workFlowReporter(
   }
 
   private def addData(snapshot: PeriodSnapshot): Unit = {
-    val metricList = actorMetrics.getOrElse(reportName, new ListBuffer[MetricWrapper])
+    val metricList = actorMetrics.getOrElse(relateActorPath, new ListBuffer[MetricWrapper])
     val timestampStart = snapshot.from.toEpochMilli.toString
     val timestampEnd = snapshot.to.toEpochMilli.toString
     val interval = Math.round(Duration.between(snapshot.from, snapshot.to).toMillis())
@@ -175,14 +175,14 @@ class workFlowReporter(
       })
       .foreach(addDistribution)
 
-    actorMetrics.put(reportName, metricList)
+    actorMetrics.put(relateActorPath, metricList)
 
   }
 
   private def pathFilter[T](instrument: Instrument.Snapshot[T]): Boolean = {
     val path = instrument.tags.get(Lookups.plain("path"))
     if (path != null) {
-      if (path.contains(reportName)) {
+      if (path.contains(relateActorPath)) {
         true
       } else false
     } else false
@@ -215,7 +215,7 @@ class workFlowReporter(
   }
 
   case class MetricWrapper(
-      var name: String, //
+      var name: String,
       var interval: String,
       var startTimeStamp: String,
       var endTimeStamp: String,
@@ -252,11 +252,11 @@ class workFlowReporter(
   }
 
   def getActorProcessingTime: ListBuffer[MetricWrapper] = {
-    actorMetrics(reportName).filter(w => { w.name == "akka.actor.processing-time" })
+    actorMetrics(relateActorPath).filter(w => { w.name == "akka.actor.processing-time" })
   }
 
   def getActorMailboxStats: ListBuffer[MetricWrapper] = {
-    actorMetrics(reportName).filter(w => {
+    actorMetrics(relateActorPath).filter(w => {
       w.name == "akka.actor.time-in-mailbox" || w.name == "akka.actor.mailbox-size"
     })
   }
