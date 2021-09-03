@@ -7,13 +7,30 @@ import com.typesafe.config.ConfigFactory
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.FatalErrorHandler.FatalError
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionStartedHandler.WorkerStateUpdated
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkMessage, RegisterActorRef}
-import edu.uci.ics.amber.engine.architecture.messaginglayer.{BatchToTupleConverter, DataOutputPort, NetworkInputPort, TupleToBatchConverter}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  NetworkMessage,
+  RegisterActorRef
+}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{
+  BatchToTupleConverter,
+  DataOutputPort,
+  NetworkInputPort,
+  TupleToBatchConverter
+}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ShutdownDPThreadHandler.ShutdownDPThread
-import edu.uci.ics.amber.engine.architecture.worker.statistics.WorkerState.{READY, RUNNING, UNINITIALIZED}
+import edu.uci.ics.amber.engine.architecture.worker.statistics.WorkerState.{
+  READY,
+  RUNNING,
+  UNINITIALIZED
+}
 import edu.uci.ics.amber.engine.common.IOperatorExecutor
 import edu.uci.ics.amber.engine.common.amberexception.WorkflowRuntimeException
-import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload, WorkflowControlMessage, WorkflowDataMessage}
+import edu.uci.ics.amber.engine.common.ambermessage.{
+  ControlPayload,
+  DataPayload,
+  WorkflowControlMessage,
+  WorkflowDataMessage
+}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnInvocation}
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCHandlerInitializer}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
@@ -112,38 +129,39 @@ class WorkflowWorker(
     }
   }
 
-
   override def preStart(): Unit = {
-//    var testString:String = s"""kamon.instrumentation.akka.filters.actors.track.includes = [\"$selfPath\"]"""
-//    var customConfig = ConfigFactory.parseString(testString).withFallback(Kamon.config())
     val config = workFlowReporter.readConfiguration(Kamon.config())
-   logger.info(s"""maozunyao: start workflow worker reporter:${self.path.toString}""")
-    var reporter = new workFlowReporter(config,self.path.address.system+self.path.toStringWithoutAddress,actorId)
-    Kamon.registerModule(self.path.toString,reporter)
+    logger.info(s"""maozunyao: start workflow worker reporter:${self.path.toString}""")
+    var reporter = new workFlowReporter(
+      config,
+      self.path.address.system + self.path.toStringWithoutAddress,
+      actorId
+    )
+    Kamon.registerModule(self.path.toString, reporter)
   }
   override def postStop(): Unit = {
     // shutdown dp thread by sending a command
-
     dataProcessor.enqueueCommand(
       ControlInvocation(AsyncRPCClient.IgnoreReply, ShutdownDPThread()),
       SELF
     )
-    var clazz = Class.forName("kamon.module.ModuleRegistry$Entry")
-    var field = Kamon.getClass.getDeclaredField("_moduleRegistry")
-    field.setAccessible(true)
-    var register= field.get(Kamon)
-    var fieldList = register.getClass.getDeclaredFields
-    var methodList = register.getClass.getDeclaredMethods
-    var fields = register.getClass.getDeclaredFields
-    var reporters =  register.getClass.getDeclaredField("_metricReporterModules")
-    reporters.setAccessible(true)
-    var moduleMap = reporters.get(register).asInstanceOf[Map[String,AnyRef]]
-    var wantedMethod = register.getClass.getDeclaredMethod("kamon$module$ModuleRegistry$$stopModule",clazz)
-    wantedMethod.setAccessible(true)
-    wantedMethod.invoke(register,moduleMap(self.path.toString))
-    logger.info(s"""maozunyao: stop workflow worker reporter:$self.path.toString""")
+    stopReporter()
+
     logger.info("stopped!")
 
+  }
+  private def stopReporter(): Unit = {
+    val clazz = Class.forName("kamon.module.ModuleRegistry$Entry")
+    val field = Kamon.getClass.getDeclaredField("_moduleRegistry")
+    field.setAccessible(true)
+    val register = field.get(Kamon)
+    val reporters = register.getClass.getDeclaredField("_metricReporterModules")
+    reporters.setAccessible(true)
+    val moduleMap = reporters.get(register).asInstanceOf[Map[String, AnyRef]]
+    val stopModuleMethod =
+      register.getClass.getDeclaredMethod("kamon$module$ModuleRegistry$$stopModule", clazz)
+    stopModuleMethod.setAccessible(true)
+    stopModuleMethod.invoke(register, moduleMap(self.path.toString))
   }
 
 }
