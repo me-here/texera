@@ -131,7 +131,7 @@ class WorkflowWorker(
 
   override def preStart(): Unit = {
     val config = workFlowReporter.readConfiguration(Kamon.config())
-    logger.info(s"""maozunyao: start workflow worker reporter:${self.path.toString}""")
+    logger.info(s"""Start workflow worker reporter:${self.path.toString}""")
     var reporter = new workFlowReporter(
       config,
       self.path.address.system + self.path.toStringWithoutAddress,
