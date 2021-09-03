@@ -219,3 +219,5 @@ libraryDependencies += "org.tukaani" % "xz" % "1.5"
 
 // https://mvnrepository.com/artifact/org.jasypt/jasypt
 libraryDependencies += "org.jasypt" % "jasypt" % "1.9.3"
+
+libraryDependencies += "io.kamon" %% "kamon-bundle" % "2.2.2"
