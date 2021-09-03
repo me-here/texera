@@ -30,15 +30,13 @@ class workFlowReporter(
   private val logger = LoggerFactory.getLogger(classOf[workFlowReporter])
   private val symbols = DecimalFormatSymbols.getInstance(Locale.US)
   private val valueFormat = new DecimalFormat("#0.#########", symbols)
-
-  logger.info("Started the Datadog API reporter.")
   var actorMetrics = new mutable.HashMap[String, ListBuffer[MetricWrapper]]
   symbols.setDecimalSeparator(
     '.'
   ) // Just in case there is some weird locale config we are not aware of.
 
   override def stop(): Unit = {
-    logger.info(reportName + " Stopped the Datadog API reporter.")
+    logger.info(reportName + " Stopped the workFlowWorker API reporter.")
     val metricList = actorMetrics.getOrElse(reportName, null)
 
     if (metricList != null) {
@@ -60,7 +58,6 @@ class workFlowReporter(
   override def reconfigure(config: Config): Unit = {
     val newConfiguration = readConfiguration(config)
     configuration = newConfiguration
-    //httpClient = new HttpClient(configuration.httpConfig, usingAgent = false)
   }
 
   override def reportPeriodSnapshot(snapshot: PeriodSnapshot): Unit = {
@@ -271,17 +268,17 @@ object workFlowReporter {
   val gauge = "gauge"
 
   def readConfiguration(config: Config): Configuration = {
-    val datadogConfig = config.getConfig("kamon.workerFlowWorkerReporter")
+    val reporterConfig = config.getConfig("kamon.workerFlowWorkerReporter")
     Configuration(
-      timeUnit = readTimeUnit(datadogConfig.getString("time-unit")),
-      informationUnit = readInformationUnit(datadogConfig.getString("information-unit")),
+      timeUnit = readTimeUnit(reporterConfig.getString("time-unit")),
+      informationUnit = readInformationUnit(reporterConfig.getString("information-unit")),
       EnvironmentTags
-        .from(Kamon.environment, datadogConfig.getConfig("environment-tags"))
+        .from(Kamon.environment, reporterConfig.getConfig("environment-tags"))
         .without("host")
         .all()
         .map(p => p.key -> Tag.unwrapValue(p).toString),
       Kamon.filter("kamon.workerFlowWorkerReporter.environment-tags.filter"),
-      datadogConfig.getStringList("metricsList").asScala.toList
+      reporterConfig.getStringList("metricsList").asScala.toList
     )
   }
 
