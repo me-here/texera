@@ -15,7 +15,7 @@ export class NzModalCommentBoxComponent {
     @Input() commentBox!: CommentBox;
 
     public commentForm = this.formBuilder.group({
-        comment: ['', [Validators.required]]
+        comment: ["", [Validators.required]]
     });
     constructor(
         public workflowActionService: WorkflowActionService,
