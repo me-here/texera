@@ -488,7 +488,6 @@ export class WorkflowActionService {
     this.executeAndStoreCommand(command);
   }
 
-
   public addCommentBox(commentBox: CommentBox): void {
     const currentHighlights = this.jointGraphWrapper.getCurrentHighlights();
     const command: Command = {
@@ -497,10 +496,9 @@ export class WorkflowActionService {
         this.jointGraphWrapper.unhighlightElements(currentHighlights);
         this.jointGraphWrapper.setMultiSelectMode(false);
         this.addCommentBoxInternal(commentBox);
-
       },
       undo: () => {
-        console.log('haha, just kidding');
+        console.log("haha, just kidding");
       }
     };
     this.executeAndStoreCommand(command);
@@ -553,7 +551,7 @@ export class WorkflowActionService {
         }
       },
       undo: () => {
-        console.log('somehow it is undoing');
+        console.log("somehow it is undoing");
 
         if (groups) {
           groups.forEach((group) => {
@@ -593,7 +591,6 @@ export class WorkflowActionService {
   public deleteCommentBox(commentBoxID: string): void {
     this.deleteCommentBoxInternal(commentBoxID);
   }
-
 
   /**
    * Deletes given operators and links from the workflow graph.
@@ -1055,8 +1052,14 @@ export class WorkflowActionService {
     this.setWorkflowMetadata(workflow);
     // remove the existing operators on the paper currently
     this.deleteOperatorsAndLinks(
-      this.getTexeraGraph().getAllOperators().map(op => op.operatorID), []);
-    this.getTexeraGraph().getAllCommentBoxes().forEach(commentBox => this.deleteCommentBox(commentBox.commentBoxID));
+      this.getTexeraGraph()
+        .getAllOperators()
+        .map((op) => op.operatorID),
+      []
+    );
+    this.getTexeraGraph()
+      .getAllCommentBoxes()
+      .forEach((commentBox) => this.deleteCommentBox(commentBox.commentBoxID));
     if (workflow === undefined) {
       return;
     }
@@ -1085,7 +1088,9 @@ export class WorkflowActionService {
       };
     });
 
-    workflowContent.commentBoxes.forEach(commentBox => this.addCommentBox(commentBox));
+    workflowContent.commentBoxes.forEach((commentBox) =>
+      this.addCommentBox(commentBox)
+    );
 
     const breakpoints = new Map(Object.entries(workflowContent.breakpoints));
 
@@ -1166,12 +1171,27 @@ export class WorkflowActionService {
     const breakpointsMap = texeraGraph.getAllLinkBreakpoints();
     const breakpoints: Record<string, Breakpoint> = {};
     breakpointsMap.forEach((value, key) => (breakpoints[key] = value));
-    texeraGraph.getAllOperators().forEach(op => operatorPositions[op.operatorID] =
-      this.getJointGraphWrapper().getElementPosition(op.operatorID));
-    commentBoxes.forEach(commentBox => commentBox.commentBoxPosition
-       = this.getJointGraphWrapper().getElementPosition(commentBox.commentBoxID));
+    texeraGraph
+      .getAllOperators()
+      .forEach(
+        (op) =>
+          (operatorPositions[op.operatorID] =
+            this.getJointGraphWrapper().getElementPosition(op.operatorID))
+      );
+    commentBoxes.forEach(
+      (commentBox) =>
+        (commentBox.commentBoxPosition =
+          this.getJointGraphWrapper().getElementPosition(
+            commentBox.commentBoxID
+          ))
+    );
     const workflowContent: WorkflowContent = {
-      operators, operatorPositions, links, groups, breakpoints, commentBoxes
+      operators,
+      operatorPositions,
+      links,
+      groups,
+      breakpoints,
+      commentBoxes
     };
     return workflowContent;
   }
@@ -1207,8 +1227,6 @@ export class WorkflowActionService {
     console.log(this.jointGraph.getCells());
     this.texeraGraph.addCommentBox(commentBox);
   }
-
-
 
   private addOperatorInternal(operator: OperatorPredicate, point: Point): void {
     // check that the operator doesn't exist

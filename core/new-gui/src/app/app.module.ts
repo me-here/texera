@@ -96,8 +96,8 @@ import { MonacoEditorModule } from "ngx-monaco-editor";
 import { OperatorPropertyEditFrameComponent } from "./workspace/component/property-editor/operator-property-edit-frame/operator-property-edit-frame.component";
 import { BreakpointPropertyEditFrameComponent } from "./workspace/component/property-editor/breakpoint-property-edit-frame/breakpoint-property-edit-frame.component";
 import { NotificationComponent } from "./common/component/notification/notification/notification.component";
-import { NgbdModalCommentBoxComponent } from './workspace/component/workflow-editor/comment-box-modal/ngbd-modal-comment-box.component';
-import { NzCommentModule } from 'ng-zorro-antd/comment';
+import { NzModalCommentBoxComponent } from "./workspace/component/workflow-editor/comment-box-modal/nz-modal-comment-box.component";
+import { NzCommentModule } from "ng-zorro-antd/comment";
 
 registerLocaleData(en);
 
@@ -150,7 +150,7 @@ registerLocaleData(en);
     BreakpointPropertyEditFrameComponent,
     NotificationComponent,
     NgbdModalUserFileShareAccessComponent,
-    NgbdModalCommentBoxComponent,
+    NzModalCommentBoxComponent,
   ],
   imports: [
     BrowserModule,
@@ -219,7 +219,7 @@ registerLocaleData(en);
     RowModalComponent,
     NgbdModalFileAddComponent,
     NgbdModalWorkflowShareAccessComponent,
-    NgbdModalCommentBoxComponent
+    NzModalCommentBoxComponent
   ],
   providers: [
     UserService,

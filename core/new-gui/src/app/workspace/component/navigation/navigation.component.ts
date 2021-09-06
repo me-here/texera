@@ -14,12 +14,11 @@ import { WorkflowActionService } from "../../service/workflow-graph/model/workfl
 import { ExecutionState } from "../../types/execute-workflow.interface";
 import { WorkflowWebsocketService } from "../../service/workflow-websocket/workflow-websocket.service";
 import { merge } from "rxjs";
-import { Observable } from 'rxjs';
-import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { WorkflowResultExportService } from "../../service/workflow-result-export/workflow-result-export.service";
 import { debounceTime } from "rxjs/operators";
 import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
-import { WorkflowUtilService } from '../../service/workflow-graph/util/workflow-util.service';
+import { WorkflowUtilService } from "../../service/workflow-graph/util/workflow-util.service";
 
 /**
  * NavigationComponent is the top level navigation bar that shows

@@ -16,8 +16,8 @@ import {
   OperatorState,
   OperatorStatistics
 } from "../../types/execute-workflow.interface";
-import * as joint from 'jointjs';
-import { jitOnlyGuardedExpression } from '@angular/compiler/src/render3/util';
+import * as joint from "jointjs";
+import { jitOnlyGuardedExpression } from "@angular/compiler/src/render3/util";
 
 /**
  * Defines the SVG element for the breakpoint button
@@ -188,15 +188,21 @@ export class JointUIService {
    */
 
   public getCommentElement(commentBox: CommentBox): joint.dia.Element {
-    const basic = new joint.shapes.standard.Rectangle;
-    basic.position(commentBox.commentBoxPosition.x, commentBox.commentBoxPosition.y);
+    const basic = new joint.shapes.standard.Rectangle();
+    basic.position(
+      commentBox.commentBoxPosition.x,
+      commentBox.commentBoxPosition.y
+    );
     basic.resize(120, 50);
     const commentElement = new TexeraCustomCommentElement({
       position: commentBox.commentBoxPosition,
-      size: {width: JointUIService.DEFAULT_COMMENT_WIDTH, height: JointUIService.DEFAULT_COMMENT_HEIGHT},
+      size: {
+        width: JointUIService.DEFAULT_COMMENT_WIDTH,
+        height: JointUIService.DEFAULT_COMMENT_HEIGHT
+      },
       attrs: JointUIService.getCustomCommentStyleAttrs()
     });
-    commentElement.set('id', commentBox.commentBoxID);
+    commentElement.set("id", commentBox.commentBoxID);
     return commentElement;
   }
 
@@ -757,24 +763,32 @@ export class JointUIService {
 
   public static getCustomCommentStyleAttrs(): joint.shapes.devs.ModelSelectors {
     const commentStyleAttrs = {
-      'rect': {
-        fill: '#F2F4F5', 'follow-scale': true, stroke: '#CED4D9', 'stroke-width': '0',
-        rx: '5px', ry: '5px'
+      rect: {
+        fill: "#F2F4F5",
+        "follow-scale": true,
+        stroke: "#CED4D9",
+        "stroke-width": "0",
+        rx: "5px",
+        ry: "5px"
       },
-      'image': {
-        'xlink:href': 'assets/operator_images/icons8-chat_bubble.png',
-        width: 32, height: 32,
-        'ref-x': .5, 'ref-y': .5,
-        ref: 'rect',
-        'x-alignment': 'middle',
-        'y-alignment': 'middle',
+      image: {
+        "xlink:href": "assets/operator_images/icons8-chat_bubble.png",
+        width: 32,
+        height: 32,
+        "ref-x": 0.5,
+        "ref-y": 0.5,
+        ref: "rect",
+        "x-alignment": "middle",
+        "y-alignment": "middle"
       },
-      '.delete-button': {
-        x: 22, y: -16, cursor: 'pointer',
-        fill: '#D8656A', event: 'element:delete'
+      ".delete-button": {
+        x: 22,
+        y: -16,
+        cursor: "pointer",
+        fill: "#D8656A",
+        event: "element:delete"
       }
     };
     return commentStyleAttrs;
   }
-
 }

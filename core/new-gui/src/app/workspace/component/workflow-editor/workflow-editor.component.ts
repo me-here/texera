@@ -4,11 +4,11 @@ import * as joint from "jointjs";
 // 2) always add this import statement even if TypeScript doesn't show an error https://github.com/Microsoft/TypeScript/issues/22016
 import * as jQuery from "jquery";
 import { fromEvent, merge } from "rxjs";
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { NgbdModalCommentBoxComponent } from './comment-box-modal/ngbd-modal-comment-box.component';
+import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { NzModalCommentBoxComponent } from "./comment-box-modal/nz-modal-comment-box.component";
 import { NzModalRef, NzModalService } from "ng-zorro-antd/modal";
-import { Subscription } from 'rxjs';
-import { Observable } from 'rxjs/Observable';
+import { Subscription } from "rxjs";
+import { Observable } from "rxjs/Observable";
 import { assertType } from "src/app/common/util/assert";
 import { environment } from "../../../../environments/environment";
 import { DragDropService } from "../../service/drag-drop/drag-drop.service";
@@ -185,7 +185,6 @@ export class WorkflowEditorComponent implements AfterViewInit {
       this.handleLinkBreakpoint();
     }
   }
-
 
   private initializeJointPaper(): void {
     // get the custom paper options
@@ -609,19 +608,28 @@ export class WorkflowEditorComponent implements AfterViewInit {
       });
   }
 
-
   private handleHighlightMouseDBClickInput(): void {
-    fromEvent<JointPaperEvent>(this.getJointPaper(), 'cell:pointerdblclick')
+    fromEvent<JointPaperEvent>(this.getJointPaper(), "cell:pointerdblclick")
       .pipe(untilDestroyed(this))
-      .subscribe(event => {
-        if(event[0].model.isElement() && this.workflowActionService.getTexeraGraph().hasCommentBox(event[0].model.id.toString())){
-          this.workflowActionService.getJointGraphWrapper().setMultiSelectMode(<boolean>event[1].shiftKey);
+      .subscribe((event) => {
+        if (
+          event[0].model.isElement() &&
+          this.workflowActionService
+            .getTexeraGraph()
+            .hasCommentBox(event[0].model.id.toString())
+        ) {
+          this.workflowActionService
+            .getJointGraphWrapper()
+            .setMultiSelectMode(<boolean>event[1].shiftKey);
           const elementID = event[0].model.id.toString();
-          if (this.workflowActionService.getTexeraGraph().hasCommentBox(elementID)) {
-            this.workflowActionService.getJointGraphWrapper().highlightCommentBoxes(elementID);
+          if (
+            this.workflowActionService.getTexeraGraph().hasCommentBox(elementID)
+          ) {
+            this.workflowActionService
+              .getJointGraphWrapper()
+              .highlightCommentBoxes(elementID);
           }
         }
-
       });
   }
   /**
@@ -781,18 +789,19 @@ export class WorkflowEditorComponent implements AfterViewInit {
       .getJointGraphWrapper()
       .getJointCommentBoxHighlightStream()
       .pipe(untilDestroyed(this))
-      .subscribe(commentBoxIDs => {
+      .subscribe((commentBoxIDs) => {
         this.openCommentBox(commentBoxIDs[0]);
       });
-
   }
 
   private openCommentBox(commentBoxID: string): void {
-    const commentBox = this.workflowActionService.getTexeraGraph().getCommentBox(commentBoxID);
+    const commentBox = this.workflowActionService
+      .getTexeraGraph()
+      .getCommentBox(commentBoxID);
     const modalRef: NzModalRef = this.nzModalService.create({
       // modal title
       nzTitle: "Comments",
-      nzContent: NgbdModalCommentBoxComponent,
+      nzContent: NzModalCommentBoxComponent,
       // set component @Input attributes
       nzComponentParams: {
         // set the index value and page size to the modal for navigation
@@ -886,11 +895,23 @@ export class WorkflowEditorComponent implements AfterViewInit {
       )
       .pipe(untilDestroyed(this))
       .subscribe((elementView) => {
-        if (this.workflowActionService.getTexeraGraph().hasOperator(elementView.model.id.toString())) {
-          this.workflowActionService.deleteOperator(elementView.model.id.toString());
+        if (
+          this.workflowActionService
+            .getTexeraGraph()
+            .hasOperator(elementView.model.id.toString())
+        ) {
+          this.workflowActionService.deleteOperator(
+            elementView.model.id.toString()
+          );
         }
-        if (this.workflowActionService.getTexeraGraph().hasCommentBox(elementView.model.id.toString())) {
-          this.workflowActionService.deleteCommentBox(elementView.model.id.toString());
+        if (
+          this.workflowActionService
+            .getTexeraGraph()
+            .hasCommentBox(elementView.model.id.toString())
+        ) {
+          this.workflowActionService.deleteCommentBox(
+            elementView.model.id.toString()
+          );
         }
       });
   }

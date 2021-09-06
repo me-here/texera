@@ -1,18 +1,17 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { FormBuilder, Validators } from '@angular/forms';
+import { Component, Input, OnInit } from "@angular/core";
+import { FormBuilder, Validators } from "@angular/forms";
 import { NzModalRef } from "ng-zorro-antd/modal";
-import { CommentBox, Comment } from 'src/app/workspace/types/workflow-common.interface';
-import { WorkflowActionService } from 'src/app/workspace/service/workflow-graph/model/workflow-action.service';
-import { UserService } from 'src/app/common/service/user/user.service';
+import { CommentBox, Comment } from "src/app/workspace/types/workflow-common.interface";
+import { WorkflowActionService } from "src/app/workspace/service/workflow-graph/model/workflow-action.service";
+import { UserService } from "src/app/common/service/user/user.service";
 
 
 @Component({
-    selector: 'texera-ngbd-modal-comment-box',
-    templateUrl: './ngbd-modal-comment-box.component.html',
-    styleUrls: ['./ngbd-modal-comment-box.component.scss']
+    selector: "texera-ngbd-modal-comment-box",
+    templateUrl: "./nz-modal-comment-box.component.html",
+    styleUrls: ["./nz-modal-comment-box.component.scss"]
 })
-export class NgbdModalCommentBoxComponent {
+export class NzModalCommentBoxComponent {
     @Input() commentBox!: CommentBox;
 
     public commentForm = this.formBuilder.group({
@@ -26,13 +25,13 @@ export class NgbdModalCommentBoxComponent {
     ) {}
 
     public onClickAddComment(): void {
-        if (this.commentForm.get('comment')?.invalid) {
-            alert('Cannot Submit Empty Comment!!');
+        if (this.commentForm.get("comment")?.invalid) {
+            alert("Cannot Submit Empty Comment!!");
             return;
         }
-        const newComment = this.commentForm.get('comment')?.value;
+        const newComment = this.commentForm.get("comment")?.value;
         this.updateComments(newComment);
-        this.commentForm.get('comment')?.setValue('');
+        this.commentForm.get("comment")?.setValue("");
     }
 
     public updateComments(newComment: string): void {
