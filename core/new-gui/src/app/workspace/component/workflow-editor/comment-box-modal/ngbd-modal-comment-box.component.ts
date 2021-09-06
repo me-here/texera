@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { FormBuilder, Validators } from '@angular/forms';
+import { NzModalRef } from "ng-zorro-antd/modal";
 import { CommentBox, Comment } from 'src/app/workspace/types/workflow-common.interface';
 import { WorkflowActionService } from 'src/app/workspace/service/workflow-graph/model/workflow-action.service';
 import { UserService } from 'src/app/common/service/user/user.service';
@@ -19,9 +20,9 @@ export class NgbdModalCommentBoxComponent {
     });
     constructor(
         public workflowActionService: WorkflowActionService,
-        public activeModal: NgbActiveModal,
         private formBuilder: FormBuilder,
-        public userService: UserService
+        public userService: UserService,
+        public modal: NzModalRef<any, number>
     ) {}
 
     public onClickAddComment(): void {

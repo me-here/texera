@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS `workflow_of_user`;
 DROP TABLE IF EXISTS `user_dictionary`;
 DROP TABLE IF EXISTS `user`;
 DROP TABLE IF EXISTS `workflow`;
+DROP TABLE IF EXISTS `commentbox`;
 
 SET GLOBAL time_zone = '+00:00'; # this line is mandatory
 
@@ -80,6 +81,16 @@ CREATE TABLE IF NOT EXISTS workflow
     `creation_time`      TIMESTAMP                   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `last_modified_time` TIMESTAMP                   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`wid`)
+) ENGINE = INNODB,
+  AUTO_INCREMENT = 1;
+
+CREATE TABLE IF NOT EXISTS commentbox
+(
+    `cid` INT UNSIGNED AUTO_INCREMENT NOT NULL,
+    `wid` INT UNSIGNED NOT NULL,
+    `content` TEXT NOT NULL,
+    PRIMARY KEY (`cid`),
+    FOREIGN KEY (`wid`) REFERENCES workflow (`wid`) ON DELETE CASCADE
 ) ENGINE = INNODB,
   AUTO_INCREMENT = 1;
 

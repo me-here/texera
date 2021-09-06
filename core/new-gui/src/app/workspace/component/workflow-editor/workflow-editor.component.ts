@@ -6,6 +6,7 @@ import * as jQuery from "jquery";
 import { fromEvent, merge } from "rxjs";
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { NgbdModalCommentBoxComponent } from './comment-box-modal/ngbd-modal-comment-box.component';
+import { NzModalRef, NzModalService } from "ng-zorro-antd/modal";
 import { Subscription } from 'rxjs';
 import { Observable } from 'rxjs/Observable';
 import { assertType } from "src/app/common/util/assert";
@@ -135,7 +136,8 @@ export class WorkflowEditorComponent implements AfterViewInit {
     private workflowStatusService: WorkflowStatusService,
     private workflowUtilService: WorkflowUtilService,
     private executeWorkflowService: ExecuteWorkflowService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private nzModalService: NzModalService
   ) {}
 
   public getJointPaper(): joint.dia.Paper {
@@ -787,8 +789,28 @@ export class WorkflowEditorComponent implements AfterViewInit {
 
   private openCommentBox(commentBoxID: string): void {
     const commentBox = this.workflowActionService.getTexeraGraph().getCommentBox(commentBoxID);
-    const modalRef = this.modalService.open(NgbdModalCommentBoxComponent);
-    modalRef.componentInstance.commentBox = commentBox;
+    const modalRef: NzModalRef = this.nzModalService.create({
+      // modal title
+      nzTitle: "Comments",
+      nzContent: NgbdModalCommentBoxComponent,
+      // set component @Input attributes
+      nzComponentParams: {
+        // set the index value and page size to the modal for navigation
+        commentBox: commentBox
+      },
+      // prevent browser focusing close button (ugly square highlight)
+      nzAutofocus: null,
+      // modal footer buttons
+      nzFooter: [
+        {
+          label: "OK",
+          onClick: () => {
+            modalRef.destroy();
+          },
+          type: "primary"
+        }
+      ]
+    });
   }
 
   private handleOperatorSuggestionHighlightEvent(): void {
