@@ -26,7 +26,7 @@ object Constants {
   val skewToFreeTransferRatio: Int = 1
   val lowerLimit: Float = 0f
   val upperLimit: Float = 600000f // 30gb
-  val sortExperiment: Boolean = true
+  val sortExperiment: Boolean = false
 
   type joinType = String
 }
