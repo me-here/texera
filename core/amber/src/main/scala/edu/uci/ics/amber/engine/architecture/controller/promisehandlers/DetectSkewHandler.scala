@@ -93,14 +93,14 @@ object DetectSkewHandler {
   def passSkewTest(
       skewedWorkerCand: ActorVirtualIdentity,
       freeWorkerCand: ActorVirtualIdentity,
-      multiplier: Double
+      threshold: Double
   ): Boolean = {
     var isSkewed = true
     val skewedHist = workerToLoadHistory(skewedWorkerCand)
     val freeHist = workerToLoadHistory(freeWorkerCand)
     assert(skewedHist.size == freeHist.size)
     for (j <- 0 to skewedHist.size - 1) {
-      if (skewedHist(j) < 100 || skewedHist(j) < multiplier * freeHist(j)) {
+      if (skewedHist(j) < 100 || skewedHist(j) < threshold + freeHist(j)) {
         isSkewed = false
       }
     }
@@ -124,7 +124,7 @@ object DetectSkewHandler {
         })
         assert(actualSkewedWorker != null)
 
-        if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, 1.5)) {
+        if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, 100)) {
           ret.append((actualSkewedWorker, sortedWorkers(i)))
           skewedWorkerToFreeWorkerCurr.remove(actualSkewedWorker)
         }
@@ -152,7 +152,7 @@ object DetectSkewHandler {
             .contains(sortedWorkers(i))
         ) {
           if (
-            passSkewTest(sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), 2)
+            passSkewTest(sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), 100)
           ) {
             ret.append(
               (sortedWorkers(i), skewedWorkerToFreeWorkerHistory(sortedWorkers(i)), false)
@@ -168,7 +168,7 @@ object DetectSkewHandler {
                 isEligibleForFree(sortedWorkers(j)) && passSkewTest(
                   sortedWorkers(i),
                   sortedWorkers(j),
-                  2
+                  100
                 )
               ) {
                 ret.append((sortedWorkers(i), sortedWorkers(j), true))
