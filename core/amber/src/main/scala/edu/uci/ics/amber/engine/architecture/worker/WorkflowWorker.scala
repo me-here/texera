@@ -76,7 +76,7 @@ class WorkflowWorker(
 
   val receivedFaultedTupleIds: mutable.HashSet[Long] = new mutable.HashSet[Long]()
   var isCompleted = false
-  var reporter: workFlowReporter = null
+  var reporter: MetricReporter =  null
   if (parentNetworkCommunicationActorRef != null) {
     parentNetworkCommunicationActorRef ! RegisterActorRef(this.actorId, self)
   }
