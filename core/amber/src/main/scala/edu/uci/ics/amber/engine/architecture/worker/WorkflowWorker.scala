@@ -7,30 +7,13 @@ import com.typesafe.config.ConfigFactory
 import edu.uci.ics.amber.engine.architecture.common.WorkflowActor
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.FatalErrorHandler.FatalError
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionStartedHandler.WorkerStateUpdated
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  NetworkMessage,
-  RegisterActorRef
-}
-import edu.uci.ics.amber.engine.architecture.messaginglayer.{
-  BatchToTupleConverter,
-  DataOutputPort,
-  NetworkInputPort,
-  TupleToBatchConverter
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{NetworkMessage, RegisterActorRef}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{BatchToTupleConverter, DataOutputPort, NetworkInputPort, TupleToBatchConverter}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ShutdownDPThreadHandler.ShutdownDPThread
-import edu.uci.ics.amber.engine.architecture.worker.statistics.WorkerState.{
-  READY,
-  RUNNING,
-  UNINITIALIZED
-}
+import edu.uci.ics.amber.engine.architecture.worker.statistics.WorkerState.{READY, RUNNING, UNINITIALIZED}
 import edu.uci.ics.amber.engine.common.IOperatorExecutor
 import edu.uci.ics.amber.engine.common.amberexception.WorkflowRuntimeException
-import edu.uci.ics.amber.engine.common.ambermessage.{
-  ControlPayload,
-  DataPayload,
-  WorkflowControlMessage,
-  WorkflowDataMessage
-}
+import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload, WorkflowControlMessage, WorkflowDataMessage}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnInvocation}
 import edu.uci.ics.amber.engine.common.rpc.{AsyncRPCClient, AsyncRPCHandlerInitializer}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
@@ -38,6 +21,7 @@ import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.util.{CONTROLLER, SELF}
 import edu.uci.ics.texera.reporter.workFlowReporter
 import kamon.Kamon
+import kamon.module.MetricReporter
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
@@ -75,7 +59,7 @@ class WorkflowWorker(
 
   val receivedFaultedTupleIds: mutable.HashSet[Long] = new mutable.HashSet[Long]()
   var isCompleted = false
-
+  var reporter: Option[MetricReporter] = None
   if (parentNetworkCommunicationActorRef != null) {
     parentNetworkCommunicationActorRef ! RegisterActorRef(this.actorId, self)
   }
@@ -131,8 +115,8 @@ class WorkflowWorker(
 
   override def preStart(): Unit = {
     val config = workFlowReporter.readConfiguration(Kamon.config())
-    logger.info(s"""maozunyao: start workflow worker reporter:${self.path.toString}""")
-    var reporter = new workFlowReporter(
+    logger.debug(s"Start workflow worker reporter:${self.path.toString}")
+    reporter = new workFlowReporter(
       config,
       self.path.address.system + self.path.toStringWithoutAddress,
       actorId

@@ -40,17 +40,8 @@ class workFlowReporter(
     val metricList = actorMetrics.getOrElse(relateActorPath, null)
 
     if (metricList != null) {
-      logger.info(
-        s"""
-          | ActorId:$relateWorkerIdentity
-          | ActorPath:$relateActorPath
-          | Metric:
-          | ${metricList.mkString(
-          "-------------------",
-          "-------------------",
-          "\n-------------------"
-        )}
-          |""".stripMargin
+      logger.debug(
+        s" ActorId:$relateWorkerIdentity | ActorPath:$relateActorPath | Metric: | ${metricList.mkString("-------------------", "-------------------", "\n-------------------")}"
       )
     }
   }
