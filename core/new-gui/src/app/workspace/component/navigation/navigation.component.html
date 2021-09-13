@@ -76,6 +76,9 @@
         <button (click)="onClickZoomIn()" nz-button title="zoom in">
           <i nz-icon nzTheme="outline" nzType="zoom-in"></i>
         </button>
+        <button nz-button (click)="onClickAutoLayout()" title="auto layout">
+          <i nz-icon nzType="partition" nzTheme="outline"></i>
+        </button>
         <button
           (click)="onClickRestoreZoomOffsetDefault()"
           nz-button
@@ -120,7 +123,7 @@
             </li>
           </ul>
         </nz-dropdown-menu>
-        <button
+        <!-- <button
           (click)="onClickGroupOperators()"
           [disabled]="!highlightedElementsGroupable()"
           nz-button
@@ -135,7 +138,7 @@
           title="ungroup"
         >
           <i nz-icon nzTheme="outline" nzType="ungroup"></i>
-        </button>
+        </button> -->
         <button
           (click)="onClickDisableOperators()"
           *ngIf="isDisableOperator || !isDisableOperatorClickable"
@@ -153,6 +156,24 @@
           title="operators disabled, click to re-enable"
         >
           <i nz-icon nzTheme="twotone" nzType="stop"></i>
+        </button>
+        <button
+          *ngIf="operatorCacheEnabled && (isCacheOperator || ! isCacheOperatorClickable)"
+          [disabled]="! isCacheOperatorClickable"
+          (click)="onClickCacheOperators()"
+          nz-button
+          title="cache operators"
+        >
+          <i nz-icon nzType="database" nzTheme="outline"></i>
+        </button>
+        <button
+          *ngIf="operatorCacheEnabled && (! isCacheOperator && isCacheOperatorClickable)"
+          [disabled]="! isCacheOperatorClickable"
+          (click)="onClickCacheOperators()"
+          nz-button
+          title="operators cached, click to remove cache"
+        >
+          <i nz-icon nzType="database" nzTheme="twotone"></i>
         </button>
       </nz-button-group>
     </div>
