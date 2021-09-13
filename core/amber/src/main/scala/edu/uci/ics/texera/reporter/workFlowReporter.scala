@@ -1,6 +1,7 @@
 package edu.uci.ics.texera.reporter
 
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.texera.reporter.workFlowReporter.Configuration
 import kamon.Kamon
@@ -20,16 +21,17 @@ import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.asScalaBufferConverter
 
 class workFlowReporter(
-                        @volatile private var configuration: Configuration,
-                        var relateActorPath: String,
-                        var relateWorkerIdentity: ActorVirtualIdentity
-) extends MetricReporter {
+    @volatile private var configuration: Configuration,
+    var relateActorPath: String,
+    var relateWorkerIdentity: ActorVirtualIdentity
+) extends MetricReporter
+    with LazyLogging {
   val expectedMetrics = configuration.metricList
   import workFlowReporter._
-
-  private val logger = LoggerFactory.getLogger(classOf[workFlowReporter])
   private val symbols = DecimalFormatSymbols.getInstance(Locale.US)
   private val valueFormat = new DecimalFormat("#0.#########", symbols)
+
+  //Key is the actor path, Value is a list for one certain vector's metrics.
   var actorMetrics = new mutable.HashMap[String, ListBuffer[MetricWrapper]]
   symbols.setDecimalSeparator(
     '.'
@@ -38,10 +40,10 @@ class workFlowReporter(
   override def stop(): Unit = {
     logger.info(relateActorPath + " Stopped the workFlowWorker API reporter.")
     val metricList = actorMetrics.getOrElse(relateActorPath, null)
-
     if (metricList != null) {
       logger.debug(
-        s" ActorId:$relateWorkerIdentity | ActorPath:$relateActorPath | Metric: | ${metricList.mkString("-------------------", "-------------------", "\n-------------------")}"
+        s" ActorId:$relateWorkerIdentity | ActorPath:$relateActorPath | Metric: | ${metricList
+          .mkString("-------------------", "-------------------", "\n-------------------")}"
       )
     }
   }
@@ -51,18 +53,28 @@ class workFlowReporter(
     configuration = newConfiguration
   }
 
+  /**
+    * This method will be called every cycle, the cycle time is configured in
+    * @param snapshot
+    */
   override def reportPeriodSnapshot(snapshot: PeriodSnapshot): Unit = {
     logger.info("reportPeriodSnapshot begin")
     addData(snapshot)
-
   }
 
+  /**
+    * Filter out the metrics in expectedMetrics, and only catch the metric related to actor with relateActorPath
+    * @param snapshot t
+    */
   private def addData(snapshot: PeriodSnapshot): Unit = {
     val metricList = actorMetrics.getOrElse(relateActorPath, new ListBuffer[MetricWrapper])
     val timestampStart = snapshot.from.toEpochMilli.toString
     val timestampEnd = snapshot.to.toEpochMilli.toString
     val interval = Math.round(Duration.between(snapshot.from, snapshot.to).toMillis())
 
+    /**
+      * @param metric For the metric is not a single value, we need to add more stats like avg, min, max.
+      */
     def addDistribution(metric: MetricSnapshot.Distributions): Unit = {
       var metricValueMap = new mutable.HashMap[String, String]
       val unit = metric.settings.unit
@@ -86,6 +98,15 @@ class workFlowReporter(
         )
       }
     }
+
+    /**
+      * To wrap one metric alue into metricWrapper and put it into metricList.
+      * @param metricClass The metric name like:"akka.actor.processing-time"
+      * @param metricType The metric data type consists of:""Counter,Gauge,Histogram,Timer,Range Samplers. For more detail, please refer to Kamon doc.
+      * @param tags This value consists of key value pair like host name, actor path or service name.
+      * @param metricValueMap This value consists of key value pair like host name, actor path or service name.
+      * @param metricValueUnit The Unit for metric value.
+      */
     def addMetric(
         metricClass: String,
         metricType: String,
@@ -96,7 +117,7 @@ class workFlowReporter(
 
       val customTagsMap: mutable.Map[String, String] = mutable.HashMap[String, String]()
       (configuration.extraTags ++ tags
-        .iterator(_.toString)
+        .iterator(tag => tag.toString)
         .map(p => p.key -> p.value)
         .filter(t => configuration.tagFilter.accept(t._1))).foreach(e =>
         customTagsMap += ((e._1, e._2))
@@ -113,8 +134,8 @@ class workFlowReporter(
         customTagsMap.toMap
       )
       metricList.append(metricWrapper)
-
     }
+
     snapshot.counters
       .filter(dis => {
         expectedMetrics.contains(dis.name)
@@ -205,6 +226,7 @@ class workFlowReporter(
 
   }
 
+  //Abstract for a single metric like "akka.actor.processing-time"
   case class MetricWrapper(
       var name: String,
       var interval: String,
@@ -258,6 +280,7 @@ object workFlowReporter {
   val count = "count"
   val gauge = "gauge"
 
+  // Read configurations into reporter
   def readConfiguration(config: Config): Configuration = {
     val reporterConfig = config.getConfig("kamon.workerFlowWorkerReporter")
     Configuration(
@@ -273,10 +296,7 @@ object workFlowReporter {
     )
   }
 
-  implicit class QuoteInterp(val sc: StringContext) extends AnyVal {
-    def quote(args: Any*): String = "\"" + sc.s(args: _*) + "\""
-  }
-
+  // Read time unit configurations into reporter
   def readTimeUnit(unit: String): MeasurementUnit =
     unit match {
       case "s"  => time.seconds
@@ -287,6 +307,7 @@ object workFlowReporter {
         sys.error(s"Invalid time unit setting [$other], the possible values are [s, ms, µs, ns]")
     }
 
+  // Read information unit configurations into reporter
   def readInformationUnit(unit: String): MeasurementUnit =
     unit match {
       case "b"  => information.bytes
