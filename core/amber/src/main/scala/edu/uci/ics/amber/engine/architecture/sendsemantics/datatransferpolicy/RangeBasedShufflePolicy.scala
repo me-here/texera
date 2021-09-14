@@ -32,6 +32,8 @@ class RangeBasedShufflePolicy(
 
   // buckets once decided will remain same because we are not changing the number of workers in Join
   var bucketsToReceivers = new mutable.HashMap[Int, ArrayBuffer[ActorVirtualIdentity]]()
+  var bucketsToRedirectRatio =
+    new mutable.HashMap[Int, (Long, Long, Long)]() // bucket to (tuples idx, numerator, denominator)
   var nextReceiverIdxInBucket = new mutable.HashMap[Int, Int]()
   var receiverToBatch = new mutable.HashMap[ActorVirtualIdentity, Array[ITuple]]()
   var receiverToCurrBatchSize = new mutable.HashMap[ActorVirtualIdentity, Int]()
@@ -62,26 +64,36 @@ class RangeBasedShufflePolicy(
   // to be called for heavy-hitter
   private def getAndIncrementReceiverForBucket(bucket: Int): ActorVirtualIdentity = {
     var receiver: ActorVirtualIdentity = null
-    var nextReceiverIdx = -1
-    if (nextReceiverIdxInBucket(bucket) >= bucketsToReceivers(bucket).size) {
-      // may happen if `removeReceiverFromBucket()` removes the receiver pointed by the `nextReceiverIdxInBucket(bucket)`
-      receiver = bucketsToReceivers(bucket)(0)
-      nextReceiverIdx = 1
+    if (
+      bucketsToReceivers(bucket).size > 1 &&
+      bucketsToRedirectRatio(bucket)._1 <= bucketsToRedirectRatio(bucket)._2
+    ) {
+      receiver = bucketsToReceivers(bucket)(1)
     } else {
-      receiver = bucketsToReceivers(bucket)(nextReceiverIdxInBucket(bucket))
-      nextReceiverIdx = nextReceiverIdxInBucket(bucket) + 1
+      receiver = bucketsToReceivers(bucket)(0)
     }
 
-    if (nextReceiverIdx >= bucketsToReceivers(bucket).size) {
-      nextReceiverIdx = 0
+    if (bucketsToRedirectRatio(bucket)._1 + 1 > bucketsToRedirectRatio(bucket)._3) {
+      bucketsToRedirectRatio(bucket) = (
+        1,
+        bucketsToRedirectRatio(bucket)._2,
+        bucketsToRedirectRatio(bucket)._3
+      )
+    } else {
+      bucketsToRedirectRatio(bucket) = (
+        bucketsToRedirectRatio(bucket)._1 + 1,
+        bucketsToRedirectRatio(bucket)._2,
+        bucketsToRedirectRatio(bucket)._3
+      )
     }
-    nextReceiverIdxInBucket(bucket) = nextReceiverIdx
     receiver
   }
 
   override def addReceiverToBucket(
       defaultRecId: ActorVirtualIdentity,
-      newRecId: ActorVirtualIdentity
+      newRecId: ActorVirtualIdentity,
+      tuplesToRedirectNumerator: Long,
+      tuplesToRedirectDenominator: Long
   ): Map[ActorVirtualIdentity, Long] = {
     var defaultBucket: Int = -1
     bucketsToReceivers.keys.foreach(b => {
@@ -97,6 +109,8 @@ class RangeBasedShufflePolicy(
     if (!bucketsToReceivers(defaultBucket).contains(newRecId)) {
       bucketsToReceivers(defaultBucket).append(newRecId)
     }
+    bucketsToRedirectRatio(defaultBucket) =
+      (1, tuplesToRedirectNumerator, tuplesToRedirectDenominator)
     receiverToTotalSent.toMap
   }
 

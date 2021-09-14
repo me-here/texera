@@ -29,7 +29,9 @@ abstract class DataSendingPolicy(
 
   def addReceiverToBucket(
       defaultRecId: ActorVirtualIdentity,
-      newRecId: ActorVirtualIdentity
+      newRecId: ActorVirtualIdentity,
+      tuplesToRedirectNumerator: Long,
+      tuplesToRedirectDenominator: Long
   ): Map[ActorVirtualIdentity, Long]
 
   def removeReceiverFromBucket(

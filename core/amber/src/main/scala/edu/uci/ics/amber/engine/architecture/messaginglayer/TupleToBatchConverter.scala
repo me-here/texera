@@ -42,11 +42,18 @@ class TupleToBatchConverter(
 
   def changeFlow(
       skewedReceiverId: ActorVirtualIdentity,
-      freeReceiverId: ActorVirtualIdentity
+      freeReceiverId: ActorVirtualIdentity,
+      tuplesToRedirectNumerator: Long,
+      tuplesToRedirectDenominator: Long
   ): Map[ActorVirtualIdentity, Long] = {
     var receiverToSentCount: Map[ActorVirtualIdentity, Long] = null
     policies.foreach(policy => {
-      receiverToSentCount = policy.addReceiverToBucket(skewedReceiverId, freeReceiverId)
+      receiverToSentCount = policy.addReceiverToBucket(
+        skewedReceiverId,
+        freeReceiverId,
+        tuplesToRedirectNumerator,
+        tuplesToRedirectDenominator
+      )
     })
     if (receiverToSentCount == null) {
       receiverToSentCount = new mutable.HashMap[ActorVirtualIdentity, Long]().toMap

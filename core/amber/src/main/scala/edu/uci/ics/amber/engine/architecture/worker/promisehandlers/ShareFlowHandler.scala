@@ -9,7 +9,9 @@ import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 object ShareFlowHandler {
   final case class ShareFlow(
       skewedReceiverId: ActorVirtualIdentity,
-      freeReceiverId: ActorVirtualIdentity
+      freeReceiverId: ActorVirtualIdentity,
+      tuplesToRedirectNumerator: Long,
+      tuplesToRedirectDenominator: Long
   ) extends ControlCommand[Map[ActorVirtualIdentity, Long]]
 }
 
@@ -18,6 +20,11 @@ trait ShareFlowHandler {
 
   registerHandler { (cmd: ShareFlow, sender) =>
     // workerStateManager.shouldBe(Running, Ready)
-    tupleToBatchConverter.changeFlow(cmd.skewedReceiverId, cmd.freeReceiverId)
+    tupleToBatchConverter.changeFlow(
+      cmd.skewedReceiverId,
+      cmd.freeReceiverId,
+      cmd.tuplesToRedirectNumerator,
+      cmd.tuplesToRedirectDenominator
+    )
   }
 }
