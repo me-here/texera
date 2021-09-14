@@ -34,6 +34,9 @@ class RangeBasedShufflePolicy(
   var bucketsToReceivers = new mutable.HashMap[Int, ArrayBuffer[ActorVirtualIdentity]]()
   var bucketsToRedirectRatio =
     new mutable.HashMap[Int, (Long, Long, Long)]() // bucket to (tuples idx, numerator, denominator)
+  var originalReceiverToHistory = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
+  var originalReceiverToHistoryArrayIdx = 0
+  var tupleIndexForHistory = 0
   var nextReceiverIdxInBucket = new mutable.HashMap[Int, Int]()
   var receiverToBatch = new mutable.HashMap[ActorVirtualIdentity, Array[ITuple]]()
   var receiverToCurrBatchSize = new mutable.HashMap[ActorVirtualIdentity, Int]()
@@ -138,6 +141,25 @@ class RangeBasedShufflePolicy(
     receiverToTotalSent.toMap
   }
 
+  override def getWorkloadHistory(): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
+    val ret = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
+    if (originalReceiverToHistoryArrayIdx == 0) {
+      return ret
+    }
+    originalReceiverToHistory.keys.foreach(rec => {
+      ret(rec) = new ArrayBuffer[Long]()
+      // copy all but last element because the last element is still forming
+      for (i <- 0 to originalReceiverToHistory(rec).size - 2) {
+        ret(rec).append(originalReceiverToHistory(rec)(i))
+      }
+      val mostRecentHistory =
+        originalReceiverToHistory(rec)(originalReceiverToHistory(rec).size - 1)
+      originalReceiverToHistory(rec) = ArrayBuffer[Long](mostRecentHistory)
+    })
+    originalReceiverToHistoryArrayIdx = 0
+    ret
+  }
+
   private def isHeavyHitterTuple(key: String) = {
     true
   }
@@ -146,6 +168,17 @@ class RangeBasedShufflePolicy(
       tuple: ITuple
   ): Option[(ActorVirtualIdentity, DataPayload)] = {
     val index = selectBatchingIndex(tuple)
+    var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))
+    hist(originalReceiverToHistoryArrayIdx) = hist(originalReceiverToHistoryArrayIdx) + 1
+    tupleIndexForHistory += 1
+    if (tupleIndexForHistory % 1000 == 0) {
+      originalReceiverToHistoryArrayIdx += 1
+      originalReceiverToHistory.keys.foreach(rec => {
+        originalReceiverToHistory(rec).append(0)
+      })
+      tupleIndexForHistory = 0
+    }
+
     var receiver: ActorVirtualIdentity = null
     if (bucketsToReceivers(index).size > 1 && isHeavyHitterTuple(shuffleKey(tuple))) {
       // choose one of the receivers in round robin manner
@@ -173,6 +206,7 @@ class RangeBasedShufflePolicy(
   private[this] def initializeInternalState(_receivers: Array[ActorVirtualIdentity]): Unit = {
     for (i <- 0 until numBuckets) {
       bucketsToReceivers(i) = ArrayBuffer[ActorVirtualIdentity](receivers(i))
+      originalReceiverToHistory(_receivers(i)) = new ArrayBuffer[Long](0)
       nextReceiverIdxInBucket(i) = 0
       receiverToBatch(_receivers(i)) = new Array[ITuple](batchSize)
       receiverToCurrBatchSize(_receivers(i)) = 0

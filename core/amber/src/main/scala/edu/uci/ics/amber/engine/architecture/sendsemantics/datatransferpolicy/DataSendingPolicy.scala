@@ -4,6 +4,8 @@ import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.ambermessage.DataPayload
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
 
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext
 
 // Sending policy used by a worker to send data to the downstream workers.
@@ -26,6 +28,8 @@ abstract class DataSendingPolicy(
   def noMore(): Array[(ActorVirtualIdentity, DataPayload)]
 
   def reset(): Unit
+
+  def getWorkloadHistory(): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]
 
   def addReceiverToBucket(
       defaultRecId: ActorVirtualIdentity,

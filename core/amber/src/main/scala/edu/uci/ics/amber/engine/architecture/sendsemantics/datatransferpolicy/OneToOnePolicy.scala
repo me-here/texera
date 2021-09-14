@@ -4,6 +4,7 @@ import edu.uci.ics.amber.engine.common.ambermessage.{DataFrame, DataPayload, End
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 class OneToOnePolicy(
@@ -43,6 +44,8 @@ class OneToOnePolicy(
     batch = new Array[ITuple](batchSize)
     currentSize = 0
   }
+
+  override def getWorkloadHistory(): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = null
 
   override def addReceiverToBucket(
       defaultRecId: ActorVirtualIdentity,

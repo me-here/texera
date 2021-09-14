@@ -6,6 +6,7 @@ import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks
 
 /** This class is a container of all the transfer policies.
@@ -38,6 +39,17 @@ class TupleToBatchConverter(
       }
       policies = policies :+ policy
     }
+  }
+
+  def getWorkloadHistory(): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
+    var ret: mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = null
+    policies.foreach(policy => {
+      ret = policy.getWorkloadHistory()
+    })
+    if (ret == null) {
+      ret = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]
+    }
+    ret
   }
 
   def changeFlow(

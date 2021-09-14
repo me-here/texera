@@ -21,7 +21,8 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSk
   startTimeForNetChange,
   startTimeForNetChangeForSecondPhase,
   startTimeForNetRollback,
-  stopMitigationCallFinished
+  stopMitigationCallFinished,
+  workerToTotalLoadHistory
 }
 import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryLoadMetricsHandler.{
@@ -30,7 +31,8 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryLoadMet
 }
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryNextOpLoadMetricsHandler.{
   FutureLoadMetrics,
-  QueryNextOpLoadMetrics
+  QueryNextOpLoadMetrics,
+  WorkloadHistory
 }
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.RollbackFlowHandler.RollbackFlow
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.SendBuildTableHandler.SendBuildTable
@@ -67,7 +69,13 @@ object DetectSkewHandler {
   var skewedToFreeWorkerSecondPhase =
     new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
   var skewedToFreeWorkerHistory = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
+  // worker to worker current input size
   var workerToLoadHistory = new mutable.HashMap[ActorVirtualIdentity, ListBuffer[Long]]()
+  // (prevWorker, (worker, array of load per 1000 tuples for worker as in prevWorker))
+  var workerToTotalLoadHistory =
+    new mutable.HashMap[ActorVirtualIdentity, mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[
+      Long
+    ]]]()
   val historyLimit = 1
 
   final case class DetectSkew(joinLayer: WorkerLayer, probeLayer: WorkerLayer)
@@ -306,7 +314,7 @@ trait DetectSkewHandler {
 
   private def aggregateLoadMetrics(
       cmd: DetectSkew,
-      metrics: (Seq[CurrentLoadMetrics], Seq[FutureLoadMetrics])
+      metrics: (Seq[CurrentLoadMetrics], Seq[(FutureLoadMetrics, WorkloadHistory)])
   ): mutable.HashMap[ActorVirtualIdentity, Long] = {
     val loads = new mutable.HashMap[ActorVirtualIdentity, Long]()
     for ((id, currLoad) <- cmd.joinLayer.workers.keys zip metrics._1) {
@@ -316,13 +324,19 @@ trait DetectSkewHandler {
 //      )
     }
     metrics._2.foreach(replyFromNetComm => {
-      for ((wId, futLoad) <- replyFromNetComm.dataToSend) {
+      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
         if (loads.contains(wId)) {
           loads(wId) = loads.getOrElse(wId, 0L) + futLoad
           // detectSkewLogger.logInfo(s"\tLOAD ${wId} - ${futLoad} going to arrive")
         }
       }
     })
+    for ((prevWId, replyFromPrevId) <- cmd.probeLayer.workers.keys zip metrics._2) {
+      var prevWorkerMap = workerToTotalLoadHistory(prevWId)
+      for ((wid, loadHistory) <- replyFromPrevId._2.history) {
+        prevWorkerMap(wid).appendAll(loadHistory)
+      }
+    }
     loads
   }
 

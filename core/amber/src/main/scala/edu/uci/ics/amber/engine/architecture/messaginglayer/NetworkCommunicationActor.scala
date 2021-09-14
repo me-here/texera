@@ -192,7 +192,7 @@ class NetworkCommunicationActor(parentRef: ActorRef) extends Actor with LazyLogg
       }
     case ProcessRequest(id, msg) =>
       // join-skew research related.
-      // currently the request can only be QueryNextOpLoadMetrics
+      // currently the request can only be QueryFutureLoadMetrics
       val metrics = idToCongestionControls.map {
         case (key, value) => (key, value.getUnsentAndTransitMsgCount())
       }
