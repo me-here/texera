@@ -141,13 +141,8 @@ class RangeBasedShufflePolicy(
     receiverToTotalSent.toMap
   }
 
-  override def getWorkloadHistory(
-      id: ActorVirtualIdentity
-  ): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
+  override def getWorkloadHistory(): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
     val ret = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
-    if (originalReceiverToHistoryArrayIdx == 0) {
-      return ret
-    }
     originalReceiverToHistory.keys.foreach(rec => {
       ret(rec) = new ArrayBuffer[Long]()
       // copy all but last element because the last element is still forming
@@ -158,7 +153,6 @@ class RangeBasedShufflePolicy(
         originalReceiverToHistory(rec)(originalReceiverToHistory(rec).size - 1)
       originalReceiverToHistory(rec) = ArrayBuffer[Long](mostRecentHistory)
     })
-    originalReceiverToHistoryArrayIdx = 0
     ret
   }
 
@@ -172,20 +166,11 @@ class RangeBasedShufflePolicy(
     val index = selectBatchingIndex(tuple)
     if (recordHistory) {
       var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))
-      if (originalReceiverToHistoryArrayIdx >= hist.size) {
-        println(s" FOUND IT ${originalReceiverToHistoryArrayIdx} and ${hist.size}")
-      }
-      hist(originalReceiverToHistoryArrayIdx) = hist(originalReceiverToHistoryArrayIdx) + 1
+      hist(hist.size - 1) = hist(hist.size - 1) + 1
       tupleIndexForHistory += 1
       if (tupleIndexForHistory % 1000 == 0) {
-        originalReceiverToHistoryArrayIdx += 1
         originalReceiverToHistory.keys.foreach(rec => {
           originalReceiverToHistory(rec).append(0)
-          if (originalReceiverToHistory(rec).size != originalReceiverToHistoryArrayIdx) {
-            println(
-              s"FOUND IT AGAIN ${originalReceiverToHistory(rec).size} and ${originalReceiverToHistoryArrayIdx}"
-            )
-          }
         })
         tupleIndexForHistory = 0
       }

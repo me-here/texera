@@ -20,9 +20,7 @@ class RoundRobinPolicy(
     roundRobinIndex
   }
 
-  override def getWorkloadHistory(
-      id: ActorVirtualIdentity
-  ): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = null
+  override def getWorkloadHistory(): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = null
 
   override def addReceiverToBucket(
       defaultRecId: ActorVirtualIdentity,

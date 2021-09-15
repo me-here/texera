@@ -27,7 +27,6 @@ class HashBasedShufflePolicy(
     val shuffleKey: ITuple => String,
     receivers: Array[ActorVirtualIdentity]
 ) extends ParallelBatchingPolicy(policyTag, batchSize, receivers) {
-  var selfId: ActorVirtualIdentity = _
   val numBuckets = receivers.length
   // buckets once decided will remain same because we are not changing the number of workers in Join
   var bucketsToReceivers = new mutable.HashMap[Int, ArrayBuffer[ActorVirtualIdentity]]()
@@ -139,10 +138,7 @@ class HashBasedShufflePolicy(
     receiverToTotalSent.toMap
   }
 
-  override def getWorkloadHistory(
-      id: ActorVirtualIdentity
-  ): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
-    selfId = id
+  override def getWorkloadHistory(): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
     val ret = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
     originalReceiverToHistory.keys.foreach(rec => {
       ret(rec) = new ArrayBuffer[Long]()

@@ -30,9 +30,7 @@ abstract class DataSendingPolicy(
 
   def reset(): Unit
 
-  def getWorkloadHistory(
-      id: ActorVirtualIdentity
-  ): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]
+  def getWorkloadHistory(): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]
 
   def addReceiverToBucket(
       defaultRecId: ActorVirtualIdentity,
