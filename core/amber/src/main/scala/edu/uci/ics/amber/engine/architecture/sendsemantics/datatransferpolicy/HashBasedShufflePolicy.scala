@@ -154,6 +154,7 @@ class HashBasedShufflePolicy(
         originalReceiverToHistory(rec)(originalReceiverToHistory(rec).size - 1)
       originalReceiverToHistory(rec) = ArrayBuffer[Long](mostRecentHistory)
     })
+    println(s"Original load index was ${originalReceiverToHistoryArrayIdx}, setting it to 0 now")
     originalReceiverToHistoryArrayIdx = 0
     ret
   }
@@ -177,11 +178,6 @@ class HashBasedShufflePolicy(
         originalReceiverToHistoryArrayIdx += 1
         originalReceiverToHistory.keys.foreach(rec => {
           originalReceiverToHistory(rec).append(0)
-          if (originalReceiverToHistory(rec).size - 1 != originalReceiverToHistoryArrayIdx) {
-            println(
-              s"FOUND IT AGAIN ${originalReceiverToHistory(rec).size} and ${originalReceiverToHistoryArrayIdx}"
-            )
-          }
         })
         tupleIndexForHistory = 0
       }
