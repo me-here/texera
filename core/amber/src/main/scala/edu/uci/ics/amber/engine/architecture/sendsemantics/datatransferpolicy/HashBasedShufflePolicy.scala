@@ -34,7 +34,7 @@ class HashBasedShufflePolicy(
   var bucketsToRedirectRatio =
     new mutable.HashMap[Int, (Long, Long, Long)]() // bucket to (tuples idx, numerator, denominator)
   var originalReceiverToHistory = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
-  var originalReceiverToHistoryArrayIdx = 0
+  @volatile var originalReceiverToHistoryArrayIdx = 0
   var tupleIndexForHistory = 0
   var nextReceiverIdxInBucket = new mutable.HashMap[Int, Int]()
   var receiverToBatch = new mutable.HashMap[ActorVirtualIdentity, Array[ITuple]]()
