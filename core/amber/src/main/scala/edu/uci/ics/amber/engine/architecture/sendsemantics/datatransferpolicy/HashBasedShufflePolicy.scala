@@ -34,7 +34,6 @@ class HashBasedShufflePolicy(
   var bucketsToRedirectRatio =
     new mutable.HashMap[Int, (Long, Long, Long)]() // bucket to (tuples idx, numerator, denominator)
   var originalReceiverToHistory = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
-  @volatile var originalReceiverToHistoryArrayIdx = 0
   var tupleIndexForHistory = 0
   var nextReceiverIdxInBucket = new mutable.HashMap[Int, Int]()
   var receiverToBatch = new mutable.HashMap[ActorVirtualIdentity, Array[ITuple]]()
@@ -145,9 +144,6 @@ class HashBasedShufflePolicy(
   ): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
     selfId = id
     val ret = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
-    if (originalReceiverToHistoryArrayIdx == 0) {
-      return ret
-    }
     originalReceiverToHistory.keys.foreach(rec => {
       ret(rec) = new ArrayBuffer[Long]()
       // copy all but last element because the last element is still forming
@@ -158,10 +154,6 @@ class HashBasedShufflePolicy(
         originalReceiverToHistory(rec)(originalReceiverToHistory(rec).size - 1)
       originalReceiverToHistory(rec) = ArrayBuffer[Long](mostRecentHistory)
     })
-    println(
-      s"ORIGINAL LOAD index was ${originalReceiverToHistoryArrayIdx}, setting it to 0 now in ${selfId}"
-    )
-    originalReceiverToHistoryArrayIdx = 0
     ret
   }
 
@@ -175,17 +167,9 @@ class HashBasedShufflePolicy(
     val index = (hashFunc(tuple) % numBuckets + numBuckets) % numBuckets
     if (recordHistory) {
       var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))
-      if (originalReceiverToHistoryArrayIdx >= hist.size) {
-        println(s" FOUND IT ${originalReceiverToHistoryArrayIdx} and ${hist.size} in ${selfId}")
-        originalReceiverToHistory.keys.foreach(rec => {
-          println(s"PRINTING all sizes ${originalReceiverToHistory(rec).size}")
-        })
-      }
-      hist(originalReceiverToHistoryArrayIdx) = hist(originalReceiverToHistoryArrayIdx) + 1
+      hist(hist.size - 1) = hist(hist.size - 1) + 1
       tupleIndexForHistory += 1
       if (tupleIndexForHistory % 1000 == 0) {
-        println(s" 1000 tUPLES HAVB COME FOR ${selfId} with ${originalReceiverToHistoryArrayIdx}")
-        originalReceiverToHistoryArrayIdx += 1
         originalReceiverToHistory.keys.foreach(rec => {
           originalReceiverToHistory(rec).append(0)
         })
