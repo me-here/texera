@@ -332,17 +332,19 @@ trait DetectSkewHandler {
       }
     })
     for ((prevWId, replyFromPrevId) <- cmd.probeLayer.workers.keys zip metrics._2) {
-      var prevWorkerMap = workerToTotalLoadHistory(prevWId)
+      var prevWorkerMap = workerToTotalLoadHistory.getOrElse(
+        prevWId,
+        new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
+      )
       for ((wid, loadHistory) <- replyFromPrevId._2.history) {
-        if (prevWorkerMap(wid) == null) {
-          prevWorkerMap(wid) = loadHistory
-        } else {
-          prevWorkerMap(wid).appendAll(loadHistory)
-        }
+        var existingHistoryForWid = prevWorkerMap.getOrElse(wid, new ArrayBuffer[Long]())
+        existingHistoryForWid.appendAll(loadHistory)
+        prevWorkerMap(wid) = existingHistoryForWid
         detectSkewLogger.logInfo(
           s"\tTOTAL HISTORY SIZE From ${prevWId} to ${wid} size ${prevWorkerMap(wid).size}"
         )
       }
+      workerToTotalLoadHistory(prevWId) = prevWorkerMap
     }
     loads
   }

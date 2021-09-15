@@ -325,10 +325,16 @@ trait DetectSortSkewHandler {
       }
     })
     for ((prevWId, replyFromPrevId) <- cmd.prevLayer.workers.keys zip metrics._2) {
-      var prevWorkerMap = workerToTotalLoadHistory(prevWId)
+      var prevWorkerMap = workerToTotalLoadHistory.getOrElse(
+        prevWId,
+        new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
+      )
       for ((wid, loadHistory) <- replyFromPrevId._2.history) {
-        prevWorkerMap(wid).appendAll(loadHistory)
+        var existingHistoryForWid = prevWorkerMap.getOrElse(wid, new ArrayBuffer[Long]())
+        existingHistoryForWid.appendAll(loadHistory)
+        prevWorkerMap(wid) = existingHistoryForWid
       }
+      workerToTotalLoadHistory(prevWId) = prevWorkerMap
     }
     loads
   }
