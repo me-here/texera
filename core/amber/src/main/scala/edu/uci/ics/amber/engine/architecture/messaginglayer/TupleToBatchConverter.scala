@@ -52,6 +52,12 @@ class TupleToBatchConverter(
     ret
   }
 
+  def recordHistory(): Unit = {
+    policies.foreach(policy => {
+      policy.recordHistory = true
+    })
+  }
+
   def changeFlow(
       skewedReceiverId: ActorVirtualIdentity,
       freeReceiverId: ActorVirtualIdentity,

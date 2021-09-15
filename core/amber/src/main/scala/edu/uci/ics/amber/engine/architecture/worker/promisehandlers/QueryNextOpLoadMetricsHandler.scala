@@ -32,6 +32,7 @@ trait QueryNextOpLoadMetricsHandler {
 
   registerHandler { (query: QueryNextOpLoadMetrics, sender) =>
     // workerStateManager.shouldBe(Running, Ready, Pausing, Paused, Completed)
+    tupleToBatchConverter.recordHistory()
     val f1: Future[FutureLoadMetrics] = sendToNetworkCommActor(QueryFutureLoadMetrics())
     val f2: Future[WorkloadHistory] =
       Future(WorkloadHistory(tupleToBatchConverter.getWorkloadHistory()))

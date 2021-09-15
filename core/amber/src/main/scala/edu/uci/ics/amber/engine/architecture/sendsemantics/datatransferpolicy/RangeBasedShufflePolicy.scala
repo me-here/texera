@@ -168,15 +168,25 @@ class RangeBasedShufflePolicy(
       tuple: ITuple
   ): Option[(ActorVirtualIdentity, DataPayload)] = {
     val index = selectBatchingIndex(tuple)
-    var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))
-    hist(originalReceiverToHistoryArrayIdx) = hist(originalReceiverToHistoryArrayIdx) + 1
-    tupleIndexForHistory += 1
-    if (tupleIndexForHistory % 1000 == 0) {
-      originalReceiverToHistoryArrayIdx += 1
-      originalReceiverToHistory.keys.foreach(rec => {
-        originalReceiverToHistory(rec).append(0)
-      })
-      tupleIndexForHistory = 0
+    if (recordHistory) {
+      var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))
+      if (originalReceiverToHistoryArrayIdx >= hist.size) {
+        println(s" FOUND IT ${originalReceiverToHistoryArrayIdx} and ${hist.size}")
+      }
+      hist(originalReceiverToHistoryArrayIdx) = hist(originalReceiverToHistoryArrayIdx) + 1
+      tupleIndexForHistory += 1
+      if (tupleIndexForHistory % 1000 == 0) {
+        originalReceiverToHistoryArrayIdx += 1
+        originalReceiverToHistory.keys.foreach(rec => {
+          originalReceiverToHistory(rec).append(0)
+          if (originalReceiverToHistory(rec).size != originalReceiverToHistoryArrayIdx) {
+            println(
+              s"FOUND IT AGAIN ${originalReceiverToHistory(rec).size} and ${originalReceiverToHistoryArrayIdx}"
+            )
+          }
+        })
+        tupleIndexForHistory = 0
+      }
     }
 
     var receiver: ActorVirtualIdentity = null

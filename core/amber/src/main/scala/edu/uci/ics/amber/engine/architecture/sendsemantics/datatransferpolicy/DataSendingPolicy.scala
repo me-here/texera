@@ -15,6 +15,7 @@ abstract class DataSendingPolicy(
     var receivers: Array[ActorVirtualIdentity]
 ) extends Serializable {
   assert(receivers != null)
+  var recordHistory = false
 
   /**
     * Keeps on adding tuples to the batch. When the batch_size is reached, the batch is returned along with the receiver

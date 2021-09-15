@@ -166,23 +166,25 @@ class HashBasedShufflePolicy(
       tuple: ITuple
   ): Option[(ActorVirtualIdentity, DataPayload)] = {
     val index = (hashFunc(tuple) % numBuckets + numBuckets) % numBuckets
-    var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))
-    if (originalReceiverToHistoryArrayIdx >= hist.size) {
-      println(s" FOUND IT ${originalReceiverToHistoryArrayIdx} and ${hist.size}")
-    }
-    hist(originalReceiverToHistoryArrayIdx) = hist(originalReceiverToHistoryArrayIdx) + 1
-    tupleIndexForHistory += 1
-    if (tupleIndexForHistory % 1000 == 0) {
-      originalReceiverToHistoryArrayIdx += 1
-      originalReceiverToHistory.keys.foreach(rec => {
-        originalReceiverToHistory(rec).append(0)
-        if (originalReceiverToHistory(rec).size != originalReceiverToHistoryArrayIdx) {
-          println(
-            s"FOUND IT AGAIN ${originalReceiverToHistory(rec).size} and ${originalReceiverToHistoryArrayIdx}"
-          )
-        }
-      })
-      tupleIndexForHistory = 0
+    if (recordHistory) {
+      var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))
+      if (originalReceiverToHistoryArrayIdx >= hist.size) {
+        println(s" FOUND IT ${originalReceiverToHistoryArrayIdx} and ${hist.size}")
+      }
+      hist(originalReceiverToHistoryArrayIdx) = hist(originalReceiverToHistoryArrayIdx) + 1
+      tupleIndexForHistory += 1
+      if (tupleIndexForHistory % 1000 == 0) {
+        originalReceiverToHistoryArrayIdx += 1
+        originalReceiverToHistory.keys.foreach(rec => {
+          originalReceiverToHistory(rec).append(0)
+          if (originalReceiverToHistory(rec).size != originalReceiverToHistoryArrayIdx) {
+            println(
+              s"FOUND IT AGAIN ${originalReceiverToHistory(rec).size} and ${originalReceiverToHistoryArrayIdx}"
+            )
+          }
+        })
+        tupleIndexForHistory = 0
+      }
     }
 
     var receiver: ActorVirtualIdentity = null
