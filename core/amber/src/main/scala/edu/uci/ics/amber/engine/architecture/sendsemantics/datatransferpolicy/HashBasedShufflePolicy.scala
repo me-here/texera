@@ -159,7 +159,7 @@ class HashBasedShufflePolicy(
       originalReceiverToHistory(rec) = ArrayBuffer[Long](mostRecentHistory)
     })
     println(
-      s"Original load index was ${originalReceiverToHistoryArrayIdx}, setting it to 0 now in ${selfId}"
+      s"ORIGINAL LOAD index was ${originalReceiverToHistoryArrayIdx}, setting it to 0 now in ${selfId}"
     )
     originalReceiverToHistoryArrayIdx = 0
     ret
@@ -181,6 +181,7 @@ class HashBasedShufflePolicy(
       hist(originalReceiverToHistoryArrayIdx) = hist(originalReceiverToHistoryArrayIdx) + 1
       tupleIndexForHistory += 1
       if (tupleIndexForHistory % 1000 == 0) {
+        println(s" 1000 tUPLES HAVB COME FOR ${selfId} with ${originalReceiverToHistoryArrayIdx}")
         originalReceiverToHistoryArrayIdx += 1
         originalReceiverToHistory.keys.foreach(rec => {
           originalReceiverToHistory(rec).append(0)
