@@ -334,7 +334,11 @@ trait DetectSkewHandler {
     for ((prevWId, replyFromPrevId) <- cmd.probeLayer.workers.keys zip metrics._2) {
       var prevWorkerMap = workerToTotalLoadHistory(prevWId)
       for ((wid, loadHistory) <- replyFromPrevId._2.history) {
-        prevWorkerMap(wid).appendAll(loadHistory)
+        if (prevWorkerMap(wid) == null) {
+          prevWorkerMap(wid) = loadHistory
+        } else {
+          prevWorkerMap(wid).appendAll(loadHistory)
+        }
         detectSkewLogger.logInfo(
           s"\tTOTAL HISTORY SIZE From ${prevWId} to ${wid} size ${prevWorkerMap(wid).size}"
         )
