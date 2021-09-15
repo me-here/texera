@@ -335,6 +335,9 @@ trait DetectSkewHandler {
       var prevWorkerMap = workerToTotalLoadHistory(prevWId)
       for ((wid, loadHistory) <- replyFromPrevId._2.history) {
         prevWorkerMap(wid).appendAll(loadHistory)
+        detectSkewLogger.logInfo(
+          s"\tTOTAL HISTORY SIZE From ${prevWId} to ${wid} size ${prevWorkerMap(wid).size}"
+        )
       }
     }
     loads
