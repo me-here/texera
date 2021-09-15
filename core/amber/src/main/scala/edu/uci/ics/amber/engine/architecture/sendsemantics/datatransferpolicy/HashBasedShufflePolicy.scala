@@ -141,20 +141,20 @@ class HashBasedShufflePolicy(
 
   override def getWorkloadHistory(): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
     val ret = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
-//    if (originalReceiverToHistoryArrayIdx == 0) {
-//      return ret
-//    }
-//    originalReceiverToHistory.keys.foreach(rec => {
-//      ret(rec) = new ArrayBuffer[Long]()
-//      // copy all but last element because the last element is still forming
-//      for (i <- 0 to originalReceiverToHistory(rec).size - 2) {
-//        ret(rec).append(originalReceiverToHistory(rec)(i))
-//      }
-//      val mostRecentHistory =
-//        originalReceiverToHistory(rec)(originalReceiverToHistory(rec).size - 1)
-//      originalReceiverToHistory(rec) = ArrayBuffer[Long](mostRecentHistory)
-//    })
-//    originalReceiverToHistoryArrayIdx = 0
+    if (originalReceiverToHistoryArrayIdx == 0) {
+      return ret
+    }
+    originalReceiverToHistory.keys.foreach(rec => {
+      ret(rec) = new ArrayBuffer[Long]()
+      // copy all but last element because the last element is still forming
+      for (i <- 0 to originalReceiverToHistory(rec).size - 2) {
+        ret(rec).append(originalReceiverToHistory(rec)(i))
+      }
+      val mostRecentHistory =
+        originalReceiverToHistory(rec)(originalReceiverToHistory(rec).size - 1)
+      originalReceiverToHistory(rec) = ArrayBuffer[Long](mostRecentHistory)
+    })
+    originalReceiverToHistoryArrayIdx = 0
     ret
   }
 
@@ -177,7 +177,7 @@ class HashBasedShufflePolicy(
         originalReceiverToHistoryArrayIdx += 1
         originalReceiverToHistory.keys.foreach(rec => {
           originalReceiverToHistory(rec).append(0)
-          if (originalReceiverToHistory(rec).size != originalReceiverToHistoryArrayIdx) {
+          if (originalReceiverToHistory(rec).size - 1 != originalReceiverToHistoryArrayIdx) {
             println(
               s"FOUND IT AGAIN ${originalReceiverToHistory(rec).size} and ${originalReceiverToHistoryArrayIdx}"
             )
