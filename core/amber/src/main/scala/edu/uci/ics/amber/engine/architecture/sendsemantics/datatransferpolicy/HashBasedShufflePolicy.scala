@@ -176,6 +176,11 @@ class HashBasedShufflePolicy(
       originalReceiverToHistoryArrayIdx += 1
       originalReceiverToHistory.keys.foreach(rec => {
         originalReceiverToHistory(rec).append(0)
+        if (originalReceiverToHistory(rec).size != originalReceiverToHistoryArrayIdx) {
+          println(
+            s"FOUND IT AGAIN ${originalReceiverToHistory(rec).size} and ${originalReceiverToHistoryArrayIdx}"
+          )
+        }
       })
       tupleIndexForHistory = 0
     }
