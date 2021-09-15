@@ -207,7 +207,7 @@ class HashBasedShufflePolicy(
   private[this] def initializeInternalState(_receivers: Array[ActorVirtualIdentity]): Unit = {
     for (i <- 0 until numBuckets) {
       bucketsToReceivers(i) = ArrayBuffer[ActorVirtualIdentity](receivers(i))
-      originalReceiverToHistory(_receivers(i)) = new ArrayBuffer[Long](0)
+      originalReceiverToHistory(_receivers(i)) = ArrayBuffer[Long](0)
       nextReceiverIdxInBucket(i) = 0
       receiverToBatch(_receivers(i)) = new Array[ITuple](batchSize)
       receiverToCurrBatchSize(_receivers(i)) = 0
