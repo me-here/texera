@@ -177,6 +177,9 @@ class HashBasedShufflePolicy(
       var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))
       if (originalReceiverToHistoryArrayIdx >= hist.size) {
         println(s" FOUND IT ${originalReceiverToHistoryArrayIdx} and ${hist.size} in ${selfId}")
+        originalReceiverToHistory.keys.foreach(rec => {
+          println(s"PRINTING all sizes ${originalReceiverToHistory(rec).size}")
+        })
       }
       hist(originalReceiverToHistoryArrayIdx) = hist(originalReceiverToHistoryArrayIdx) + 1
       tupleIndexForHistory += 1
