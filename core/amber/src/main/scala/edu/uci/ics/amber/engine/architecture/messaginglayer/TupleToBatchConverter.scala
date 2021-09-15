@@ -44,7 +44,7 @@ class TupleToBatchConverter(
   def getWorkloadHistory(): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
     var ret: mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = null
     policies.foreach(policy => {
-      ret = policy.getWorkloadHistory()
+      ret = policy.getWorkloadHistory(selfID)
     })
     if (ret == null) {
       ret = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]

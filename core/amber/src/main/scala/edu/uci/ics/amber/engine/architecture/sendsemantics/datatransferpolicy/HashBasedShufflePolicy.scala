@@ -27,6 +27,7 @@ class HashBasedShufflePolicy(
     val shuffleKey: ITuple => String,
     receivers: Array[ActorVirtualIdentity]
 ) extends ParallelBatchingPolicy(policyTag, batchSize, receivers) {
+  var selfId: ActorVirtualIdentity = _
   val numBuckets = receivers.length
   // buckets once decided will remain same because we are not changing the number of workers in Join
   var bucketsToReceivers = new mutable.HashMap[Int, ArrayBuffer[ActorVirtualIdentity]]()
@@ -139,7 +140,10 @@ class HashBasedShufflePolicy(
     receiverToTotalSent.toMap
   }
 
-  override def getWorkloadHistory(): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
+  override def getWorkloadHistory(
+      id: ActorVirtualIdentity
+  ): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
+    selfId = id
     val ret = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
     if (originalReceiverToHistoryArrayIdx == 0) {
       return ret
@@ -154,7 +158,9 @@ class HashBasedShufflePolicy(
         originalReceiverToHistory(rec)(originalReceiverToHistory(rec).size - 1)
       originalReceiverToHistory(rec) = ArrayBuffer[Long](mostRecentHistory)
     })
-    println(s"Original load index was ${originalReceiverToHistoryArrayIdx}, setting it to 0 now")
+    println(
+      s"Original load index was ${originalReceiverToHistoryArrayIdx}, setting it to 0 now in ${selfId}"
+    )
     originalReceiverToHistoryArrayIdx = 0
     ret
   }
@@ -170,7 +176,7 @@ class HashBasedShufflePolicy(
     if (recordHistory) {
       var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))
       if (originalReceiverToHistoryArrayIdx >= hist.size) {
-        println(s" FOUND IT ${originalReceiverToHistoryArrayIdx} and ${hist.size}")
+        println(s" FOUND IT ${originalReceiverToHistoryArrayIdx} and ${hist.size} in ${selfId}")
       }
       hist(originalReceiverToHistoryArrayIdx) = hist(originalReceiverToHistoryArrayIdx) + 1
       tupleIndexForHistory += 1

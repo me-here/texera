@@ -141,7 +141,9 @@ class RangeBasedShufflePolicy(
     receiverToTotalSent.toMap
   }
 
-  override def getWorkloadHistory(): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
+  override def getWorkloadHistory(
+      id: ActorVirtualIdentity
+  ): mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]] = {
     val ret = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
     if (originalReceiverToHistoryArrayIdx == 0) {
       return ret
