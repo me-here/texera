@@ -167,6 +167,9 @@ class HashBasedShufflePolicy(
   ): Option[(ActorVirtualIdentity, DataPayload)] = {
     val index = (hashFunc(tuple) % numBuckets + numBuckets) % numBuckets
     var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))
+    if (originalReceiverToHistoryArrayIdx >= hist.size) {
+      println(s" FOUND IT ${originalReceiverToHistoryArrayIdx} and ${hist.size}")
+    }
     hist(originalReceiverToHistoryArrayIdx) = hist(originalReceiverToHistoryArrayIdx) + 1
     tupleIndexForHistory += 1
     if (tupleIndexForHistory % 1000 == 0) {
