@@ -344,7 +344,7 @@ trait DetectSkewHandler {
           existingHistoryForWid = new ArrayBuffer[Long]()
         }
         existingHistoryForWid.appendAll(loadHistory)
-        if (wid.toString().contains("main)[11]")) {
+        if (wid.toString().contains("main)[3]")) {
           print(s"\tLOADS FROM ${prevWId} are : ")
           var stop = existingHistoryForWid.size - 11
           if (stop < 0) { stop = 0 }
