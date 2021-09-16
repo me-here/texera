@@ -338,17 +338,23 @@ trait DetectSkewHandler {
         new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
       )
       for ((wid, loadHistory) <- replyFromPrevId._2.history) {
-        if (
-          skewedToFreeWorkerHistory.keySet.contains(wid) || skewedToFreeWorkerHistory.values.toList
-            .contains(wid)
-        ) {
-          var existingHistoryForWid = prevWorkerMap.getOrElse(wid, new ArrayBuffer[Long]())
-          existingHistoryForWid.appendAll(loadHistory)
-          prevWorkerMap(wid) = existingHistoryForWid
-          detectSkewLogger.logInfo(
-            s"\tTOTAL HISTORY SIZE From ${prevWId} to ${wid} size ${prevWorkerMap(wid).size}"
-          )
+        var existingHistoryForWid = prevWorkerMap.getOrElse(wid, new ArrayBuffer[Long]())
+        if (wid.toString().contains("main)[11]")) {
+          println(s"\tLOADS FOR ${wid} are : ")
+          for (i <- loadHistory.size - 1 to loadHistory.size - 11 by -1) {
+            print(loadHistory(i) + ", ")
+          }
         }
+        // clean up to save memory
+        if (existingHistoryForWid.size >= 500) {
+          existingHistoryForWid = new ArrayBuffer[Long]()
+        }
+
+        existingHistoryForWid.appendAll(loadHistory)
+        prevWorkerMap(wid) = existingHistoryForWid
+        detectSkewLogger.logInfo(
+          s"\tTOTAL HISTORY SIZE From ${prevWId} to ${wid} size ${prevWorkerMap(wid).size}"
+        )
       }
       workerToTotalLoadHistory(prevWId) = prevWorkerMap
     }

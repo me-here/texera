@@ -331,6 +331,10 @@ trait DetectSortSkewHandler {
       )
       for ((wid, loadHistory) <- replyFromPrevId._2.history) {
         var existingHistoryForWid = prevWorkerMap.getOrElse(wid, new ArrayBuffer[Long]())
+        // clean up to save memory
+        if (existingHistoryForWid.size >= 500) {
+          existingHistoryForWid = new ArrayBuffer[Long]()
+        }
         existingHistoryForWid.appendAll(loadHistory)
         prevWorkerMap(wid) = existingHistoryForWid
       }
