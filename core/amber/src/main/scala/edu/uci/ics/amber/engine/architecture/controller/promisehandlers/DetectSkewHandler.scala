@@ -16,6 +16,7 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSk
   isfreeGettingSkewed,
   previousCallFinished,
   skewedToFreeWorkerFirstPhase,
+  skewedToFreeWorkerHistory,
   startTimeForBuildRepl,
   startTimeForMetricColl,
   startTimeForNetChange,
@@ -337,12 +338,17 @@ trait DetectSkewHandler {
         new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
       )
       for ((wid, loadHistory) <- replyFromPrevId._2.history) {
-        var existingHistoryForWid = prevWorkerMap.getOrElse(wid, new ArrayBuffer[Long]())
-        existingHistoryForWid.appendAll(loadHistory)
-        prevWorkerMap(wid) = existingHistoryForWid
-        detectSkewLogger.logInfo(
-          s"\tTOTAL HISTORY SIZE From ${prevWId} to ${wid} size ${prevWorkerMap(wid).size}"
-        )
+        if (
+          skewedToFreeWorkerHistory.keySet.contains(wid) || skewedToFreeWorkerHistory.values.toList
+            .contains(wid)
+        ) {
+          var existingHistoryForWid = prevWorkerMap.getOrElse(wid, new ArrayBuffer[Long]())
+          existingHistoryForWid.appendAll(loadHistory)
+          prevWorkerMap(wid) = existingHistoryForWid
+          detectSkewLogger.logInfo(
+            s"\tTOTAL HISTORY SIZE From ${prevWId} to ${wid} size ${prevWorkerMap(wid).size}"
+          )
+        }
       }
       workerToTotalLoadHistory(prevWId) = prevWorkerMap
     }
