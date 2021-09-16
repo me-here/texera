@@ -345,7 +345,7 @@ trait DetectSkewHandler {
         }
         existingHistoryForWid.appendAll(loadHistory)
         if (wid.toString().contains("main)[11]")) {
-          print(s"\tLOADS FOR ${wid} are : ")
+          print(s"\tLOADS FROM ${prevWId} are : ")
           var stop = existingHistoryForWid.size - 11
           if (stop < 0) { stop = 0 }
           for (i <- existingHistoryForWid.size - 1 to stop by -1) {
@@ -354,9 +354,9 @@ trait DetectSkewHandler {
           println()
         }
         prevWorkerMap(wid) = existingHistoryForWid
-        detectSkewLogger.logInfo(
-          s"\tTOTAL HISTORY SIZE From ${prevWId} to ${wid} size ${prevWorkerMap(wid).size}"
-        )
+//        detectSkewLogger.logInfo(
+//          s"\tTOTAL HISTORY SIZE From ${prevWId} to ${wid} size ${prevWorkerMap(wid).size}"
+//        )
       }
       workerToTotalLoadHistory(prevWId) = prevWorkerMap
     }
