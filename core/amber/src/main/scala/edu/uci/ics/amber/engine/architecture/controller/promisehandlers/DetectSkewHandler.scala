@@ -339,20 +339,20 @@ trait DetectSkewHandler {
       )
       for ((wid, loadHistory) <- replyFromPrevId._2.history) {
         var existingHistoryForWid = prevWorkerMap.getOrElse(wid, new ArrayBuffer[Long]())
-        if (wid.toString().contains("main)[11]")) {
-          println(s"\tLOADS FOR ${wid} are : ")
-          var stop = loadHistory.size - 11
-          if (stop < 0) { stop = 0 }
-          for (i <- loadHistory.size - 1 to stop by -1) {
-            print(loadHistory(i) + ", ")
-          }
-        }
         // clean up to save memory
         if (existingHistoryForWid.size >= 500) {
           existingHistoryForWid = new ArrayBuffer[Long]()
         }
-
         existingHistoryForWid.appendAll(loadHistory)
+        if (wid.toString().contains("main)[11]")) {
+          print(s"\tLOADS FOR ${wid} are : ")
+          var stop = existingHistoryForWid.size - 11
+          if (stop < 0) { stop = 0 }
+          for (i <- existingHistoryForWid.size - 1 to stop by -1) {
+            print(existingHistoryForWid(i) + ", ")
+          }
+          println()
+        }
         prevWorkerMap(wid) = existingHistoryForWid
         detectSkewLogger.logInfo(
           s"\tTOTAL HISTORY SIZE From ${prevWId} to ${wid} size ${prevWorkerMap(wid).size}"
