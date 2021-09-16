@@ -341,7 +341,9 @@ trait DetectSkewHandler {
         var existingHistoryForWid = prevWorkerMap.getOrElse(wid, new ArrayBuffer[Long]())
         if (wid.toString().contains("main)[11]")) {
           println(s"\tLOADS FOR ${wid} are : ")
-          for (i <- loadHistory.size - 1 to loadHistory.size - 11 by -1) {
+          var stop = loadHistory.size - 11
+          if (stop < 0) { stop = 0 }
+          for (i <- loadHistory.size - 1 to stop by -1) {
             print(loadHistory(i) + ", ")
           }
         }
