@@ -168,7 +168,7 @@ class RangeBasedShufflePolicy(
       var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))
       hist(hist.size - 1) = hist(hist.size - 1) + 1
       tupleIndexForHistory += 1
-      if (tupleIndexForHistory % 10000 == 0) {
+      if (tupleIndexForHistory % Constants.samplingResetFrequency == 0) {
         originalReceiverToHistory.keys.foreach(rec => {
           originalReceiverToHistory(rec).append(0)
         })
