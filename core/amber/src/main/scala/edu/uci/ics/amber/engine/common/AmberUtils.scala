@@ -2,13 +2,35 @@ package edu.uci.ics.amber.engine.common
 
 import java.io.{BufferedReader, InputStreamReader}
 import java.net.{InetAddress, URL}
-
 import edu.uci.ics.amber.clustering.ClusterListener
 import akka.actor.{ActorSystem, DeadLetter, Props}
 import com.typesafe.config.ConfigFactory
 import edu.uci.ics.amber.engine.architecture.messaginglayer.DeadLetterMonitorActor
 
+import scala.collection.mutable.ArrayBuffer
+
 object AmberUtils {
+
+  private def mean(workloads: ArrayBuffer[Long]): Double = {
+    var mean: Double = 0
+    workloads.foreach(load => { mean = mean + load })
+    mean = mean / workloads.size
+    mean
+  }
+
+  def sampleMeanError(workloads: ArrayBuffer[Long]): Double = {
+    if (workloads.size == 0) {
+      return Double.MaxValue
+    }
+    var sum: Double = 0
+    val meanOfLoads: Double = mean(workloads)
+    workloads.foreach(load => {
+      sum = sum + (load - meanOfLoads) * (load - meanOfLoads)
+    })
+    val ssd = scala.math.sqrt(sum / (workloads.size - 1))
+    val error = ssd / math.sqrt(workloads.size)
+    error
+  }
 
   def reverseMultimap[T1, T2](map: Map[T1, Set[T2]]): Map[T2, Set[T1]] =
     map.toSeq

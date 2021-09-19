@@ -10,12 +10,12 @@ object Constants {
   var dataset = 0
   var masterNodeAddr: String = null
 
-  var numWorkerPerNode = 4
+  var numWorkerPerNode = 6
   var dataVolumePerNode = 10
   var defaultTau: FiniteDuration = 10.milliseconds
 
   // join-skew reserach related
-  val gcpExp: Boolean = true
+  val gcpExp: Boolean = false
   val samplingResetFrequency: Int = 2000
   val onlyDetectSkew: Boolean = false
   val startDetection: FiniteDuration = 100.milliseconds

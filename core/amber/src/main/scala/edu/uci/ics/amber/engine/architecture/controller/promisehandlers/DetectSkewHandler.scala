@@ -38,6 +38,7 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryNextOpL
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.RollbackFlowHandler.RollbackFlow
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.SendBuildTableHandler.SendBuildTable
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ShareFlowHandler.ShareFlow
+import edu.uci.ics.amber.engine.common.AmberUtils.sampleMeanError
 import edu.uci.ics.amber.engine.common.{Constants, WorkflowLogger}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
@@ -351,12 +352,9 @@ trait DetectSkewHandler {
           for (i <- existingHistoryForWid.size - 1 to stop by -1) {
             print(existingHistoryForWid(i) + ", ")
           }
-          println()
         }
+        print(s"Standard error is ${sampleMeanError(existingHistoryForWid)}")
         prevWorkerMap(wid) = existingHistoryForWid
-//        detectSkewLogger.logInfo(
-//          s"\tTOTAL HISTORY SIZE From ${prevWId} to ${wid} size ${prevWorkerMap(wid).size}"
-//        )
       }
       workerToTotalLoadHistory(prevWId) = prevWorkerMap
     }
