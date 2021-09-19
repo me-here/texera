@@ -352,8 +352,9 @@ trait DetectSkewHandler {
           for (i <- existingHistoryForWid.size - 1 to stop by -1) {
             print(existingHistoryForWid(i) + ", ")
           }
+          print(s"Standard error is ${sampleMeanError(existingHistoryForWid)}")
+          println()
         }
-        print(s"Standard error is ${sampleMeanError(existingHistoryForWid)}")
         prevWorkerMap(wid) = existingHistoryForWid
       }
       workerToTotalLoadHistory(prevWId) = prevWorkerMap
