@@ -175,18 +175,14 @@ object DetectSortSkewHandler {
       if (isEligibleForSkewedAndForFirstPhase(sortedWorkers(i))) {
         // worker has been previously paired with some worker and that worker will be used again.
         // Also if the worker is in second phase, it will be put back in the first phase
-        if (
-          skewedToFreeWorkerHistory.keySet.contains(sortedWorkers(i)) && passSkewTest(
-            sortedWorkers(i),
-            skewedToFreeWorkerHistory(sortedWorkers(i)),
-            100
-          )
-        ) {
-          ret.append((sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), false))
-          skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(
-            sortedWorkers(i)
-          )
-          skewedToFreeWorkerSecondPhase.remove(sortedWorkers(i))
+        if (skewedToFreeWorkerHistory.keySet.contains(sortedWorkers(i))) {
+          if (passSkewTest(sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), 100)) {
+            ret.append((sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), false))
+            skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(
+              sortedWorkers(i)
+            )
+            skewedToFreeWorkerSecondPhase.remove(sortedWorkers(i))
+          }
         } else if (i > 0) {
           breakable {
             for (j <- 0 to i - 1) {
@@ -286,7 +282,9 @@ trait DetectSortSkewHandler {
           val skewedLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._1))
           val freeLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._2))
           val redirectNum = ((skewedLoad - freeLoad) / 2).toLong
-
+          workerToTotalLoadHistory(id)(sf._1) = new ArrayBuffer[Long]()
+          workerToTotalLoadHistory(id)(sf._2) = new ArrayBuffer[Long]()
+          detectSortSkewLogger.logInfo(s"SECOND PHASE RATIO: ${id} for ${sf._1} - ${redirectNum}:${skewedLoad.toLong}")
           futuresArr.append(
             send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
           )
