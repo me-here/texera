@@ -177,18 +177,14 @@ object DetectSkewHandler {
       if (isEligibleForSkewedAndForFirstPhase(sortedWorkers(i))) {
         // worker has been previously paired with some worker and that worker will be used again.
         // Also if the worker is in second phase, it will be put back in the first phase
-        if (
-          skewedToFreeWorkerHistory.keySet.contains(sortedWorkers(i)) && passSkewTest(
-            sortedWorkers(i),
-            skewedToFreeWorkerHistory(sortedWorkers(i)),
-            100
-          )
-        ) {
-          ret.append((sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), false))
-          skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(
-            sortedWorkers(i)
-          )
-          skewedToFreeWorkerSecondPhase.remove(sortedWorkers(i))
+        if (skewedToFreeWorkerHistory.keySet.contains(sortedWorkers(i))) {
+          if (passSkewTest(sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), 100)) {
+            ret.append((sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), false))
+            skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(
+              sortedWorkers(i)
+            )
+            skewedToFreeWorkerSecondPhase.remove(sortedWorkers(i))
+          }
         } else if (i > 0) {
           breakable {
             for (j <- 0 to i - 1) {
