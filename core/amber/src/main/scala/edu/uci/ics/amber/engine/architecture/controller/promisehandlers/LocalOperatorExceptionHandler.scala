@@ -15,8 +15,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object LocalOperatorExceptionHandler {
-  final case class LocalOperatorException(triggeredTuple: ITuple, e: Throwable)
-      extends ControlCommand[CommandCompleted]
+  final case class LocalOperatorException(triggeredTuple: ITuple, e: Throwable) extends ControlCommand[CommandCompleted]
 }
 
 /** indicate an exception thrown from the operator logic on a worker

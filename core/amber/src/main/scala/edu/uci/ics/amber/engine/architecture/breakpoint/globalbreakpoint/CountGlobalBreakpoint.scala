@@ -1,14 +1,10 @@
 package edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint
-import edu.uci.ics.amber.engine.architecture.breakpoint.localbreakpoint.{
-  CountLocalBreakpoint,
-  LocalBreakpoint
-}
+import edu.uci.ics.amber.engine.architecture.breakpoint.localbreakpoint.{CountLocalBreakpoint, LocalBreakpoint}
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 
 import scala.collection.mutable.ArrayBuffer
 
-class CountGlobalBreakpoint(id: String, val target: Long)
-    extends GlobalBreakpoint[CountLocalBreakpoint](id) {
+class CountGlobalBreakpoint(id: String, val target: Long) extends GlobalBreakpoint[CountLocalBreakpoint](id) {
 
   var current: Long = 0
 

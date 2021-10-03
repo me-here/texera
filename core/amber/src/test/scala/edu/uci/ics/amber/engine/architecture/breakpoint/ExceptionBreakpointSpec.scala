@@ -15,11 +15,7 @@ import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration._
 import scala.util.Random
 
-class ExceptionBreakpointSpec
-    extends TestKit(ActorSystem("PrincipalSpec"))
-    with ImplicitSender
-    with AnyFlatSpecLike
-    with BeforeAndAfterAll {
+class ExceptionBreakpointSpec extends TestKit(ActorSystem("PrincipalSpec")) with ImplicitSender with AnyFlatSpecLike with BeforeAndAfterAll {
 
   implicit val timeout: Timeout = Timeout(5.seconds)
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher

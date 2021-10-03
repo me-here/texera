@@ -1,11 +1,7 @@
 package edu.uci.ics.amber.engine.common.statetransition
 
 import edu.uci.ics.amber.engine.common.amberexception.WorkflowRuntimeException
-import edu.uci.ics.amber.engine.common.statetransition.StateManager.{
-  IntermediateState,
-  InvalidStateException,
-  InvalidTransitionException
-}
+import edu.uci.ics.amber.engine.common.statetransition.StateManager.{IntermediateState, InvalidStateException, InvalidTransitionException}
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 
 import scala.collection.mutable

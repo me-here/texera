@@ -5,14 +5,7 @@ import edu.uci.ics.amber.engine.architecture.worker.WorkerAsyncRPCHandlerInitial
 import edu.uci.ics.amber.engine.architecture.worker.WorkerInternalQueue.DummyInput
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.PauseHandler.PauseWorker
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{
-  Completed,
-  Paused,
-  Pausing,
-  Ready,
-  Running,
-  WorkerState
-}
+import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{Completed, Paused, Pausing, Ready, Running, WorkerState}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 
 object PauseHandler {

@@ -1,10 +1,7 @@
 package edu.uci.ics.amber.engine.architecture.messaginglayer
 
 import akka.actor.{Actor, DeadLetter}
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  MessageBecomesDeadLetter,
-  NetworkMessage
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{MessageBecomesDeadLetter, NetworkMessage}
 
 class DeadLetterMonitorActor extends Actor {
   override def receive: Receive = {

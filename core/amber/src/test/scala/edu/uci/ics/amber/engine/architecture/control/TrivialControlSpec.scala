@@ -9,12 +9,7 @@ import com.esotericsoftware.kryo.io.Input
 import com.twitter.util.{FuturePool, Promise}
 import edu.uci.ics.amber.clustering.SingleNodeListener
 import edu.uci.ics.amber.engine.architecture.messaginglayer.ControlInputPort.WorkflowControlMessage
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
-  GetActorRef,
-  NetworkAck,
-  NetworkMessage,
-  RegisterActorRef
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{GetActorRef, NetworkAck, NetworkMessage, RegisterActorRef}
 import edu.uci.ics.amber.engine.architecture.control.utils.ChainHandler.Chain
 import edu.uci.ics.amber.engine.architecture.control.utils.CollectHandler.Collect
 import edu.uci.ics.amber.engine.architecture.control.utils.MultiCallHandler.MultiCall
@@ -32,11 +27,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import scala.collection.mutable
 import scala.concurrent.duration._
 
-class TrivialControlSpec
-    extends TestKit(ActorSystem("TrivialControlSpec"))
-    with AnyWordSpecLike
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll {
+class TrivialControlSpec extends TestKit(ActorSystem("TrivialControlSpec")) with AnyWordSpecLike with BeforeAndAfterEach with BeforeAndAfterAll {
 
   override def afterAll: Unit = {
     TestKit.shutdownActorSystem(system)

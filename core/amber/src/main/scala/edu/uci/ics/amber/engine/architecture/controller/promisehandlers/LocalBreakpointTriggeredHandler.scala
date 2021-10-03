@@ -17,8 +17,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 object LocalBreakpointTriggeredHandler {
-  final case class LocalBreakpointTriggered(localBreakpoints: Array[(String, Long)])
-      extends ControlCommand[CommandCompleted]
+  final case class LocalBreakpointTriggered(localBreakpoints: Array[(String, Long)]) extends ControlCommand[CommandCompleted]
 }
 
 /** indicate one/multiple local breakpoints have triggered on a worker

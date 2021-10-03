@@ -6,8 +6,7 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AssignLocalB
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 
 object AssignLocalBreakpointHandler {
-  final case class AssignLocalBreakpoint(bp: LocalBreakpoint)
-      extends ControlCommand[CommandCompleted]
+  final case class AssignLocalBreakpoint(bp: LocalBreakpoint) extends ControlCommand[CommandCompleted]
 }
 
 trait AssignLocalBreakpointHandler {

@@ -4,17 +4,8 @@ import java.io.Serializable
 import com.fasterxml.jackson.annotation.{JsonProperty, JsonPropertyDescription}
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle
 import edu.uci.ics.texera.workflow.common.metadata.annotations.AutofillAttributeName
-import edu.uci.ics.texera.workflow.common.metadata.{
-  InputPort,
-  OperatorGroupConstants,
-  OperatorInfo,
-  OutputPort
-}
-import edu.uci.ics.texera.workflow.common.operators.aggregate.{
-  AggregateOpDesc,
-  AggregateOpExecConfig,
-  DistributedAggregation
-}
+import edu.uci.ics.texera.workflow.common.metadata.{InputPort, OperatorGroupConstants, OperatorInfo, OutputPort}
+import edu.uci.ics.texera.workflow.common.operators.aggregate.{AggregateOpDesc, AggregateOpExecConfig, DistributedAggregation}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.{AttributeType, Schema}
 
@@ -62,9 +53,7 @@ class SpecializedAverageOpDesc extends AggregateOpDesc {
     else
       tuple => {
         val builder = Tuple.newBuilder()
-        groupByKeys.foreach(key =>
-          builder.add(tuple.getSchema.getAttribute(key), tuple.getField(key))
-        )
+        groupByKeys.foreach(key => builder.add(tuple.getSchema.getAttribute(key), tuple.getField(key)))
         builder.build()
       }
   }
@@ -155,8 +144,7 @@ class SpecializedAverageOpDesc extends AggregateOpDesc {
         val value = tuple.getField(attribute).toString.toDouble
         AveragePartialObj(partial.sum + value, partial.count + 1)
       },
-      (partial1, partial2) =>
-        AveragePartialObj(partial1.sum + partial2.sum, partial1.count + partial2.count),
+      (partial1, partial2) => AveragePartialObj(partial1.sum + partial2.sum, partial1.count + partial2.count),
       partial => {
         val value = if (partial.count == 0) null else partial.sum / partial.count
         Tuple.newBuilder.add(resultAttribute, AttributeType.DOUBLE, value).build

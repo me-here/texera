@@ -6,13 +6,7 @@ import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import akka.util.Timeout
 import edu.uci.ics.amber.engine.architecture.controller.ControllerState
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
-import edu.uci.ics.texera.workflow.common.workflow.{
-  BreakpointInfo,
-  OperatorLink,
-  OperatorPort,
-  WorkflowCompiler,
-  WorkflowInfo
-}
+import edu.uci.ics.texera.workflow.common.workflow.{BreakpointInfo, OperatorLink, OperatorPort, WorkflowCompiler, WorkflowInfo}
 import org.scalatest.BeforeAndAfterAll
 
 import scala.collection.mutable
@@ -26,11 +20,7 @@ import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
 import org.scalatest.flatspec.AnyFlatSpecLike
 
-class PauseSpec
-    extends TestKit(ActorSystem("PauseSpec"))
-    with ImplicitSender
-    with AnyFlatSpecLike
-    with BeforeAndAfterAll {
+class PauseSpec extends TestKit(ActorSystem("PauseSpec")) with ImplicitSender with AnyFlatSpecLike with BeforeAndAfterAll {
 
   implicit val timeout: Timeout = Timeout(5.seconds)
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher

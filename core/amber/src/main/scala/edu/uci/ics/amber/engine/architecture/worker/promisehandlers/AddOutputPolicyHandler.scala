@@ -7,8 +7,7 @@ import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, Con
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Ready
 
 object AddOutputPolicyHandler {
-  final case class AddOutputPolicy(policy: DataSendingPolicy)
-      extends ControlCommand[CommandCompleted]
+  final case class AddOutputPolicy(policy: DataSendingPolicy) extends ControlCommand[CommandCompleted]
 }
 
 trait AddOutputPolicyHandler {

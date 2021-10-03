@@ -34,8 +34,6 @@ trait SendBuildTableHandler {
     })
     Future
       .collect(buildSendingFutures)
-      .onSuccess(seq =>
-        println(s"Replication of all parts of build table done to ${cmd.freeReceiverId}")
-      )
+      .onSuccess(seq => println(s"Replication of all parts of build table done to ${cmd.freeReceiverId}"))
   }
 }

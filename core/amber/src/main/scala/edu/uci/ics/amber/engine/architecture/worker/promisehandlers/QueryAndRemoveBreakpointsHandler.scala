@@ -8,8 +8,7 @@ import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Paused
 
 object QueryAndRemoveBreakpointsHandler {
 
-  final case class QueryAndRemoveBreakpoints(ids: Array[String])
-      extends ControlCommand[Array[LocalBreakpoint]]
+  final case class QueryAndRemoveBreakpoints(ids: Array[String]) extends ControlCommand[Array[LocalBreakpoint]]
 }
 
 trait QueryAndRemoveBreakpointsHandler {

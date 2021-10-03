@@ -1,14 +1,10 @@
 package edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint
 
-import edu.uci.ics.amber.engine.architecture.breakpoint.localbreakpoint.{
-  ConditionalLocalBreakpoint,
-  LocalBreakpoint
-}
+import edu.uci.ics.amber.engine.architecture.breakpoint.localbreakpoint.{ConditionalLocalBreakpoint, LocalBreakpoint}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 
-class ConditionalGlobalBreakpoint(id: String, val predicate: ITuple => Boolean)
-    extends GlobalBreakpoint[ConditionalLocalBreakpoint](id) {
+class ConditionalGlobalBreakpoint(id: String, val predicate: ITuple => Boolean) extends GlobalBreakpoint[ConditionalLocalBreakpoint](id) {
 
   var triggeredTuples: Array[ITuple] = Array.empty
 

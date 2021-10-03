@@ -10,12 +10,7 @@ import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
 import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.common.amberexception.WorkflowRuntimeException
 import edu.uci.ics.amber.engine.common.tuple.ITuple
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  LayerIdentity,
-  LinkIdentity,
-  OperatorIdentity
-}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LayerIdentity, LinkIdentity, OperatorIdentity}
 import edu.uci.ics.amber.engine.operators.OpExecConfig
 import edu.uci.ics.amber.error.WorkflowRuntimeError
 import edu.uci.ics.texera.workflow.common.operators.OperatorExecutor
@@ -54,8 +49,7 @@ class HashJoinOpExecConfig[K](
     workflow.getSources(probeLink.from.toOperatorIdentity).foreach { source =>
       workflow.getOperator(source).topology.layers.head.startAfter(buildLink)
     }
-    topology.layers.head.metadata = _ =>
-      new HashJoinOpExec[K](buildTable, buildAttributeName, probeAttributeName)
+    topology.layers.head.metadata = _ => new HashJoinOpExec[K](buildTable, buildAttributeName, probeAttributeName)
   }
 
   override def requiredShuffle: Boolean = true

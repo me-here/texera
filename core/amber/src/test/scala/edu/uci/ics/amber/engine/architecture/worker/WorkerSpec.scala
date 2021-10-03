@@ -5,10 +5,7 @@ import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
 import edu.uci.ics.amber.clustering.SingleNodeListener
 import edu.uci.ics.amber.engine.architecture.messaginglayer.ControlInputPort.WorkflowControlMessage
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.NetworkMessage
-import edu.uci.ics.amber.engine.architecture.messaginglayer.{
-  ControlOutputPort,
-  TupleToBatchConverter
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{ControlOutputPort, TupleToBatchConverter}
 import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.DataSendingPolicy
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddOutputPolicyHandler.AddOutputPolicy
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.UpdateInputLinkingHandler.UpdateInputLinking
@@ -23,12 +20,7 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpecLike
 
-class WorkerSpec
-    extends TestKit(ActorSystem("WorkerSpec"))
-    with ImplicitSender
-    with AnyFlatSpecLike
-    with BeforeAndAfterAll
-    with MockFactory {
+class WorkerSpec extends TestKit(ActorSystem("WorkerSpec")) with ImplicitSender with AnyFlatSpecLike with BeforeAndAfterAll with MockFactory {
 
   override def beforeAll: Unit = {
     system.actorOf(Props[SingleNodeListener], "cluster-info")

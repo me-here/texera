@@ -24,15 +24,8 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSo
   workerToTotalLoadHistory
 }
 import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
-import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryLoadMetricsHandler.{
-  CurrentLoadMetrics,
-  QueryLoadMetrics
-}
-import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryNextOpLoadMetricsHandler.{
-  FutureLoadMetrics,
-  QueryNextOpLoadMetrics,
-  WorkloadHistory
-}
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryLoadMetricsHandler.{CurrentLoadMetrics, QueryLoadMetrics}
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryNextOpLoadMetricsHandler.{FutureLoadMetrics, QueryNextOpLoadMetrics, WorkloadHistory}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.RollbackFlowHandler.RollbackFlow
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.SendBuildTableHandler.SendBuildTable
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.SendStateTransferNotificationHandler.SendStateTranferNotification
@@ -78,8 +71,7 @@ object DetectSortSkewHandler {
     ]]]()
   val historyLimit = 1
 
-  final case class DetectSortSkew(sortLayer: WorkerLayer, prevLayer: WorkerLayer)
-      extends ControlCommand[CommandCompleted]
+  final case class DetectSortSkew(sortLayer: WorkerLayer, prevLayer: WorkerLayer) extends ControlCommand[CommandCompleted]
 
   def updateLoadHistory(loads: mutable.HashMap[ActorVirtualIdentity, Long]): Unit = {
     loads.keys.foreach(worker => {

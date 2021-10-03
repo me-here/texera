@@ -8,10 +8,7 @@ import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
 import akka.util.Timeout
 import com.softwaremill.macwire.wire
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.NetworkSenderActorRef
-import edu.uci.ics.amber.engine.architecture.messaginglayer.{
-  CongestionControl,
-  NetworkCommunicationActor
-}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{CongestionControl, NetworkCommunicationActor}
 import edu.uci.ics.amber.engine.architecture.worker.WorkflowWorker
 import edu.uci.ics.amber.engine.architecture.worker.{DataProcessor, WorkerInternalQueue}
 import edu.uci.ics.amber.engine.common.virtualidentity.VirtualIdentity
@@ -19,13 +16,7 @@ import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.e2e.TestOperators
 import edu.uci.ics.texera.workflow.common.WorkflowContext
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
-import edu.uci.ics.texera.workflow.common.workflow.{
-  BreakpointInfo,
-  OperatorLink,
-  OperatorPort,
-  WorkflowCompiler,
-  WorkflowInfo
-}
+import edu.uci.ics.texera.workflow.common.workflow.{BreakpointInfo, OperatorLink, OperatorPort, WorkflowCompiler, WorkflowInfo}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpecLike
@@ -35,12 +26,7 @@ import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration._
 import scala.util.Random
 
-class ControllerSpec
-    extends TestKit(ActorSystem("ControllerSpec"))
-    with ImplicitSender
-    with AnyFlatSpecLike
-    with BeforeAndAfterAll
-    with MockFactory {
+class ControllerSpec extends TestKit(ActorSystem("ControllerSpec")) with ImplicitSender with AnyFlatSpecLike with BeforeAndAfterAll with MockFactory {
 
   implicit val timeout: Timeout = Timeout(5.seconds)
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher

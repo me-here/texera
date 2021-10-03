@@ -4,16 +4,8 @@ import com.fasterxml.jackson.annotation.{JsonIgnore, JsonProperty, JsonPropertyD
 import com.google.common.base.Preconditions
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaTitle
 import edu.uci.ics.amber.engine.operators.OpExecConfig
-import edu.uci.ics.texera.workflow.common.metadata.annotations.{
-  AutofillAttributeName,
-  AutofillAttributeNameOnPort1
-}
-import edu.uci.ics.texera.workflow.common.metadata.{
-  InputPort,
-  OperatorGroupConstants,
-  OperatorInfo,
-  OutputPort
-}
+import edu.uci.ics.texera.workflow.common.metadata.annotations.{AutofillAttributeName, AutofillAttributeNameOnPort1}
+import edu.uci.ics.texera.workflow.common.metadata.{InputPort, OperatorGroupConstants, OperatorInfo, OutputPort}
 import edu.uci.ics.texera.workflow.common.operators.{OneToOneOpExecConfig, OperatorDescriptor}
 import edu.uci.ics.texera.workflow.common.operators.filter.FilterOpDesc
 import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, Schema}
@@ -62,9 +54,7 @@ class HashJoinOpDesc[K] extends OperatorDescriptor {
       schemas(1)
         .getAttributes()
         .forEach(attr => {
-          if (
-            schemas(0).containsAttribute(attr.getName()) && attr.getName() != probeAttributeName
-          ) {
+          if (schemas(0).containsAttribute(attr.getName()) && attr.getName() != probeAttributeName) {
             // appending 1 to the output of Join schema in case of duplicate attributes in probe and build table
             builder.add(new Attribute(s"${attr.getName()}#@1", attr.getType()))
           } else {

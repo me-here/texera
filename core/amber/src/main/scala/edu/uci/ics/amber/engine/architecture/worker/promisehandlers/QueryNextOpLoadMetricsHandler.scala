@@ -22,8 +22,7 @@ object QueryNextOpLoadMetricsHandler {
   final case class WorkloadHistory(
       history: mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]
   )
-  final case class QueryNextOpLoadMetrics()
-      extends ControlCommand[(FutureLoadMetrics, WorkloadHistory)]
+  final case class QueryNextOpLoadMetrics() extends ControlCommand[(FutureLoadMetrics, WorkloadHistory)]
   final case class QueryFutureLoadMetrics() extends ControlCommand[FutureLoadMetrics]
 }
 

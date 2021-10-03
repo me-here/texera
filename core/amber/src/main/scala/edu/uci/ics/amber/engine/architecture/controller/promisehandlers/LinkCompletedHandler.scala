@@ -48,9 +48,7 @@ trait LinkCompletedHandler {
               .toSeq
           )
           .map(ret => {
-            if (
-              workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[Constants.joinType]]
-            ) {
+            if (workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[Constants.joinType]]) {
               val joinLayer = workflow.getWorkerLayer(sender)
               val joinOpId = workflow.getOperatorIdentity(workflow.getOperator(sender))
               val upstreamOps = workflow.getDirectUpstreamOperators(joinOpId)

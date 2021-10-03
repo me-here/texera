@@ -1,11 +1,7 @@
 package edu.uci.ics.amber.engine.faulttolerance
 
 import edu.uci.ics.amber.clustering.SingleNodeListener
-import edu.uci.ics.amber.engine.architecture.controller.{
-  Controller,
-  ControllerEventListener,
-  ControllerState
-}
+import edu.uci.ics.amber.engine.architecture.controller.{Controller, ControllerEventListener, ControllerState}
 import akka.actor.{ActorSystem, PoisonPill, Props}
 import akka.event.LoggingAdapter
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
@@ -20,11 +16,7 @@ import org.scalatest.BeforeAndAfterAll
 import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration._
 
-class RecoverySpec
-    extends TestKit(ActorSystem("RecoverySpec"))
-    with ImplicitSender
-    with AnyFlatSpecLike
-    with BeforeAndAfterAll {
+class RecoverySpec extends TestKit(ActorSystem("RecoverySpec")) with ImplicitSender with AnyFlatSpecLike with BeforeAndAfterAll {
 
   implicit val timeout: Timeout = Timeout(5.seconds)
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher

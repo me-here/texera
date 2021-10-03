@@ -11,7 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object AmberUtils {
 
-  private def mean(workloads: ArrayBuffer[Long]): Double = {
+  def mean(workloads: ArrayBuffer[Long]): Double = {
     var mean: Double = 0
     workloads.foreach(load => { mean = mean + load })
     mean = mean / workloads.size

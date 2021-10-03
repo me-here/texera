@@ -112,8 +112,7 @@ class RangeBasedShufflePolicy(
     if (!bucketsToReceivers(defaultBucket).contains(newRecId)) {
       bucketsToReceivers(defaultBucket).append(newRecId)
     }
-    bucketsToRedirectRatio(defaultBucket) =
-      (1, tuplesToRedirectNumerator, tuplesToRedirectDenominator)
+    bucketsToRedirectRatio(defaultBucket) = (1, tuplesToRedirectNumerator, tuplesToRedirectDenominator)
     receiverToTotalSent.toMap
   }
 

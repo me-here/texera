@@ -9,21 +9,8 @@ import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.architecture.principal.{OperatorState, OperatorStatistics}
 import edu.uci.ics.amber.engine.architecture.principal.OperatorState
 import edu.uci.ics.amber.engine.common.WorkflowLogger
-import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{
-  Completed,
-  Paused,
-  Ready,
-  Running,
-  Uninitialized,
-  WorkerState
-}
-import edu.uci.ics.amber.engine.common.virtualidentity.{
-  ActorVirtualIdentity,
-  LayerIdentity,
-  LinkIdentity,
-  OperatorIdentity,
-  VirtualIdentity
-}
+import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.{Completed, Paused, Ready, Running, Uninitialized, WorkerState}
+import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LayerIdentity, LinkIdentity, OperatorIdentity, VirtualIdentity}
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext

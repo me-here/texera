@@ -7,8 +7,7 @@ import edu.uci.ics.texera.workflow.common.tuple.Tuple
 
 import scala.util.Random
 
-class ReservoirSamplingOpExec(val actor: Int, val opDesc: ReservoirSamplingOpDesc)
-    extends OperatorExecutor {
+class ReservoirSamplingOpExec(val actor: Int, val opDesc: ReservoirSamplingOpDesc) extends OperatorExecutor {
   var n: Int = 0
 
   val reservoir: Array[Tuple] = Array.ofDim(opDesc.getKForActor(actor))

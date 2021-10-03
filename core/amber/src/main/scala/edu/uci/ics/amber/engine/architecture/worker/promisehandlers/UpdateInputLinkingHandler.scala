@@ -8,8 +8,7 @@ import edu.uci.ics.amber.engine.common.virtualidentity.{LinkIdentity, VirtualIde
 
 object UpdateInputLinkingHandler {
 
-  final case class UpdateInputLinking(identifier: VirtualIdentity, inputLink: LinkIdentity)
-      extends ControlCommand[CommandCompleted]
+  final case class UpdateInputLinking(identifier: VirtualIdentity, inputLink: LinkIdentity) extends ControlCommand[CommandCompleted]
 }
 
 trait UpdateInputLinkingHandler {

@@ -48,8 +48,7 @@ abstract class MLModelOpExec() extends OperatorExecutor with Serializable {
         if (nextOperation.equalsIgnoreCase("predict")) {
           // set the miniBatch
           if (nextMiniBatchStartIdx + MINIBATCH_SIZE <= allData.size) {
-            minibatch =
-              allData.slice(nextMiniBatchStartIdx, nextMiniBatchStartIdx + MINIBATCH_SIZE).toArray
+            minibatch = allData.slice(nextMiniBatchStartIdx, nextMiniBatchStartIdx + MINIBATCH_SIZE).toArray
             nextMiniBatchStartIdx = nextMiniBatchStartIdx + MINIBATCH_SIZE
           } else if (nextMiniBatchStartIdx < allData.size) {
             // remaining data is less than MINIBATCH_SIZE
