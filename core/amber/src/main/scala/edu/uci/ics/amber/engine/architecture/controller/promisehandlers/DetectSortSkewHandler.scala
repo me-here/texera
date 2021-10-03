@@ -30,7 +30,8 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.RollbackFlow
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.SendBuildTableHandler.SendBuildTable
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.SendStateTransferNotificationHandler.SendStateTranferNotification
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ShareFlowHandler.ShareFlow
-import edu.uci.ics.amber.engine.common.{Constants, WorkflowLogger}
+import edu.uci.ics.amber.engine.common.AmberUtils.sampleMeanError
+import edu.uci.ics.amber.engine.common.{AmberUtils, Constants, WorkflowLogger}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
@@ -214,14 +215,16 @@ object DetectSortSkewHandler {
     }
   }
 
-  // return value is array of (skewedWorker, freeWorker,  # tuples to redirect, out of total tuples)
+  // return value is array of (skewedWorker, freeWorker)
   def getSkewedAndFreeWorkersEligibleForSecondPhase(
       loads: mutable.HashMap[ActorVirtualIdentity, Long]
-  ): ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity, Long, Long)] = {
-    val ret = new ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity, Long, Long)]()
+  ): ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)] = {
+    val ret = new ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)]()
     skewedToFreeWorkerFirstPhase.keys.foreach(skewedWorker => {
       if (loads(skewedWorker) <= loads(skewedToFreeWorkerFirstPhase(skewedWorker))) {
-        ret.append((skewedWorker, skewedToFreeWorkerFirstPhase(skewedWorker), 1L, 4L))
+        ret.append((skewedWorker, skewedToFreeWorkerFirstPhase(skewedWorker)))
+        skewedToFreeWorkerSecondPhase(skewedWorker) = skewedToFreeWorkerFirstPhase(skewedWorker)
+        skewedToFreeWorkerFirstPhase.remove(skewedWorker)
       }
     })
     ret
@@ -270,15 +273,25 @@ trait DetectSortSkewHandler {
   private def getShareFlowSecondPhaseResultsAsFuture[T](
       workerLayer: WorkerLayer,
       skewedAndFreeWorkersList: ArrayBuffer[
-        (ActorVirtualIdentity, ActorVirtualIdentity, Long, Long)
+        (ActorVirtualIdentity, ActorVirtualIdentity)
       ]
   ): Future[Seq[Map[ActorVirtualIdentity, Long]]] = {
     val futuresArr = new ArrayBuffer[Future[Map[ActorVirtualIdentity, Long]]]()
     skewedAndFreeWorkersList.foreach(sf => {
       workerLayer.workers.keys.foreach(id => {
-        futuresArr.append(
-          send(ShareFlow(sf._1, sf._2, sf._3, sf._4), id)
-        )
+        if (
+          workerToTotalLoadHistory.contains(id) && workerToTotalLoadHistory(id)
+            .contains(sf._1) && workerToTotalLoadHistory(id).contains(sf._2)
+        ) {
+          val skewedLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._1))
+          val freeLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._2))
+          val redirectNum = ((skewedLoad - freeLoad) / 2).toLong
+
+          futuresArr.append(
+            send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
+          )
+
+        }
       })
     })
     Future.collect(futuresArr)
@@ -323,11 +336,25 @@ trait DetectSortSkewHandler {
       )
       for ((wid, loadHistory) <- replyFromPrevId._2.history) {
         var existingHistoryForWid = prevWorkerMap.getOrElse(wid, new ArrayBuffer[Long]())
+        existingHistoryForWid.appendAll(loadHistory)
         // clean up to save memory
         if (existingHistoryForWid.size >= 500) {
-          existingHistoryForWid = new ArrayBuffer[Long]()
+          existingHistoryForWid = existingHistoryForWid.slice(
+            existingHistoryForWid.size - 500,
+            existingHistoryForWid.size
+          )
         }
-        existingHistoryForWid.appendAll(loadHistory)
+
+        if (wid.toString().contains("main)[3]")) {
+          print(s"\tLOADS FROM ${prevWId} are : ")
+          var stop = existingHistoryForWid.size - 11
+          if (stop < 0) { stop = 0 }
+          for (i <- existingHistoryForWid.size - 1 to stop by -1) {
+            print(existingHistoryForWid(i) + ", ")
+          }
+          print(s"Standard error is ${sampleMeanError(existingHistoryForWid)}")
+          println()
+        }
         prevWorkerMap(wid) = existingHistoryForWid
       }
       workerToTotalLoadHistory(prevWId) = prevWorkerMap
@@ -344,7 +371,7 @@ trait DetectSortSkewHandler {
         aggregatedSentCount(rec) = aggregatedSentCount.getOrElse(rec, 0L) + count
       }
     })
-    detectSortSkewLogger.logInfo(s"\tTOTAL SENT TILL NOW ${aggregatedSentCount.mkString("\n\t\t")}")
+    // detectSortSkewLogger.logInfo(s"\tTOTAL SENT TILL NOW ${aggregatedSentCount.mkString("\n\t\t")}")
   }
 
   registerHandler { (cmd: DetectSortSkew, sender) =>

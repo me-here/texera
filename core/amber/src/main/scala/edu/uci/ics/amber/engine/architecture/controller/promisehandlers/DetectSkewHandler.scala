@@ -217,7 +217,7 @@ object DetectSkewHandler {
     }
   }
 
-  // return value is array of (skewedWorker, freeWorker,  # tuples to redirect, out of total tuples)
+  // return value is array of (skewedWorker, freeWorker)
   def getSkewedAndFreeWorkersEligibleForSecondPhase(
       loads: mutable.HashMap[ActorVirtualIdentity, Long]
   ): ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)] = {
@@ -225,6 +225,8 @@ object DetectSkewHandler {
     skewedToFreeWorkerFirstPhase.keys.foreach(skewedWorker => {
       if (loads(skewedWorker) <= loads(skewedToFreeWorkerFirstPhase(skewedWorker))) {
         ret.append((skewedWorker, skewedToFreeWorkerFirstPhase(skewedWorker)))
+        skewedToFreeWorkerSecondPhase(skewedWorker) = skewedToFreeWorkerFirstPhase(skewedWorker)
+        skewedToFreeWorkerFirstPhase.remove(skewedWorker)
       }
     })
     ret
@@ -382,7 +384,7 @@ trait DetectSkewHandler {
         aggregatedSentCount(rec) = aggregatedSentCount.getOrElse(rec, 0L) + count
       }
     })
-    detectSkewLogger.logInfo(s"\tTOTAL SENT TILL NOW ${aggregatedSentCount.mkString("\n\t\t")}")
+    // detectSkewLogger.logInfo(s"\tTOTAL SENT TILL NOW ${aggregatedSentCount.mkString("\n\t\t")}")
   }
 
   registerHandler { (cmd: DetectSkew, sender) =>
