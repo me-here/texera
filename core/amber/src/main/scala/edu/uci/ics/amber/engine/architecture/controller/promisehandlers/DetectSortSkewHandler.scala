@@ -270,11 +270,14 @@ trait DetectSortSkewHandler {
           workerToTotalLoadHistory.contains(id) && workerToTotalLoadHistory(id)
             .contains(sf._1) && workerToTotalLoadHistory(id).contains(sf._2)
         ) {
-          val skewedLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._1))
+          var skewedLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._1))
           val freeLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._2))
           val redirectNum = ((skewedLoad - freeLoad) / 2).toLong
           workerToTotalLoadHistory(id)(sf._1) = new ArrayBuffer[Long]()
           workerToTotalLoadHistory(id)(sf._2) = new ArrayBuffer[Long]()
+          if (skewedLoad == 0) {
+            skewedLoad = 1
+          }
           detectSortSkewLogger.logInfo(s"SECOND PHASE RATIO: ${id} for ${sf._1} - ${redirectNum}:${skewedLoad.toLong}")
           futuresArr.append(
             send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
