@@ -19,7 +19,7 @@ object AmberUtils {
   }
 
   def sampleMeanError(workloads: ArrayBuffer[Long]): Double = {
-    if (workloads.size == 0) {
+    if (workloads.size <= 1) {
       return Double.MaxValue
     }
     var sum: Double = 0

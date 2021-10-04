@@ -156,7 +156,7 @@ object DetectSkewHandler {
         }
         assert(actualSkewedWorker != null)
 
-        if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, 50)) {
+        if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, Constants.threshold / 2)) {
           ret.append((actualSkewedWorker, sortedWorkers(i)))
         }
       }
@@ -178,7 +178,7 @@ object DetectSkewHandler {
         // worker has been previously paired with some worker and that worker will be used again.
         // Also if the worker is in second phase, it will be put back in the first phase
         if (skewedToFreeWorkerHistory.keySet.contains(sortedWorkers(i))) {
-          if (passSkewTest(sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), 100)) {
+          if (passSkewTest(sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), Constants.threshold)) {
             ret.append((sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), false))
             skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(
               sortedWorkers(i)
@@ -192,7 +192,7 @@ object DetectSkewHandler {
                 isEligibleForFree(sortedWorkers(j)) && passSkewTest(
                   sortedWorkers(i),
                   sortedWorkers(j),
-                  100
+                  Constants.threshold
                 )
               ) {
                 ret.append((sortedWorkers(i), sortedWorkers(j), true))

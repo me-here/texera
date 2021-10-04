@@ -15,9 +15,10 @@ object Constants {
   var defaultTau: FiniteDuration = 10.milliseconds
 
   // join-skew reserach related
-  val gcpExp: Boolean = false
+  val gcpExp: Boolean = true
   val samplingResetFrequency: Int = 2000
-  val onlyDetectSkew: Boolean = false
+  val onlyDetectSkew: Boolean = true
+  val threshold: Int = 100
   val startDetection: FiniteDuration = 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
   val printResultsInConsole: Boolean = true
