@@ -58,10 +58,9 @@ object DetectSortSkewHandler {
   var endTimeForNetRollback: Long = _
   var detectSortSkewLogger: WorkflowLogger = new WorkflowLogger("DetectSortSkewHandler")
 
-  var skewedToFreeWorkerFirstPhase =
-    new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
-  var skewedToFreeWorkerSecondPhase =
-    new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
+  var skewedToFreeWorkerFirstPhase = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
+  var skewedToFreeWorkerSecondPhase = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
+  var skewedToFreeWorkerNetworkRolledBack = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
   var skewedToFreeWorkerHistory = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
   // worker to worker current input size
   var workerToLoadHistory = new mutable.HashMap[ActorVirtualIdentity, ListBuffer[Long]]()
@@ -138,11 +137,9 @@ object DetectSortSkewHandler {
     val sortedWorkers = loads.keys.toList.sortBy(loads(_))
     val freeWorkersInFirstPhase = skewedToFreeWorkerFirstPhase.values.toList
     val freeWorkersInSecondPhase = skewedToFreeWorkerSecondPhase.values.toList
+    val freeWorkersAlreadyRolledBack = skewedToFreeWorkerNetworkRolledBack.values.toList
     for (i <- 0 to sortedWorkers.size - 1) {
-      if (
-        freeWorkersInFirstPhase
-          .contains(sortedWorkers(i)) || freeWorkersInSecondPhase.contains(sortedWorkers(i))
-      ) {
+      if (!freeWorkersAlreadyRolledBack.contains(sortedWorkers(i)) && (freeWorkersInFirstPhase.contains(sortedWorkers(i)) || freeWorkersInSecondPhase.contains(sortedWorkers(i)))) {
         var actualSkewedWorker: ActorVirtualIdentity = null
         skewedToFreeWorkerFirstPhase.keys.foreach(sw => {
           if (skewedToFreeWorkerFirstPhase(sw) == sortedWorkers(i)) { actualSkewedWorker = sw }
@@ -156,6 +153,7 @@ object DetectSortSkewHandler {
 
         if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, Constants.threshold / 2)) {
           ret.append((actualSkewedWorker, sortedWorkers(i)))
+          skewedToFreeWorkerNetworkRolledBack(actualSkewedWorker) = sortedWorkers(i)
         }
       }
     }
@@ -178,21 +176,14 @@ object DetectSortSkewHandler {
         if (skewedToFreeWorkerHistory.keySet.contains(sortedWorkers(i))) {
           if (passSkewTest(sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), Constants.threshold)) {
             ret.append((sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), false))
-            skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(
-              sortedWorkers(i)
-            )
-            skewedToFreeWorkerSecondPhase.remove(sortedWorkers(i))
+            skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(sortedWorkers(i))
+            skewedToFreeWorkerSecondPhase.remove(sortedWorkers(i)) // remove if there
+            skewedToFreeWorkerNetworkRolledBack.remove(sortedWorkers(i)) // remove if there
           }
         } else if (i > 0) {
           breakable {
             for (j <- 0 to i - 1) {
-              if (
-                isEligibleForFree(sortedWorkers(j)) && passSkewTest(
-                  sortedWorkers(i),
-                  sortedWorkers(j),
-                  Constants.threshold
-                )
-              ) {
+              if (isEligibleForFree(sortedWorkers(j)) && passSkewTest(sortedWorkers(i), sortedWorkers(j), Constants.threshold)) {
                 ret.append((sortedWorkers(i), sortedWorkers(j), true))
                 skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = sortedWorkers(j)
                 skewedToFreeWorkerHistory(sortedWorkers(i)) = sortedWorkers(j)
