@@ -10,10 +10,10 @@ object Constants {
   var dataset = 0
   var masterNodeAddr: String = null
 
-  var numWorkerPerNode = 6
   var dataVolumePerNode = 10
   var defaultTau: FiniteDuration = 10.milliseconds
 
+  var numWorkerPerNode = 4
   // join-skew reserach related
   val gcpExp: Boolean = true
   val samplingResetFrequency: Int = 2000
