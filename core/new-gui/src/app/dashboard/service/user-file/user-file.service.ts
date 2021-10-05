@@ -1,10 +1,12 @@
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { Observable, Subject } from "rxjs";
+import { Observable, Subject, throwError } from "rxjs";
 import { AppSettings } from "../../../common/app-setting";
 import { DashboardUserFileEntry, UserFile } from "../../type/dashboard-user-file-entry";
 import { UserService } from "../../../common/service/user/user.service";
 import { AccessEntry } from "../../type/access.interface";
+import { NzMessageService } from "ng-zorro-antd/message";
+import { filter, catchError } from "rxjs/operators";
 
 export const USER_FILE_BASE_URL = `${AppSettings.getApiEndpoint()}/user/file`;
 export const USER_FILE_LIST_URL = `${USER_FILE_BASE_URL}/list`;
@@ -14,6 +16,7 @@ export const USER_FILE_ACCESS_BASE_URL = `${USER_FILE_BASE_URL}/access`;
 export const USER_FILE_ACCESS_GRANT_URL = `${USER_FILE_ACCESS_BASE_URL}/grant`;
 export const USER_FILE_ACCESS_LIST_URL = `${USER_FILE_ACCESS_BASE_URL}/list`;
 export const USER_FILE_ACCESS_REVOKE_URL = `${USER_FILE_ACCESS_BASE_URL}/revoke`;
+export const USER_FILE_NAME_UPDATE_URL = `${USER_FILE_BASE_URL}/update/name`;
 
 @Injectable({
   providedIn: "root",
@@ -22,7 +25,7 @@ export class UserFileService {
   private dashboardUserFileEntries: ReadonlyArray<DashboardUserFileEntry> = [];
   private dashboardUserFileEntryChanged = new Subject<null>();
 
-  constructor(private http: HttpClient, private userService: UserService) {
+  constructor(private http: HttpClient, private userService: UserService, private message: NzMessageService) {
     this.detectUserChanges();
   }
 
@@ -157,4 +160,27 @@ export class UserFileService {
     this.dashboardUserFileEntries = [];
     this.dashboardUserFileEntryChanged.next();
   }
+
+
+  /**
+   * updates the file name of a given userFileEntry
+   */
+  public updateFileName(fid: number, name: string): Observable<UserFile> {
+    return this.http.post<UserFile>(
+      `${USER_FILE_NAME_UPDATE_URL}`, {
+        fid: fid,
+        name: name,
+      }
+    )
+      .pipe(
+        catchError((err: unknown) => {
+          if (err instanceof HttpErrorResponse && err.status === 400 ) {
+            this.message.error(err.error)
+            this.refreshDashboardUserFileEntries()
+          }
+          return throwError(err);
+        }),
+        filter((updatedUserFile: UserFile) => updatedUserFile != null),
+      );
+  } 
 }

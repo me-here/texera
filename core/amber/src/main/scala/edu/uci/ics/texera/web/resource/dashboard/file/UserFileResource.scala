@@ -258,4 +258,34 @@ class UserFileResource {
 
   }
 
+  /**
+    * This method updates the name of a given userFile
+    *
+    * @param session HttpSession
+    * @return the updated userFile
+    */
+  @POST
+  @Path("/update/name")
+  @Consumes(Array(MediaType.APPLICATION_JSON))
+  @Produces(Array(MediaType.APPLICATION_JSON))
+  def changeUserFileName(file: File, @Auth sessionUser: SessionUser): Response = {
+    val user = sessionUser.getUser
+    val fid = file.getFid
+    val newFileName = file.getName
+
+    val validationRes = this.validateFileName(newFileName, user.getUid)
+    if (validationRes.getLeft) {
+      val userFile = fileDao.fetchOneByFid(fid)
+      userFile.setName(newFileName)
+      fileDao.update(userFile)
+      Response.ok(userFile).build()
+    } else {
+      Response
+        .status(Response.Status.BAD_REQUEST)
+        .`type`(MediaType.TEXT_PLAIN)
+        .entity(validationRes.getRight)
+        .build()
+    }
+  }
+
 }

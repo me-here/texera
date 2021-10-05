@@ -2,7 +2,7 @@ import { Component } from "@angular/core";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { NgbdModalFileAddComponent } from "./ngbd-modal-file-add/ngbd-modal-file-add.component";
 import { UserFileService } from "../../../service/user-file/user-file.service";
-import { DashboardUserFileEntry } from "../../../type/dashboard-user-file-entry";
+import { DashboardUserFileEntry, UserFile } from "../../../type/dashboard-user-file-entry";
 import { UserService } from "../../../../common/service/user/user.service";
 import { NgbdModalUserFileShareAccessComponent } from "./ngbd-modal-file-share-access/ngbd-modal-user-file-share-access.component";
 import { NzMessageService } from "ng-zorro-antd/message";
@@ -77,5 +77,14 @@ export class UserFileSectionComponent {
           this.message.error(err.error.message);
         }
       );
+  }
+
+  public confirmUpdateFileCustomName(dashboardUserFileEntry: DashboardUserFileEntry, name: string): void {
+    const { file : { fid } } = dashboardUserFileEntry
+    this.userFileService.updateFileName(fid, name)
+      .pipe(untilDestroyed(this))
+      .subscribe((updatedFile: UserFile) => {
+        this.userFileService.refreshDashboardUserFileEntries()
+      })
   }
 }
