@@ -1,3 +1,4 @@
+import { Workflow } from './../../../../common/type/workflow';
 import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
@@ -167,5 +168,17 @@ export class SavedWorkflowSectionComponent implements OnInit {
 
   private clearDashboardWorkflowEntries(): void {
     this.dashboardWorkflowEntries = [];
+  }
+
+  public confirmUpdateWorkflowCustomName(dashboardWorkflowEntry: DashboardWorkflowEntry, name: string, index: number) : void {
+    const { workflow } = dashboardWorkflowEntry
+    this.workflowPersistService.updateWorkflowName(workflow.wid, name)
+    .pipe(untilDestroyed(this))
+    .subscribe((updatedWorkflow: Workflow) => {
+      let updatedDashboardWorkFlowEntry = {...dashboardWorkflowEntry}
+      updatedDashboardWorkFlowEntry.workflow = {...updatedWorkflow}
+
+      this.dashboardWorkflowEntries[index] = updatedDashboardWorkFlowEntry
+    });
   }
 }

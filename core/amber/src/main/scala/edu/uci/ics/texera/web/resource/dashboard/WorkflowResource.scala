@@ -296,4 +296,27 @@ class WorkflowResource {
     }
   }
 
+  /**
+    * This method updates the name of a given workflow
+    *
+    * @param session HttpSession
+    * @return the updated workflow
+    */
+  @POST
+  @Path("/update/name")
+  @Consumes(Array(MediaType.APPLICATION_JSON))
+  @Produces(Array(MediaType.APPLICATION_JSON))
+  def changeWorkflowName(workflow: Workflow, @Auth sessionUser: SessionUser): Response = {
+    val user = sessionUser.getUser
+    val wid = workflow.getWid
+    if (workflowOfUserExists(wid, user.getUid)) {
+      val userWorkflow = workflowDao.fetchOneByWid(wid);
+      userWorkflow.setName(workflow.getName)
+      workflowDao.update(userWorkflow)
+      Response.ok(userWorkflow).build()
+    } else {
+      Response.notModified().build()
+    }
+  }
+
 }

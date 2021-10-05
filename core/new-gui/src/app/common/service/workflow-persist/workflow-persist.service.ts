@@ -12,6 +12,7 @@ export const WORKFLOW_PERSIST_URL = WORKFLOW_BASE_URL + "/persist";
 export const WORKFLOW_LIST_URL = WORKFLOW_BASE_URL + "/list";
 export const WORKFLOW_CREATE_URL = WORKFLOW_BASE_URL + "/create";
 export const WORKFLOW_DUPLICATE_URL = WORKFLOW_BASE_URL + "/duplicate";
+export const WORKFLOW_UPDATENAME_URL = WORKFLOW_BASE_URL + "/update/name";
 
 @Injectable({
   providedIn: "root",
@@ -95,5 +96,20 @@ export class WorkflowPersistService {
    */
   public deleteWorkflow(wid: number): Observable<Response> {
     return this.http.delete<Response>(`${AppSettings.getApiEndpoint()}/${WORKFLOW_BASE_URL}/${wid}`);
+  }
+
+  /**
+   * updates the name of a given workflow, the user in the session must own the workflow.
+   */
+  public updateWorkflowName(wid: number | undefined, name: string): Observable<Workflow> {
+    return this.http
+      .post<Workflow>(`${AppSettings.getApiEndpoint()}/${WORKFLOW_UPDATENAME_URL}`, {
+      wid: wid,
+      name: name,
+    })
+      .pipe(
+        filter((updatedWorkflow: Workflow) => updatedWorkflow != null),
+        map(WorkflowUtilService.parseWorkflowInfo)
+      );
   }
 }
