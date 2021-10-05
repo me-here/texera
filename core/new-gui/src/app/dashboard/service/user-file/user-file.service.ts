@@ -175,8 +175,8 @@ export class UserFileService {
       .pipe(
         catchError((err: unknown) => {
           if (err instanceof HttpErrorResponse && err.status === 400 ) {
-            this.message.error(err.error)
-            this.refreshDashboardUserFileEntries()
+            this.message.error(err.error);
+            this.refreshDashboardUserFileEntries();
           }
           return throwError(err);
         }),

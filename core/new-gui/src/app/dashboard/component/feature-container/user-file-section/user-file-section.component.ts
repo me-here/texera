@@ -80,11 +80,11 @@ export class UserFileSectionComponent {
   }
 
   public confirmUpdateFileCustomName(dashboardUserFileEntry: DashboardUserFileEntry, name: string): void {
-    const { file : { fid } } = dashboardUserFileEntry
+    const { file : { fid } } = dashboardUserFileEntry;
     this.userFileService.updateFileName(fid, name)
       .pipe(untilDestroyed(this))
       .subscribe((updatedFile: UserFile) => {
-        this.userFileService.refreshDashboardUserFileEntries()
-      })
+        this.userFileService.refreshDashboardUserFileEntries();
+      });
   }
 }
