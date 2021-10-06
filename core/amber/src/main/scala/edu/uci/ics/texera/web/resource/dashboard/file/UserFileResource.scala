@@ -13,7 +13,7 @@ import org.glassfish.jersey.media.multipart.{FormDataContentDisposition, FormDat
 import org.jooq.DSLContext
 import org.jooq.types.UInteger
 
-import java.io.{IOException, InputStream, OutputStream}
+import java.io.{FileInputStream, IOException, InputStream, OutputStream}
 import java.nio.file.Paths
 import java.util
 import javax.annotation.security.PermitAll
@@ -269,14 +269,23 @@ class UserFileResource {
   @Consumes(Array(MediaType.APPLICATION_JSON))
   @Produces(Array(MediaType.APPLICATION_JSON))
   def changeUserFileName(file: File, @Auth sessionUser: SessionUser): Response = {
-    val user = sessionUser.getUser
+    val userId = sessionUser.getUser.getUid
     val fid = file.getFid
     val newFileName = file.getName
 
-    val validationRes = this.validateFileName(newFileName, user.getUid)
+    val validationRes = this.validateFileName(newFileName, userId)
     if (validationRes.getLeft) {
       val userFile = fileDao.fetchOneByFid(fid)
+      val filePath = userFile.getPath
+
+      val uploadedInputStream = new FileInputStream(filePath)
+      // delete the original file
+      UserFileUtils.deleteFile(Paths.get(filePath))
+      // store the file with the new file name
+      val fileNameStored = UserFileUtils.storeFileSafe(uploadedInputStream, newFileName, userId)
+
       userFile.setName(newFileName)
+      userFile.setPath(UserFileUtils.getFilePath(userId, fileNameStored).toString)
       fileDao.update(userFile)
       Response.ok(userFile).build()
     } else {
