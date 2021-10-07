@@ -6,7 +6,7 @@ import { AppSettings } from "../../app-setting";
 import { Workflow, WorkflowContent } from "../../type/workflow";
 import { DashboardWorkflowEntry } from "../../../dashboard/type/dashboard-workflow-entry";
 import { WorkflowUtilService } from "../../../workspace/service/workflow-graph/util/workflow-util.service";
-import { NzMessageService } from "ng-zorro-antd/message";
+import { NotificationService } from "../notification/notification.service";
 
 export const WORKFLOW_BASE_URL = "workflow";
 export const WORKFLOW_PERSIST_URL = WORKFLOW_BASE_URL + "/persist";
@@ -19,7 +19,7 @@ export const WORKFLOW_UPDATENAME_URL = WORKFLOW_BASE_URL + "/update/name";
   providedIn: "root",
 })
 export class WorkflowPersistService {
-  constructor(private http: HttpClient, private message: NzMessageService) {}
+  constructor(private http: HttpClient, private notificationService: NotificationService) {}
 
   /**
    * persists a workflow to backend database and returns its updated information (e.g., new wid)
@@ -110,7 +110,7 @@ export class WorkflowPersistService {
     })
     .pipe(catchError((error: unknown) => {
       // @ts-ignore // TODO: fix this with notification component
-      this.message.error(error.error.message);
+      this.notificationService.error(error.error.message);
       return throwError(error);
     }));
   }

@@ -5,7 +5,6 @@ import { AppSettings } from "../../../common/app-setting";
 import { DashboardUserFileEntry, UserFile } from "../../type/dashboard-user-file-entry";
 import { UserService } from "../../../common/service/user/user.service";
 import { AccessEntry } from "../../type/access.interface";
-import { NzMessageService } from "ng-zorro-antd/message";
 
 export const USER_FILE_BASE_URL = `${AppSettings.getApiEndpoint()}/user/file`;
 export const USER_FILE_LIST_URL = `${USER_FILE_BASE_URL}/list`;
@@ -24,7 +23,7 @@ export class UserFileService {
   private dashboardUserFileEntries: ReadonlyArray<DashboardUserFileEntry> = [];
   private dashboardUserFileEntryChanged = new Subject<null>();
 
-  constructor(private http: HttpClient, private userService: UserService, private message: NzMessageService) {
+  constructor(private http: HttpClient, private userService: UserService) {
     this.detectUserChanges();
   }
 
