@@ -24,6 +24,8 @@ export class UserFileSectionComponent {
     this.userFileService.refreshDashboardUserFileEntries();
   }
 
+  public isEditingName: number[] = []; 
+
   public openFileAddComponent() {
     this.modalService.open(NgbdModalFileAddComponent);
   }
@@ -79,8 +81,18 @@ export class UserFileSectionComponent {
       );
   }
 
-  public confirmUpdateFileCustomName(dashboardUserFileEntry: DashboardUserFileEntry, name: string): void {
+  public confirmUpdateFileCustomName(dashboardUserFileEntry: DashboardUserFileEntry, name: string, index: number): void {
     const { file : { fid } } = dashboardUserFileEntry;
-    this.userFileService.updateFileName(fid, name);
+    this.userFileService.updateFileName(fid, name)
+      .pipe(untilDestroyed(this))
+      .subscribe(
+        () => this.userFileService.refreshDashboardUserFileEntries(),
+        (err: unknown) => {
+          // @ts-ignore // TODO: fix this with notification component
+          this.message.error(err.error.message);
+          this.userFileService.refreshDashboardUserFileEntries();
+        },
+      )
+      .add(() => this.isEditingName = this.isEditingName.filter(fileIsEditing => fileIsEditing != index));
   }
 }

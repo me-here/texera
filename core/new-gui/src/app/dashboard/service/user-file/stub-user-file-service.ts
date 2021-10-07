@@ -83,7 +83,7 @@ export class StubUserFileService implements PublicInterfaceOf<UserFileService> {
     return;
   }
 
-  public updateFileName(fid: number, name: string): Observable<UserFile> {
+  public updateFileName(fid: number, name: string): Observable<Response> {
     return of();
   }
 }

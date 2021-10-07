@@ -164,20 +164,12 @@ export class UserFileService {
   /**
    * updates the file name of a given userFileEntry
    */
-  public updateFileName(fid: number, name: string): void {
-    this.http.post<UserFile>(
+  public updateFileName(fid: number, name: string): Observable<Response> {
+    return this.http.post<Response>(
       `${USER_FILE_NAME_UPDATE_URL}`, {
         fid: fid,
         name: name,
       }
-    )
-    .subscribe(
-      () => this.refreshDashboardUserFileEntries(),
-      (err: unknown) => {
-        // @ts-ignore // TODO: fix this with notification component
-        this.message.error(err.error.message);
-        this.refreshDashboardUserFileEntries();
-      },
     );
   } 
 }
