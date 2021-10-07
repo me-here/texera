@@ -261,20 +261,31 @@ class UserFileResource {
   /**
     * This method updates the name of a given userFile
     *
-    * @param session HttpSession
+    * @param file the to be updated file
     * @return the updated userFile
     */
   @POST
   @Path("/update/name")
   @Consumes(Array(MediaType.APPLICATION_JSON))
   @Produces(Array(MediaType.APPLICATION_JSON))
-  def changeUserFileName(file: File, @Auth sessionUser: SessionUser): Response = {
+  def changeUserFileName(file: File, @Auth sessionUser: SessionUser): Unit = {
     val userId = sessionUser.getUser.getUid
     val fid = file.getFid
     val newFileName = file.getName
 
     val validationRes = this.validateFileName(newFileName, userId)
-    if (validationRes.getLeft) {
+    val hasWriteAccess = context
+      .select(USER_FILE_ACCESS.WRITE_ACCESS)
+      .from(USER_FILE_ACCESS)
+      .where(USER_FILE_ACCESS.UID.eq(userId).and(USER_FILE_ACCESS.FID.eq(fid)))
+      .fetch()
+      .getValue(0, 0)
+    if (hasWriteAccess == false) {
+      throw new ForbiddenException("No sufficient access privilege.")
+    }
+    if (validationRes.getLeft == false) {
+      throw new BadRequestException(validationRes.getRight)
+    } else {
       val userFile = fileDao.fetchOneByFid(fid)
       val filePath = userFile.getPath
 
@@ -287,13 +298,6 @@ class UserFileResource {
       userFile.setName(newFileName)
       userFile.setPath(UserFileUtils.getFilePath(userId, fileNameStored).toString)
       fileDao.update(userFile)
-      Response.ok(userFile).build()
-    } else {
-      Response
-        .status(Response.Status.BAD_REQUEST)
-        .`type`(MediaType.TEXT_PLAIN)
-        .entity(validationRes.getRight)
-        .build()
     }
   }
 

@@ -4,6 +4,7 @@ import { WorkflowPersistService } from "./workflow-persist.service";
 import { jsonCast } from "../../util/storage";
 import { WorkflowContent } from "../../type/workflow";
 import { last } from "rxjs/operators";
+import { NzMessageModule } from "ng-zorro-antd/message";
 
 describe("WorkflowPersistService", () => {
   let service: WorkflowPersistService;
@@ -30,7 +31,7 @@ describe("WorkflowPersistService", () => {
     "\"groups\":[],\"breakpoints\":{}}";
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
+      imports: [HttpClientTestingModule, NzMessageModule],
     });
     service = TestBed.inject(WorkflowPersistService);
     httpTestingController = TestBed.get(HttpTestingController);

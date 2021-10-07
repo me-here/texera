@@ -1,11 +1,12 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { Observable } from "rxjs";
-import { filter, map } from "rxjs/operators";
+import { Observable, throwError } from "rxjs";
+import { filter, map, catchError } from "rxjs/operators";
 import { AppSettings } from "../../app-setting";
 import { Workflow, WorkflowContent } from "../../type/workflow";
 import { DashboardWorkflowEntry } from "../../../dashboard/type/dashboard-workflow-entry";
 import { WorkflowUtilService } from "../../../workspace/service/workflow-graph/util/workflow-util.service";
+import { NzMessageService } from "ng-zorro-antd/message";
 
 export const WORKFLOW_BASE_URL = "workflow";
 export const WORKFLOW_PERSIST_URL = WORKFLOW_BASE_URL + "/persist";
@@ -18,7 +19,7 @@ export const WORKFLOW_UPDATENAME_URL = WORKFLOW_BASE_URL + "/update/name";
   providedIn: "root",
 })
 export class WorkflowPersistService {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private message: NzMessageService) {}
 
   /**
    * persists a workflow to backend database and returns its updated information (e.g., new wid)
@@ -101,15 +102,16 @@ export class WorkflowPersistService {
   /**
    * updates the name of a given workflow, the user in the session must own the workflow.
    */
-  public updateWorkflowName(wid: number | undefined, name: string): Observable<Workflow> {
+  public updateWorkflowName(wid: number | undefined, name: string): Observable<Response> {
     return this.http
-      .post<Workflow>(`${AppSettings.getApiEndpoint()}/${WORKFLOW_UPDATENAME_URL}`, {
+      .post<Response>(`${AppSettings.getApiEndpoint()}/${WORKFLOW_UPDATENAME_URL}`, {
       wid: wid,
       name: name,
     })
-      .pipe(
-        filter((updatedWorkflow: Workflow) => updatedWorkflow != null),
-        map(WorkflowUtilService.parseWorkflowInfo)
-      );
+    .pipe(catchError((error: unknown) => {
+      // @ts-ignore // TODO: fix this with notification component
+      this.message.error(error.error.message);
+      return throwError(error);
+    }));
   }
 }

@@ -18,6 +18,7 @@ import { DashboardWorkflowEntry } from "../../../type/dashboard-workflow-entry";
 import { UserService } from "../../../../common/service/user/user.service";
 import { StubUserService } from "../../../../common/service/user/stub-user.service";
 import { NzDropDownModule } from "ng-zorro-antd/dropdown";
+import { NzMessageModule } from "ng-zorro-antd/message";
 
 describe("SavedWorkflowSectionComponent", () => {
   let component: SavedWorkflowSectionComponent;
@@ -114,6 +115,7 @@ describe("SavedWorkflowSectionComponent", () => {
           MatCardModule,
           MatDialogModule,
           NgbModule,
+          NzMessageModule,
           FormsModule,
           RouterTestingModule,
           HttpClientTestingModule,

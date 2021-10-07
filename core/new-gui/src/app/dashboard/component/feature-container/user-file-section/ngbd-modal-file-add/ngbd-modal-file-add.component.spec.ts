@@ -11,7 +11,7 @@ import { NgbdModalFileAddComponent } from "./ngbd-modal-file-add.component";
 import { UserService } from "../../../../../common/service/user/user.service";
 import { UserFileUploadService } from "../../../../service/user-file/user-file-upload.service";
 import { StubUserService } from "../../../../../common/service/user/stub-user.service";
-import { NzMessageService } from "ng-zorro-antd/message";
+import { NzMessageModule } from "ng-zorro-antd/message";
 
 describe("NgbdModalFileAddComponent", () => {
   let component: NgbdModalFileAddComponent;
@@ -23,13 +23,13 @@ describe("NgbdModalFileAddComponent", () => {
         declarations: [NgbdModalFileAddComponent],
         providers: [
           { provide: UserService, useClass: StubUserService },
-          { provide: NzMessageService, useClass: StubUserService } ,
           UserFileService,
           UserFileUploadService,
           NgbActiveModal,
         ],
         imports: [
           CustomNgMaterialModule,
+          NzMessageModule,
           NgbModule,
           FormsModule,
           FileUploadModule,

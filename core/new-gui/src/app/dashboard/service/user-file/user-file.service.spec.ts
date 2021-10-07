@@ -10,7 +10,7 @@ import {
 import { UserService } from "../../../common/service/user/user.service";
 import { StubUserService } from "../../../common/service/user/stub-user.service";
 import { first } from "rxjs/operators";
-import { NzMessageService } from "ng-zorro-antd/message";
+import { NzMessageModule } from "ng-zorro-antd/message";
 
 const id = 1;
 const name = "testFileEntry";
@@ -39,8 +39,8 @@ describe("UserFileService", () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [UserFileService, { provide: UserService, useClass: StubUserService }, { provide: NzMessageService, useClass: StubUserService } ],
-      imports: [HttpClientTestingModule],
+      providers: [UserFileService, { provide: UserService, useClass: StubUserService }],
+      imports: [HttpClientTestingModule, NzMessageModule],
     });
     httpMock = TestBed.get(HttpTestingController);
     service = TestBed.get(UserFileService);

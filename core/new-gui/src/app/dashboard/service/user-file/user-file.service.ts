@@ -1,12 +1,11 @@
-import { HttpClient, HttpErrorResponse } from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { Observable, Subject, throwError } from "rxjs";
+import { Observable, Subject } from "rxjs";
 import { AppSettings } from "../../../common/app-setting";
 import { DashboardUserFileEntry, UserFile } from "../../type/dashboard-user-file-entry";
 import { UserService } from "../../../common/service/user/user.service";
 import { AccessEntry } from "../../type/access.interface";
 import { NzMessageService } from "ng-zorro-antd/message";
-import { filter, catchError } from "rxjs/operators";
 
 export const USER_FILE_BASE_URL = `${AppSettings.getApiEndpoint()}/user/file`;
 export const USER_FILE_LIST_URL = `${USER_FILE_BASE_URL}/list`;
@@ -165,22 +164,20 @@ export class UserFileService {
   /**
    * updates the file name of a given userFileEntry
    */
-  public updateFileName(fid: number, name: string): Observable<UserFile> {
-    return this.http.post<UserFile>(
+  public updateFileName(fid: number, name: string): void {
+    this.http.post<UserFile>(
       `${USER_FILE_NAME_UPDATE_URL}`, {
         fid: fid,
         name: name,
       }
     )
-      .pipe(
-        catchError((err: unknown) => {
-          if (err instanceof HttpErrorResponse && err.status === 400 ) {
-            this.message.error(err.error);
-            this.refreshDashboardUserFileEntries();
-          }
-          return throwError(err);
-        }),
-        filter((updatedUserFile: UserFile) => updatedUserFile != null),
-      );
+    .subscribe(
+      () => this.refreshDashboardUserFileEntries(),
+      (err: unknown) => {
+        // @ts-ignore // TODO: fix this with notification component
+        this.message.error(err.error.message);
+        this.refreshDashboardUserFileEntries();
+      },
+    );
   } 
 }

@@ -22,6 +22,7 @@ export const ROUTER_WORKFLOW_CREATE_NEW_URL = "/";
 })
 export class SavedWorkflowSectionComponent implements OnInit {
   public dashboardWorkflowEntries: DashboardWorkflowEntry[] = [];
+  public dashboardWorkflowEntriesIsEditingName: number[] = []; 
 
   constructor(
     private userService: UserService,
@@ -174,11 +175,17 @@ export class SavedWorkflowSectionComponent implements OnInit {
     const { workflow } = dashboardWorkflowEntry;
     this.workflowPersistService.updateWorkflowName(workflow.wid, name)
     .pipe(untilDestroyed(this))
-    .subscribe((updatedWorkflow: Workflow) => {
+    .subscribe(
+      () => {
       let updatedDashboardWorkFlowEntry = {...dashboardWorkflowEntry};
-      updatedDashboardWorkFlowEntry.workflow = {...updatedWorkflow};
+      updatedDashboardWorkFlowEntry.workflow = {...workflow};
+      updatedDashboardWorkFlowEntry.workflow.name = name; 
 
       this.dashboardWorkflowEntries[index] = updatedDashboardWorkFlowEntry;
-    });
+    })
+    .add(() => {
+      this.dashboardWorkflowEntriesIsEditingName = this.dashboardWorkflowEntriesIsEditingName.filter(entryIsEditingIndex => entryIsEditingIndex != index);
+    }
+    );
   }
 }

@@ -50,7 +50,7 @@
           </nz-list-item-meta-avatar>
           <nz-list-item-meta-title>
             <span class="workflow-dashboard-entry">
-              <label *ngIf="dashboardWorkflowEntry.workflow.isEditingName !== true; else customeWorkflow " (click)="jumpToWorkflow(dashboardWorkflowEntry)" class="workflow-name"
+              <label *ngIf="dashboardWorkflowEntriesIsEditingName.indexOf(indexOfElement) === -1; else customeWorkflow " (click)="jumpToWorkflow(dashboardWorkflowEntry)" class="workflow-name"
                 >{{ dashboardWorkflowEntry.workflow.name }}</label
               >
               <ng-template #customeWorkflow>
@@ -63,7 +63,7 @@
                 />
               </ng-template>
               <button
-              (click)="dashboardWorkflowEntry.workflow.isEditingName = true"
+              (click)="dashboardWorkflowEntriesIsEditingName.push(indexOfElement)"
               nz-button
               nz-tooltip="Customize Workflow Name"
               nzSize="small"

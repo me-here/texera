@@ -23,4 +23,4 @@ export interface WorkflowContent
     breakpoints: Record<string, Breakpoint>;
   }> {}
 
-export type Workflow = { content: WorkflowContent, isEditingName?: Boolean } & WorkflowMetadata;
+export type Workflow = { content: WorkflowContent } & WorkflowMetadata;
