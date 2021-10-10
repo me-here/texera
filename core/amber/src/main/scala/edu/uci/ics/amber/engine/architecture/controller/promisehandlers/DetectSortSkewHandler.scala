@@ -278,7 +278,7 @@ trait DetectSortSkewHandler {
           if (skewedLoad == 0) {
             skewedLoad = 1
           }
-          detectSortSkewLogger.logInfo(s"SECOND PHASE RATIO: ${id} for ${sf._1} - ${redirectNum}:${skewedLoad.toLong}")
+          // detectSortSkewLogger.logInfo(s"SECOND PHASE RATIO: ${id} for ${sf._1} - ${redirectNum}:${skewedLoad.toLong}")
           futuresArr.append(
             send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
           )

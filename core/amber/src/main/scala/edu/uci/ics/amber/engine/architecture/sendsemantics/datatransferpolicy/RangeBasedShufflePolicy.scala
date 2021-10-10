@@ -66,10 +66,7 @@ class RangeBasedShufflePolicy(
   // to be called for heavy-hitter
   private def getAndIncrementReceiverForBucket(bucket: Int): ActorVirtualIdentity = {
     var receiver: ActorVirtualIdentity = null
-    if (
-      bucketsToReceivers(bucket).size > 1 &&
-      bucketsToRedirectRatio(bucket)._1 <= bucketsToRedirectRatio(bucket)._2
-    ) {
+    if (bucketsToReceivers(bucket).size > 1 && bucketsToRedirectRatio(bucket)._1 <= bucketsToRedirectRatio(bucket)._2) {
       receiver = bucketsToReceivers(bucket)(1)
     } else {
       receiver = bucketsToReceivers(bucket)(0)
