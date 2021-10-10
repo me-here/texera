@@ -309,10 +309,10 @@ class WorkflowResource {
   def updateWorkflowName(workflow: Workflow, @Auth sessionUser: SessionUser): Unit = {
     val user = sessionUser.getUser
     val wid = workflow.getWid
-    if (!workflowOfUserExists(wid, user.getUid)) {
-      throw new BadRequestException("The workflow does not exist.")
-    } else if (!WorkflowAccessResource.hasWriteAccess(workflow.getWid, user.getUid)) {
+    if (!WorkflowAccessResource.hasWriteAccess(workflow.getWid, user.getUid)) {
       throw new ForbiddenException("No sufficient access privilege.")
+    } else if (!workflowOfUserExists(wid, user.getUid)) {
+      throw new BadRequestException("The workflow does not exist.")
     } else {
       val userWorkflow = workflowDao.fetchOneByWid(wid);
       userWorkflow.setName(workflow.getName)

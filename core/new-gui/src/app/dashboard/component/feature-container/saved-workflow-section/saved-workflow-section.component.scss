@@ -15,6 +15,10 @@
 
 .ant-btn-icon-only {
   margin-right: 10px;
+
+  &.ant-btn-sm {
+    transform: translateY(-5px);
+  }
 }
 
 /**

@@ -1,4 +1,3 @@
-import { Workflow } from "./../../../../common/type/workflow";
 import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
@@ -10,6 +9,7 @@ import { NgbdModalWorkflowShareAccessComponent } from "./ngbd-modal-share-access
 import { DashboardWorkflowEntry } from "../../../type/dashboard-workflow-entry";
 import { UserService } from "../../../../common/service/user/user.service";
 import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
+import { NotificationService } from "src/app/common/service/notification/notification.service";
 
 export const ROUTER_WORKFLOW_BASE_URL = "/workflow";
 export const ROUTER_WORKFLOW_CREATE_NEW_URL = "/";
@@ -27,6 +27,7 @@ export class SavedWorkflowSectionComponent implements OnInit {
   constructor(
     private userService: UserService,
     private workflowPersistService: WorkflowPersistService,
+    private notificationService: NotificationService,
     private modalService: NgbModal,
     private router: Router
   ) {}
@@ -173,13 +174,16 @@ export class SavedWorkflowSectionComponent implements OnInit {
 
   public confirmUpdateWorkflowCustomName(dashboardWorkflowEntry: DashboardWorkflowEntry, name: string, index: number) : void {
     const { workflow } = dashboardWorkflowEntry;
-    this.workflowPersistService.updateWorkflowName(workflow.wid, name)
+    this.workflowPersistService.updateWorkflowName(workflow.wid, name || "Untitled Workflow")
     .pipe(untilDestroyed(this))
     .subscribe(
       () => {
+      if (!name) {
+        this.notificationService.error("The name of the workflow cannot be empty. It has been set as Untitled Workflow");
+      }
       let updatedDashboardWorkFlowEntry = {...dashboardWorkflowEntry};
       updatedDashboardWorkFlowEntry.workflow = {...workflow};
-      updatedDashboardWorkFlowEntry.workflow.name = name; 
+      updatedDashboardWorkFlowEntry.workflow.name = name || "Untitled Workflow"; 
 
       this.dashboardWorkflowEntries[index] = updatedDashboardWorkFlowEntry;
     })
