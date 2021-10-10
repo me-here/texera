@@ -216,7 +216,11 @@ object DetectSkewHandler {
         skewedToFreeWorkerFirstPhase.remove(skewedWorker)
       }
     })
-    ret
+    if (Constants.onlyDetectSkew) {
+      return new ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)]()
+    } else {
+      return ret
+    }
   }
 
 }
