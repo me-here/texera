@@ -160,11 +160,7 @@ class DataProcessor( // dependencies:
           currentInputTuple = Right(InputExhausted())
           if (Constants.sortExperiment) {
             // sort skew research related
-            if (
-              operator.isInstanceOf[SortOpLocalExec] && operator
-                .asInstanceOf[SortOpLocalExec]
-                .skewedWorkerIdentity != null
-            ) {
+            if (operator.isInstanceOf[SortOpLocalExec] && operator.asInstanceOf[SortOpLocalExec].skewedWorkerIdentity != null) {
               // this is a free worker. It needs to send the skewed worker tuples to the
               // rightful owner
               val sortSendingFutures = new ArrayBuffer[Future[Unit]]()
