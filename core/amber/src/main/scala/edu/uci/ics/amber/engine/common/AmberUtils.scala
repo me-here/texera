@@ -28,7 +28,7 @@ object AmberUtils {
       sum = sum + (load - meanOfLoads) * (load - meanOfLoads)
     })
     val ssd = scala.math.sqrt(sum / (workloads.size - 1))
-    val error = ssd / math.sqrt(workloads.size)
+    val error = ssd * (1 + (1.0 / (2.0 * workloads.size)))
     error
   }
 
