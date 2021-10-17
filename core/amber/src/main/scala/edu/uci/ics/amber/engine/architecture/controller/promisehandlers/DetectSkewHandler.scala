@@ -432,7 +432,7 @@ trait DetectSkewHandler {
                     skewedAndFreeWorkersForFirstPhase
                   ).map(seq => {
                     endTimeForNetChange = System.nanoTime()
-                    aggregateAndPrintSentCount(seq)
+                    // aggregateAndPrintSentCount(seq)
                     detectSkewLogger.logInfo(
                       s"\tTHE NETWORK SHARE HAS HAPPENED in ${(endTimeForNetChange - startTimeForNetChange) / 1e9d}s"
                     )
@@ -480,7 +480,7 @@ trait DetectSkewHandler {
                 actualSkewedAndFreeGettingSkewedWorkers
               ).map(seq => {
                 startTimeForNetRollback = System.nanoTime()
-                aggregateAndPrintSentCount(seq)
+                // aggregateAndPrintSentCount(seq)
                 detectSkewLogger.logInfo(
                   s"\tTHE NETWORK ROLLBACK HAS HAPPENED in ${(endTimeForNetChange - startTimeForNetChange) / 1e9d}s"
                 )
