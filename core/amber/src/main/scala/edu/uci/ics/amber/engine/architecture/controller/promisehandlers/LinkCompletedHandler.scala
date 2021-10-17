@@ -62,7 +62,7 @@ trait LinkCompletedHandler {
                 )
                 .get
               val probeLayer = workflow.getOperator(probeOpId).topology.layers(0)
-              enableDetectSkewCalls(joinLayer, probeLayer)
+              // enableDetectSkewCalls(joinLayer, probeLayer)
             }
             CommandCompleted()
           })
