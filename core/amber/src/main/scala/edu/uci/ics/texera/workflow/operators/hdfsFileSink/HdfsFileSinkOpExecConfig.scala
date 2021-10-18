@@ -29,7 +29,7 @@ class HdfsFileSinkOpExecConfig(
           hdfsPort,
           folderName,
           i,
-          numOfWorkers
+          250
         ),
       Constants.defaultNumWorkers,
       FollowPrevious(),
