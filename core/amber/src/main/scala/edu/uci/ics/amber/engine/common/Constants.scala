@@ -20,7 +20,7 @@ object Constants {
   val onlyDetectSkew: Boolean = true
   val threshold: Int = 100
   val startDetection: FiniteDuration = 100.milliseconds
-  val detectionPeriod: FiniteDuration = 10.seconds
+  val detectionPeriod: FiniteDuration = 20.seconds
   val printResultsInConsole: Boolean = true
 
   // sort-skew research related
