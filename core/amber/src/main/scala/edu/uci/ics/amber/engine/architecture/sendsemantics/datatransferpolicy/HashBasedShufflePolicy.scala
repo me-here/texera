@@ -71,21 +71,24 @@ class HashBasedShufflePolicy(
       receiver = bucketsToReceivers(bucket)(0)
     }
 
+    // logic below is written in this way to avoid race condition on bucketsToRedirectRatio map
+    var redirectRatio = bucketsToRedirectRatio.getOrElse(bucket, (0, 0, 0))
     if (bucketsToRedirectRatio.contains(bucket)) {
-      if (bucketsToRedirectRatio(bucket)._1 + 1 > bucketsToRedirectRatio(bucket)._3) {
+      if (redirectRatio._1 + 1 > redirectRatio._3) {
         bucketsToRedirectRatio(bucket) = (
           1,
-          bucketsToRedirectRatio(bucket)._2,
-          bucketsToRedirectRatio(bucket)._3
+          redirectRatio._2,
+          redirectRatio._3
         )
       } else {
         bucketsToRedirectRatio(bucket) = (
-          bucketsToRedirectRatio(bucket)._1 + 1,
-          bucketsToRedirectRatio(bucket)._2,
-          bucketsToRedirectRatio(bucket)._3
+          redirectRatio._1 + 1,
+          redirectRatio._2,
+          redirectRatio._3
         )
       }
     }
+
     receiver
   }
 
