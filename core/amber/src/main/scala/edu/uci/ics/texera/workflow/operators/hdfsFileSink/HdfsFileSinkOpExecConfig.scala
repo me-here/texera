@@ -30,10 +30,10 @@ class HdfsFileSinkOpExecConfig(
           folderName,
           i,
           // numOfWorkers
-          500
+          800
         ),
       // Constants.defaultNumWorkers,
-      500,
+      800,
       FollowPrevious(),
       RoundRobinDeployment()
     )
