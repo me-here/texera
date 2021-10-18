@@ -66,10 +66,13 @@ class RangeBasedShufflePolicy(
   // to be called for heavy-hitter
   private def getAndIncrementReceiverForBucket(bucket: Int): ActorVirtualIdentity = {
     var receiver: ActorVirtualIdentity = null
+
+    // logic below is written in this way to avoid race condition on bucketsToReceivers map
+    val receivers = bucketsToReceivers(bucket)
     if (bucketsToReceivers(bucket).size > 1 && bucketsToRedirectRatio.contains(bucket) && bucketsToRedirectRatio(bucket)._1 <= bucketsToRedirectRatio(bucket)._2) {
-      receiver = bucketsToReceivers(bucket)(1)
+      receiver = receivers(1)
     } else {
-      receiver = bucketsToReceivers(bucket)(0)
+      receiver = receivers(0)
     }
 
     // logic below is written in this way to avoid race condition on bucketsToRedirectRatio map
