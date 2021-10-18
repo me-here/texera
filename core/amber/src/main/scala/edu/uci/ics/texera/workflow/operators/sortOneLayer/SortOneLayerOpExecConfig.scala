@@ -28,10 +28,10 @@ class SortOneLayerOpExecConfig(
           Constants.upperLimit,
           i,
           // numOfWorkers
-          350
+          400
         ),
       //Constants.defaultNumWorkers,
-      350,
+      400,
       UseAll(),
       RoundRobinDeployment()
     )
