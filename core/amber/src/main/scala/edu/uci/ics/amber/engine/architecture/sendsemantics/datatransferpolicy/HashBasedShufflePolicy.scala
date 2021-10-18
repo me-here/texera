@@ -71,18 +71,20 @@ class HashBasedShufflePolicy(
       receiver = bucketsToReceivers(bucket)(0)
     }
 
-    if (bucketsToRedirectRatio.contains(bucket) && bucketsToRedirectRatio(bucket)._1 + 1 > bucketsToRedirectRatio(bucket)._3) {
-      bucketsToRedirectRatio(bucket) = (
-        1,
-        bucketsToRedirectRatio(bucket)._2,
-        bucketsToRedirectRatio(bucket)._3
-      )
-    } else {
-      bucketsToRedirectRatio(bucket) = (
-        bucketsToRedirectRatio(bucket)._1 + 1,
-        bucketsToRedirectRatio(bucket)._2,
-        bucketsToRedirectRatio(bucket)._3
-      )
+    if (bucketsToRedirectRatio.contains(bucket)) {
+      if (bucketsToRedirectRatio(bucket)._1 + 1 > bucketsToRedirectRatio(bucket)._3) {
+        bucketsToRedirectRatio(bucket) = (
+          1,
+          bucketsToRedirectRatio(bucket)._2,
+          bucketsToRedirectRatio(bucket)._3
+        )
+      } else {
+        bucketsToRedirectRatio(bucket) = (
+          bucketsToRedirectRatio(bucket)._1 + 1,
+          bucketsToRedirectRatio(bucket)._2,
+          bucketsToRedirectRatio(bucket)._3
+        )
+      }
     }
     receiver
   }
