@@ -242,7 +242,7 @@ class WorkflowWebsocketResource {
     )
 
     val controllerActorRef = TexeraWebApplication.actorSystem.actorOf(
-      Controller.props(workflowTag, workflow, eventListener, 1000)
+      Controller.props(workflowTag, workflow, eventListener, 3000)
     )
     texeraWorkflowCompiler.initializeBreakpoint(controllerActorRef)
     controllerActorRef ! ControlInvocation(AsyncRPCClient.IgnoreReply, StartWorkflow())
