@@ -25,7 +25,8 @@ class SortOneLayerOpDesc extends OperatorDescriptor {
     opExecConfig = new SortOneLayerOpExecConfig(
       this.operatorIdentifier,
       sortAttributeName,
-      1000
+      // 800
+      Constants.defaultNumWorkers
     )
     opExecConfig
   }
