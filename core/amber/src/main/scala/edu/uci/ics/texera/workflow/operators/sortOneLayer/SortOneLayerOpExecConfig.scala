@@ -27,7 +27,8 @@ class SortOneLayerOpExecConfig(
           Constants.lowerLimit,
           Constants.upperLimit,
           i,
-          numOfWorkers
+          // numOfWorkers
+          100
         ),
       Constants.defaultNumWorkers,
       UseAll(),
