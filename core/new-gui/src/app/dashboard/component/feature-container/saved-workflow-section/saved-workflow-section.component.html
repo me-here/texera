@@ -36,6 +36,25 @@
   </nz-card>
 
   <nz-card class="workflow-list-container subsection-grid-container">
+    <nz-input-group [nzAddOnBefore]="addOnBeforeTemplate" class="texera-dashboard-saved-workflow-search-box-input">
+      <input
+      [(ngModel)]="workflowSearchValue"
+      autocomplete="on"
+      nz-input
+      placeholder="Search Workflows... Use a semicolon(;) between names"
+      (ngModelChange)="searchInputOnChange($event)"
+      type="text"
+      (keyup.enter)="searchWorkflow()"
+      [nzAutocomplete]="auto"
+    />
+    <nz-autocomplete [nzDataSource]="workflowSearchCriteria === 'workflows' ? filteredDashboardWorkflowNames : filteredDashboardWorkflowOwnerNames" nzBackfill #auto></nz-autocomplete>
+    </nz-input-group>
+      <ng-template #addOnBeforeTemplate>
+        <nz-select [(ngModel)]="workflowSearchCriteria">
+          <nz-option nzLabel="Workflow Name(s)" nzValue="workflows"></nz-option>
+          <nz-option nzLabel="Owner Name(s)" nzValue="owners"></nz-option>
+        </nz-select>
+      </ng-template>
     <nz-list>
       <nz-list-item *ngFor="let dashboardWorkflowEntry of dashboardWorkflowEntries;let indexOfElement=index" class="workflow-list-item">
         <nz-list-item-meta>

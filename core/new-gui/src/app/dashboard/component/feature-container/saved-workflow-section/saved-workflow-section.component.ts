@@ -22,7 +22,12 @@ export const ROUTER_WORKFLOW_CREATE_NEW_URL = "/";
 })
 export class SavedWorkflowSectionComponent implements OnInit {
   public dashboardWorkflowEntries: DashboardWorkflowEntry[] = [];
-  public dashboardWorkflowEntriesIsEditingName: number[] = []; 
+  public dashboardWorkflowEntriesIsEditingName: number[] = [];
+  public allDashboardWorkflowEntries: DashboardWorkflowEntry[] = [];
+  public filteredDashboardWorkflowNames: Set<string> = new Set();
+  public filteredDashboardWorkflowOwnerNames: Set<string> = new Set();
+  public workflowSearchCriteria: string = "workflows"; 
+  public workflowSearchValue: string = "";
 
   constructor(
     private userService: UserService,
@@ -42,6 +47,74 @@ export class SavedWorkflowSectionComponent implements OnInit {
   public onClickOpenShareAccess({ workflow }: DashboardWorkflowEntry): void {
     const modalRef = this.modalService.open(NgbdModalWorkflowShareAccessComponent);
     modalRef.componentInstance.workflow = workflow;
+  }
+
+  public searchInputOnChange(value: string): void {
+    if (this.workflowSearchCriteria === "workflows") {
+      this.filteredDashboardWorkflowNames = new Set();
+      this.allDashboardWorkflowEntries.forEach(dashboardEntry => {
+        const workflowName = dashboardEntry.workflow.name;
+        if (workflowName.toLowerCase().indexOf(value.toLowerCase()) !== -1 ) {
+          this.filteredDashboardWorkflowNames.add(workflowName);
+        }
+      });
+    } else {
+      this.filteredDashboardWorkflowOwnerNames = new Set();
+      this.allDashboardWorkflowEntries.forEach(dashboardEntry => {
+        const ownerName = dashboardEntry.ownerName;
+        if (ownerName && ownerName.toLowerCase().indexOf(value.toLowerCase()) !== -1 ) {
+          this.filteredDashboardWorkflowOwnerNames.add(ownerName);
+        }
+      });
+    }
+
+  }
+
+  /**
+   * search workflows by owner names or workflow names
+   */
+  public searchWorkflow(): void {
+    if (this.workflowSearchValue === "") {
+      this.dashboardWorkflowEntries = cloneDeep(this.allDashboardWorkflowEntries);
+      return; 
+    }
+    this.dashboardWorkflowEntries = [];
+    const searchNamesSet = new Set(this.workflowSearchValue.split(";"));
+    if (this.workflowSearchCriteria === "owners") {
+      let workflowOwnerMap = new Map();
+      this.allDashboardWorkflowEntries.forEach((dashboardWorkflowEntry) => {
+        const wid = dashboardWorkflowEntry.workflow.wid;
+        if (!workflowOwnerMap.has(wid)) {
+          workflowOwnerMap.set(wid, new Set([dashboardWorkflowEntry.ownerName]));
+        } else {
+          workflowOwnerMap.get(wid).add(dashboardWorkflowEntry.ownerName);
+        }
+      });
+      let widArray: number[] =  [];
+      workflowOwnerMap.forEach( (value, key) =>  {
+        let isSubset = true;
+        searchNamesSet.forEach(name => {
+          if (!value.has(name)) {
+            isSubset = false;
+            return; 
+          }
+        });
+        if (isSubset) {
+          widArray.push(key);
+        }
+      });
+      this.allDashboardWorkflowEntries.forEach((dashboardWorkflowEntry) => {
+        if (widArray.includes(dashboardWorkflowEntry.workflow.wid!)) {
+          this.dashboardWorkflowEntries.push(dashboardWorkflowEntry);
+        }
+      });
+    } else {
+      this.allDashboardWorkflowEntries.forEach((dashboardWorkflowEntry) => {
+        if (searchNamesSet.has(dashboardWorkflowEntry.workflow.name)) {
+          this.dashboardWorkflowEntries.push(dashboardWorkflowEntry);
+        }
+      });
+    }
   }
 
   /**
@@ -165,7 +238,16 @@ export class SavedWorkflowSectionComponent implements OnInit {
     this.workflowPersistService
       .retrieveWorkflowsBySessionUser()
       .pipe(untilDestroyed(this))
-      .subscribe(dashboardWorkflowEntries => (this.dashboardWorkflowEntries = dashboardWorkflowEntries));
+      .subscribe((dashboardWorkflowEntries) => {
+        this.dashboardWorkflowEntries = dashboardWorkflowEntries;
+        this.allDashboardWorkflowEntries = dashboardWorkflowEntries;
+        dashboardWorkflowEntries.forEach((dashboardWorkflowEntry) => {
+          if (dashboardWorkflowEntry.ownerName){
+            this.filteredDashboardWorkflowOwnerNames.add(dashboardWorkflowEntry.ownerName);
+          }
+          this.filteredDashboardWorkflowNames.add(dashboardWorkflowEntry.workflow.name);
+        });
+      });
   }
 
   private clearDashboardWorkflowEntries(): void {

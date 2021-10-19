@@ -25,9 +25,23 @@ export class UserFileSectionComponent {
   }
 
   public isEditingName: number[] = []; 
+  public userFileSearchValue: string = "";
+  public filteredFilenames: Set<string> = new Set();
+  public isTyping: boolean = false; 
 
   public openFileAddComponent() {
     this.modalService.open(NgbdModalFileAddComponent);
+  }
+
+  public searchInputOnChange(value: string): void{
+    this.isTyping = true;
+    this.filteredFilenames.clear();
+    const fileArray = this.userFileService.getUserFiles();
+    fileArray.forEach(fileEntry => {
+      if (fileEntry.file.name.toLowerCase().indexOf(value.toLowerCase()) !== -1) {
+        this.filteredFilenames.add(fileEntry.file.name);
+      }
+    });
   }
 
   public onClickOpenShareAccess(dashboardUserFileEntry: DashboardUserFileEntry): void {
@@ -39,6 +53,8 @@ export class UserFileSectionComponent {
     const fileArray = this.userFileService.getUserFiles();
     if (!fileArray) {
       return [];
+    } else if (this.userFileSearchValue !== "" && this.isTyping === false) {
+      return fileArray.filter(file => file.file.name === this.userFileSearchValue);
     }
     return fileArray;
   }
