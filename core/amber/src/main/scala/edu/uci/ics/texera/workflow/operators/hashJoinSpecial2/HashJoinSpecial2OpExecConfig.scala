@@ -18,21 +18,21 @@ class HashJoinSpecial2OpExecConfig[K](
     val customerPKAttr: String
 ) extends HashJoinOpExecConfig[K](id, probeAttributeNameSp, buildAttributeNameSp) {
 
-//  // for baseline
-//  override lazy val topology: Topology = {
-//    new Topology(
-//      Array(
-//        new WorkerLayer(
-//          LayerIdentity(id, "main"),
-//          null,
-//          100,
-//          UseAll(),
-//          RoundRobinDeployment()
-//        )
-//      ),
-//      Array()
-//    )
-//  }
+  // for baseline
+  override lazy val topology: Topology = {
+    new Topology(
+      Array(
+        new WorkerLayer(
+          LayerIdentity(id, "main"),
+          null,
+          2500,
+          UseAll(),
+          RoundRobinDeployment()
+        )
+      ),
+      Array()
+    )
+  }
 
   override def checkStartDependencies(workflow: Workflow): Unit = {
     val buildLink = inputToOrdinalMapping.find(pair => pair._2 == 0).get._1
