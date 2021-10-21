@@ -68,28 +68,18 @@ class HashBasedShufflePolicy(
 
     // logic below is written in this way to avoid race condition on bucketsToReceivers map
     val receivers = bucketsToReceivers(bucket)
-    if (bucketsToReceivers(bucket).size > 1 && bucketsToRedirectRatio.contains(bucket) && bucketsToRedirectRatio(bucket)._1 <= bucketsToRedirectRatio(bucket)._2) {
+    var redirectRatio: (Long, Long, Long) = bucketsToRedirectRatio.getOrElse(bucket, (0L, 0L, 0L))
+    if (bucketsToReceivers(bucket).size > 1 && bucketsToRedirectRatio.contains(bucket) && redirectRatio._1 <= redirectRatio._2) {
       receiver = receivers(1)
     } else {
       receiver = receivers(0)
     }
 
     // logic below is written in this way to avoid race condition on bucketsToRedirectRatio map
-    var redirectRatio: (Long, Long, Long) = bucketsToRedirectRatio.getOrElse(bucket, (0L, 0L, 0L))
-    if (bucketsToRedirectRatio.contains(bucket)) {
-      if (redirectRatio._1 + 1L > redirectRatio._3) {
-        bucketsToRedirectRatio(bucket) = (
-          1L,
-          redirectRatio._2,
-          redirectRatio._3
-        )
-      } else {
-        bucketsToRedirectRatio(bucket) = (
-          redirectRatio._1 + 1L,
-          redirectRatio._2,
-          redirectRatio._3
-        )
-      }
+    if (redirectRatio._1 + 1L > redirectRatio._3) {
+      bucketsToRedirectRatio(bucket) = (1L, redirectRatio._2, redirectRatio._3)
+    } else {
+      bucketsToRedirectRatio(bucket) = (redirectRatio._1 + 1L, redirectRatio._2, redirectRatio._3)
     }
 
     receiver
