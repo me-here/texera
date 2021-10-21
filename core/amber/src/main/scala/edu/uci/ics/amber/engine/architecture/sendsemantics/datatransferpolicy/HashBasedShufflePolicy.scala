@@ -3,6 +3,7 @@ package edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy
 import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.ambermessage.{DataFrame, DataPayload, EndOfUpstream}
+import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.WorkerActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
 
 import scala.collection.mutable
@@ -70,7 +71,7 @@ class HashBasedShufflePolicy(
     val receivers = bucketsToReceivers(bucket)
     var redirectRatio: (Long, Long, Long) = bucketsToRedirectRatio.getOrElse(bucket, (0L, 0L, 0L))
     if (bucketsToReceivers(bucket).size > 1 && bucketsToRedirectRatio.contains(bucket) && redirectRatio._1 <= redirectRatio._2) {
-      receiver = receivers(1)
+      receiver = WorkerActorVirtualIdentity(receivers(1).asInstanceOf[WorkerActorVirtualIdentity].name)
     } else {
       receiver = receivers(0)
     }
