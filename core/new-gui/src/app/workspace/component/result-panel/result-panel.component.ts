@@ -122,10 +122,9 @@ export class ResultPanelComponent implements OnInit {
       const operator = this.workflowActionService.getTexeraGraph().getOperator(this.currentOperatorId);
       if ([PYTHON_UDF_V2_OP_TYPE, PYTHON_UDF_SOURCE_V2_OP_TYPE].includes(operator.operatorType)) {
         this.displayConsole(this.currentOperatorId);
-
-        if (environment.debuggerEnabled && this.hasErrorOrBreakpoint()) {
-          this.displayDebugger(this.currentOperatorId);
-        }
+      }
+      if (environment.debuggerEnabled && this.hasErrorOrBreakpoint()) {
+        this.displayDebugger(this.currentOperatorId);
       }
     }
   }
