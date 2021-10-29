@@ -103,6 +103,7 @@ import { VersionsListDisplayComponent } from "./workspace/component/property-edi
 import { NzPaginationModule } from "ng-zorro-antd/pagination";
 import { JwtModule } from "@auth0/angular-jwt";
 import { AuthService } from "./common/service/user/auth.service";
+import { PythonExpressionEvaluatorComponent } from "./workspace/component/result-panel/debugger-frame/python-expression-evaluator/python-expression-evaluator.component";
 
 registerLocaleData(en);
 
@@ -159,6 +160,7 @@ registerLocaleData(en);
     OperatorPropertyEditFrameComponent,
     BreakpointPropertyEditFrameComponent,
     DebuggerFrameComponent,
+    PythonExpressionEvaluatorComponent,
   ],
   imports: [
     BrowserModule,
