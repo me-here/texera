@@ -28,6 +28,7 @@ export class SavedWorkflowSectionComponent implements OnInit {
   public filteredDashboardWorkflowOwnerNames: Set<string> = new Set();
   public workflowSearchCriteria: string = "workflows"; 
   public workflowSearchValue: string = "";
+  private defaultWorkflowName: string = "Untitled Workflow";
 
   constructor(
     private userService: UserService,
@@ -254,24 +255,26 @@ export class SavedWorkflowSectionComponent implements OnInit {
     this.dashboardWorkflowEntries = [];
   }
 
-  public confirmUpdateWorkflowCustomName(dashboardWorkflowEntry: DashboardWorkflowEntry, name: string, index: number) : void {
+  public confirmUpdateWorkflowCustomName(
+    dashboardWorkflowEntry: DashboardWorkflowEntry,
+    name: string,
+    index: number
+  ): void {
     const { workflow } = dashboardWorkflowEntry;
-    this.workflowPersistService.updateWorkflowName(workflow.wid, name || "Untitled Workflow")
-    .pipe(untilDestroyed(this))
-    .subscribe(
-      () => {
-      if (!name) {
-        this.notificationService.error("The name of the workflow cannot be empty. It has been set as Untitled Workflow");
-      }
-      let updatedDashboardWorkFlowEntry = {...dashboardWorkflowEntry};
-      updatedDashboardWorkFlowEntry.workflow = {...workflow};
-      updatedDashboardWorkFlowEntry.workflow.name = name || "Untitled Workflow"; 
+    this.workflowPersistService
+      .updateWorkflowName(workflow.wid, name || this.defaultWorkflowName)
+      .pipe(untilDestroyed(this))
+      .subscribe(() => {
+        let updatedDashboardWorkFlowEntry = { ...dashboardWorkflowEntry };
+        updatedDashboardWorkFlowEntry.workflow = { ...workflow };
+        updatedDashboardWorkFlowEntry.workflow.name = name || this.defaultWorkflowName;
 
-      this.dashboardWorkflowEntries[index] = updatedDashboardWorkFlowEntry;
-    })
-    .add(() => {
-      this.dashboardWorkflowEntriesIsEditingName = this.dashboardWorkflowEntriesIsEditingName.filter(entryIsEditingIndex => entryIsEditingIndex != index);
-    }
-    );
+        this.dashboardWorkflowEntries[index] = updatedDashboardWorkFlowEntry;
+      })
+      .add(() => {
+        this.dashboardWorkflowEntriesIsEditingName = this.dashboardWorkflowEntriesIsEditingName.filter(
+          entryIsEditingIndex => entryIsEditingIndex != index
+        );
+      });
   }
 }

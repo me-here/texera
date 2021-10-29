@@ -97,9 +97,16 @@ export class UserFileSectionComponent {
       );
   }
 
-  public confirmUpdateFileCustomName(dashboardUserFileEntry: DashboardUserFileEntry, name: string, index: number): void {
-    const { file : { fid } } = dashboardUserFileEntry;
-    this.userFileService.updateFileName(fid, name)
+  public confirmUpdateFileCustomName(
+    dashboardUserFileEntry: DashboardUserFileEntry,
+    name: string,
+    index: number
+  ): void {
+    const {
+      file: { fid },
+    } = dashboardUserFileEntry;
+    this.userFileService
+      .updateFileName(fid, name)
       .pipe(untilDestroyed(this))
       .subscribe(
         () => this.userFileService.refreshDashboardUserFileEntries(),
@@ -107,8 +114,8 @@ export class UserFileSectionComponent {
           // @ts-ignore // TODO: fix this with notification component
           this.notificationService.error(err.error.message);
           this.userFileService.refreshDashboardUserFileEntries();
-        },
+        }
       )
-      .add(() => this.isEditingName = this.isEditingName.filter(fileIsEditing => fileIsEditing != index));
+      .add(() => (this.isEditingName = this.isEditingName.filter(fileIsEditing => fileIsEditing != index)));
   }
 }
