@@ -31,6 +31,7 @@ import edu.uci.ics.texera.web.resource.dashboard.workflow.WorkflowResource.{
 }
 import io.dropwizard.auth.Auth
 import org.jooq.types.UInteger
+import org.glassfish.jersey.media.multipart.FormDataParam
 
 import javax.annotation.security.PermitAll
 import javax.ws.rs._
@@ -107,6 +108,7 @@ class WorkflowResource {
         WORKFLOW.NAME,
         WORKFLOW.CREATION_TIME,
         WORKFLOW.LAST_MODIFIED_TIME,
+        WORKFLOW.SNAPSHOT,
         WORKFLOW_USER_ACCESS.READ_PRIVILEGE,
         WORKFLOW_USER_ACCESS.WRITE_PRIVILEGE,
         WORKFLOW_OF_USER.UID,
@@ -133,7 +135,6 @@ class WorkflowResource {
         )
       )
       .toList
-
   }
 
   /**
@@ -177,6 +178,9 @@ class WorkflowResource {
 
       // retrieve current workflow from DB
       val currentWorkflow = workflowDao.fetchOneByWid(workflow.getWid)
+      if (workflow.getSnapshot == null && currentWorkflow.getSnapshot != null) {
+        workflow.setSnapshot(currentWorkflow.getSnapshot: _*)
+      }
       // compute diff
       val mapper = new ObjectMapper()
       val patch = JsonDiff.asJson(
@@ -235,7 +239,14 @@ class WorkflowResource {
       workflow.getContent
       workflow.getName
       createWorkflow(
-        new Workflow(workflow.getName + "_copy", null, workflow.getContent, null, null),
+        new Workflow(
+          workflow.getName + "_copy",
+          null,
+          workflow.getContent,
+          null,
+          null,
+          workflow.getSnapshot
+        ),
         sessionUser
       )
 
@@ -267,6 +278,32 @@ class WorkflowResource {
       )
     }
 
+  }
+
+  @PUT
+  @Path("/upload/snapshot")
+  @Consumes(Array(MediaType.MULTIPART_FORM_DATA))
+  def uploadWorkflowSnapshot(
+      @FormDataParam("wid") wid: UInteger,
+      @FormDataParam("SnapshotBlob") SnapshotBlob: Array[Byte],
+      @Auth sessionUser: SessionUser
+  ): Unit = {
+    val user = sessionUser.getUser
+    if (SnapshotBlob == null) {
+      throw new BadRequestException("Snapshot Blob cannot be null.")
+    } else if (wid == null) {
+      throw new BadRequestException("Cannot upload workflow snapshot without a provided id.")
+    } else if (
+      WorkflowAccessResource.hasNoWorkflowAccess(wid, user.getUid) ||
+      WorkflowAccessResource.hasNoWorkflowAccessRecord(wid, user.getUid)
+    ) {
+      throw new ForbiddenException("No sufficient access privilege.")
+    } else {
+      val workflow = workflowDao.fetchOneByWid(wid)
+      workflow.setSnapshot(SnapshotBlob: _*)
+
+      workflowDao.update(workflow)
+    }
   }
 
   /**

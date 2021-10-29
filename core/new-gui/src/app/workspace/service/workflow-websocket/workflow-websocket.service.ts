@@ -30,7 +30,6 @@ export class WorkflowWebsocketService {
   constructor() {
     // setup heartbeat
     interval(WS_HEARTBEAT_INTERVAL_MS).subscribe(_ => this.send("HeartBeatRequest", {}));
-
   }
 
   public websocketEvent(): Observable<TexeraWebsocketEvent> {
@@ -62,7 +61,7 @@ export class WorkflowWebsocketService {
     this.websocket?.complete();
   }
 
-  public openWebsocket(wid:number) {
+  public openWebsocket(wid: number) {
     const websocketUrl =
       WorkflowWebsocketService.getWorkflowWebsocketUrl() +
       (environment.userSystemEnabled && AuthService.getAccessToken() !== null
@@ -78,12 +77,10 @@ export class WorkflowWebsocketService {
             console.log(`websocket connection lost, reconnecting in ${WS_RECONNECT_INTERVAL_MS / 1000} seconds`)
           ),
           delayWhen(_ => timer(WS_RECONNECT_INTERVAL_MS)), // reconnect after delay
-          tap(
-            _ => {
-              this.send("RegisterWIdRequest", { wId: wid}); // re-register wid
-              this.send("HeartBeatRequest", {}); // try to send heartbeat immediately after reconnect
-            }
-          )
+          tap(_ => {
+            this.send("RegisterWIdRequest", { wId: wid }); // re-register wid
+            this.send("HeartBeatRequest", {}); // try to send heartbeat immediately after reconnect
+          })
         )
       )
     );
@@ -93,7 +90,7 @@ export class WorkflowWebsocketService {
     );
 
     // send wid registration and recover frontend state
-    this.send("RegisterWIdRequest", { wId: wid});
+    this.send("RegisterWIdRequest", { wId: wid });
 
     // refresh connection status
     this.websocketEvent().subscribe(_ => (this.isConnected = true));

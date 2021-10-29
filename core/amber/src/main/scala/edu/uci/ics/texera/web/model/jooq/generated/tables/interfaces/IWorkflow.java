@@ -66,6 +66,16 @@ public interface IWorkflow extends Serializable {
      */
     public Timestamp getLastModifiedTime();
 
+    /**
+     * Setter for <code>texera_db.workflow.snapshot</code>.
+     */
+    public void setSnapshot(byte... value);
+
+    /**
+     * Getter for <code>texera_db.workflow.snapshot</code>.
+     */
+    public byte[] getSnapshot();
+
     // -------------------------------------------------------------------------
     // FROM and INTO
     // -------------------------------------------------------------------------

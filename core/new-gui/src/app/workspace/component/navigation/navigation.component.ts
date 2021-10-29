@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from "@angular/common/http";
 import { DatePipe, Location } from "@angular/common";
 import { Component, ElementRef, Input, ViewChild } from "@angular/core";
 import { TourService } from "ngx-tour-ng-bootstrap";
@@ -19,6 +20,8 @@ import { debounceTime } from "rxjs/operators";
 import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
 import { VIEW_RESULT_OP_TYPE } from "../../service/workflow-graph/model/workflow-graph";
 import { WorkflowVersionService } from "../../../dashboard/service/workflow-version/workflow-version.service";
+import { NotificationService } from "src/app/common/service/notification/notification.service";
+import html2canvas from "html2canvas";
 
 /**
  * NavigationComponent is the top level navigation bar that shows
@@ -75,6 +78,7 @@ export class NavigationComponent {
     public workflowWebsocketService: WorkflowWebsocketService,
     private location: Location,
     public undoRedoService: UndoRedoService,
+    private notificationService: NotificationService,
     public validationWorkflowService: ValidationWorkflowService,
     public workflowPersistService: WorkflowPersistService,
     public workflowVersionService: WorkflowVersionService,
@@ -380,20 +384,50 @@ export class NavigationComponent {
   }
 
   public persistWorkflow(): void {
-    this.isSaving = true;
-    this.workflowPersistService
-      .persistWorkflow(this.workflowActionService.getWorkflow())
-      .pipe(untilDestroyed(this))
-      .subscribe(
-        (updatedWorkflow: Workflow) => {
-          this.workflowActionService.setWorkflowMetadata(updatedWorkflow);
-          this.isSaving = false;
-        },
-        (error: unknown) => {
-          alert(error);
-          this.isSaving = false;
-        }
-      );
+    // TODO: optimize logic 
+    const doc = document.getElementById("texera-workflow-editor");
+    const width = doc?.getBoundingClientRect().width;
+    const height = width! * (9 / 16);
+    html2canvas(doc!, {
+      height,
+      width,
+      allowTaint: true,
+      useCORS: true,
+      backgroundColor: "transparent",
+    }).then(canvas => {
+      this.isSaving = true;
+      let imageData = canvas.toDataURL("image/png");
+      fetch(imageData)
+        .then(res => res.blob())
+        .then(SnapshotBlob =>
+          this.workflowPersistService
+            .persistWorkflow({ ...this.workflowActionService.getWorkflow(), snapshot: undefined })
+            .pipe(untilDestroyed(this))
+            .subscribe(
+              (updatedWorkflow: Workflow) => {
+                this.workflowActionService.setWorkflowMetadata(updatedWorkflow);
+                this.workflowPersistService
+                  .uploadWorkflowSnapshot(SnapshotBlob, updatedWorkflow.wid)
+                  .pipe(untilDestroyed(this))
+                  .subscribe(
+                    () => {
+                      this.notificationService.success("workflow has been successfully saved.");
+                    },
+                    (error: unknown) => {
+                      if (error instanceof HttpErrorResponse && error.status !== 204) {
+                        this.notificationService.error(error.error);
+                      }
+                    }
+                  );
+                this.isSaving = false;
+              },
+              (error: unknown) => {
+                alert(error);
+                this.isSaving = false;
+              }
+            )
+        );
+    });
   }
 
   /**

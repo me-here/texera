@@ -68,6 +68,7 @@ export class WorkflowActionService {
     wid: undefined,
     creationTime: undefined,
     lastModifiedTime: undefined,
+    snapshot: undefined,
   };
 
   private readonly texeraGraph: WorkflowGraph;

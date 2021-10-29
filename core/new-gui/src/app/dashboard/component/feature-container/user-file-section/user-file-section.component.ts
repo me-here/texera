@@ -19,21 +19,21 @@ export class UserFileSectionComponent {
     private modalService: NgbModal,
     private userFileService: UserFileService,
     private userService: UserService,
-    private notificationService: NotificationService,
+    private notificationService: NotificationService
   ) {
     this.userFileService.refreshDashboardUserFileEntries();
   }
 
-  public isEditingName: number[] = []; 
+  public isEditingName: number[] = [];
   public userFileSearchValue: string = "";
   public filteredFilenames: Set<string> = new Set();
-  public isTyping: boolean = false; 
+  public isTyping: boolean = false;
 
   public openFileAddComponent() {
     this.modalService.open(NgbdModalFileAddComponent);
   }
 
-  public searchInputOnChange(value: string): void{
+  public searchInputOnChange(value: string): void {
     this.isTyping = true;
     this.filteredFilenames.clear();
     const fileArray = this.userFileService.getUserFiles();

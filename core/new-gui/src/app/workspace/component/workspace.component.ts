@@ -84,24 +84,24 @@ export class WorkspaceComponent implements AfterViewInit {
     this.registerResultPanelToggleHandler();
 
     this.establishWebsocketConnectionIfWIdChanged();
-
   }
 
-  ngOnDestroy(){
+  ngOnDestroy() {
     this.workflowWebsocketService.closeWebsocket();
   }
 
-  establishWebsocketConnectionIfWIdChanged(){
-    this.workflowActionService.workflowMetaDataChanged()
-    .pipe(untilDestroyed(this))
-    .subscribe(() => {
-      let wid = (this.workflowActionService.getWorkflowMetadata().wid) ?? 0;
-      if(wid != this.currentWid){
-        this.workflowWebsocketService.closeWebsocket();
-        this.workflowWebsocketService.openWebsocket(wid);
-        this.currentWid = wid;
-      }
-    });
+  establishWebsocketConnectionIfWIdChanged() {
+    this.workflowActionService
+      .workflowMetaDataChanged()
+      .pipe(untilDestroyed(this))
+      .subscribe(() => {
+        let wid = this.workflowActionService.getWorkflowMetadata().wid ?? 0;
+        if (wid != this.currentWid) {
+          this.workflowWebsocketService.closeWebsocket();
+          this.workflowWebsocketService.openWebsocket(wid);
+          this.currentWid = wid;
+        }
+      });
   }
 
   registerResultPanelToggleHandler() {

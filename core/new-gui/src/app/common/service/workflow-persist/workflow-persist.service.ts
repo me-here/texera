@@ -14,6 +14,7 @@ export const WORKFLOW_LIST_URL = WORKFLOW_BASE_URL + "/list";
 export const WORKFLOW_CREATE_URL = WORKFLOW_BASE_URL + "/create";
 export const WORKFLOW_DUPLICATE_URL = WORKFLOW_BASE_URL + "/duplicate";
 export const WORKFLOW_UPDATENAME_URL = WORKFLOW_BASE_URL + "/update/name";
+export const WORKFLOW_UPLOAD_SNAPSHOT_URL = WORKFLOW_BASE_URL + "/upload/snapshot";
 
 @Injectable({
   providedIn: "root",
@@ -36,6 +37,13 @@ export class WorkflowPersistService {
         filter((updatedWorkflow: Workflow) => updatedWorkflow != null),
         map(WorkflowUtilService.parseWorkflowInfo)
       );
+  }
+
+  public uploadWorkflowSnapshot(SnapshotBlob: Blob, wid: number | undefined): Observable<Response> {
+    const formData: FormData = new FormData();
+    formData.append("wid", wid!.toString());
+    formData.append("SnapshotBlob", SnapshotBlob);
+    return this.http.put<Response>(`${AppSettings.getApiEndpoint()}/${WORKFLOW_UPLOAD_SNAPSHOT_URL}`, formData);
   }
 
   /**
@@ -103,12 +111,14 @@ export class WorkflowPersistService {
    * updates the name of a given workflow, the user in the session must own the workflow.
    */
   public updateWorkflowName(wid: number | undefined, name: string): Observable<Response> {
-    return this.http.post<Response>(`${AppSettings.getApiEndpoint()}/${WORKFLOW_UPDATENAME_URL}/${wid}/${name}`, null).pipe(
-      catchError((error: unknown) => {
-        // @ts-ignore // TODO: fix this with notification component
-        this.notificationService.error(error.error.message);
-        return throwError(error);
-      })
-    );
+    return this.http
+      .post<Response>(`${AppSettings.getApiEndpoint()}/${WORKFLOW_UPDATENAME_URL}/${wid}/${name}`, null)
+      .pipe(
+        catchError((error: unknown) => {
+          // @ts-ignore // TODO: fix this with notification component
+          this.notificationService.error(error.error.message);
+          return throwError(error);
+        })
+      );
   }
 }

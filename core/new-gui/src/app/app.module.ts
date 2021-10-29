@@ -102,6 +102,7 @@ import { NzTabsModule } from "ng-zorro-antd/tabs";
 import { NzTreeViewModule } from "ng-zorro-antd/tree-view";
 import { VersionsListDisplayComponent } from "./workspace/component/property-editor/versions-display/versions-display.component";
 import { NzPaginationModule } from "ng-zorro-antd/pagination";
+import { NzImageModule } from "ng-zorro-antd/image";
 import { JwtModule } from "@auth0/angular-jwt";
 import { AuthService } from "./common/service/user/auth.service";
 
@@ -197,6 +198,7 @@ registerLocaleData(en);
     }),
     NzDatePickerModule,
     NzDropDownModule,
+    NzImageModule,
     NzButtonModule,
     NzAutocompleteModule,
     NzIconModule,
