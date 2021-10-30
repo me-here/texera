@@ -285,11 +285,11 @@ class WorkflowResource {
   @Consumes(Array(MediaType.MULTIPART_FORM_DATA))
   def uploadWorkflowSnapshot(
       @FormDataParam("wid") wid: UInteger,
-      @FormDataParam("SnapshotBlob") SnapshotBlob: Array[Byte],
+      @FormDataParam("SnapshotBlob") snapshotBlob: Array[Byte],
       @Auth sessionUser: SessionUser
   ): Unit = {
     val user = sessionUser.getUser
-    if (SnapshotBlob == null) {
+    if (snapshotBlob == null) {
       throw new BadRequestException("Snapshot Blob cannot be null.")
     } else if (wid == null) {
       throw new BadRequestException("Cannot upload workflow snapshot without a provided id.")
@@ -300,7 +300,7 @@ class WorkflowResource {
       throw new ForbiddenException("No sufficient access privilege.")
     } else {
       val workflow = workflowDao.fetchOneByWid(wid)
-      workflow.setSnapshot(SnapshotBlob: _*)
+      workflow.setSnapshot(snapshotBlob: _*)
 
       workflowDao.update(workflow)
     }

@@ -41,7 +41,7 @@ export class WorkflowPersistService {
 
   public uploadWorkflowSnapshot(SnapshotBlob: Blob, wid: number | undefined): Observable<Response> {
     const formData: FormData = new FormData();
-    formData.append("wid", wid!.toString());
+    formData.append("wid", wid?.toString() || "");
     formData.append("SnapshotBlob", SnapshotBlob);
     return this.http.put<Response>(`${AppSettings.getApiEndpoint()}/${WORKFLOW_UPLOAD_SNAPSHOT_URL}`, formData);
   }
