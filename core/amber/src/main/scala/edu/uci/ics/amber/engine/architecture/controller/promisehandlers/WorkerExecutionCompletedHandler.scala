@@ -15,6 +15,8 @@ import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.Work
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
 import edu.uci.ics.amber.engine.operators.SinkOpExecConfig
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExecConfig
+import edu.uci.ics.texera.workflow.operators.hashJoinSpecial2.HashJoinSpecial2OpExecConfig
+import edu.uci.ics.texera.workflow.operators.hashJoinTweets.HashJoinTweetsOpExecConfig
 import edu.uci.ics.texera.workflow.operators.sort.SortOpExecConfig
 
 object WorkerExecutionCompletedHandler {
@@ -73,18 +75,16 @@ trait WorkerExecutionCompletedHandler {
         if (
           workflow
             .getOperator(sender)
-            .isInstanceOf[HashJoinOpExecConfig[Constants.joinType]] && workflow
-            .getOperator(sender)
-            .getState == OperatorState.Completed
+            .isInstanceOf[HashJoinTweetsOpExecConfig[Constants.joinType]] || workflow.getOperator(sender).isInstanceOf[HashJoinSpecial2OpExecConfig[Constants.joinType]]
+          // && workflow.getOperator(sender).getState == OperatorState.Completed
         ) {
           // join-skew research related
           disableDetectSkewCalls()
         } else if (
           workflow
             .getOperator(sender)
-            .isInstanceOf[SortOpExecConfig] && workflow
-            .getOperator(sender)
-            .getState == OperatorState.Completed
+            .isInstanceOf[SortOpExecConfig]
+          // && workflow.getOperator(sender).getState == OperatorState.Completed
         ) {
           // sort-skew research related
           disableDetectSortSkewCalls()

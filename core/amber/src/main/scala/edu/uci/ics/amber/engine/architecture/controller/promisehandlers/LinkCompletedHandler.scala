@@ -8,6 +8,8 @@ import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.virtualidentity.{LinkIdentity, OperatorIdentity}
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExecConfig
+import edu.uci.ics.texera.workflow.operators.hashJoinSpecial2.HashJoinSpecial2OpExecConfig
+import edu.uci.ics.texera.workflow.operators.hashJoinTweets.HashJoinTweetsOpExecConfig
 
 object LinkCompletedHandler {
   final case class LinkCompleted(linkID: LinkIdentity) extends ControlCommand[CommandCompleted]
@@ -48,7 +50,11 @@ trait LinkCompletedHandler {
               .toSeq
           )
           .map(ret => {
-            if (workflow.getOperator(sender).isInstanceOf[HashJoinOpExecConfig[Constants.joinType]]) {
+            if (
+              workflow
+                .getOperator(sender)
+                .isInstanceOf[HashJoinTweetsOpExecConfig[Constants.joinType]] || workflow.getOperator(sender).isInstanceOf[HashJoinSpecial2OpExecConfig[Constants.joinType]]
+            ) {
               val joinLayer = workflow.getWorkerLayer(sender)
               val joinOpId = workflow.getOperatorIdentity(workflow.getOperator(sender))
               val upstreamOps = workflow.getDirectUpstreamOperators(joinOpId)
