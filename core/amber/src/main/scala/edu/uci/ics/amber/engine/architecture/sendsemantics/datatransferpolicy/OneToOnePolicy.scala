@@ -52,7 +52,7 @@ class OneToOnePolicy(
       newRecId: ActorVirtualIdentity,
       tuplesToRedirectNumerator: Long,
       tuplesToRedirectDenominator: Long
-  ): Map[ActorVirtualIdentity, Long] = {
+  ): Unit = {
     println(
       "ADD RECEIVEER TO BUCKET CALLED IN ONE-TO-ONE. SHOULD HAVE BEEN CALLED IN HASHBASEDSHUFFLE"
     )
@@ -62,7 +62,7 @@ class OneToOnePolicy(
   override def removeReceiverFromBucket(
       defaultRecId: ActorVirtualIdentity,
       newRecId: ActorVirtualIdentity
-  ): Map[ActorVirtualIdentity, Long] = {
+  ): Unit = {
     println(
       "REMOVE RECEIVEER FROM BUCKET CALLED IN ONE-TO-ONE. SHOULD HAVE BEEN CALLED IN HASHBASEDSHUFFLE"
     )

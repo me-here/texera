@@ -10,7 +10,7 @@ object RollbackFlowHandler {
   final case class RollbackFlow(
       skewedReceiverId: ActorVirtualIdentity,
       freeReceiverId: ActorVirtualIdentity
-  ) extends ControlCommand[Map[ActorVirtualIdentity, Long]]
+  ) extends ControlCommand[Unit]
 }
 
 trait RollbackFlowHandler {

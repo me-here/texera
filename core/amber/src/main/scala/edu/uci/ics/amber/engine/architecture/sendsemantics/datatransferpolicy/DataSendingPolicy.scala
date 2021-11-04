@@ -37,11 +37,11 @@ abstract class DataSendingPolicy(
       newRecId: ActorVirtualIdentity,
       tuplesToRedirectNumerator: Long,
       tuplesToRedirectDenominator: Long
-  ): Map[ActorVirtualIdentity, Long]
+  ): Unit
 
   def removeReceiverFromBucket(
       defaultRecId: ActorVirtualIdentity,
       newRecId: ActorVirtualIdentity
-  ): Map[ActorVirtualIdentity, Long]
+  ): Unit
 
 }

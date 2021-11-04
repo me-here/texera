@@ -12,7 +12,7 @@ object ShareFlowHandler {
       freeReceiverId: ActorVirtualIdentity,
       tuplesToRedirectNumerator: Long,
       tuplesToRedirectDenominator: Long
-  ) extends ControlCommand[Map[ActorVirtualIdentity, Long]]
+  ) extends ControlCommand[Unit]
 }
 
 trait ShareFlowHandler {

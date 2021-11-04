@@ -258,8 +258,8 @@ trait DetectSkewHandler {
   private def getShareFlowFirstPhaseResultsAsFuture[T](
       workerLayer: WorkerLayer,
       skewedAndFreeWorkersList: ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity, Boolean)]
-  ): Future[Seq[Map[ActorVirtualIdentity, Long]]] = {
-    val futuresArr = new ArrayBuffer[Future[Map[ActorVirtualIdentity, Long]]]()
+  ): Future[Seq[Unit]] = {
+    val futuresArr = new ArrayBuffer[Future[Unit]]()
     skewedAndFreeWorkersList.foreach(sf => {
       workerLayer.workers.keys.foreach(id => {
         futuresArr.append(
@@ -275,8 +275,8 @@ trait DetectSkewHandler {
       skewedAndFreeWorkersList: ArrayBuffer[
         (ActorVirtualIdentity, ActorVirtualIdentity)
       ]
-  ): Future[Seq[Map[ActorVirtualIdentity, Long]]] = {
-    val futuresArr = new ArrayBuffer[Future[Map[ActorVirtualIdentity, Long]]]()
+  ): Future[Seq[Unit]] = {
+    val futuresArr = new ArrayBuffer[Future[Unit]]()
     skewedAndFreeWorkersList.foreach(sf => {
       workerLayer.workers.keys.foreach(id => {
         if (
@@ -305,8 +305,8 @@ trait DetectSkewHandler {
   private def getRollbackFlowResultsAsFuture[T](
       workerLayer: WorkerLayer,
       actualSkewedAndFreeWorkersList: ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)]
-  ): Future[Seq[Map[ActorVirtualIdentity, Long]]] = {
-    val futuresArr = new ArrayBuffer[Future[Map[ActorVirtualIdentity, Long]]]()
+  ): Future[Seq[Unit]] = {
+    val futuresArr = new ArrayBuffer[Future[Unit]]()
     actualSkewedAndFreeWorkersList.foreach(sf => {
       workerLayer.workers.keys.foreach(id => {
         futuresArr.append(send(RollbackFlow(sf._1, sf._2), id))

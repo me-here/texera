@@ -27,7 +27,7 @@ class RoundRobinPolicy(
       newRecId: ActorVirtualIdentity,
       tuplesToRedirectNumerator: Long,
       tuplesToRedirectDenominator: Long
-  ): Map[ActorVirtualIdentity, Long] = {
+  ): Unit = {
     println(
       "ADD RECEIVEER TO BUCKET CALLED IN ROUND_ROBIN. SHOULD HAVE BEEN CALLED IN HASHBASEDSHUFFLE"
     )
@@ -37,7 +37,7 @@ class RoundRobinPolicy(
   override def removeReceiverFromBucket(
       defaultRecId: ActorVirtualIdentity,
       newRecId: ActorVirtualIdentity
-  ): Map[ActorVirtualIdentity, Long] = {
+  ): Unit = {
     println(
       "REMOVE RECEIVEER FROM BUCKET CALLED IN ROUND_ROBIN. SHOULD HAVE BEEN CALLED IN HASHBASEDSHUFFLE"
     )

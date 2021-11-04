@@ -63,34 +63,19 @@ class TupleToBatchConverter(
       freeReceiverId: ActorVirtualIdentity,
       tuplesToRedirectNumerator: Long,
       tuplesToRedirectDenominator: Long
-  ): Map[ActorVirtualIdentity, Long] = {
-    var receiverToSentCount: Map[ActorVirtualIdentity, Long] = null
+  ): Unit = {
     policies.foreach(policy => {
-      receiverToSentCount = policy.addReceiverToBucket(
-        skewedReceiverId,
-        freeReceiverId,
-        tuplesToRedirectNumerator,
-        tuplesToRedirectDenominator
-      )
+      policy.addReceiverToBucket(skewedReceiverId,freeReceiverId,tuplesToRedirectNumerator,tuplesToRedirectDenominator)
     })
-    if (receiverToSentCount == null) {
-      receiverToSentCount = new mutable.HashMap[ActorVirtualIdentity, Long]().toMap
-    }
-    receiverToSentCount
   }
 
   def rollbackFlow(
       skewedReceiverId: ActorVirtualIdentity,
       freeReceiverId: ActorVirtualIdentity
-  ): Map[ActorVirtualIdentity, Long] = {
-    var receiverToSentCount: Map[ActorVirtualIdentity, Long] = null
+  ): Unit = {
     policies.foreach(policy => {
-      receiverToSentCount = policy.removeReceiverFromBucket(skewedReceiverId, freeReceiverId)
+      policy.removeReceiverFromBucket(skewedReceiverId, freeReceiverId)
     })
-    if (receiverToSentCount == null) {
-      receiverToSentCount = new mutable.HashMap[ActorVirtualIdentity, Long]().toMap
-    }
-    receiverToSentCount
   }
 
   /** Push one tuple to the downstream, will be batched by each transfer policy.
