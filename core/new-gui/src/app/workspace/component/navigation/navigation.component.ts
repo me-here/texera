@@ -384,16 +384,11 @@ export class NavigationComponent {
   }
 
   public persistWorkflow(): void {
-    // TODO: optimize logic 
-    const doc = document.getElementById("texera-workflow-editor");
-    const width = doc?.getBoundingClientRect().width;
-    const height = width! * (9 / 16);
-    html2canvas(doc!, {
-      height,
-      width,
+    const doc = document.getElementById("texera-workflow-editor") || document.body;
+    html2canvas(doc, {
       allowTaint: true,
       useCORS: true,
-      backgroundColor: "transparent",
+      backgroundColor: "rgba(0,0,0,0)",
     }).then(canvas => {
       this.isSaving = true;
       let imageData = canvas.toDataURL("image/png");
@@ -414,7 +409,7 @@ export class NavigationComponent {
                       this.notificationService.success("workflow has been successfully saved.");
                     },
                     (error: unknown) => {
-                      if (error instanceof HttpErrorResponse && error.status !== 204) {
+                      if (error instanceof HttpErrorResponse ) {
                         this.notificationService.error(error.error);
                       }
                     }
