@@ -127,15 +127,17 @@
             </p>
           </nz-list-item-meta-description>
         </nz-list-item-meta>
+        <img
+        *ngIf="dashboardWorkflowEntry.workflow.snapshot!= null"
+        nz-image
+        class="workflow-snapshot"
+        [nzSrc]=" 'data:image/jpeg;base64,' + dashboardWorkflowEntry.workflow.snapshot"
+        alt=""
+      />
         <ul nz-list-item-actions>
           <nz-list-item-action>
-            <img
-              *ngIf="dashboardWorkflowEntry.workflow.snapshot!= null"
-              nz-image
-              class="workflow-snapshot"
-              [nzSrc]=" 'data:image/jpeg;base64,' + dashboardWorkflowEntry.workflow.snapshot"
-              alt=""
-            />
+
+
             <button
               (click)="onClickOpenShareAccess(dashboardWorkflowEntry)"
               [disabled]="!dashboardWorkflowEntry.isOwner"

@@ -103,8 +103,14 @@ $header-height: 120px;
   margin-bottom: 6px;
 }
 
+.ant-list-item-meta-content {
+  width: 310px;
+}
+
 .workflow-snapshot {
-  margin-right: 20px;
+  float: left;
+  display:inline;
+  // margin-right: 20px;
   width: 115px;
   border: 1px solid #343A40;
   height: 65px;

@@ -1,3 +1,4 @@
+import { cloneDeep } from 'lodash-es';
 import { HttpErrorResponse } from "@angular/common/http";
 import { DatePipe, Location } from "@angular/common";
 import { Component, ElementRef, Input, ViewChild } from "@angular/core";
@@ -384,14 +385,16 @@ export class NavigationComponent {
   }
 
   public persistWorkflow(): void {
-    const doc = document.getElementById("texera-workflow-editor") || document.body;
+    let doc = document.getElementById("texera-workflow-editor") || document.body;
     html2canvas(doc, {
       allowTaint: true,
       useCORS: true,
       backgroundColor: "rgba(0,0,0,0)",
     }).then(canvas => {
-      this.isSaving = true;
+      // this.isSaving = true;
       let imageData = canvas.toDataURL("image/png");
+      console.log(imageData);
+      return;
       fetch(imageData)
         .then(res => res.blob())
         .then(SnapshotBlob =>
