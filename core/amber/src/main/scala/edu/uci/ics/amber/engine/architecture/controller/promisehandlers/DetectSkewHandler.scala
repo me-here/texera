@@ -153,7 +153,7 @@ object DetectSkewHandler {
         }
         assert(actualSkewedWorker != null)
 
-        if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, Constants.threshold / 2)) {
+        if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, Constants.freeSkewedThreshold)) {
           ret.append((actualSkewedWorker, sortedWorkers(i)))
           skewedToFreeWorkerNetworkRolledBack(actualSkewedWorker) = sortedWorkers(i)
         }
@@ -210,7 +210,11 @@ object DetectSkewHandler {
   ): ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)] = {
     val ret = new ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)]()
     skewedToFreeWorkerFirstPhase.keys.foreach(skewedWorker => {
-      if (loads(skewedWorker) <= loads(skewedToFreeWorkerFirstPhase(skewedWorker))) {
+      if (
+        loads(skewedWorker) <= loads(skewedToFreeWorkerFirstPhase(skewedWorker)) && (loads(skewedToFreeWorkerFirstPhase(skewedWorker)) - loads(
+          skewedWorker
+        ) < Constants.freeSkewedThreshold)
+      ) {
         ret.append((skewedWorker, skewedToFreeWorkerFirstPhase(skewedWorker)))
         skewedToFreeWorkerSecondPhase(skewedWorker) = skewedToFreeWorkerFirstPhase(skewedWorker)
         skewedToFreeWorkerFirstPhase.remove(skewedWorker)
@@ -284,12 +288,16 @@ trait DetectSkewHandler {
             .contains(sf._1) && workerToTotalLoadHistory(id).contains(sf._2)
         ) {
           var skewedLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._1))
-          val freeLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._2))
+          var freeLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._2))
           val redirectNum = ((skewedLoad - freeLoad) / 2).toLong
           workerToTotalLoadHistory(id)(sf._1) = new ArrayBuffer[Long]()
           workerToTotalLoadHistory(id)(sf._2) = new ArrayBuffer[Long]()
           if (skewedLoad == 0) {
             skewedLoad = 1
+          }
+          if (freeLoad > skewedLoad) {
+            skewedLoad = 1
+            freeLoad = 0
           }
           detectSkewLogger.logInfo(s"SECOND PHASE: ${id} - ${skewedLoad}:${freeLoad} - ${redirectNum}:${skewedLoad.toLong}")
           futuresArr.append(

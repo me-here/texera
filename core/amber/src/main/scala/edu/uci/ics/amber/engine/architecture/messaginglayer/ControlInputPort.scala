@@ -81,9 +81,9 @@ class ControlInputPort(
       if (ret.returnValue.isInstanceOf[WorkerStatistics]) {
         return
       }
-      logger.logInfo(
-        s"receive reply: ${ret.returnValue.getClass.getSimpleName} from ${sender.toString} (controlID: ${ret.originalCommandID})"
-      )
+//      logger.logInfo(
+//        s"receive reply: ${ret.returnValue.getClass.getSimpleName} from ${sender.toString} (controlID: ${ret.originalCommandID})"
+//      )
     } else {
       logger.logInfo(
         s"receive reply: null from ${sender.toString} (controlID: ${ret.originalCommandID})"

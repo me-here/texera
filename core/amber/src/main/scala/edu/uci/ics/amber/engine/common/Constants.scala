@@ -19,6 +19,7 @@ object Constants {
   val samplingResetFrequency: Int = 2000
   val onlyDetectSkew: Boolean = true
   val threshold: Int = 100
+  val freeSkewedThreshold: Int = 100
   val startDetection: FiniteDuration = 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
   val printResultsInConsole: Boolean = true

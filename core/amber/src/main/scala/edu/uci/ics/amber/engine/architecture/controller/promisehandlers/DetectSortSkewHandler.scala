@@ -151,7 +151,7 @@ object DetectSortSkewHandler {
         }
         assert(actualSkewedWorker != null)
 
-        if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, Constants.threshold / 2)) {
+        if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, Constants.freeSkewedThreshold)) {
           ret.append((actualSkewedWorker, sortedWorkers(i)))
           skewedToFreeWorkerNetworkRolledBack(actualSkewedWorker) = sortedWorkers(i)
         }
@@ -208,7 +208,11 @@ object DetectSortSkewHandler {
   ): ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)] = {
     val ret = new ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity)]()
     skewedToFreeWorkerFirstPhase.keys.foreach(skewedWorker => {
-      if (loads(skewedWorker) <= loads(skewedToFreeWorkerFirstPhase(skewedWorker))) {
+      if (
+        loads(skewedWorker) <= loads(skewedToFreeWorkerFirstPhase(skewedWorker)) && (loads(skewedToFreeWorkerFirstPhase(skewedWorker)) - loads(
+          skewedWorker
+        ) < Constants.freeSkewedThreshold)
+      ) {
         ret.append((skewedWorker, skewedToFreeWorkerFirstPhase(skewedWorker)))
         skewedToFreeWorkerSecondPhase(skewedWorker) = skewedToFreeWorkerFirstPhase(skewedWorker)
         skewedToFreeWorkerFirstPhase.remove(skewedWorker)
@@ -275,14 +279,18 @@ trait DetectSortSkewHandler {
             .contains(sf._1) && workerToTotalLoadHistory(id).contains(sf._2)
         ) {
           var skewedLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._1))
-          val freeLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._2))
+          var freeLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._2))
           val redirectNum = ((skewedLoad - freeLoad) / 2).toLong
           workerToTotalLoadHistory(id)(sf._1) = new ArrayBuffer[Long]()
           workerToTotalLoadHistory(id)(sf._2) = new ArrayBuffer[Long]()
           if (skewedLoad == 0) {
             skewedLoad = 1
           }
-          // detectSortSkewLogger.logInfo(s"SECOND PHASE RATIO: ${id} for ${sf._1} - ${redirectNum}:${skewedLoad.toLong}")
+          if (freeLoad > skewedLoad) {
+            skewedLoad = 1
+            freeLoad = 0
+          }
+          detectSortSkewLogger.logInfo(s"SECOND PHASE: ${id} - ${skewedLoad}:${freeLoad} - ${redirectNum}:${skewedLoad.toLong}")
           futuresArr.append(
             send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
           )
