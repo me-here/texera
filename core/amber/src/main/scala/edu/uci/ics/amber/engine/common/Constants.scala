@@ -27,7 +27,7 @@ object Constants {
   val eachTransferredListSize: Int = 100000
   val lowerLimit: Float = 0f
   val upperLimit: Float = 600000f // 30gb
-  val sortExperiment: Boolean = false
+  val sortExperiment: Boolean = true
 
   val singleIterationOnly: Boolean = true
   val freeSkewedThreshold: Int = 100000
