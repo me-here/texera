@@ -26,13 +26,13 @@ object Constants {
   val lowerLimit: Float = 0f
   val upperLimit: Float = 600000f // 30gb
 
-  val sortExperiment: Boolean = true
+  val sortExperiment: Boolean = false
   val onlyDetectSkew: Boolean = false
-  val threshold: Int = 500
-  val singleIterationOnly: Boolean = true
-  val freeSkewedThreshold: Int = 100000
-  val firstPhaseNum = 1
-  val firstPhaseDen = 1
+  val threshold: Int = 100
+  val singleIterationOnly: Boolean = false
+  val freeSkewedThreshold: Int = 100
+  val firstPhaseNum = 4
+  val firstPhaseDen = 5
 
   type joinType = String
 }
