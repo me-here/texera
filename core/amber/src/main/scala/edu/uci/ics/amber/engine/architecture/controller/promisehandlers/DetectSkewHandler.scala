@@ -14,6 +14,7 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSk
   getSkewedAndFreeWorkersEligibleForFirstPhase,
   getSkewedAndFreeWorkersEligibleForSecondPhase,
   isfreeGettingSkewed,
+  iterationCount,
   previousCallFinished,
   skewedToFreeWorkerFirstPhase,
   skewedToFreeWorkerHistory,
@@ -59,6 +60,7 @@ object DetectSkewHandler {
   var startTimeForNetRollback: Long = _
   var endTimeForNetRollback: Long = _
   var detectSkewLogger: WorkflowLogger = new WorkflowLogger("DetectSkewHandler")
+  var iterationCount: Int = 1
 
   var skewedToFreeWorkerFirstPhase = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
   var skewedToFreeWorkerSecondPhase = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
@@ -398,6 +400,8 @@ trait DetectSkewHandler {
         convertToSecondPhaseCallFinished && stopMitigationCallFinished
       ) {
         previousCallFinished = false
+        println(s"NEW ITERATION ${iterationCount}")
+        iterationCount += 1
         startTimeForMetricColl = System.nanoTime()
         Future
           .join(
