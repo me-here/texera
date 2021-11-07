@@ -18,7 +18,7 @@ object Constants {
   val gcpExp: Boolean = true
   val samplingResetFrequency: Int = 2000
   val onlyDetectSkew: Boolean = false
-  val threshold: Int = 100
+  val threshold: Int = 10
   val startDetection: FiniteDuration = 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
   val printResultsInConsole: Boolean = true

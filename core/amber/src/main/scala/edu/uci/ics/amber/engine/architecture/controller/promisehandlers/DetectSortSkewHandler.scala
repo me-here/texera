@@ -387,7 +387,7 @@ trait DetectSortSkewHandler {
         convertToSecondPhaseCallFinished && stopMitigationCallFinished
       ) {
         previousCallFinished = false
-        println(s"NEW ITERATION ${iterationCount}")
+        println(s"\n\nNEW ITERATION ${iterationCount}")
         iterationCount += 1
         startTimeForMetricColl = System.nanoTime()
         Future
