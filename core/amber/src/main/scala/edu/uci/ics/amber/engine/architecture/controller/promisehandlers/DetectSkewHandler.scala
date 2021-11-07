@@ -96,7 +96,7 @@ object DetectSkewHandler {
       worker
     ) && !skewedToFreeWorkerFirstPhase.values.toList.contains(
       worker
-    ) && !skewedToFreeWorkerSecondPhase.values.toList.contains(worker)
+    ) && !skewedToFreeWorkerSecondPhase.values.toList.contains(worker) && (!Constants.singleIterationOnly || !skewedToFreeWorkerSecondPhase.keySet.contains(worker))
   }
 
   /**

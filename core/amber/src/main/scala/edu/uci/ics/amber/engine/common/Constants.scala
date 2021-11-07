@@ -19,7 +19,6 @@ object Constants {
   val samplingResetFrequency: Int = 2000
   val onlyDetectSkew: Boolean = true
   val threshold: Int = 100
-  val freeSkewedThreshold: Int = 100
   val startDetection: FiniteDuration = 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
   val printResultsInConsole: Boolean = true
@@ -29,6 +28,9 @@ object Constants {
   val lowerLimit: Float = 0f
   val upperLimit: Float = 600000f // 30gb
   val sortExperiment: Boolean = false
+
+  val singleIterationOnly: Boolean = true
+  val freeSkewedThreshold: Int = 100000
 
   type joinType = String
 }
