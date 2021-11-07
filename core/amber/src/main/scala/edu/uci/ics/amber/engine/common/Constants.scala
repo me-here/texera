@@ -28,7 +28,7 @@ object Constants {
 
   val sortExperiment: Boolean = true
   val onlyDetectSkew: Boolean = false
-  val threshold: Int = 10
+  val threshold: Int = 100
   val singleIterationOnly: Boolean = true
   val freeSkewedThreshold: Int = 100000
   val firstPhaseNum = 1
