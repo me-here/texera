@@ -260,7 +260,7 @@ trait DetectSortSkewHandler {
     skewedAndFreeWorkersList.foreach(sf => {
       workerLayer.workers.keys.foreach(id => {
         futuresArr.append(
-          send(ShareFlow(sf._1, sf._2, 1, 2), id)
+          send(ShareFlow(sf._1, sf._2, Constants.firstPhaseNum, Constants.firstPhaseDen), id)
         )
       })
     })
@@ -281,7 +281,11 @@ trait DetectSortSkewHandler {
             .contains(sf._1) && workerToTotalLoadHistory(id).contains(sf._2)
         ) {
           var skewedLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._1))
+          val skewedEstimateError = AmberUtils.sampleMeanError(workerToTotalLoadHistory(id)(sf._1))
+          val skewedHistorySize = workerToTotalLoadHistory(id)(sf._1).size
           var freeLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._2))
+          val freeEstimateError = AmberUtils.sampleMeanError(workerToTotalLoadHistory(id)(sf._2))
+          val freeHistorySize = workerToTotalLoadHistory(id)(sf._2).size
           val redirectNum = ((skewedLoad - freeLoad) / 2).toLong
           workerToTotalLoadHistory(id)(sf._1) = new ArrayBuffer[Long]()
           workerToTotalLoadHistory(id)(sf._2) = new ArrayBuffer[Long]()
@@ -292,7 +296,9 @@ trait DetectSortSkewHandler {
             skewedLoad = 1
             freeLoad = 0
           }
-          detectSortSkewLogger.logInfo(s"SECOND PHASE: ${id} - ${skewedLoad}:${freeLoad} - ${redirectNum}:${skewedLoad.toLong}")
+          detectSortSkewLogger.logInfo(
+            s"SECOND PHASE: ${id} - Loads=${skewedLoad}:${freeLoad}; Error=${skewedEstimateError}:${freeEstimateError}; Size=${skewedHistorySize}:${freeHistorySize} - Ratio=${redirectNum}:${skewedLoad.toLong}"
+          )
           futuresArr.append(
             send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
           )
@@ -351,7 +357,7 @@ trait DetectSortSkewHandler {
           )
         }
 
-        if (wid.toString().contains("main)[3]")) {
+        if (wid.toString().contains("localSort1L)[3]")) {
           print(s"\tLOADS FROM ${prevWId} are : ")
           var stop = existingHistoryForWid.size - 11
           if (stop < 0) { stop = 0 }

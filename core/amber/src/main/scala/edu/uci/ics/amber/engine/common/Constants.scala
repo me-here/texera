@@ -17,8 +17,6 @@ object Constants {
   // join-skew reserach related
   val gcpExp: Boolean = true
   val samplingResetFrequency: Int = 2000
-  val onlyDetectSkew: Boolean = false
-  val threshold: Int = 10
   val startDetection: FiniteDuration = 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
   val printResultsInConsole: Boolean = true
@@ -27,10 +25,14 @@ object Constants {
   val eachTransferredListSize: Int = 100000
   val lowerLimit: Float = 0f
   val upperLimit: Float = 600000f // 30gb
-  val sortExperiment: Boolean = true
 
+  val sortExperiment: Boolean = true
+  val onlyDetectSkew: Boolean = false
+  val threshold: Int = 10
   val singleIterationOnly: Boolean = true
   val freeSkewedThreshold: Int = 100000
+  val firstPhaseNum = 1
+  val firstPhaseDen = 1
 
   type joinType = String
 }
