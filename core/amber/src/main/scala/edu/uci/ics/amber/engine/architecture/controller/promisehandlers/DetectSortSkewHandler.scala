@@ -124,7 +124,7 @@ object DetectSortSkewHandler {
     val freeHist = workerToLoadHistory(freeWorkerCand)
     assert(skewedHist.size == freeHist.size)
     for (j <- 0 to skewedHist.size - 1) {
-      if (skewedHist(j) < 100 || skewedHist(j) < threshold + freeHist(j)) {
+      if (skewedHist(j) < threshold + freeHist(j)) {
         isSkewed = false
       }
     }
