@@ -375,7 +375,7 @@ trait DetectSkewHandler {
       for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
         if (loads.contains(wId)) {
           loads(wId) = loads.getOrElse(wId, 0L) + futLoad
-          // detectSkewLogger.logInfo(s"\tLOAD ${wId} - ${futLoad} going to arrive")
+           detectSkewLogger.logInfo(s"\tLOAD ${wId} - ${futLoad} going to arrive")
         }
       }
     })
