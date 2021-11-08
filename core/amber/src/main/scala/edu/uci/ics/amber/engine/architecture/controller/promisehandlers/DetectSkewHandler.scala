@@ -410,7 +410,7 @@ trait DetectSkewHandler {
       }
       workerToTotalLoadHistory(prevWId) = prevWorkerMap
     }
-    detectSkewLogger.logInfo(s"Max Error for this iteration is = ${maxError}")
+    detectSkewLogger.logInfo(s"MAX ERROR FOR THIS ITERATION IS =  ${maxError}")
     loads
   }
 
