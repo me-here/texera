@@ -176,7 +176,7 @@ object DetectSkewHandler {
     val sortedWorkers = loads.keys.toList.sortBy(loads(_))
 
     if (Constants.dynamicThreshold) {
-      if (maxError < Constants.lowerErrorLimit) {
+      if (maxError < Constants.lowerErrorLimit && maxError != Double.MinValue) {
         val possibleThreshold = (workerToLoadHistory(sortedWorkers(sortedWorkers.size - 1))(0) - workerToLoadHistory(sortedWorkers(0))(0)).toInt
         if (possibleThreshold < Constants.threshold) {
           Constants.threshold = possibleThreshold
@@ -309,14 +309,14 @@ trait DetectSkewHandler {
           val freeEstimateError = AmberUtils.sampleMeanError(workerToTotalLoadHistory(id)(sf._2))
           val freeHistorySize = workerToTotalLoadHistory(id)(sf._2).size
           if (Constants.dynamicThreshold) {
-            if (skewedEstimateError > maxErrorAtSecondPhaseStart) {
+            if (skewedEstimateError > maxErrorAtSecondPhaseStart && skewedEstimateError != Double.MaxValue) {
               maxErrorAtSecondPhaseStart = skewedEstimateError
             }
-            if (freeEstimateError > maxErrorAtSecondPhaseStart) {
+            if (freeEstimateError > maxErrorAtSecondPhaseStart && freeEstimateError != Double.MaxValue) {
               maxErrorAtSecondPhaseStart = freeEstimateError
             }
             if (maxErrorAtSecondPhaseStart > Constants.upperErrorLimit) {
-              Constants.threshold = Constants.threshold + 50
+              Constants.threshold = Constants.threshold + Constants.fixedThresholdIncrease
               detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
             }
           }
@@ -385,7 +385,7 @@ trait DetectSkewHandler {
         var existingHistoryForWid = prevWorkerMap.getOrElse(wid, new ArrayBuffer[Long]())
         existingHistoryForWid.appendAll(loadHistory)
         val currError = AmberUtils.sampleMeanError(existingHistoryForWid)
-        if (maxError < currError) {
+        if (maxError < currError && currError != Double.MaxValue) {
           maxError = currError
         }
         // clean up to save memory
