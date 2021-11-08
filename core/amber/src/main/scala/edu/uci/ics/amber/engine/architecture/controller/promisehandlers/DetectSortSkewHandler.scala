@@ -401,6 +401,7 @@ trait DetectSortSkewHandler {
       }
       workerToTotalLoadHistory(prevWId) = prevWorkerMap
     }
+    detectSortSkewLogger.logInfo(s"Max Error for this iteration is = ${maxError}")
     loads
   }
 
