@@ -465,8 +465,7 @@ trait DetectSkewHandler {
               startTimeForBuildRepl = System.nanoTime()
 
               println()
-              firstPhaseIterations.keys.foreach(wid => print(s"${wid}:${firstPhaseIterations(wid)};  "))
-              println()
+              println(s"First phase iterations ${firstPhaseIterations.mkString("\n\t\t")}")
 
               val futuresArr = new ArrayBuffer[Future[Seq[Unit]]]()
               skewedAndFreeWorkersForFirstPhase.foreach(sf => {
