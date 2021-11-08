@@ -28,7 +28,7 @@ object Constants {
 
   val sortExperiment: Boolean = true
   val onlyDetectSkew: Boolean = false
-  var threshold: Int = 2500
+  var threshold: Int = 10
   var freeSkewedThreshold: Int = 100
   val firstPhaseNum = 1
   val firstPhaseDen = 1
