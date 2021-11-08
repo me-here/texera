@@ -394,7 +394,7 @@ trait DetectSortSkewHandler {
           for (i <- existingHistoryForWid.size - 1 to stop by -1) {
             print(existingHistoryForWid(i) + ", ")
           }
-          print(s"Standard error is ${sampleMeanError(existingHistoryForWid)}")
+          print(s"Standard error is ${sampleMeanError(existingHistoryForWid)} with size ${existingHistoryForWid.size}")
           println()
         }
         prevWorkerMap(wid) = existingHistoryForWid
