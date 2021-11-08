@@ -37,7 +37,7 @@ object Constants {
   val dynamicThreshold: Boolean = true
   val controllerHistoryLimitPerWorker: Int = 10000
   val fixedThresholdIncrease: Int = 50
-  val upperErrorLimit: Int = 20
+  val upperErrorLimit: Int = 15
   val lowerErrorLimit: Int = 12
 
   type joinType = String
