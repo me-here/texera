@@ -11,6 +11,7 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSo
   endTimeForNetChange,
   endTimeForNetChangeForSecondPhase,
   endTimeForNotification,
+  firstPhaseIterations,
   getSkewedAndFreeWorkersEligibleForFirstPhase,
   getSkewedAndFreeWorkersEligibleForSecondPhase,
   isfreeGettingSkewed,
@@ -60,6 +61,7 @@ object DetectSortSkewHandler {
   var endTimeForNetRollback: Long = _
   var detectSortSkewLogger: WorkflowLogger = new WorkflowLogger("DetectSortSkewHandler")
   var iterationCount: Int = 1
+  var firstPhaseIterations = new mutable.HashMap[ActorVirtualIdentity, Int]()
   var maxError: Double = Double.MinValue
 
   var skewedToFreeWorkerFirstPhase = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
@@ -190,6 +192,7 @@ object DetectSortSkewHandler {
         if (skewedToFreeWorkerHistory.keySet.contains(sortedWorkers(i))) {
           if (passSkewTest(sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), Constants.threshold)) {
             ret.append((sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), false))
+            firstPhaseIterations(sortedWorkers(i)) = firstPhaseIterations(sortedWorkers(i)) + 1
             skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(sortedWorkers(i))
             skewedToFreeWorkerSecondPhase.remove(sortedWorkers(i)) // remove if there
             skewedToFreeWorkerNetworkRolledBack.remove(sortedWorkers(i)) // remove if there
@@ -199,6 +202,7 @@ object DetectSortSkewHandler {
             for (j <- 0 to i - 1) {
               if (isEligibleForFree(sortedWorkers(j)) && passSkewTest(sortedWorkers(i), sortedWorkers(j), Constants.threshold)) {
                 ret.append((sortedWorkers(i), sortedWorkers(j), true))
+                firstPhaseIterations(sortedWorkers(i)) = 1
                 skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = sortedWorkers(j)
                 skewedToFreeWorkerHistory(sortedWorkers(i)) = sortedWorkers(j)
                 break
@@ -445,6 +449,11 @@ trait DetectSortSkewHandler {
             if (skewedAndFreeWorkersForFirstPhase.size > 0) {
               convertToFirstPhaseCallFinished = false
               startTimeForNotification = System.nanoTime()
+
+              println()
+              firstPhaseIterations.keys.foreach(wid => print(s"${wid}:${firstPhaseIterations(wid)};  "))
+              println()
+
               val futuresArr = new ArrayBuffer[Future[Unit]]()
               skewedAndFreeWorkersForFirstPhase.foreach(sf => {
                 detectSortSkewLogger.logInfo(

@@ -11,6 +11,7 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSk
   endTimeForMetricColl,
   endTimeForNetChange,
   endTimeForNetChangeForSecondPhase,
+  firstPhaseIterations,
   getSkewedAndFreeWorkersEligibleForFirstPhase,
   getSkewedAndFreeWorkersEligibleForSecondPhase,
   isfreeGettingSkewed,
@@ -62,6 +63,7 @@ object DetectSkewHandler {
   var endTimeForNetRollback: Long = _
   var detectSkewLogger: WorkflowLogger = new WorkflowLogger("DetectSkewHandler")
   var iterationCount: Int = 1
+  var firstPhaseIterations = new mutable.HashMap[ActorVirtualIdentity, Int]()
   var maxError: Double = Double.MinValue
 
   var skewedToFreeWorkerFirstPhase = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
@@ -192,6 +194,7 @@ object DetectSkewHandler {
         if (skewedToFreeWorkerHistory.keySet.contains(sortedWorkers(i))) {
           if (passSkewTest(sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), Constants.threshold)) {
             ret.append((sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), false))
+            firstPhaseIterations(sortedWorkers(i)) = firstPhaseIterations(sortedWorkers(i)) + 1
             skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(sortedWorkers(i))
             skewedToFreeWorkerSecondPhase.remove(sortedWorkers(i)) // remove if there
             skewedToFreeWorkerNetworkRolledBack.remove(sortedWorkers(i)) // remove if there
@@ -201,6 +204,7 @@ object DetectSkewHandler {
             for (j <- 0 to i - 1) {
               if (isEligibleForFree(sortedWorkers(j)) && passSkewTest(sortedWorkers(i), sortedWorkers(j), Constants.threshold)) {
                 ret.append((sortedWorkers(i), sortedWorkers(j), true))
+                firstPhaseIterations(sortedWorkers(i)) = 1
                 skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = sortedWorkers(j)
                 skewedToFreeWorkerHistory(sortedWorkers(i)) = sortedWorkers(j)
                 break
@@ -459,6 +463,10 @@ trait DetectSkewHandler {
             if (skewedAndFreeWorkersForFirstPhase.size > 0) {
               convertToFirstPhaseCallFinished = false
               startTimeForBuildRepl = System.nanoTime()
+
+              println()
+              firstPhaseIterations.keys.foreach(wid => print(s"${wid}:${firstPhaseIterations(wid)};  "))
+              println()
 
               val futuresArr = new ArrayBuffer[Future[Seq[Unit]]]()
               skewedAndFreeWorkersForFirstPhase.foreach(sf => {
