@@ -15,6 +15,7 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSk
   getSkewedAndFreeWorkersEligibleForSecondPhase,
   isfreeGettingSkewed,
   iterationCount,
+  maxError,
   previousCallFinished,
   skewedToFreeWorkerFirstPhase,
   skewedToFreeWorkerHistory,
@@ -61,6 +62,7 @@ object DetectSkewHandler {
   var endTimeForNetRollback: Long = _
   var detectSkewLogger: WorkflowLogger = new WorkflowLogger("DetectSkewHandler")
   var iterationCount: Int = 1
+  var maxError: Double = Double.MinValue
 
   var skewedToFreeWorkerFirstPhase = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
   var skewedToFreeWorkerSecondPhase = new mutable.HashMap[ActorVirtualIdentity, ActorVirtualIdentity]()
@@ -173,6 +175,16 @@ object DetectSkewHandler {
     // Get workers in increasing load
     val sortedWorkers = loads.keys.toList.sortBy(loads(_))
 
+    if (Constants.dynamicThreshold) {
+      if (maxError < Constants.lowerErrorLimit) {
+        val possibleThreshold = (workerToLoadHistory(sortedWorkers(sortedWorkers.size - 1))(0) - workerToLoadHistory(sortedWorkers(0))(0)).toInt
+        if (possibleThreshold < Constants.threshold) {
+          Constants.threshold = possibleThreshold
+          detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
+        }
+      }
+    }
+
     for (i <- sortedWorkers.size - 1 to 0 by -1) {
       if (isEligibleForSkewedAndForFirstPhase(sortedWorkers(i))) {
         // worker has been previously paired with some worker and that worker will be used again.
@@ -283,6 +295,7 @@ trait DetectSkewHandler {
       ]
   ): Future[Seq[Unit]] = {
     val futuresArr = new ArrayBuffer[Future[Unit]]()
+    var maxErrorAtSecondPhaseStart = Double.MinValue
     skewedAndFreeWorkersList.foreach(sf => {
       workerLayer.workers.keys.foreach(id => {
         if (
@@ -295,6 +308,18 @@ trait DetectSkewHandler {
           var freeLoad = AmberUtils.mean(workerToTotalLoadHistory(id)(sf._2))
           val freeEstimateError = AmberUtils.sampleMeanError(workerToTotalLoadHistory(id)(sf._2))
           val freeHistorySize = workerToTotalLoadHistory(id)(sf._2).size
+          if (Constants.dynamicThreshold) {
+            if (skewedEstimateError > maxErrorAtSecondPhaseStart) {
+              maxErrorAtSecondPhaseStart = skewedEstimateError
+            }
+            if (freeEstimateError > maxErrorAtSecondPhaseStart) {
+              maxErrorAtSecondPhaseStart = freeEstimateError
+            }
+            if (maxErrorAtSecondPhaseStart > Constants.upperErrorLimit) {
+              Constants.threshold = Constants.threshold + 50
+              detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
+            }
+          }
           val redirectNum = ((skewedLoad - freeLoad) / 2).toLong
           workerToTotalLoadHistory(id)(sf._1) = new ArrayBuffer[Long]()
           workerToTotalLoadHistory(id)(sf._2) = new ArrayBuffer[Long]()
@@ -350,6 +375,7 @@ trait DetectSkewHandler {
         }
       }
     })
+    maxError = Double.MinValue
     for ((prevWId, replyFromPrevId) <- cmd.probeLayer.workers.keys zip metrics._2) {
       var prevWorkerMap = workerToTotalLoadHistory.getOrElse(
         prevWId,
@@ -358,10 +384,14 @@ trait DetectSkewHandler {
       for ((wid, loadHistory) <- replyFromPrevId._2.history) {
         var existingHistoryForWid = prevWorkerMap.getOrElse(wid, new ArrayBuffer[Long]())
         existingHistoryForWid.appendAll(loadHistory)
+        val currError = AmberUtils.sampleMeanError(existingHistoryForWid)
+        if (maxError < currError) {
+          maxError = currError
+        }
         // clean up to save memory
-        if (existingHistoryForWid.size >= 500) {
+        if (existingHistoryForWid.size >= Constants.controllerHistoryLimitPerWorker) {
           existingHistoryForWid = existingHistoryForWid.slice(
-            existingHistoryForWid.size - 500,
+            existingHistoryForWid.size - Constants.controllerHistoryLimitPerWorker,
             existingHistoryForWid.size
           )
         }
@@ -380,6 +410,7 @@ trait DetectSkewHandler {
       }
       workerToTotalLoadHistory(prevWId) = prevWorkerMap
     }
+    detectSkewLogger.logInfo(s"Max Error for this iteration is = ${maxError}")
     loads
   }
 
