@@ -26,7 +26,7 @@ object Constants {
   val lowerLimit: Float = 0f
   val upperLimit: Float = 600000f // 30gb
 
-  val sortExperiment: Boolean = true
+  val sortExperiment: Boolean = false
   val onlyDetectSkew: Boolean = true
   var threshold: Int = 100
   var freeSkewedThreshold: Int = 100

@@ -47,6 +47,17 @@ class HashJoinTweetsOpExec[K](
             if (storedTuples.isEmpty) {
               Iterator()
             } else {
+              var count1 = 0;
+              for (i <- 0 to 1000) {
+                val tweetText1 = t.getField(tweetTextAttr).asInstanceOf[String]
+                val x1 = storedTuples(0).getField(slangTextAttr).asInstanceOf[String]
+                if (tweetText1.contains(x1 + i.toString())) {
+                  count1 += 1
+                }
+              }
+              if (count1 > 100) {
+                return Iterator()
+              }
               val tweetText = t.getField(tweetTextAttr).asInstanceOf[String]
               val x =
                 storedTuples(0).getField(slangTextAttr).asInstanceOf[String]
