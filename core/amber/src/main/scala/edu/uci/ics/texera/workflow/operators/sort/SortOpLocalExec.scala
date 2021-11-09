@@ -71,6 +71,7 @@ class SortOpLocalExec(
   }
 
   def addTupleToSortedList(tuple: Tuple, sortedList: mutable.PriorityQueue[Tuple]): Unit = {
+    Thread.sleep(0, 20000)
     sortedList.enqueue(tuple)
 
 //    if (sortedList.length == 0) {
