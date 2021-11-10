@@ -62,8 +62,8 @@ class HashJoinTweetsOpExec[K](
               val x =
                 storedTuples(0).getField(slangTextAttr).asInstanceOf[String]
               if (tweetText.toLowerCase().contains(x.toLowerCase())) {
-                Iterator(t)
-//                Iterator()
+//                Iterator(t)
+                Iterator()
               } else {
                 Iterator()
               }
