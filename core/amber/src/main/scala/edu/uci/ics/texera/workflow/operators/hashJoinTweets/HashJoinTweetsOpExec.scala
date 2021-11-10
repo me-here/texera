@@ -20,6 +20,21 @@ class HashJoinTweetsOpExec[K](
 
   var slangsHashMap: mutable.HashMap[K, ArrayBuffer[String]] = _
 
+  override def addToHashTable(additionalTable: mutable.HashMap[K, ArrayBuffer[Tuple]]): Unit = {
+    for ((key, tuples) <- additionalTable) {
+      val existingTuples = buildTableHashMap.getOrElse(key, new ArrayBuffer[Tuple]())
+      existingTuples.appendAll(tuples)
+      buildTableHashMap(key) = existingTuples
+
+      var storedWords = slangsHashMap.getOrElse(key, new ArrayBuffer[String]())
+      for(t <- existingTuples) {
+        val individualSlangWords = t.getField(slangTextAttr).asInstanceOf[String].split(':')
+        individualSlangWords.foreach(w => storedWords.append(w))
+      }
+      slangsHashMap.put(key, storedWords)
+    }
+  }
+
   override def processTexeraTuple(
       tuple: Either[Tuple, InputExhausted],
       input: LinkIdentity
@@ -35,6 +50,9 @@ class HashJoinTweetsOpExec[K](
           val individualSlangWords = t.getField(slangTextAttr).asInstanceOf[String].split(':')
           individualSlangWords.foreach(w => storedWords.append(w))
           slangsHashMap.put(key, storedWords)
+          var storedTuples = buildTableHashMap.getOrElse(key, new ArrayBuffer[Tuple]())
+          storedTuples += t
+          buildTableHashMap.put(key, storedTuples)
           println(s"Build hash table size for stateID ${key.asInstanceOf[String]} = ${storedWords.size}")
           Iterator()
         } else {
@@ -84,9 +102,11 @@ class HashJoinTweetsOpExec[K](
 
   override def open(): Unit = {
     slangsHashMap = new mutable.HashMap[K, mutable.ArrayBuffer[String]]()
+    buildTableHashMap = new mutable.HashMap[K, mutable.ArrayBuffer[Tuple]]()
   }
 
   override def close(): Unit = {
     slangsHashMap.clear()
+    buildTableHashMap.clear()
   }
 }
