@@ -51,7 +51,7 @@ class HashJoinTweetsOpExec[K](
               for (i <- 0 to 10) {
                 val tweetText1 = t.getField(tweetTextAttr).asInstanceOf[String]
                 val x1 = storedTuples(0).getField(slangTextAttr).asInstanceOf[String]
-                if (tweetText1.contains(x1 + i.toString())) {
+                if (tweetText1.contains(x1)) {
                   count1 += 1
                 }
               }
