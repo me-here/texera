@@ -18,6 +18,8 @@ class HashJoinTweetsOpExec[K](
     val slangTextAttr: String
 ) extends HashJoinOpExec[K](buildTable, buildAttributeName, probeAttributeName) {
 
+  var slangsHashMap: mutable.HashMap[K, ArrayBuffer[String]] = _
+
   override def processTexeraTuple(
       tuple: Either[Tuple, InputExhausted],
       input: LinkIdentity
@@ -29,9 +31,10 @@ class HashJoinTweetsOpExec[K](
         // the large input is assigned the inputNum 1.
         if (input == buildTable) {
           val key = t.getField(buildAttributeName).asInstanceOf[K]
-          var storedTuples = buildTableHashMap.getOrElse(key, new ArrayBuffer[Tuple]())
-          storedTuples += t
-          buildTableHashMap.put(key, storedTuples)
+          var storedWords = slangsHashMap.getOrElse(key, new ArrayBuffer[String]())
+          val individualSlangWords = t.getField(slangTextAttr).asInstanceOf[String].split(' ')
+          individualSlangWords.foreach(w => storedWords.append(w))
+          slangsHashMap.put(key, storedWords)
           Iterator()
         } else {
           if (!isBuildTableFinished) {
@@ -43,27 +46,19 @@ class HashJoinTweetsOpExec[K](
             throw new WorkflowRuntimeException(err)
           } else {
             val key = t.getField(probeAttributeName).asInstanceOf[K]
-            val storedTuples = buildTableHashMap.getOrElse(key, new ArrayBuffer[Tuple]())
-            if (storedTuples.isEmpty) {
+            val storedWords = slangsHashMap.getOrElse(key, new ArrayBuffer[String]())
+            if (storedWords.isEmpty) {
               Iterator()
             } else {
-              var count1 = 0;
-              for (i <- 0 to 10) {
-                val tweetText1 = t.getField(tweetTextAttr).asInstanceOf[String]
-                val x1 = storedTuples(0).getField(slangTextAttr).asInstanceOf[String]
-                if (tweetText1.contains(x1)) {
-                  count1 += 1
-                }
-              }
-              if (count1 > 100) {
-                return Iterator()
-              }
               val tweetText = t.getField(tweetTextAttr).asInstanceOf[String]
-              val x =
-                storedTuples(0).getField(slangTextAttr).asInstanceOf[String]
-              if (tweetText.toLowerCase().contains(x.toLowerCase())) {
+              var isPresent: Boolean = false
+              storedWords.foreach(slang => {
+                if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
+                  isPresent = true
+                }
+              })
+              if (isPresent) {
                 Iterator(t)
-//                Iterator()
               } else {
                 Iterator()
               }
@@ -84,10 +79,10 @@ class HashJoinTweetsOpExec[K](
   }
 
   override def open(): Unit = {
-    buildTableHashMap = new mutable.HashMap[K, mutable.ArrayBuffer[Tuple]]()
+    slangsHashMap = new mutable.HashMap[K, mutable.ArrayBuffer[String]]()
   }
 
   override def close(): Unit = {
-    buildTableHashMap.clear()
+    slangsHashMap.clear()
   }
 }
