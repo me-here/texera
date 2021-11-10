@@ -53,7 +53,7 @@ class HashJoinTweetsOpExec[K](
             } else {
               val tweetText = t.getField(tweetTextAttr).asInstanceOf[String]
               var countPresent: Int = 0
-              for(i <- 0 to 5) {
+              for(i <- 0 to 2) {
                 storedWords.foreach(slang => {
                   if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
                     countPresent += 1
