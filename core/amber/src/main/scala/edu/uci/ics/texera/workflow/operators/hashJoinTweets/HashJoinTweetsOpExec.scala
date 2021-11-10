@@ -35,6 +35,7 @@ class HashJoinTweetsOpExec[K](
           val individualSlangWords = t.getField(slangTextAttr).asInstanceOf[String].split(':')
           individualSlangWords.foreach(w => storedWords.append(w))
           slangsHashMap.put(key, storedWords)
+          println(s"Build hash table size for stateID ${key.asInstanceOf[String]} = ${storedWords.size}")
           Iterator()
         } else {
           if (!isBuildTableFinished) {
@@ -51,14 +52,16 @@ class HashJoinTweetsOpExec[K](
               Iterator()
             } else {
               val tweetText = t.getField(tweetTextAttr).asInstanceOf[String]
-              var isPresent: Boolean = false
+              var countPresent: Int = 0
               storedWords.foreach(slang => {
                 if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
-                  isPresent = true
+                  countPresent += 1
                 }
               })
 
-              if (isPresent) {
+              if(countPresent >1) {println(s"CountPresent is greater than 1: ${countPresent}")}
+
+              if (countPresent >= 1) {
                 Iterator(t)
               } else {
                 Iterator()
