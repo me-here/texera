@@ -53,13 +53,13 @@ class HashJoinTweetsOpExec[K](
             } else {
               val tweetText = t.getField(tweetTextAttr).asInstanceOf[String]
               var countPresent: Int = 0
-              storedWords.foreach(slang => {
-                if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
-                  countPresent += 1
-                }
-              })
-
-              if(countPresent >1) {println(s"CountPresent is greater than 1: ${countPresent}")}
+              for(i <- 0 to 10) {
+                storedWords.foreach(slang => {
+                  if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
+                    countPresent += 1
+                  }
+                })
+              }
 
               if (countPresent >= 1) {
                 Iterator(t)
