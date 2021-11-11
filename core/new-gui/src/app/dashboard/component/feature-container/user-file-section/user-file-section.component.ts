@@ -24,7 +24,7 @@ export class UserFileSectionComponent {
     this.userFileService.refreshDashboardUserFileEntries();
   }
 
-  public isEditingName: number[] = []; 
+  public isEditingName: number[] = [];
 
   public openFileAddComponent() {
     this.modalService.open(NgbdModalFileAddComponent);

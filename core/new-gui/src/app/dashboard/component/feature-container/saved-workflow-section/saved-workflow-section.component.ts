@@ -22,7 +22,7 @@ export const ROUTER_WORKFLOW_CREATE_NEW_URL = "/";
 })
 export class SavedWorkflowSectionComponent implements OnInit {
   public dashboardWorkflowEntries: DashboardWorkflowEntry[] = [];
-  public dashboardWorkflowEntriesIsEditingName: number[] = []; 
+  public dashboardWorkflowEntriesIsEditingName: number[] = [];
   private defaultWorkflowName: string = "Untitled Workflow";
 
   constructor(
