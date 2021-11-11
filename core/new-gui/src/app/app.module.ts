@@ -18,7 +18,6 @@ import { NzDatePickerModule } from "ng-zorro-antd/date-picker";
 import { NzDropDownModule } from "ng-zorro-antd/dropdown";
 import { NzFormModule } from "ng-zorro-antd/form";
 import { en_US, NZ_I18N } from "ng-zorro-antd/i18n";
-import { NzAutocompleteModule } from "ng-zorro-antd/auto-complete";
 import { NzIconModule } from "ng-zorro-antd/icon";
 import { NzInputModule } from "ng-zorro-antd/input";
 import { NzListModule } from "ng-zorro-antd/list";
@@ -200,7 +199,6 @@ registerLocaleData(en);
     NzDropDownModule,
     NzImageModule,
     NzButtonModule,
-    NzAutocompleteModule,
     NzIconModule,
     NzFormModule,
     NzListModule,
