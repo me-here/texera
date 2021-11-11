@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash-es';
+import { cloneDeep } from "lodash-es";
 import { HttpErrorResponse } from "@angular/common/http";
 import { DatePipe, Location } from "@angular/common";
 import { Component, ElementRef, Input, ViewChild } from "@angular/core";
@@ -386,15 +386,17 @@ export class NavigationComponent {
 
   public persistWorkflow(): void {
     let doc = document.getElementById("texera-workflow-editor") || document.body;
+    const { height, width } = doc.getBoundingClientRect();
     html2canvas(doc, {
       allowTaint: true,
       useCORS: true,
       backgroundColor: "rgba(0,0,0,0)",
+      height: height * 0.6,
+      y: height * 0.2,
+      width: width * 0.7,
+      x: width * 0.15,
     }).then(canvas => {
-      // this.isSaving = true;
       let imageData = canvas.toDataURL("image/png");
-      console.log(imageData);
-      return;
       fetch(imageData)
         .then(res => res.blob())
         .then(SnapshotBlob =>
@@ -412,7 +414,7 @@ export class NavigationComponent {
                       this.notificationService.success("workflow has been successfully saved.");
                     },
                     (error: unknown) => {
-                      if (error instanceof HttpErrorResponse ) {
+                      if (error instanceof HttpErrorResponse) {
                         this.notificationService.error(error.error);
                       }
                     }

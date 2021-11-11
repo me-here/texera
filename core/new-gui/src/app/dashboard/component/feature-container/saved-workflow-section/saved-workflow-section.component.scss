@@ -67,8 +67,8 @@ $header-height: 120px;
 
 .workflow-list-item {
   margin-bottom: 1.5%;
-  height: 70px;
   padding: 5px 0 5px 0;
+  height: 267px;
 }
 
 .time-space {
@@ -109,11 +109,13 @@ $header-height: 120px;
 
 .workflow-snapshot {
   float: left;
-  display:inline;
-  // margin-right: 20px;
-  width: 115px;
-  border: 1px solid #343A40;
-  height: 65px;
+  display: inline;
+  margin-left: 50px;
+  // width: 225px;
+  border: 1px solid #343a40;
+  // height: 165px;
+  width: 333px;
+  height: 256px;
 }
 
 .workflow-name:hover {
