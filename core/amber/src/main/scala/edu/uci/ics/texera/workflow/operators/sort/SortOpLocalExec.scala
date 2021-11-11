@@ -26,6 +26,9 @@ class SortOpLocalExec(
   val outputSchema: Schema =
     Schema.newBuilder().add(new Attribute(sortAttributeName, AttributeType.FLOAT)).build()
 
+  val orderStatus: Array[String] = Array("A", "F", "P", "C", "S", "O")
+  var countFound: Int = 0
+
   // var sortedTuples: ArrayBuffer[Tuple] = _
   var sortedTuples: mutable.PriorityQueue[Tuple] = _
 
@@ -71,6 +74,11 @@ class SortOpLocalExec(
   }
 
   def addTupleToSortedList(tuple: Tuple, sortedList: mutable.PriorityQueue[Tuple]): Unit = {
+    orderStatus.foreach(status => {
+      if (tuple.getField(sortAttributeName).asInstanceOf[Float].toString().contains(status)) {
+        countFound += 1
+      }
+    })
     sortedList.enqueue(tuple)
 
 //    if (sortedList.length == 0) {

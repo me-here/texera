@@ -26,7 +26,7 @@ class HashJoinTweetsOpExecConfig[K](
 //          null,
 //          100,
 //          UseAll(),
-//          RoundRobinDeployment()
+//          RoundRobinDep./sc se  loyment()
 //        )
 //      ),
 //      Array()
