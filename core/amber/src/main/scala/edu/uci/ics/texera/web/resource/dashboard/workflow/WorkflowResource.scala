@@ -280,6 +280,10 @@ class WorkflowResource {
 
   }
 
+  /**
+   * This method will handle the request to upload a snapshot image.
+   * @return
+   */
   @PUT
   @Path("/upload/snapshot")
   @Consumes(Array(MediaType.MULTIPART_FORM_DATA))
