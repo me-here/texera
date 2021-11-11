@@ -204,9 +204,11 @@ class SortOpLocalExec(
       case Right(_) =>
         if (!sentTuplesToFree) {
           println(s"\t PRODUCED ${sortedTuples.size}")
+          println(s"\t CountFound is ${countFound}")
           outputOneList(sortedTuples)
         } else {
           println(s"\t PRODUCED ${sortedTuples.size + receivedFromFreeWorker.size}")
+          println(s"\t CountFound is ${countFound}")
           outputMergedLists(sortedTuples, receivedFromFreeWorker)
         }
     }
