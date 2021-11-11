@@ -1,6 +1,9 @@
 package edu.uci.ics.texera.workflow.operators.hashJoinTweets
 
 import edu.uci.ics.amber.engine.architecture.controller.Workflow
+import edu.uci.ics.amber.engine.architecture.deploysemantics.deploymentfilter.UseAll
+import edu.uci.ics.amber.engine.architecture.deploysemantics.deploystrategy.RoundRobinDeployment
+import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.{LayerIdentity, OperatorIdentity}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
@@ -15,20 +18,20 @@ class HashJoinTweetsOpExecConfig[K](
 ) extends HashJoinOpExecConfig[K](id, probeAttributeNameSp, buildAttributeNameSp) {
 
   // for baseline
-//  override lazy val topology: Topology = {
-//    new Topology(
-//      Array(
-//        new WorkerLayer(
-//          LayerIdentity(id, "main"),
-//          null,
-//          2500,
-//          UseAll(),
-//          RoundRobinDeployment()
-//        )
-//      ),
-//      Array()
-//    )
-//  }
+  override lazy val topology: Topology = {
+    new Topology(
+      Array(
+        new WorkerLayer(
+          LayerIdentity(id, "main"),
+          null,
+          100,
+          UseAll(),
+          RoundRobinDeployment()
+        )
+      ),
+      Array()
+    )
+  }
 
   override def checkStartDependencies(workflow: Workflow): Unit = {
     val buildLink = inputToOrdinalMapping.find(pair => pair._2 == 0).get._1
