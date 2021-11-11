@@ -18,7 +18,7 @@ class HashJoinTweetsOpExecConfig[K](
 ) extends HashJoinOpExecConfig[K](id, probeAttributeNameSp, buildAttributeNameSp) {
 
   // for baseline
-//  override lazy val topology: Topology = {
+  override lazy val topology: Topology = {
     new Topology(
       Array(
         new WorkerLayer(
