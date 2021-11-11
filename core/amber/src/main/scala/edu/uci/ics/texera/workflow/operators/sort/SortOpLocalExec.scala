@@ -26,7 +26,38 @@ class SortOpLocalExec(
   val outputSchema: Schema =
     Schema.newBuilder().add(new Attribute(sortAttributeName, AttributeType.FLOAT)).build()
 
-  val orderStatus: Array[String] = Array("304", "443", "665", "322", "566", "767", "664", "321", "586", "777")
+  val orderStatus: Array[String] = Array(
+    "304",
+    "443",
+    "665",
+    "322",
+    "566",
+    "767",
+    "664",
+    "321",
+    "586",
+    "777",
+    "304",
+    "443",
+    "665",
+    "322",
+    "566",
+    "767",
+    "664",
+    "321",
+    "586",
+    "777",
+    "304",
+    "443",
+    "665",
+    "322",
+    "566",
+    "767",
+    "664",
+    "321",
+    "586",
+    "777"
+  )
   var countFound: Int = 0
 
   // var sortedTuples: ArrayBuffer[Tuple] = _
