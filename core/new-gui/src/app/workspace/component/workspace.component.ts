@@ -16,6 +16,7 @@ import { WorkflowCacheService } from "../service/workflow-cache/workflow-cache.s
 import { WorkflowActionService } from "../service/workflow-graph/model/workflow-action.service";
 import { WorkflowWebsocketService } from "../service/workflow-websocket/workflow-websocket.service";
 import { NzMessageService } from "ng-zorro-antd/message";
+import { NotificationService } from "src/app/common/service/notification/notification.service";
 import { WorkflowConsoleService } from "../service/workflow-console/workflow-console.service";
 import { debounceTime, distinctUntilChanged, filter, switchMap } from "rxjs/operators";
 import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
