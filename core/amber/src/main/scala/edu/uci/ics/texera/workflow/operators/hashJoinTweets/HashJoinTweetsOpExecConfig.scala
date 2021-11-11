@@ -24,7 +24,7 @@ class HashJoinTweetsOpExecConfig[K](
         new WorkerLayer(
           LayerIdentity(id, "main"),
           null,
-          100,
+          2500,
           UseAll(),
           RoundRobinDeployment()
         )
