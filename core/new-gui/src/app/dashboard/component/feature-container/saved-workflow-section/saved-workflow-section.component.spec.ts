@@ -34,6 +34,7 @@ describe("SavedWorkflowSectionComponent", () => {
     content: jsonCast<WorkflowContent>("{}"),
     creationTime: 1,
     lastModifiedTime: 2,
+    snapshot: undefined,
   };
   const testWorkflow2: Workflow = {
     wid: 2,
@@ -41,6 +42,7 @@ describe("SavedWorkflowSectionComponent", () => {
     content: jsonCast<WorkflowContent>("{}"),
     creationTime: 3,
     lastModifiedTime: 4,
+    snapshot: undefined,
   };
   const testWorkflow3: Workflow = {
     wid: 3,
@@ -48,6 +50,7 @@ describe("SavedWorkflowSectionComponent", () => {
     content: jsonCast<WorkflowContent>("{}"),
     creationTime: 3,
     lastModifiedTime: 3,
+    snapshot: undefined,
   };
   const testWorkflow4: Workflow = {
     wid: 4,
@@ -55,6 +58,7 @@ describe("SavedWorkflowSectionComponent", () => {
     content: jsonCast<WorkflowContent>("{}"),
     creationTime: 4,
     lastModifiedTime: 6,
+    snapshot: undefined,
   };
   const testWorkflow5: Workflow = {
     wid: 5,
@@ -62,6 +66,7 @@ describe("SavedWorkflowSectionComponent", () => {
     content: jsonCast<WorkflowContent>("{}"),
     creationTime: 3,
     lastModifiedTime: 8,
+    snapshot: undefined,
   };
   const testWorkflowEntries: DashboardWorkflowEntry[] = [
     {

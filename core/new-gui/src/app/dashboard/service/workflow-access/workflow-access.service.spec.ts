@@ -19,6 +19,7 @@ describe("WorkflowAccessService", () => {
     ),
     creationTime: 1,
     lastModifiedTime: 2,
+    snapshot: undefined,
   };
 
   const username = "Jim";

@@ -23,6 +23,7 @@ describe("NgbdModalDeleteProjectComponent", () => {
     content: jsonCast<WorkflowContent>("{}"),
     creationTime: 1,
     lastModifiedTime: 2,
+    snapshot: undefined,
   };
 
   beforeEach(

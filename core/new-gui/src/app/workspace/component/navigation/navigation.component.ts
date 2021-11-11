@@ -385,48 +385,39 @@ export class NavigationComponent {
   }
 
   public persistWorkflow(): void {
-    let doc = document.getElementById("texera-workflow-editor") || document.body;
-    const { height, width } = doc.getBoundingClientRect();
-    html2canvas(doc, {
-      allowTaint: true,
-      useCORS: true,
-      backgroundColor: "rgba(0,0,0,0)",
-      height: height * 0.6,
-      y: height * 0.2,
-      width: width * 0.7,
-      x: width * 0.15,
-    }).then(canvas => {
-      let imageData = canvas.toDataURL("image/png");
-      fetch(imageData)
-        .then(res => res.blob())
-        .then(SnapshotBlob =>
-          this.workflowPersistService
-            .persistWorkflow({ ...this.workflowActionService.getWorkflow(), snapshot: undefined })
-            .pipe(untilDestroyed(this))
-            .subscribe(
-              (updatedWorkflow: Workflow) => {
-                this.workflowActionService.setWorkflowMetadata(updatedWorkflow);
-                this.workflowPersistService
-                  .uploadWorkflowSnapshot(SnapshotBlob, updatedWorkflow.wid)
-                  .pipe(untilDestroyed(this))
-                  .subscribe(
-                    () => {
-                      this.notificationService.success("workflow has been successfully saved.");
-                    },
-                    (error: unknown) => {
-                      if (error instanceof HttpErrorResponse) {
-                        this.notificationService.error(error.error);
-                      }
+    this.workflowPersistService.createSnapShotCanvas().then(canvas => {
+      canvas.toBlob(snapshotBlob => {
+        if (snapshotBlob === null) {
+          this.notificationService.error("canvas error");
+          return;
+        }
+        this.workflowPersistService
+          .persistWorkflow({ ...this.workflowActionService.getWorkflow(), snapshot: undefined })
+          .pipe(untilDestroyed(this))
+          .subscribe(
+            (updatedWorkflow: Workflow) => {
+              this.workflowActionService.setWorkflowMetadata(updatedWorkflow);
+              this.workflowPersistService
+                .uploadWorkflowSnapshot(snapshotBlob, updatedWorkflow.wid)
+                .pipe(untilDestroyed(this))
+                .subscribe(
+                  () => {
+                    this.notificationService.success("workflow has been successfully saved.");
+                  },
+                  (error: unknown) => {
+                    if (error instanceof HttpErrorResponse) {
+                      this.notificationService.error(error.error);
                     }
-                  );
-                this.isSaving = false;
-              },
-              (error: unknown) => {
-                alert(error);
-                this.isSaving = false;
-              }
-            )
-        );
+                  }
+                );
+              this.isSaving = false;
+            },
+            (error: unknown) => {
+              alert(error);
+              this.isSaving = false;
+            }
+          );
+      });
     });
   }
 

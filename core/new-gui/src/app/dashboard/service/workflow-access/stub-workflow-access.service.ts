@@ -14,6 +14,7 @@ export const MOCK_WORKFLOW: Workflow = {
   ),
   creationTime: 1,
   lastModifiedTime: 2,
+  snapshot: undefined,
 };
 
 type PublicInterfaceOf<Class> = {

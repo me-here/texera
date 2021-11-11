@@ -7,6 +7,7 @@ import { Workflow, WorkflowContent } from "../../type/workflow";
 import { DashboardWorkflowEntry } from "../../../dashboard/type/dashboard-workflow-entry";
 import { WorkflowUtilService } from "../../../workspace/service/workflow-graph/util/workflow-util.service";
 import { NotificationService } from "../notification/notification.service";
+import html2canvas from "html2canvas";
 
 export const WORKFLOW_BASE_URL = "workflow";
 export const WORKFLOW_PERSIST_URL = WORKFLOW_BASE_URL + "/persist";
@@ -21,6 +22,23 @@ export const WORKFLOW_UPLOAD_SNAPSHOT_URL = WORKFLOW_BASE_URL + "/upload/snapsho
 })
 export class WorkflowPersistService {
   constructor(private http: HttpClient, private notificationService: NotificationService) {}
+
+  /**
+   * take a snapshot of the current workflow editor
+   */
+  public createSnapShotCanvas(): Promise<HTMLCanvasElement> {
+    let doc = document.getElementById("texera-workflow-editor") || document.body;
+    const { height, width } = doc.getBoundingClientRect();
+    return html2canvas(doc, {
+      allowTaint: true,
+      useCORS: true,
+      backgroundColor: "transparent",
+      height: height * 0.6,
+      y: height * 0.2,
+      width: width * 0.7,
+      x: width * 0.15,
+    });
+  }
 
   /**
    * persists a workflow to backend database and returns its updated information (e.g., new wid)
@@ -39,10 +57,10 @@ export class WorkflowPersistService {
       );
   }
 
-  public uploadWorkflowSnapshot(SnapshotBlob: Blob, wid: number | undefined): Observable<Response> {
+  public uploadWorkflowSnapshot(snpashotBlob: Blob, wid: number | undefined): Observable<Response> {
     const formData: FormData = new FormData();
     formData.append("wid", wid?.toString() || "");
-    formData.append("SnapshotBlob", SnapshotBlob);
+    formData.append("SnapshotBlob", snpashotBlob);
     return this.http.put<Response>(`${AppSettings.getApiEndpoint()}/${WORKFLOW_UPLOAD_SNAPSHOT_URL}`, formData);
   }
 

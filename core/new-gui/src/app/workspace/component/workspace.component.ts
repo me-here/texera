@@ -1,6 +1,7 @@
 import { Location } from "@angular/common";
 import { AfterViewInit, Component } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
+import { HttpErrorResponse } from "@angular/common/http";
 import { environment } from "../../../environments/environment";
 import { Version } from "../../../environments/version";
 import { UserService } from "../../common/service/user/user.service";
@@ -19,6 +20,7 @@ import { WorkflowConsoleService } from "../service/workflow-console/workflow-con
 import { debounceTime, filter } from "rxjs/operators";
 import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
 import { OperatorCacheStatusService } from "../service/workflow-status/operator-cache-status.service";
+import { NotificationService } from "src/app/common/service/notification/notification.service";
 
 @UntilDestroy()
 @Component({
@@ -49,6 +51,7 @@ export class WorkspaceComponent implements AfterViewInit {
     private workflowWebsocketService: WorkflowWebsocketService,
     private workflowActionService: WorkflowActionService,
     private workflowConsoleService: WorkflowConsoleService,
+    private notificationService: NotificationService,
     private location: Location,
     private route: ActivatedRoute,
     private operatorMetadataService: OperatorMetadataService,
@@ -128,13 +131,34 @@ export class WorkspaceComponent implements AfterViewInit {
       .pipe(untilDestroyed(this))
       .subscribe(() => {
         if (this.userService.isLogin()) {
-          this.workflowPersistService
-            .persistWorkflow(this.workflowActionService.getWorkflow())
-            .pipe(untilDestroyed(this))
-            .subscribe((updatedWorkflow: Workflow) => {
-              this.workflowActionService.setWorkflowMetadata(updatedWorkflow);
-              this.location.go(`/workflow/${updatedWorkflow.wid}`);
+          this.workflowPersistService.createSnapShotCanvas().then(canvas => {
+            canvas.toBlob(snapshotBlob => {
+              if (snapshotBlob === null) {
+                this.notificationService.error("canvas error");
+                return;
+              }
+              this.workflowPersistService
+                .persistWorkflow(this.workflowActionService.getWorkflow())
+                .pipe(untilDestroyed(this))
+                .subscribe((updatedWorkflow: Workflow) => {
+                  this.workflowActionService.setWorkflowMetadata(updatedWorkflow);
+                  this.workflowPersistService
+                    .uploadWorkflowSnapshot(snapshotBlob, updatedWorkflow.wid)
+                    .pipe(untilDestroyed(this))
+                    .subscribe(
+                      () => {
+                        this.location.go(`/workflow/${updatedWorkflow.wid}`);
+                      },
+                      (error: unknown) => {
+                        if (error instanceof HttpErrorResponse) {
+                          this.notificationService.error(error.error);
+                        }
+                      }
+                    );
+                });
             });
+          });
+
           // to sync up with the updated information, such as workflow.wid
         }
       });
