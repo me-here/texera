@@ -165,11 +165,12 @@ class DataProcessor( // dependencies:
               // rightful owner
               val sortSendingFutures = new ArrayBuffer[Future[Unit]]()
               val listsToSend = operator.asInstanceOf[SortOpLocalExec].getSortedLists()
+              val listsSize = listsToSend.size
               val stateTransferStartTime = System.nanoTime()
               listsToSend.foreach(list => {
                 sortSendingFutures.append(
                   asyncRPCClient.send(
-                    AcceptSortedList(list),
+                    AcceptSortedList(list, listsSize),
                     operator
                       .asInstanceOf[SortOpLocalExec]
                       .skewedWorkerIdentity
@@ -184,12 +185,12 @@ class DataProcessor( // dependencies:
                     .asInstanceOf[SortOpLocalExec]
                     .skewedWorkerIdentity
                     .toString()} is ${(stateTransferEndTime - stateTransferStartTime) / 1e9d} s")
-                  asyncRPCClient.send(
-                    EntireSortedListSentNotification(),
-                    operator
-                      .asInstanceOf[SortOpLocalExec]
-                      .skewedWorkerIdentity
-                  )
+//                  asyncRPCClient.send(
+//                    EntireSortedListSentNotification(),
+//                    operator
+//                      .asInstanceOf[SortOpLocalExec]
+//                      .skewedWorkerIdentity
+//                  )
                 })
             }
           }

@@ -12,7 +12,8 @@ import scala.collection.mutable.ArrayBuffer
 
 object AcceptSortedListHandler {
   final case class AcceptSortedList(
-      sortedList: ArrayBuffer[Float]
+      sortedList: ArrayBuffer[Float],
+      totalListsCount: Int
   ) extends ControlCommand[Unit]
 }
 
@@ -22,11 +23,17 @@ trait AcceptSortedListHandler {
   registerHandler { (cmd: AcceptSortedList, sender) =>
     // workerStateManager.shouldBe(Running, Ready)
     try {
-      dataProcessor
-        .getOperatorExecutor()
-        .asInstanceOf[SortOpLocalExec]
-        .receivedFromFreeWorker
-        .appendAll(cmd.sortedList)
+      val opExec = dataProcessor.getOperatorExecutor().asInstanceOf[SortOpLocalExec]
+      opExec.receivedFromFreeWorker.appendAll(cmd.sortedList)
+
+      opExec.receivedFromFreeWorkerCount += 1
+      if (opExec.receivedFromFreeWorkerCount == cmd.totalListsCount) {
+        // all lists have arrived
+        opExec.receivedTuplesFromFree = true
+        if (dataProcessor.endMarkersEatenInSkewedWorker) {
+          dataProcessor.putEndMarkersInQueue()
+        }
+      }
     } catch {
       case exception: Exception =>
         println(

@@ -95,6 +95,7 @@ class SortOpLocalExec(
   @volatile var sentTuplesToFree: Boolean = false
   @volatile var receivedTuplesFromFree: Boolean = false
   var receivedFromFreeWorker: ArrayBuffer[Float] = _
+  var receivedFromFreeWorkerCount: Int = 0
 
   val jump: Int =
     ((rangeMax - rangeMin) / numWorkers).toInt + 1
