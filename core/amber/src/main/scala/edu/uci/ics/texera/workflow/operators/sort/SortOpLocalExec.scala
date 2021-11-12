@@ -191,11 +191,11 @@ class SortOpLocalExec(
     new Iterator[Tuple] {
       var receivedIdx = 0
       override def hasNext: Boolean = {
-        (ownList.size > 0 || receivedIdx < receivedListSize)
+        (ownList.nonEmpty || receivedIdx < receivedListSize)
       }
 
       override def next(): Tuple = {
-        if (ownList.size > 0 && receivedIdx < receivedListSize) {
+        if (ownList.nonEmpty && receivedIdx < receivedListSize) {
           if (
             ownList.head
               .getField(sortAttributeName)
@@ -219,7 +219,7 @@ class SortOpLocalExec(
               )
               .build()
           }
-        } else if (ownList.size > 0) {
+        } else if (ownList.nonEmpty) {
           return Tuple
             .newBuilder()
             .add(
