@@ -164,7 +164,10 @@ class DataProcessor( // dependencies:
               // this is a free worker. It needs to send the skewed worker tuples to the
               // rightful owner
               val sortSendingFutures = new ArrayBuffer[Future[Unit]]()
+              val listCreationStartTime = System.nanoTime()
               val listsToSend = operator.asInstanceOf[SortOpLocalExec].getSortedLists()
+              val listCreationEndTime = System.nanoTime()
+              println(s"Time to serialize state into array by ${selfID.toString()} = ${(listCreationEndTime - listCreationStartTime) / 1e9d}")
               val listsSize = listsToSend.size
               val stateTransferStartTime = System.nanoTime()
               listsToSend.foreach(list => {
@@ -202,7 +205,13 @@ class DataProcessor( // dependencies:
             // this is a skewed worker. It needs to receive all data from free worker before ending
             endMarkersEatenInSkewedWorker = true
           } else {
+            val lastInputStartTime = System.nanoTime()
             handleInputTuple()
+            val lastInputEndTime = System.nanoTime()
+            if (operator.isInstanceOf[SortOpLocalExec]) {
+              println(s"Time to send out the total list by ${selfID.toString()} = ${(lastInputEndTime - lastInputStartTime) / 1e9d}")
+            }
+
             if (currentInputLink != null) {
               asyncRPCClient.send(LinkCompleted(currentInputLink), ActorVirtualIdentity.Controller)
             }
