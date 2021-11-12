@@ -184,17 +184,18 @@ class SortOpLocalExec(
 
   def outputMergedLists(
       ownList: mutable.PriorityQueue[Tuple],
-      receivedList: ArrayBuffer[Float]
+      receivedList: ArrayBuffer[Float],
+      receivedListSize: Int
   ): Iterator[Tuple] = {
     // merge the two sorted lists
     new Iterator[Tuple] {
       var receivedIdx = 0
       override def hasNext: Boolean = {
-        (ownList.size > 0 || receivedIdx < receivedList.size)
+        (ownList.size > 0 || receivedIdx < receivedListSize)
       }
 
       override def next(): Tuple = {
-        if (ownList.size > 0 && receivedIdx < receivedList.size) {
+        if (ownList.size > 0 && receivedIdx < receivedListSize) {
           if (
             ownList.head
               .getField(sortAttributeName)
@@ -265,7 +266,7 @@ class SortOpLocalExec(
         } else {
           println(s"\t PRODUCED ${sortedTuples.size + receivedFromFreeWorker.size}")
           println(s"\t CountFound is ${countFound}")
-          outputMergedLists(sortedTuples, receivedFromFreeWorker)
+          outputMergedLists(sortedTuples, receivedFromFreeWorker, receivedFromFreeWorker.size)
         }
     }
   }
