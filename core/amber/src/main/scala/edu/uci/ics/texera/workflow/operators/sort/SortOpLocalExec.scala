@@ -107,7 +107,7 @@ class SortOpLocalExec(
     var count = 1
     var curr = new ArrayBuffer[Float]
 
-    while (tuplesFromSkewedWorker.size > 0) {
+    while (tuplesFromSkewedWorker.nonEmpty) {
       curr.append(tuplesFromSkewedWorker.dequeue().getField(sortAttributeName).asInstanceOf[Float])
       if (count % Constants.eachTransferredListSize == 0) {
         sendingLists.append(curr)
@@ -123,7 +123,7 @@ class SortOpLocalExec(
 //      }
 //      count += 1
 //    }
-    if (!curr.isEmpty) sendingLists.append(curr)
+    if (curr.nonEmpty) sendingLists.append(curr)
     sendingLists
   }
 
