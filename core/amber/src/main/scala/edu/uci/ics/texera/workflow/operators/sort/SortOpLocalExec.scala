@@ -128,11 +128,13 @@ class SortOpLocalExec(
   }
 
   def addTupleToSortedList(tuple: Tuple, sortedList: mutable.PriorityQueue[Tuple]): Unit = {
-    orderStatus.foreach(status => {
-      if (tuple.getField(sortAttributeName).asInstanceOf[Float].toString().contains(status)) {
-        countFound += 1
-      }
-    })
+    for (i <- 0 to 5) {
+      orderStatus.foreach(status => {
+        if (tuple.getField(sortAttributeName).asInstanceOf[Float].toString().contains(status)) {
+          countFound += 1
+        }
+      })
+    }
     sortedList.enqueue(tuple)
 
 //    if (sortedList.length == 0) {
