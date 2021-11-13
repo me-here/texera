@@ -203,6 +203,7 @@ class DataProcessor( // dependencies:
               .sentTuplesToFree && !operator.asInstanceOf[SortOpLocalExec].receivedTuplesFromFree
           ) {
             // this is a skewed worker. It needs to receive all data from free worker before ending
+            println(s"End markers eaten for ${selfID.toString()}")
             endMarkersEatenInSkewedWorker = true
           } else {
             val lastInputStartTime = System.nanoTime()
