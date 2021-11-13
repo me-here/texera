@@ -84,11 +84,11 @@ class SortOpLocalExec(
   var countFound: Int = 0
 
   // var sortedTuples: ArrayBuffer[Tuple] = _
-  var sortedTuples: mutable.PriorityQueue[Tuple] = _
+  var sortedTuples: mutable.PriorityQueue[Float] = _
 
   /** For free workers receiving data of skewed workers * */
   //var tuplesFromSkewedWorker: ArrayBuffer[Tuple] = _
-  var tuplesFromSkewedWorker: mutable.PriorityQueue[Tuple] = _
+  var tuplesFromSkewedWorker: mutable.PriorityQueue[Float] = _
   @volatile var skewedWorkerIdentity: ActorVirtualIdentity = null
 
   /** For skewed worker whose data is sent to free workers * */
@@ -109,26 +109,19 @@ class SortOpLocalExec(
     var curr = new ArrayBuffer[Float]
 
     while (tuplesFromSkewedWorker.nonEmpty) {
-      curr.append(tuplesFromSkewedWorker.dequeue().getField(sortAttributeName).asInstanceOf[Float])
+      curr.append(tuplesFromSkewedWorker.dequeue())
       if (count % Constants.eachTransferredListSize == 0) {
         sendingLists.append(curr)
         curr = new ArrayBuffer[Float]
       }
       count += 1
     }
-//    for (value <- tuplesFromSkewedWorker) {
-//      curr.append(value)
-//      if (count % 4000 == 0) {
-//        sendingLists.append(curr)
-//        curr = new ArrayBuffer[Tuple]
-//      }
-//      count += 1
-//    }
+
     if (curr.nonEmpty) sendingLists.append(curr)
     sendingLists
   }
 
-  def addTupleToSortedList(tuple: Tuple, sortedList: mutable.PriorityQueue[Tuple]): Unit = {
+  def addTupleToSortedList(tuple: Tuple, sortedList: mutable.PriorityQueue[Float]): Unit = {
     for (i <- 0 to 5) {
       orderStatus.foreach(status => {
         if (tuple.getField(sortAttributeName).asInstanceOf[Float].toString().contains(status)) {
@@ -136,7 +129,7 @@ class SortOpLocalExec(
         }
       })
     }
-    sortedList.enqueue(tuple)
+    sortedList.enqueue(tuple.getField(sortAttributeName).asInstanceOf[Float])
 
 //    if (sortedList.length == 0) {
 //      sortedList.append(tuple)
@@ -168,7 +161,7 @@ class SortOpLocalExec(
 
   }
 
-  def outputOneList(ownList: mutable.PriorityQueue[Tuple]): Iterator[Tuple] = {
+  def outputOneList(ownList: mutable.PriorityQueue[Float]): Iterator[Tuple] = {
     new Iterator[Tuple] {
       override def hasNext: Boolean = ownList.size > 0
 
@@ -177,14 +170,14 @@ class SortOpLocalExec(
           .newBuilder()
           .add(
             outputSchema.getAttribute(sortAttributeName),
-            ownList.dequeue().getField(sortAttributeName).asInstanceOf[Float]
+            ownList.dequeue()
           )
           .build()
     }
   }
 
   def outputMergedLists(
-      ownList: mutable.PriorityQueue[Tuple],
+      ownList: mutable.PriorityQueue[Float],
       receivedList: ArrayBuffer[Float],
       receivedListSize: Int
   ): Iterator[Tuple] = {
@@ -197,16 +190,12 @@ class SortOpLocalExec(
 
       override def next(): Tuple = {
         if (ownList.nonEmpty && receivedIdx < receivedListSize) {
-          if (
-            ownList.head
-              .getField(sortAttributeName)
-              .asInstanceOf[Float] < receivedList(receivedIdx)
-          ) {
+          if (ownList.head < receivedList(receivedIdx)) {
             return Tuple
               .newBuilder()
               .add(
                 outputSchema.getAttribute(sortAttributeName),
-                ownList.dequeue().getField(sortAttributeName).asInstanceOf[Float]
+                ownList.dequeue()
               )
               .build()
           } else {
@@ -225,7 +214,7 @@ class SortOpLocalExec(
             .newBuilder()
             .add(
               outputSchema.getAttribute(sortAttributeName),
-              ownList.dequeue().getField(sortAttributeName).asInstanceOf[Float]
+              ownList.dequeue()
             )
             .build()
         } else {
@@ -272,25 +261,28 @@ class SortOpLocalExec(
     }
   }
 
+  // sorts in ascending order
   override def open(): Unit = {
     // sortedTuples = new ArrayBuffer[Tuple]()
-    sortedTuples = mutable.PriorityQueue.empty[Tuple](
-      Ordering
-        .by[Tuple, Float](
-          _.getField(sortAttributeName)
-            .asInstanceOf[Float]
-        )
-        .reverse
-    )
+    sortedTuples = mutable.PriorityQueue.empty[Float](Ordering[Float].reverse)
+    tuplesFromSkewedWorker = mutable.PriorityQueue.empty[Float](Ordering[Float].reverse)
+//    sortedTuples = mutable.PriorityQueue.empty[Tuple](
+//      Ordering
+//        .by[Tuple, Float](
+//          _.getField(sortAttributeName)
+//            .asInstanceOf[Float]
+//        )
+//        .reverse
+//    )
 
-    tuplesFromSkewedWorker = mutable.PriorityQueue.empty[Tuple](
-      Ordering
-        .by[Tuple, Float](
-          _.getField(sortAttributeName)
-            .asInstanceOf[Float]
-        )
-        .reverse
-    )
+//    tuplesFromSkewedWorker = mutable.PriorityQueue.empty[Tuple](
+//      Ordering
+//        .by[Tuple, Float](
+//          _.getField(sortAttributeName)
+//            .asInstanceOf[Float]
+//        )
+//        .reverse
+//    )
 
     receivedFromFreeWorker = new ArrayBuffer[Float]()
   }
