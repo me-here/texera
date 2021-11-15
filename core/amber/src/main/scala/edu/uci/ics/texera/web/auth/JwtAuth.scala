@@ -40,6 +40,7 @@ object JwtAuth {
     val claims = new JwtClaims
     claims.setSubject(user.getName)
     claims.setClaim("userId", user.getUid)
+    claims.setClaim("avatar", user.getAvatar)
     claims.setExpirationTimeMinutesInTheFuture(dayToMin(expireInDays))
     claims
   }

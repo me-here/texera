@@ -102,7 +102,11 @@ export class AuthService {
     if (token !== null && !this.jwtHelperService.isTokenExpired(token)) {
       this.registerAutoLogout();
       this.registerAutoRefreshToken();
-      return of(<User>{ name: this.jwtHelperService.decodeToken(token).sub });
+      console.log("jwt content ", this.jwtHelperService.decodeToken(token));
+      return of(<User>{
+        name: this.jwtHelperService.decodeToken(token).sub,
+        avatar: this.jwtHelperService.decodeToken(token).avatar,
+      });
     } else {
       // access token is expired, logout instantly
       return this.logout();

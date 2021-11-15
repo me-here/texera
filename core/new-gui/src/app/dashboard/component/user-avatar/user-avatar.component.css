@@ -1,0 +1,23 @@
+
+.texeraUserAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: smaller;
+  font-family: roboto, arial;
+  color: white;
+  line-height: 38px;
+  text-align: center;
+  background: orange;
+  vertical-align: top;
+  margin-right: 15px;
+}
+
+.user-avatar-image {
+  object-fit: cover;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  vertical-align: top;
+  margin-right: 15px;
+}

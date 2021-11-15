@@ -1,4 +1,4 @@
-<div ngbDropdown class="d-inline-block user-icon">
+<div ngbDropdown class="d-inline-block" [ngClass]="user ? 'user-icon-with-avatar': 'user-icon-no-avatar' ">
   <button class="btn btn-outline-primary" id="dropdownBasic1" ngbDropdownToggle>{{ user?.name || "Sign In" }}</button>
   <div aria-labelledby="dropdownBasic1" class="user-dropdown" ngbDropdownMenu>
     <button (click)="onClickLogin()" *ngIf="!user" class="dropdown-item">Sign In</button>
@@ -6,3 +6,5 @@
     <button (click)="onClickLogout()" *ngIf="user" class="dropdown-item">Sign Out</button>
   </div>
 </div>
+<texera-user-avatar *ngIf="user" [imageSrc]="user ? user.avatar : '' " [userName]="user ? user.name : ''">
+</texera-user-avatar>

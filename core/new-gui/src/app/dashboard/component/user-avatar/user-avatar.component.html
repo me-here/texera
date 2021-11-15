@@ -1,0 +1,6 @@
+<div *ngIf="imageSrc;else default_avatar" class="d-inline-block">
+  <img class="user-avatar-image" [src]="imageSrc" alt="" />
+</div>
+<ng-template #default_avatar>
+  <div *ngIf="userName" class="d-inline-block texeraUserAvatar">{{getUserInitial(this.userName)}}</div>
+</ng-template>
