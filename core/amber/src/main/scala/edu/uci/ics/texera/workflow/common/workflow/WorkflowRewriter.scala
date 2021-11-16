@@ -8,7 +8,10 @@ import edu.uci.ics.texera.workflow.common.workflow.WorkflowRewriter.copyOperator
 import edu.uci.ics.texera.workflow.operators.source.cache.CacheSourceOpDesc
 import java.util.UUID
 
-import edu.uci.ics.texera.workflow.operators.sink.managed.{ProgressiveSinkOpDesc, ProgressiveSinkOpExec}
+import edu.uci.ics.texera.workflow.operators.sink.managed.{
+  ProgressiveSinkOpDesc,
+  ProgressiveSinkOpExec
+}
 
 import scala.collection.mutable
 
@@ -24,12 +27,12 @@ object WorkflowRewriter {
 }
 
 class WorkflowRewriter(
-                        val workflowInfo: WorkflowInfo,
-                        val cachedOperatorDescriptors: mutable.HashMap[String, OperatorDescriptor],
-                        val cacheSourceOperatorDescriptors: mutable.HashMap[String, CacheSourceOpDesc],
-                        val cacheSinkOperatorDescriptors: mutable.HashMap[String, ProgressiveSinkOpDesc],
-                        val operatorRecord: mutable.HashMap[String, WorkflowVertex],
-                        val opResultStorage: OpResultStorage
+    val workflowInfo: WorkflowInfo,
+    val cachedOperatorDescriptors: mutable.HashMap[String, OperatorDescriptor],
+    val cacheSourceOperatorDescriptors: mutable.HashMap[String, CacheSourceOpDesc],
+    val cacheSinkOperatorDescriptors: mutable.HashMap[String, ProgressiveSinkOpDesc],
+    val operatorRecord: mutable.HashMap[String, WorkflowVertex],
+    val opResultStorage: OpResultStorage
 ) extends LazyLogging {
 
   var visitedOpIdSet: mutable.HashSet[String] = new mutable.HashSet[String]()
@@ -397,7 +400,9 @@ class WorkflowRewriter(
       operatorDescriptor: OperatorDescriptor
   ): CacheSourceOpDesc = {
     val cacheSourceOperator = cacheSourceOperatorDescriptors(operatorDescriptor.operatorID)
-    cacheSourceOperator.schema = cacheSinkOperatorDescriptors(operatorDescriptor.operatorID).getStorage.getSchema
+    cacheSourceOperator.schema = cacheSinkOperatorDescriptors(
+      operatorDescriptor.operatorID
+    ).getStorage.getSchema
     cacheSourceOperator
   }
 

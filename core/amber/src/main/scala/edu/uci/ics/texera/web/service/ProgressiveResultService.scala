@@ -11,7 +11,7 @@ import edu.uci.ics.texera.workflow.operators.sink.storage.SinkStorage
   * It always keeps the latest snapshot of the computation result.
   */
 class ProgressiveResultService(
-   sink:ProgressiveSinkOpDesc
+    sink: ProgressiveSinkOpDesc
 ) {
 
   // offset that indicates how many records have been sent to the frontend

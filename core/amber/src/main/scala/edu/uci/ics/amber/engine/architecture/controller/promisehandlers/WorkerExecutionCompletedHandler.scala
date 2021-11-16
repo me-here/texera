@@ -4,7 +4,10 @@ import com.twitter.util.Future
 import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.WorkflowCompleted
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.QueryWorkerStatisticsHandler.ControllerInitiateQueryStatistics
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.WorkerExecutionCompletedHandler.WorkerExecutionCompleted
-import edu.uci.ics.amber.engine.architecture.controller.{ControllerAsyncRPCHandlerInitializer, ControllerState}
+import edu.uci.ics.amber.engine.architecture.controller.{
+  ControllerAsyncRPCHandlerInitializer,
+  ControllerState
+}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
@@ -36,17 +39,19 @@ trait WorkerExecutionCompletedHandler {
       val statsRequests = new mutable.MutableList[Future[Unit]]()
       statsRequests += execute(ControllerInitiateQueryStatistics(Option(List(sender))), CONTROLLER)
 
-      Future.collect(statsRequests).flatMap(_ => {
-        // if entire workflow is completed, clean up
-        if (workflow.isCompleted) {
-          // after query result come back: send completed event, cleanup ,and kill workflow
-          sendToClient(WorkflowCompleted())
-          disableStatusUpdate()
-          Future.Done
-        } else {
-          Future.Done
-        }
-      })
+      Future
+        .collect(statsRequests)
+        .flatMap(_ => {
+          // if entire workflow is completed, clean up
+          if (workflow.isCompleted) {
+            // after query result come back: send completed event, cleanup ,and kill workflow
+            sendToClient(WorkflowCompleted())
+            disableStatusUpdate()
+            Future.Done
+          } else {
+            Future.Done
+          }
+        })
     }
   }
 }

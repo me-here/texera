@@ -19,13 +19,15 @@ class MemoryStorage(schema: Schema) extends SinkStorage with ShardedStorage {
       results += tuple
     }
 
-  override def removeOne(tuple: Tuple): Unit = synchronized{
-    results -= tuple
-  }
+  override def removeOne(tuple: Tuple): Unit =
+    synchronized {
+      results -= tuple
+    }
 
-  override def getAllAfter(offset: Int): Iterable[Tuple] = synchronized{
-    results.slice(offset, results.size)
-  }
+  override def getAllAfter(offset: Int): Iterable[Tuple] =
+    synchronized {
+      results.slice(offset, results.size)
+    }
 
   override def clear(): Unit =
     synchronized {

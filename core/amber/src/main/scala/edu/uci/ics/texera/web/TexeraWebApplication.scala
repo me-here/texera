@@ -40,8 +40,10 @@ object TexeraWebApplication {
     actorSystem.scheduler.scheduleOnce(delay)(call)
   }
 
-  def scheduleRecurringCallThroughActorSystem(initialDelay: FiniteDuration, delay:FiniteDuration)(call: => Unit): Cancellable = {
-    actorSystem.scheduler.scheduleWithFixedDelay(initialDelay,delay)(() => call)
+  def scheduleRecurringCallThroughActorSystem(initialDelay: FiniteDuration, delay: FiniteDuration)(
+      call: => Unit
+  ): Cancellable = {
+    actorSystem.scheduler.scheduleWithFixedDelay(initialDelay, delay)(() => call)
   }
 
   private var actorSystem: ActorSystem = _

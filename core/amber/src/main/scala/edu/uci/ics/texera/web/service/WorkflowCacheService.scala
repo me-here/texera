@@ -20,7 +20,9 @@ object WorkflowCacheService extends LazyLogging {
   def isAvailable: Boolean = AmberUtils.amberConfig.getBoolean("cache.enabled")
 }
 
-class WorkflowCacheService(opResultStorage: OpResultStorage) extends SnapshotMulticast[TexeraWebSocketEvent] with LazyLogging {
+class WorkflowCacheService(opResultStorage: OpResultStorage)
+    extends SnapshotMulticast[TexeraWebSocketEvent]
+    with LazyLogging {
 
   val cachedOperators: mutable.HashMap[String, OperatorDescriptor] =
     mutable.HashMap[String, OperatorDescriptor]()

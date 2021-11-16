@@ -16,7 +16,8 @@ import collection.JavaConverters._
 class MongoDBStorage(id: String, schema: Schema) extends SinkStorage {
 
   schema.getAttributeNames.stream.forEach(name =>
-    assert(!name.matches(".*[\\$\\.].*"), s"illegal attribute name '$name' for mongo DB"))
+    assert(!name.matches(".*[\\$\\.].*"), s"illegal attribute name '$name' for mongo DB")
+  )
 
   val url: String = AmberUtils.amberConfig.getString("storage.mongodb.url")
   val databaseName: String = AmberUtils.amberConfig.getString("storage.mongodb.database")
@@ -54,9 +55,9 @@ class MongoDBStorage(id: String, schema: Schema) extends SinkStorage {
     }
 
     override def removeOne(tuple: Tuple): Unit = {
-      if(uncommittedInsertions.contains(tuple)){
+      if (uncommittedInsertions.contains(tuple)) {
         uncommittedInsertions.remove(tuple)
-      }else{
+      } else {
         collection.findOneAndDelete(tuple.asDocument())
       }
     }
@@ -75,7 +76,8 @@ class MongoDBStorage(id: String, schema: Schema) extends SinkStorage {
     mkTupleIterable(cursor)
   }
 
-  override def getShardedStorage(idx: Int): ShardedStorage = new MongoDBShardedStorage(commitBatchSize)
+  override def getShardedStorage(idx: Int): ShardedStorage =
+    new MongoDBShardedStorage(commitBatchSize)
 
   override def clear(): Unit = {
     database.getCollection(id).drop()

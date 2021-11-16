@@ -7,7 +7,12 @@ import edu.uci.ics.amber.engine.common.{AmberClient, AmberUtils}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.texera.web.{SnapshotMulticast, TexeraWebApplication}
 import edu.uci.ics.texera.web.model.websocket.event.WorkflowAvailableResultEvent.OperatorAvailableResult
-import edu.uci.ics.texera.web.model.websocket.event.{PaginatedResultEvent, TexeraWebSocketEvent, WebResultUpdateEvent, WorkflowAvailableResultEvent}
+import edu.uci.ics.texera.web.model.websocket.event.{
+  PaginatedResultEvent,
+  TexeraWebSocketEvent,
+  WebResultUpdateEvent,
+  WorkflowAvailableResultEvent
+}
 import edu.uci.ics.texera.web.model.websocket.request.ResultPaginationRequest
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.storage.OpResultStorage
@@ -116,26 +121,31 @@ class JobResultService(
   var progressiveResults: mutable.HashMap[String, ProgressiveResultService] =
     mutable.HashMap[String, ProgressiveResultService]()
   var availableResultMap: Map[String, OperatorAvailableResult] = Map.empty
-  private val resultPullingFrequency = AmberUtils.amberConfig.getInt("web-server.workflow-result-pulling-in-seconds")
+  private val resultPullingFrequency =
+    AmberUtils.amberConfig.getInt("web-server.workflow-result-pulling-in-seconds")
 
-  private val resultUpdateCancellable = TexeraWebApplication.scheduleRecurringCallThroughActorSystem(2.seconds, resultPullingFrequency.seconds){
-    onResultUpdate()
-  }
-
-  client.getObservable[WorkflowCompleted].onTerminateDetach.subscribe(evt =>{
-    if(resultUpdateCancellable.cancel() || resultUpdateCancellable.isCancelled){
-      // immediately perform final update
+  private val resultUpdateCancellable = TexeraWebApplication
+    .scheduleRecurringCallThroughActorSystem(2.seconds, resultPullingFrequency.seconds) {
       onResultUpdate()
     }
-  })
+
+  client
+    .getObservable[WorkflowCompleted]
+    .onTerminateDetach
+    .subscribe(evt => {
+      if (resultUpdateCancellable.cancel() || resultUpdateCancellable.isCancelled) {
+        // immediately perform final update
+        onResultUpdate()
+      }
+    })
 
   workflowInfo.toDAG.getSinkOperators.map(sink => {
     workflowInfo.toDAG.getOperator(sink) match {
-      case sinkOp:ProgressiveSinkOpDesc =>
+      case sinkOp: ProgressiveSinkOpDesc =>
         val service = new ProgressiveResultService(sinkOp)
         sinkOp.getCachedUpstreamId match {
           case Some(upstreamId) => progressiveResults += ((upstreamId, service))
-          case None => progressiveResults += ((sink, service))
+          case None             => progressiveResults += ((sink, service))
         }
       case other => // skip other non-texera-managed sinks, if any
     }
@@ -146,9 +156,9 @@ class JobResultService(
     val from = request.pageSize * (request.pageIndex - 1)
     val opId = request.operatorID
     val paginationIterable =
-      if(opResultStorage.contains(opId)){
+      if (opResultStorage.contains(opId)) {
         opResultStorage.get(opId).getRange(from, from + request.pageSize)
-      }else{
+      } else {
         Iterable.empty
       }
     val mappedResults = paginationIterable
@@ -185,7 +195,9 @@ class JobResultService(
 
   override def sendSnapshotTo(observer: Observer[TexeraWebSocketEvent]): Unit = {
     observer.onNext(WorkflowAvailableResultEvent(availableResultMap))
-    observer.onNext(WebResultUpdateEvent(progressiveResults.map(e => (e._1, e._2.getSnapshot)).toMap))
+    observer.onNext(
+      WebResultUpdateEvent(progressiveResults.map(e => (e._1, e._2.getSnapshot)).toMap)
+    )
   }
 
 }

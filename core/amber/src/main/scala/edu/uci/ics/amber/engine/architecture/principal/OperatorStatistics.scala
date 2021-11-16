@@ -5,4 +5,3 @@ case class OperatorStatistics(
     aggregatedInputRowCount: Long,
     aggregatedOutputRowCount: Long
 )
-

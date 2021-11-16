@@ -15,13 +15,14 @@ class ProgressiveSinkOpExecConfig(
     tag: OperatorIdentity,
     val operatorSchemaInfo: OperatorSchemaInfo,
     outputMode: IncrementalOutputMode,
-    storage:SinkStorage
+    storage: SinkStorage
 ) extends OpExecConfig(tag) {
   override lazy val topology = new Topology(
     Array(
       new WorkerLayer(
         makeLayer(tag, "main"),
-        idx => new ProgressiveSinkOpExec(operatorSchemaInfo, outputMode, storage.getShardedStorage(idx)),
+        idx =>
+          new ProgressiveSinkOpExec(operatorSchemaInfo, outputMode, storage.getShardedStorage(idx)),
         1,
         ForceLocal(),
         RandomDeployment()

@@ -1,13 +1,20 @@
 package edu.uci.ics.texera.workflow.common.workflow
 
 import akka.actor.ActorRef
-import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.{ConditionalGlobalBreakpoint, CountGlobalBreakpoint}
+import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.{
+  ConditionalGlobalBreakpoint,
+  CountGlobalBreakpoint
+}
 import edu.uci.ics.amber.engine.architecture.controller.Workflow
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.AssignBreakpointHandler.AssignGlobalBreakpoint
 import edu.uci.ics.amber.engine.common.AmberClient
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.ControlInvocation
-import edu.uci.ics.amber.engine.common.virtualidentity.{LinkIdentity, OperatorIdentity, WorkflowIdentity}
+import edu.uci.ics.amber.engine.common.virtualidentity.{
+  LinkIdentity,
+  OperatorIdentity,
+  WorkflowIdentity
+}
 import edu.uci.ics.amber.engine.operators.OpExecConfig
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.operators.source.SourceOperatorDescriptor
@@ -74,7 +81,7 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
             sink.setOutputMode(viz.outputMode())
             sink.setChartType(viz.chartType())
           case _ =>
-            //skip
+          //skip
         }
       }
     })
@@ -91,7 +98,8 @@ class WorkflowCompiler(val workflowInfo: WorkflowInfo, val context: WorkflowCont
       o match {
         case sink: ProgressiveSinkOpDesc =>
           sink.getCachedUpstreamId match {
-            case Some(upstreamId) => sink.setStorage(opResultStorage.create(upstreamId, outputSchema))
+            case Some(upstreamId) =>
+              sink.setStorage(opResultStorage.create(upstreamId, outputSchema))
             case None => sink.setStorage(opResultStorage.create(o.operatorID, outputSchema))
           }
         case _ =>

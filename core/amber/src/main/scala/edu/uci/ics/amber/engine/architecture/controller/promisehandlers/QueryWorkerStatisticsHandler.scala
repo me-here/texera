@@ -9,7 +9,6 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryStatist
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 
-
 object QueryWorkerStatisticsHandler {
 
   final case class ControllerInitiateQueryStatistics(
