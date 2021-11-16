@@ -81,11 +81,7 @@ class Controller(
   networkCommunicationActor ! RegisterActorRef(CLIENT, context.parent)
 
   // build whole workflow
-  try {
-    workflow.build(availableNodes, networkCommunicationActor, context)
-  } catch {
-    case t: Throwable => t.printStackTrace()
-  }
+  workflow.build(availableNodes, networkCommunicationActor, context)
 
   // bring all workers into a ready state
   prepareWorkers()
