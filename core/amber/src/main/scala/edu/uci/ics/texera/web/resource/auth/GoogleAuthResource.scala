@@ -58,8 +58,6 @@ object GoogleAuthResource {
       val googleId = payload.getSubject
       // get the Google username of the user, will be used as Texera username
       val googleUsername = payload.get("name").asInstanceOf[String]
-      // get the Google profile picture of the user
-      val userAvatar = payload.get("picture").asInstanceOf[String]
 
       // store Google user id in database if it does not exist
       Option(userDao.fetchOneByGoogleId(googleId)) match {

@@ -102,7 +102,6 @@ export class AuthService {
     if (token !== null && !this.jwtHelperService.isTokenExpired(token)) {
       this.registerAutoLogout();
       this.registerAutoRefreshToken();
-      console.log("jwt content ", this.jwtHelperService.decodeToken(token));
       return of(<User>{
         name: this.jwtHelperService.decodeToken(token).sub,
         googleId: this.jwtHelperService.decodeToken(token).googleId,
