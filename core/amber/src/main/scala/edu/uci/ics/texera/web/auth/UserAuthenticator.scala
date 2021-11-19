@@ -15,7 +15,7 @@ object UserAuthenticator extends Authenticator[JwtContext, SessionUser] with Laz
     try {
       val userName = context.getJwtClaims.getSubject
       val userId = UInteger.valueOf(context.getJwtClaims.getClaimValue("userId").asInstanceOf[Long])
-      val user = new User(userName, userId, null, null, null)
+      val user = new User(userName, userId, null, null)
       Optional.of(new SessionUser(user))
     } catch {
       case e: Exception =>

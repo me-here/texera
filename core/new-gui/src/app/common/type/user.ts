@@ -7,5 +7,5 @@ export interface User
   extends Readonly<{
     name: string;
     uid: number;
-    avatar: string | undefined;
+    googleId: string | undefined;
   }> {}

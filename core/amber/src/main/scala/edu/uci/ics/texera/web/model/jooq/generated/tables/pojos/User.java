@@ -15,13 +15,12 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class User implements IUser {
 
-    private static final long serialVersionUID = 159129094;
+    private static final long serialVersionUID = -1659266357;
 
     private String   name;
     private UInteger uid;
     private String   password;
     private String   googleId;
-    private String   avatar;
 
     public User() {}
 
@@ -30,21 +29,18 @@ public class User implements IUser {
         this.uid = value.getUid();
         this.password = value.getPassword();
         this.googleId = value.getGoogleId();
-        this.avatar = value.getAvatar();
     }
 
     public User(
         String   name,
         UInteger uid,
         String   password,
-        String   googleId,
-        String   avatar
+        String   googleId
     ) {
         this.name = name;
         this.uid = uid;
         this.password = password;
         this.googleId = googleId;
-        this.avatar = avatar;
     }
 
     @Override
@@ -88,16 +84,6 @@ public class User implements IUser {
     }
 
     @Override
-    public String getAvatar() {
-        return this.avatar;
-    }
-
-    @Override
-    public void setAvatar(String avatar) {
-        this.avatar = avatar;
-    }
-
-    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("User (");
 
@@ -105,7 +91,6 @@ public class User implements IUser {
         sb.append(", ").append(uid);
         sb.append(", ").append(password);
         sb.append(", ").append(googleId);
-        sb.append(", ").append(avatar);
 
         sb.append(")");
         return sb.toString();
@@ -121,7 +106,6 @@ public class User implements IUser {
         setUid(from.getUid());
         setPassword(from.getPassword());
         setGoogleId(from.getGoogleId());
-        setAvatar(from.getAvatar());
     }
 
     @Override

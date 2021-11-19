@@ -76,7 +76,6 @@ object GoogleAuthResource {
           val user = new User
           user.setName(googleUsername)
           user.setGoogleId(googleId)
-          user.setAvatar(userAvatar)
           userDao.insert(user)
           user
       }

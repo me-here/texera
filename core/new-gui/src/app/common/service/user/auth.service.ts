@@ -105,7 +105,7 @@ export class AuthService {
       console.log("jwt content ", this.jwtHelperService.decodeToken(token));
       return of(<User>{
         name: this.jwtHelperService.decodeToken(token).sub,
-        avatar: this.jwtHelperService.decodeToken(token).avatar,
+        googleId: this.jwtHelperService.decodeToken(token).googleId,
       });
     } else {
       // access token is expired, logout instantly

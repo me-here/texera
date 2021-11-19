@@ -67,6 +67,7 @@ export const defaultEnvironment = {
    */
   google: {
     clientID: "",
+    publicKey: "",
   },
 };
 
