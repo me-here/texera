@@ -15,7 +15,10 @@ import { environment } from "../../../../environments/environment";
  * UserAvatarComponent is used to show the avatar of a user
  * The avatar of a Google user will be its Google profile picture
  * The avatar of a normal user will be a default one with the initial
- *
+ * 
+ * Use Google People API to retrieve google user's profile picture
+ * Check https://developers.google.com/people/api/rest/v1/people/get for more details of the api usage
+ * 
  * @author Zhen Guan
  */
 export class UserAvatarComponent implements OnInit {
@@ -34,9 +37,9 @@ export class UserAvatarComponent implements OnInit {
     if (this.googleId) {
       this.userName = "";
       // get the avatar of the google user
-      const url = `https://people.googleapis.com/v1/people/${this.googleId}?personFields=names%2Cphotos&key=${this.publicKey}`;
+      const googlePeopleAPIUrl = `https://people.googleapis.com/v1/people/${this.googleId}?personFields=names%2Cphotos&key=${this.publicKey}`;
       this.http
-        .get<GooglePeopleApiResponse>(url)
+        .get<GooglePeopleApiResponse>(googlePeopleAPIUrl)
         .pipe(untilDestroyed(this))
         .subscribe(res => {
           this.googleUserAvatarSrc = res.photos[0].url;
