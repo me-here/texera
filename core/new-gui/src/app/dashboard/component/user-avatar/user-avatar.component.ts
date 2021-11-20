@@ -33,8 +33,7 @@ export class UserAvatarComponent implements OnInit {
   ngOnInit(): void {
     if (!this.googleId && !this.userName) {
       throw new Error("google Id or user name should be provided");
-    }
-    if (this.googleId) {
+    } else if (this.googleId) {
       this.userName = "";
       // get the avatar of the google user
       const googlePeopleAPIUrl = `https://people.googleapis.com/v1/people/${this.googleId}?personFields=names%2Cphotos&key=${this.publicKey}`;
@@ -44,7 +43,7 @@ export class UserAvatarComponent implements OnInit {
         .subscribe(res => {
           this.googleUserAvatarSrc = res.photos[0].url;
         });
-    } else if (this.userName) {
+    } else {
       const colors = ["#9ACD32", "#40E0D0", "#696969", "#9932CC", "#FF8C00"];
       const avatar = document.getElementById("texera-user-avatar");
       const randomColor = Math.floor(Math.random() * colors.length);
