@@ -30,8 +30,8 @@ object Constants {
   val onlyDetectSkew: Boolean = false
   var threshold: Int = 100
   var freeSkewedThreshold: Int = 300
-  val firstPhaseNum = 1 // 9
-  val firstPhaseDen = 1 // 10
+  val firstPhaseNum = 9
+  val firstPhaseDen = 10
 
   val singleIterationOnly: Boolean = false // set freeSkewedThreshold to large number
   val dynamicThreshold: Boolean = false

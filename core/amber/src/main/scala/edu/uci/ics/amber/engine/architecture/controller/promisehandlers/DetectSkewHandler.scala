@@ -338,8 +338,7 @@ trait DetectSkewHandler {
             s"SECOND PHASE: ${id} - Loads=${skewedLoad}:${freeLoad}; Error=${skewedEstimateError}:${freeEstimateError}; Size=${skewedHistorySize}:${freeHistorySize} - Ratio=${redirectNum}:${skewedLoad.toLong}"
           )
           futuresArr.append(
-            // send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
-            send(ShareFlow(sf._1, sf._2, 1, 1), id)
+            send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
           )
 
         }
