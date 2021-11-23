@@ -59,10 +59,14 @@ class HashJoinTweetsOpExecConfig[K](
   }
 
   override def getShuffleHashFunction(layer: LayerIdentity): ITuple => Int = {
-    if (layer == buildTable.from) { t: ITuple =>
-      t.asInstanceOf[Tuple].getField(buildAttributeName).asInstanceOf[String].toInt
-    } else { t: ITuple =>
-      t.asInstanceOf[Tuple].getField(probeAttributeName).asInstanceOf[String].toInt
+    if (layer == buildTable.from) { t: ITuple => {
+      val ret = t.asInstanceOf[Tuple].getField(buildAttributeName).asInstanceOf[String].toInt
+      if(ret==48) {6} else { ret}
+    }
+    } else { t: ITuple => {
+      val ret = t.asInstanceOf[Tuple].getField(buildAttributeName).asInstanceOf[String].toInt
+      if(ret==48) {6} else { ret}
+    }
     }
   }
 }
