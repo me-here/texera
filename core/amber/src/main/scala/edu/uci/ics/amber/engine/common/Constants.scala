@@ -27,13 +27,13 @@ object Constants {
   val upperLimit: Float = 600000f // 30gb
 
   val sortExperiment: Boolean = false
-  val onlyDetectSkew: Boolean = true
-  var threshold: Int = 100
+  val onlyDetectSkew: Boolean = false
+  var threshold: Int = 10
   var freeSkewedThreshold: Int = 300
   val firstPhaseNum = 9
   val firstPhaseDen = 10
 
-  val singleIterationOnly: Boolean = false // set freeSkewedThreshold to large number
+  val singleIterationOnly: Boolean = true // set freeSkewedThreshold to large number
   val dynamicThreshold: Boolean = false
   val controllerHistoryLimitPerWorker: Int = 10000
   val fixedThresholdIncrease: Int = 50
