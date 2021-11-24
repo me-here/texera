@@ -22,7 +22,7 @@ class CongestionControl {
   // after windowSize > ssThreshold,
   // we increment windowSize by one every time,
   // otherwise, we multiply windowSize by 2.
-  private var ssThreshold = 16
+  private var ssThreshold = 100 //16
 
   // initial window size = 1
   // it represents how many messages can be sent concurrently
