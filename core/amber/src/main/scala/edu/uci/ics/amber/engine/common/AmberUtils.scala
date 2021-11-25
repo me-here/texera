@@ -51,7 +51,7 @@ object AmberUtils {
 
   def startActorWorker(mainNodeAddress: Option[String]): ActorSystem = {
     val addr = mainNodeAddress.getOrElse("localhost")
-    val localIpAddress = "localhost"
+    var localIpAddress = "localhost"
     if (mainNodeAddress.isDefined) {
       try {
         val query = new URL("http://checkip.amazonaws.com")
