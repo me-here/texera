@@ -473,7 +473,7 @@ trait DetectSkewHandler {
                 detectSkewLogger.logInfo(
                   s"\tSkewed Worker:${sf._1}, Free Worker:${sf._2}, build replication:${sf._3}"
                 )
-                if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
+                // if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
               })
               Future
                 .collect(futuresArr)
