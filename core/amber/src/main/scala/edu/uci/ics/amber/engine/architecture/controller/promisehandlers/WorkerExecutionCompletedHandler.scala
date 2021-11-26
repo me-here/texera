@@ -15,6 +15,7 @@ import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.Work
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
 import edu.uci.ics.amber.engine.operators.SinkOpExecConfig
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExecConfig
+import edu.uci.ics.texera.workflow.operators.hashJoinGenerated.HashJoinGeneratedOpExecConfig
 import edu.uci.ics.texera.workflow.operators.hashJoinSpecial2.HashJoinSpecial2OpExecConfig
 import edu.uci.ics.texera.workflow.operators.hashJoinTweets.HashJoinTweetsOpExecConfig
 import edu.uci.ics.texera.workflow.operators.sort.SortOpExecConfig
@@ -76,6 +77,7 @@ trait WorkerExecutionCompletedHandler {
           workflow
             .getOperator(sender)
             .isInstanceOf[HashJoinTweetsOpExecConfig[Constants.joinType]] || workflow.getOperator(sender).isInstanceOf[HashJoinSpecial2OpExecConfig[Constants.joinType]]
+          || workflow.getOperator(sender).isInstanceOf[HashJoinGeneratedOpExecConfig[Constants.joinType]]
           // && workflow.getOperator(sender).getState == OperatorState.Completed
         ) {
           // join-skew research related

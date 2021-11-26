@@ -29,10 +29,11 @@ import edu.uci.ics.texera.workflow.operators.visualization.lineChart.LineChartOp
 import edu.uci.ics.texera.workflow.operators.visualization.pieChart.PieChartOpDesc
 import edu.uci.ics.texera.workflow.operators.visualization.wordCloud.WordCloudOpDesc
 import org.apache.commons.lang3.builder.{EqualsBuilder, HashCodeBuilder, ToStringBuilder}
-import java.util.UUID
 
+import java.util.UUID
 import edu.uci.ics.amber.engine.common.virtualidentity.OperatorIdentity
 import edu.uci.ics.texera.workflow.operators.generated.GenerateDataSourceOpDesc
+import edu.uci.ics.texera.workflow.operators.hashJoinGenerated.HashJoinGeneratedOpDesc
 import edu.uci.ics.texera.workflow.operators.hashJoinSpecial.HashJoinSpecialOpDesc
 import edu.uci.ics.texera.workflow.operators.hashJoinSpecial2.HashJoinSpecial2OpDesc
 import edu.uci.ics.texera.workflow.operators.hashJoinTweets.HashJoinTweetsOpDesc
@@ -79,7 +80,8 @@ import edu.uci.ics.texera.workflow.operators.sortOneLayer.SortOneLayerOpDesc
     new Type(value = classOf[SortOpDesc], name = "Sort"),
     new Type(value = classOf[SortOneLayerOpDesc], name = "SortOneLayer"),
     new Type(value = classOf[HdfsFileSinkOpDesc], name = "HdfsFileSink"),
-    new Type(value = classOf[HashJoinTweetsOpDesc[Constants.joinType]], name = "HashJoinTweets")
+    new Type(value = classOf[HashJoinTweetsOpDesc[Constants.joinType]], name = "HashJoinTweets"),
+    new Type(value = classOf[HashJoinGeneratedOpDesc[Constants.joinType]], name = "HashJoinGenerated")
   )
 )
 abstract class OperatorDescriptor extends Serializable {
