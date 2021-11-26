@@ -37,7 +37,7 @@ class GenerateDataSourceOpExec(limit:Int,
           }.toMap
           val remaining = total/100*percentage
           val remainingKeyCount = (keyRange._2 - keyRange._1 + 1) - curDist._2.length
-          keyDist = skewedMap ++ Array.range(keyRange._1, keyRange._2+1).map{
+          keyDist = skewedMap ++ Array.range(keyRange._1, keyRange._2+1).collect{
             case key if !skewedMap.contains(key) => key -> remaining/remainingKeyCount
           }.toMap
           println("new key dist = "+keyDist)
