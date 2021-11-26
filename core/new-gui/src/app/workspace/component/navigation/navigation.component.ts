@@ -384,10 +384,12 @@ export class NavigationComponent {
   }
 
   public persistWorkflow(): void {
+    this.isSaving = true;
     this.workflowPersistService.createSnapShotCanvas().then(canvas => {
       canvas.toBlob(snapshotBlob => {
         if (snapshotBlob === null) {
           this.notificationService.error("canvas error");
+          this.isSaving = false;
           return;
         }
         this.workflowPersistService
