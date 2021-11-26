@@ -54,8 +54,8 @@ class GenerateDataSourceOpDesc extends SourceOperatorDescriptor{
 
   override def sourceSchema(): Schema = {
     val builder = Schema.newBuilder()
-    builder.add(new Attribute("key",AttributeType.INTEGER))
-    builder.add(new Attribute("value", AttributeType.INTEGER))
+    builder.add(new Attribute("key",AttributeType.STRING))
+    builder.add(new Attribute("value", AttributeType.STRING))
     builder.build()
   }
 

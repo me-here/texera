@@ -49,7 +49,7 @@ class GenerateDataSourceOpExec(limit:Int,
           }
           keyCurCount = 0
         }
-        val res = Tuple.newBuilder().add(schema,Array[AnyRef](Int.box(keyCur), Int.box(current))).build()
+        val res = Tuple.newBuilder().add(schema,Array[AnyRef](keyCur.toString, current.toString)).build()
         keyCurCount +=1
         current += 1
         res
