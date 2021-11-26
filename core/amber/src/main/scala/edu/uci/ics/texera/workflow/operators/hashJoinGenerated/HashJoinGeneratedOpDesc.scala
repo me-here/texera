@@ -26,7 +26,6 @@ class HashJoinGeneratedOpDesc[K] extends OperatorDescriptor {
   @JsonProperty(required = true)
   @JsonSchemaTitle("Complexity")
   @JsonPropertyDescription("Complexity")
-  @AutofillAttributeNameOnPort1
   var complexity: Int = _
 
   @JsonIgnore
