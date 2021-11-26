@@ -338,8 +338,8 @@ trait DetectSkewHandler {
             s"SECOND PHASE: ${id} - Loads=${skewedLoad}:${freeLoad}; Error=${skewedEstimateError}:${freeEstimateError}; Size=${skewedHistorySize}:${freeHistorySize} - Ratio=${redirectNum}:${skewedLoad.toLong}"
           )
           futuresArr.append(
-            // send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
-            send(ShareFlow(sf._1, sf._2, 1, 2), id)
+            send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
+            // send(ShareFlow(sf._1, sf._2, 1, 2), id)
           )
 
         }
@@ -473,7 +473,7 @@ trait DetectSkewHandler {
                 detectSkewLogger.logInfo(
                   s"\tSkewed Worker:${sf._1}, Free Worker:${sf._2}, build replication:${sf._3}"
                 )
-                // if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
+                if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
               })
               Future
                 .collect(futuresArr)
