@@ -44,7 +44,7 @@ class GenerateDataSourceOpExec(limit:Int,
         }
         if(keyDist(keyCur) <= keyCurCount){
           keyCur += 1
-          if(keyCur == keyRange._2){
+          if(keyCur > keyRange._2){
             keyCur = keyRange._1
           }
           keyCurCount = 0

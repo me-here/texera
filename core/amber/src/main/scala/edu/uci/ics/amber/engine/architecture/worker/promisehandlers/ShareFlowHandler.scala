@@ -5,7 +5,6 @@ import com.twitter.conversions.DurationOps._
 import com.twitter.util.JavaTimer
 import edu.uci.ics.amber.engine.architecture.worker.WorkerAsyncRPCHandlerInitializer
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ShareFlowHandler.ShareFlow
-import edu.uci.ics.amber.engine.common.Constants.controlMessageLatency
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
 
