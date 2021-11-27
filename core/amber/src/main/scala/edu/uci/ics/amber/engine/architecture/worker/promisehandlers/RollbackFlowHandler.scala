@@ -1,5 +1,8 @@
 package edu.uci.ics.amber.engine.architecture.worker.promisehandlers
 
+import com.twitter.util.Future
+import com.twitter.conversions.DurationOps._
+import com.twitter.util.JavaTimer
 import edu.uci.ics.amber.engine.architecture.worker.WorkerAsyncRPCHandlerInitializer
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.RollbackFlowHandler.RollbackFlow
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
@@ -18,6 +21,13 @@ trait RollbackFlowHandler {
 
   registerHandler { (cmd: RollbackFlow, sender) =>
     // workerStateManager.shouldBe(Running, Ready)
-    tupleToBatchConverter.rollbackFlow(cmd.skewedReceiverId, cmd.freeReceiverId)
+    Future
+      .sleep(10.seconds)(new JavaTimer())
+      .map(_ =>
+        tupleToBatchConverter.rollbackFlow(
+          cmd.skewedReceiverId,
+          cmd.freeReceiverId
+        )
+      )
   }
 }
