@@ -14,6 +14,7 @@ import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager.Comple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.WorkerActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, VirtualIdentity}
 import edu.uci.ics.amber.engine.operators.SinkOpExecConfig
+import edu.uci.ics.texera.workflow.common.operators.filter.FilterOpExecConfig
 import edu.uci.ics.texera.workflow.operators.hashJoin.HashJoinOpExecConfig
 import edu.uci.ics.texera.workflow.operators.hashJoinGenerated.HashJoinGeneratedOpExecConfig
 import edu.uci.ics.texera.workflow.operators.hashJoinSpecial2.HashJoinSpecial2OpExecConfig
@@ -60,7 +61,9 @@ trait WorkerExecutionCompletedHandler {
                   .getOperator(sender)
                   .isInstanceOf[HashJoinOpExecConfig[Constants.joinType]] || workflow
                   .getOperator(sender)
-                  .isInstanceOf[SortOpExecConfig]
+                  .isInstanceOf[SortOpExecConfig] || workflow
+                  .getOperator(sender)
+                  .isInstanceOf[FilterOpExecConfig]
               ) {
                 workerCompletedLogger.logInfo(
                   s"\tFinal i/o tuples and time in ${sender} are ${stats}, ${(workerEndTime(sender) - workerStartTime(sender)) / 1e9d}s"
