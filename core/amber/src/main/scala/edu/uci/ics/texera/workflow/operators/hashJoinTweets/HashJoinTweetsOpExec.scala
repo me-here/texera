@@ -1,6 +1,6 @@
 package edu.uci.ics.texera.workflow.operators.hashJoinTweets
 
-import edu.uci.ics.amber.engine.common.InputExhausted
+import edu.uci.ics.amber.engine.common.{Constants, InputExhausted}
 import edu.uci.ics.amber.engine.common.amberexception.WorkflowRuntimeException
 import edu.uci.ics.amber.engine.common.virtualidentity.LinkIdentity
 import edu.uci.ics.amber.error.WorkflowRuntimeError
@@ -71,12 +71,23 @@ class HashJoinTweetsOpExec[K](
             } else {
               val tweetText = t.getField(tweetTextAttr).asInstanceOf[String]
               var countPresent: Int = 0
-              for (i <- 0 to 2) {
-                storedWords.foreach(slang => {
-                  if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
-                    countPresent += 1
-                  }
-                })
+              if (Constants.dynamicThreshold) {
+                var slangs: Array[String] = Array("there", "hella", "gaper", "bomb", "poho", "potato", "dunks")
+                for (i <- 0 to 3) {
+                  slangs.foreach(slang => {
+                    if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
+                      countPresent += 1
+                    }
+                  })
+                }
+              } else {
+                for (i <- 0 to 2) {
+                  storedWords.foreach(slang => {
+                    if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
+                      countPresent += 1
+                    }
+                  })
+                }
               }
 
               if (countPresent > 7) {

@@ -161,6 +161,7 @@ object DetectSkewHandler {
 
         if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, Constants.freeSkewedThreshold)) {
           ret.append((actualSkewedWorker, sortedWorkers(i)))
+          firstPhaseIterations(actualSkewedWorker) = firstPhaseIterations(actualSkewedWorker) + 1
           skewedToFreeWorkerNetworkRolledBack(actualSkewedWorker) = sortedWorkers(i)
         }
       }
@@ -482,7 +483,7 @@ trait DetectSkewHandler {
                 detectSkewLogger.logInfo(
                   s"\tSkewed Worker:${sf._1}, Free Worker:${sf._2}, build replication:${sf._3}"
                 )
-                if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
+                // if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
               })
               Future
                 .collect(futuresArr)
