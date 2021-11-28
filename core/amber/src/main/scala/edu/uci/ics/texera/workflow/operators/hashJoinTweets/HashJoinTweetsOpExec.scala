@@ -81,13 +81,21 @@ class HashJoinTweetsOpExec[K](
                   })
                 }
               } else {
-                for (i <- 0 to 2) {
-                  storedWords.foreach(slang => {
+                var slangs: Array[String] = Array("there", "hella", "gaper", "bomb", "poho", "potato", "dunks")
+                for (i <- 0 to 6) {
+                  slangs.foreach(slang => {
                     if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
                       countPresent += 1
                     }
                   })
                 }
+//                for (i <- 0 to 2) {
+//                  storedWords.foreach(slang => {
+//                    if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
+//                      countPresent += 1
+//                    }
+//                  })
+//                }
               }
 
               if (countPresent > 7) {
