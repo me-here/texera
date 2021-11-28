@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.{JsonIgnore, JsonProperty, JsonPropertyD
 import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.texera.workflow.common.metadata.{InputPort, OperatorGroupConstants, OperatorInfo, OutputPort}
 import edu.uci.ics.texera.workflow.common.operators.OneToOneOpExecConfig
-import edu.uci.ics.texera.workflow.common.operators.filter.FilterOpDesc
+import edu.uci.ics.texera.workflow.common.operators.filter.{FilterOpDesc, FilterOpExecConfig}
 
 import scala.util.Random
 
@@ -23,8 +23,8 @@ class RandomKSamplingOpDesc extends FilterOpDesc {
   @JsonIgnore
   def getSeed(index: Int): Int = seeds(index)
 
-  override def operatorExecutor: OneToOneOpExecConfig = {
-    new OneToOneOpExecConfig(
+  override def operatorExecutor: FilterOpExecConfig = {
+    new FilterOpExecConfig(
       this.operatorIdentifier,
       (actor: Int) => new RandomKSamplingOpExec(actor, this)
     )
