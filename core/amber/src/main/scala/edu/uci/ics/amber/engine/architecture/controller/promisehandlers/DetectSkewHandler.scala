@@ -319,11 +319,6 @@ trait DetectSkewHandler {
             if (freeEstimateError > maxErrorAtSecondPhaseStart && freeEstimateError != Double.MaxValue) {
               maxErrorAtSecondPhaseStart = freeEstimateError
             }
-            println(s"The MAX ERROR at Second phase is ${maxErrorAtSecondPhaseStart}")
-            if (maxErrorAtSecondPhaseStart > Constants.upperErrorLimit) {
-              Constants.threshold = Constants.threshold + Constants.fixedThresholdIncrease
-              detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
-            }
           }
           val redirectNum = ((skewedLoad - freeLoad) / 2).toLong
           workerToTotalLoadHistory(id)(sf._1) = new ArrayBuffer[Long]()
@@ -346,6 +341,13 @@ trait DetectSkewHandler {
         }
       })
     })
+    if (Constants.dynamicThreshold) {
+      println(s"The MAX ERROR at Second phase is ${maxErrorAtSecondPhaseStart}")
+      if (maxErrorAtSecondPhaseStart > Constants.upperErrorLimit) {
+        Constants.threshold = Constants.threshold + Constants.fixedThresholdIncrease
+        detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
+      }
+    }
     Future.collect(futuresArr)
   }
 
