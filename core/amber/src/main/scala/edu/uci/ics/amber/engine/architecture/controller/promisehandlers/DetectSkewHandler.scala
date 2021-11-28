@@ -289,6 +289,12 @@ trait DetectSkewHandler {
         )
       })
     })
+    if (Constants.dynamicThreshold) {
+      if (maxError > Constants.upperErrorLimit && maxError != Double.MaxValue) {
+        Constants.threshold = Constants.threshold + Constants.fixedThresholdIncrease
+        detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
+      }
+    }
     Future.collect(futuresArr)
   }
 
@@ -341,13 +347,13 @@ trait DetectSkewHandler {
         }
       })
     })
-    if (Constants.dynamicThreshold) {
-      println(s"The MAX ERROR at Second phase is ${maxErrorAtSecondPhaseStart}")
-      if (maxErrorAtSecondPhaseStart > Constants.upperErrorLimit) {
-        Constants.threshold = Constants.threshold + Constants.fixedThresholdIncrease
-        detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
-      }
-    }
+//    if (Constants.dynamicThreshold) {
+//      println(s"The MAX ERROR at Second phase is ${maxErrorAtSecondPhaseStart}")
+//      if (maxError > Constants.upperErrorLimit && maxError != Double.MaxValue) {
+//        Constants.threshold = Constants.threshold + Constants.fixedThresholdIncrease
+//        detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
+//      }
+//    }
     Future.collect(futuresArr)
   }
 
