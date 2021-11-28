@@ -6,6 +6,7 @@ import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryNextOpL
   FutureLoadMetrics,
   QueryFutureLoadMetrics,
   QueryNextOpLoadMetrics,
+  TotalSentCount,
   WorkloadHistory
 }
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
@@ -22,7 +23,8 @@ object QueryNextOpLoadMetricsHandler {
   final case class WorkloadHistory(
       history: mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]
   )
-  final case class QueryNextOpLoadMetrics() extends ControlCommand[(FutureLoadMetrics, WorkloadHistory)]
+  final case class TotalSentCount(totalSent: mutable.HashMap[ActorVirtualIdentity, Long])
+  final case class QueryNextOpLoadMetrics() extends ControlCommand[(FutureLoadMetrics, WorkloadHistory, TotalSentCount)]
   final case class QueryFutureLoadMetrics() extends ControlCommand[FutureLoadMetrics]
 }
 
@@ -35,6 +37,7 @@ trait QueryNextOpLoadMetricsHandler {
     val f1: Future[FutureLoadMetrics] = sendToNetworkCommActor(QueryFutureLoadMetrics())
     val f2: Future[WorkloadHistory] =
       Future(WorkloadHistory(tupleToBatchConverter.getWorkloadHistory()))
-    Future.join(f1, f2)
+    val f3: Future[TotalSentCount] = Future(TotalSentCount(tupleToBatchConverter.getTotalSentCount()))
+    Future.join(f1, f2, f3)
   }
 }

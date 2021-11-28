@@ -20,7 +20,7 @@ abstract class ParallelBatchingPolicy(
   var bucketsToReceivers = new mutable.HashMap[Int, ArrayBuffer[ActorVirtualIdentity]]()
   var bucketsToRedirectRatio =
     new mutable.HashMap[Int, (Long, Long, Long)]() // bucket to (tuples idx, numerator, denominator)
-  var bucketsToSharingEnabled = new mutable.HashMap[Int,Boolean]()
+  var bucketsToSharingEnabled = new mutable.HashMap[Int, Boolean]()
   var originalReceiverToHistory = new mutable.HashMap[ActorVirtualIdentity, ArrayBuffer[Long]]()
   var tupleIndexForHistory = 0
   var receiverToBatch = new mutable.HashMap[ActorVirtualIdentity, Array[ITuple]]()
@@ -46,6 +46,8 @@ abstract class ParallelBatchingPolicy(
     }
     receiversAndBatches.toArray
   }
+
+  override def getTotalSentCount(): mutable.HashMap[ActorVirtualIdentity, Long] = { receiverToTotalSent }
 
   // for non-heavy hitters get the default receiver
   private def getDefaultReceiverForBucket(bucket: Int): ActorVirtualIdentity =
@@ -75,11 +77,11 @@ abstract class ParallelBatchingPolicy(
   }
 
   override def addReceiverToBucket(
-                                    defaultRecId: ActorVirtualIdentity,
-                                    newRecId: ActorVirtualIdentity,
-                                    tuplesToRedirectNumerator: Long,
-                                    tuplesToRedirectDenominator: Long
-                                  ): Unit = {
+      defaultRecId: ActorVirtualIdentity,
+      newRecId: ActorVirtualIdentity,
+      tuplesToRedirectNumerator: Long,
+      tuplesToRedirectDenominator: Long
+  ): Unit = {
     var defaultBucket: Int = -1
     bucketsToReceivers.keys.foreach(b => {
       if (bucketsToReceivers(b)(0) == defaultRecId) { defaultBucket = b }
@@ -99,9 +101,9 @@ abstract class ParallelBatchingPolicy(
   }
 
   override def removeReceiverFromBucket(
-                                         defaultRecId: ActorVirtualIdentity,
-                                         recIdToRemove: ActorVirtualIdentity
-                                       ): Unit = {
+      defaultRecId: ActorVirtualIdentity,
+      recIdToRemove: ActorVirtualIdentity
+  ): Unit = {
     var defaultBucket: Int = -1
     bucketsToReceivers.keys.foreach(b => {
       if (bucketsToReceivers(b)(0) == defaultRecId) { defaultBucket = b }
@@ -138,8 +140,8 @@ abstract class ParallelBatchingPolicy(
   }
 
   override def addTupleToBatch(
-                                tuple: ITuple
-                              ): Option[(ActorVirtualIdentity, DataPayload)] = {
+      tuple: ITuple
+  ): Option[(ActorVirtualIdentity, DataPayload)] = {
     val index = selectBatchingIndex(tuple)
     if (recordHistory) {
       var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))

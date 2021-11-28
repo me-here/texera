@@ -58,6 +58,10 @@ class TupleToBatchConverter(
     })
   }
 
+  def getTotalSentCount(): mutable.HashMap[ActorVirtualIdentity, Long] = {
+    policies(0).getTotalSentCount()
+  }
+
   def changeFlow(
       skewedReceiverId: ActorVirtualIdentity,
       freeReceiverId: ActorVirtualIdentity,
@@ -65,7 +69,7 @@ class TupleToBatchConverter(
       tuplesToRedirectDenominator: Long
   ): Unit = {
     policies.foreach(policy => {
-      policy.addReceiverToBucket(skewedReceiverId,freeReceiverId,tuplesToRedirectNumerator,tuplesToRedirectDenominator)
+      policy.addReceiverToBucket(skewedReceiverId, freeReceiverId, tuplesToRedirectNumerator, tuplesToRedirectDenominator)
     })
   }
 

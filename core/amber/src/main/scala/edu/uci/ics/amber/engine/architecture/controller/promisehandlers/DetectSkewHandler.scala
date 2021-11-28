@@ -31,7 +31,7 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSk
 }
 import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryLoadMetricsHandler.{CurrentLoadMetrics, QueryLoadMetrics}
-import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryNextOpLoadMetricsHandler.{FutureLoadMetrics, QueryNextOpLoadMetrics, WorkloadHistory}
+import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryNextOpLoadMetricsHandler.{FutureLoadMetrics, QueryNextOpLoadMetrics, TotalSentCount, WorkloadHistory}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.RollbackFlowHandler.RollbackFlow
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.SendBuildTableHandler.SendBuildTable
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ShareFlowHandler.ShareFlow
@@ -375,26 +375,29 @@ trait DetectSkewHandler {
 
   private def aggregateLoadMetrics(
       cmd: DetectSkew,
-      metrics: (Seq[CurrentLoadMetrics], Seq[(FutureLoadMetrics, WorkloadHistory)])
+      metrics: (Seq[CurrentLoadMetrics], Seq[(FutureLoadMetrics, WorkloadHistory, TotalSentCount)])
   ): mutable.HashMap[ActorVirtualIdentity, Long] = {
     val loads = new mutable.HashMap[ActorVirtualIdentity, Long]()
-    val fullLoads = new mutable.HashMap[ActorVirtualIdentity, Long]()
     for ((id, currLoad) <- cmd.joinLayer.workers.keys zip metrics._1) {
       loads(id) = currLoad.stashedBatches + currLoad.unprocessedQueueLength
-      fullLoads(id) = currLoad.stashedBatches + currLoad.unprocessedQueueLength
 //      detectSkewLogger.logInfo(
 //        s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue, ${currLoad.totalPutInInternalQueue} total input"
 //      )
     }
-    metrics._2.foreach(replyFromNetComm => {
-      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
-        if (loads.contains(wId)) {
-          // loads(wId) = loads.getOrElse(wId, 0L) + futLoad
-          fullLoads(wId) = fullLoads.getOrElse(wId, 0L) + futLoad
-        }
+//    metrics._2.foreach(replyFromNetComm => {
+//      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
+//        if (loads.contains(wId)) {
+//           loads(wId) = loads.getOrElse(wId, 0L) + futLoad
+//        }
+//      }
+//    })
+    val aggregatedSentCount = new mutable.HashMap[ActorVirtualIdentity, Long]()
+    metrics._2.foreach(prevReply => {
+      for ((rec, count) <- prevReply._3.totalSent) {
+        aggregatedSentCount(rec) = aggregatedSentCount.getOrElse(rec, 0L) + count
       }
     })
-    detectSkewLogger.logInfo(s"\tThe full loads map ${fullLoads.mkString("\n\t\t")}")
+    detectSkewLogger.logInfo(s"\tThe full loads map ${aggregatedSentCount.mkString("\n\t\t")}")
     maxError = Double.MinValue
     for ((prevWId, replyFromPrevId) <- cmd.probeLayer.workers.keys zip metrics._2) {
       var prevWorkerMap = workerToTotalLoadHistory.getOrElse(
