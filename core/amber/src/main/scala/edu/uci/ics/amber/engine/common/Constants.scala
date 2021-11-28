@@ -29,12 +29,12 @@ object Constants {
   val sortExperiment: Boolean = false
   val onlyDetectSkew: Boolean = false
   var threshold: Int = 10
-  var freeSkewedThreshold: Int = 100 // 300
+  var freeSkewedThreshold: Int = 10 // 300
   val firstPhaseNum = 9 // 9
   val firstPhaseDen = 10 // 10
 
   val singleIterationOnly: Boolean = false // set freeSkewedThreshold to large number
-  val dynamicThreshold: Boolean = false
+  val dynamicThreshold: Boolean = false // set freeSkewedThreshold to be equal to threshold
   val controllerHistoryLimitPerWorker: Int = 10000
   val fixedThresholdIncrease: Int = 50
   val upperErrorLimit: Int = 95
