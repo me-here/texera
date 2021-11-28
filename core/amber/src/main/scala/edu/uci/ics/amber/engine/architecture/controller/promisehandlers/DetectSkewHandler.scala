@@ -294,7 +294,9 @@ trait DetectSkewHandler {
     if (Constants.dynamicThreshold) {
       if (maxError > Constants.upperErrorLimit && Constants.threshold < 160 && maxError != Double.MaxValue) {
         Constants.threshold = Constants.threshold + Constants.fixedThresholdIncrease
-        Constants.freeSkewedThreshold = Constants.threshold
+        if (Constants.threshold < 160) {
+          Constants.freeSkewedThreshold = Constants.threshold
+        }
         detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
       }
     }
