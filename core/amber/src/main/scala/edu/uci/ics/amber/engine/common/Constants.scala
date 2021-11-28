@@ -34,7 +34,7 @@ object Constants {
   val firstPhaseDen = 10 // 10
 
   val singleIterationOnly: Boolean = false // set freeSkewedThreshold to large number
-  val dynamicThreshold: Boolean = true
+  val dynamicThreshold: Boolean = false
   val controllerHistoryLimitPerWorker: Int = 10000
   val fixedThresholdIncrease: Int = 50
   val upperErrorLimit: Int = 95
