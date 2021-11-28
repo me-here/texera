@@ -70,7 +70,7 @@ class HashJoinTweetsOpExec[K](
               val tweetText = t.getField(tweetTextAttr).asInstanceOf[String]
               var countPresent: Int = 0
               val slangs: Array[String] = Array("there", "hella", "gaper", "bomb", "poho", "potato", "dunks")
-              for (i <- 0 to 6) {
+              for (i <- 0 to 3) {
                 slangs.foreach(slang => {
                   if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
                     countPresent += 1
@@ -85,7 +85,7 @@ class HashJoinTweetsOpExec[K](
               var countPresent: Int = 0
               if (Constants.dynamicThreshold) {
                 var slangs: Array[String] = Array("there", "hella", "gaper", "bomb", "poho", "potato", "dunks")
-                for (i <- 0 to 6) {
+                for (i <- 0 to 3) {
                   slangs.foreach(slang => {
                     if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
                       countPresent += 1
@@ -94,7 +94,7 @@ class HashJoinTweetsOpExec[K](
                 }
               } else {
                 var slangs: Array[String] = Array("there", "hella", "gaper", "bomb", "poho", "potato", "dunks")
-                for (i <- 0 to 6) {
+                for (i <- 0 to 3) {
                   slangs.foreach(slang => {
                     if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
                       countPresent += 1
