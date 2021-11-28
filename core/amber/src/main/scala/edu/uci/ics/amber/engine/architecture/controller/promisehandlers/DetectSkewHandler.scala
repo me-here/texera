@@ -319,6 +319,7 @@ trait DetectSkewHandler {
             if (freeEstimateError > maxErrorAtSecondPhaseStart && freeEstimateError != Double.MaxValue) {
               maxErrorAtSecondPhaseStart = freeEstimateError
             }
+            println(s"The MAX ERROR at Second phase is ${maxErrorAtSecondPhaseStart}")
             if (maxErrorAtSecondPhaseStart > Constants.upperErrorLimit) {
               Constants.threshold = Constants.threshold + Constants.fixedThresholdIncrease
               detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
@@ -334,9 +335,9 @@ trait DetectSkewHandler {
             skewedLoad = 1
             freeLoad = 0
           }
-          detectSkewLogger.logInfo(
-            s"SECOND PHASE: ${id} - Loads=${skewedLoad}:${freeLoad}; Error=${skewedEstimateError}:${freeEstimateError}; Size=${skewedHistorySize}:${freeHistorySize} - Ratio=${redirectNum}:${skewedLoad.toLong}"
-          )
+//          detectSkewLogger.logInfo(
+//            s"SECOND PHASE: ${id} - Loads=${skewedLoad}:${freeLoad}; Error=${skewedEstimateError}:${freeEstimateError}; Size=${skewedHistorySize}:${freeHistorySize} - Ratio=${redirectNum}:${skewedLoad.toLong}"
+//          )
           futuresArr.append(
             send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
             //send(ShareFlow(sf._1, sf._2, 1, 2), id)
