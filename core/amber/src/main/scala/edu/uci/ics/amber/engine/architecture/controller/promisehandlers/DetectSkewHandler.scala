@@ -162,6 +162,7 @@ object DetectSkewHandler {
         if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, Constants.freeSkewedThreshold)) {
           ret.append((actualSkewedWorker, sortedWorkers(i)))
           firstPhaseIterations(actualSkewedWorker) = firstPhaseIterations(actualSkewedWorker) + 1
+          skewedToFreeWorkerFirstPhase.remove(actualSkewedWorker)
           skewedToFreeWorkerNetworkRolledBack(actualSkewedWorker) = sortedWorkers(i)
         }
       }
@@ -383,14 +384,14 @@ trait DetectSkewHandler {
         s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue, ${currLoad.totalPutInInternalQueue} total input"
       )
     }
-    metrics._2.foreach(replyFromNetComm => {
-      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
-        if (loads.contains(wId)) {
-          loads(wId) = loads.getOrElse(wId, 0L) + futLoad
-//           detectSkewLogger.logInfo(s"\tLOAD ${wId} - ${futLoad} going to arrive")
-        }
-      }
-    })
+//    metrics._2.foreach(replyFromNetComm => {
+//      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
+//        if (loads.contains(wId)) {
+//          loads(wId) = loads.getOrElse(wId, 0L) + futLoad
+//           // detectSkewLogger.logInfo(s"\tLOAD ${wId} - ${futLoad} going to arrive")
+//        }
+//      }
+//    })
     maxError = Double.MinValue
     for ((prevWId, replyFromPrevId) <- cmd.probeLayer.workers.keys zip metrics._2) {
       var prevWorkerMap = workerToTotalLoadHistory.getOrElse(
@@ -476,9 +477,6 @@ trait DetectSkewHandler {
               convertToFirstPhaseCallFinished = false
               startTimeForBuildRepl = System.nanoTime()
 
-              println()
-              println(s"First phase iterations ${firstPhaseIterations.mkString("\n\t\t")}")
-
               val futuresArr = new ArrayBuffer[Future[Seq[Unit]]]()
               skewedAndFreeWorkersForFirstPhase.foreach(sf => {
                 detectSkewLogger.logInfo(
@@ -508,6 +506,8 @@ trait DetectSkewHandler {
                   })
                 })
             }
+            println()
+            println(s"First phase iterations ${firstPhaseIterations.mkString("\n\t\t")}")
 
             // check the pairs in first phase and see if they have to be shifted to second phase
             val skewedAndFreeWorkersForSecondPhase =
