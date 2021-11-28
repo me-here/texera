@@ -292,7 +292,7 @@ trait DetectSkewHandler {
       })
     })
     if (Constants.dynamicThreshold) {
-      if (maxError > Constants.upperErrorLimit && maxError != Double.MaxValue) {
+      if (maxError > Constants.upperErrorLimit && Constants.threshold < 160 && maxError != Double.MaxValue) {
         Constants.threshold = Constants.threshold + Constants.fixedThresholdIncrease
         Constants.freeSkewedThreshold = Constants.threshold
         detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
@@ -378,20 +378,23 @@ trait DetectSkewHandler {
       metrics: (Seq[CurrentLoadMetrics], Seq[(FutureLoadMetrics, WorkloadHistory)])
   ): mutable.HashMap[ActorVirtualIdentity, Long] = {
     val loads = new mutable.HashMap[ActorVirtualIdentity, Long]()
+    val fullLoads = new mutable.HashMap[ActorVirtualIdentity, Long]()
     for ((id, currLoad) <- cmd.joinLayer.workers.keys zip metrics._1) {
       loads(id) = currLoad.stashedBatches + currLoad.unprocessedQueueLength
-      detectSkewLogger.logInfo(
-        s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue, ${currLoad.totalPutInInternalQueue} total input"
-      )
+      fullLoads(id) = currLoad.stashedBatches + currLoad.unprocessedQueueLength
+//      detectSkewLogger.logInfo(
+//        s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue, ${currLoad.totalPutInInternalQueue} total input"
+//      )
     }
-//    metrics._2.foreach(replyFromNetComm => {
-//      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
-//        if (loads.contains(wId)) {
-//          loads(wId) = loads.getOrElse(wId, 0L) + futLoad
-//           // detectSkewLogger.logInfo(s"\tLOAD ${wId} - ${futLoad} going to arrive")
-//        }
-//      }
-//    })
+    metrics._2.foreach(replyFromNetComm => {
+      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
+        if (loads.contains(wId)) {
+          // loads(wId) = loads.getOrElse(wId, 0L) + futLoad
+          fullLoads(wId) = fullLoads.getOrElse(wId, 0L) + futLoad
+        }
+      }
+    })
+    detectSkewLogger.logInfo(s"\tThe full loads map ${fullLoads.mkString("\n\t\t")}")
     maxError = Double.MinValue
     for ((prevWId, replyFromPrevId) <- cmd.probeLayer.workers.keys zip metrics._2) {
       var prevWorkerMap = workerToTotalLoadHistory.getOrElse(
