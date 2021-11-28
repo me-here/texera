@@ -67,7 +67,19 @@ class HashJoinTweetsOpExec[K](
             val key = t.getField(probeAttributeName).asInstanceOf[K]
             val storedWords = slangsHashMap.getOrElse(key, new ArrayBuffer[String]())
             if (storedWords.isEmpty) {
-              Iterator()
+              val tweetText = t.getField(tweetTextAttr).asInstanceOf[String]
+              var countPresent: Int = 0
+              val slangs: Array[String] = Array("there", "hella", "gaper", "bomb", "poho", "potato", "dunks")
+              for (i <- 0 to 18) {
+                slangs.foreach(slang => {
+                  if (tweetText.toLowerCase().contains(slang.toLowerCase())) {
+                    countPresent += 1
+                  }
+                })
+              }
+
+              if (countPresent > 7) { Iterator(t) }
+              else Iterator()
             } else {
               val tweetText = t.getField(tweetTextAttr).asInstanceOf[String]
               var countPresent: Int = 0
