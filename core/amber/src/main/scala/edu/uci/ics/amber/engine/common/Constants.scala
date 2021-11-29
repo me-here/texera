@@ -38,7 +38,7 @@ object Constants {
   val controllerHistoryLimitPerWorker: Int = 10000
   val fixedThresholdIncrease: Int = 50
   val upperErrorLimit: Int = 100
-  val lowerErrorLimit: Int = 99
+  val lowerErrorLimit: Int = 100
 
   type joinType = String
 }
