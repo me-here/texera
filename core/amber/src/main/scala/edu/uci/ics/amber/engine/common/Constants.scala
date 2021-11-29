@@ -37,8 +37,8 @@ object Constants {
   val dynamicThreshold: Boolean = true // set freeSkewedThreshold to be equal to threshold
   val controllerHistoryLimitPerWorker: Int = 10000
   val fixedThresholdIncrease: Int = 50
-  val upperErrorLimit: Int = 95
-  val lowerErrorLimit: Int = 95
+  val upperErrorLimit: Int = 100
+  val lowerErrorLimit: Int = 97
 
   type joinType = String
 }
