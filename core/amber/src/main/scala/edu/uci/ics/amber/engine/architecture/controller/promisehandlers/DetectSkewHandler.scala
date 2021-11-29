@@ -182,7 +182,7 @@ object DetectSkewHandler {
     if (Constants.dynamicThreshold) {
       if (maxError < Constants.lowerErrorLimit && maxError != Double.MinValue) {
         val possibleThreshold = (workerToLoadHistory(sortedWorkers(sortedWorkers.size - 1))(0) - workerToLoadHistory(sortedWorkers(0))(0)).toInt
-        if (possibleThreshold < Constants.threshold) {
+        if (possibleThreshold < Constants.threshold && possibleThreshold > 160) {
           Constants.threshold = possibleThreshold
           detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
         }
