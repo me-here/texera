@@ -2,33 +2,7 @@ package edu.uci.ics.amber.engine.architecture.controller.promisehandlers
 
 import com.twitter.util.Future
 import edu.uci.ics.amber.engine.architecture.controller.ControllerAsyncRPCHandlerInitializer
-import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSkewHandler.{
-  DetectSkew,
-  convertToFirstPhaseCallFinished,
-  convertToSecondPhaseCallFinished,
-  detectSkewLogger,
-  endTimeForBuildRepl,
-  endTimeForMetricColl,
-  endTimeForNetChange,
-  endTimeForNetChangeForSecondPhase,
-  firstPhaseIterations,
-  getSkewedAndFreeWorkersEligibleForFirstPhase,
-  getSkewedAndFreeWorkersEligibleForSecondPhase,
-  isfreeGettingSkewed,
-  iterationCount,
-  maxError,
-  previousCallFinished,
-  skewedToFreeWorkerFirstPhase,
-  skewedToFreeWorkerHistory,
-  startTimeForBuildRepl,
-  startTimeForMetricColl,
-  startTimeForNetChange,
-  startTimeForNetChangeForSecondPhase,
-  startTimeForNetRollback,
-  stopMitigationCallFinished,
-  workerToLoadHistory,
-  workerToTotalLoadHistory
-}
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSkewHandler.{DetectSkew, convertToFirstPhaseCallFinished, convertToSecondPhaseCallFinished, detectSkewLogger, endTimeForBuildRepl, endTimeForMetricColl, endTimeForNetChange, endTimeForNetChangeForSecondPhase, firstPhaseIterations, getSkewedAndFreeWorkersEligibleForFirstPhase, getSkewedAndFreeWorkersEligibleForSecondPhase, isfreeGettingSkewed, iterationCount, maxError, previousCallFinished, skewedToFreeWorkerFirstPhase, skewedToFreeWorkerHistory, startTimeForBuildRepl, startTimeForMetricColl, startTimeForNetChange, startTimeForNetChangeForSecondPhase, startTimeForNetRollback, stopMitigationCallFinished, workerToLoadHistory, workerToTotalLoadHistory}
 import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryLoadMetricsHandler.{CurrentLoadMetrics, QueryLoadMetrics}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryNextOpLoadMetricsHandler.{FutureLoadMetrics, QueryNextOpLoadMetrics, TotalSentCount, WorkloadHistory}
@@ -39,6 +13,7 @@ import edu.uci.ics.amber.engine.common.AmberUtils.sampleMeanError
 import edu.uci.ics.amber.engine.common.{AmberUtils, Constants, WorkflowLogger}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.{CommandCompleted, ControlCommand}
 import edu.uci.ics.amber.engine.common.statetransition.WorkerStateManager
+import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity.WorkerActorVirtualIdentity
 import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LinkIdentity}
 
 import scala.collection.immutable.ListMap
@@ -189,33 +164,44 @@ object DetectSkewHandler {
       }
     }
 
-    for (i <- sortedWorkers.size - 1 to 0 by -1) {
-      if (isEligibleForSkewedAndForFirstPhase(sortedWorkers(i))) {
-        // worker has been previously paired with some worker and that worker will be used again.
-        // Also if the worker is in second phase, it will be put back in the first phase
-        if (skewedToFreeWorkerHistory.keySet.contains(sortedWorkers(i))) {
-          if (passSkewTest(sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), Constants.threshold)) {
-            ret.append((sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), false))
-            firstPhaseIterations(sortedWorkers(i)) = firstPhaseIterations(sortedWorkers(i)) + 1
-            skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(sortedWorkers(i))
-            skewedToFreeWorkerSecondPhase.remove(sortedWorkers(i)) // remove if there
-            skewedToFreeWorkerNetworkRolledBack.remove(sortedWorkers(i)) // remove if there
-          }
-        } else if (i > 0) {
-          breakable {
-            for (j <- 0 to i - 1) {
-              if (isEligibleForFree(sortedWorkers(j)) && passSkewTest(sortedWorkers(i), sortedWorkers(j), Constants.threshold)) {
-                ret.append((sortedWorkers(i), sortedWorkers(j), true))
-                firstPhaseIterations(sortedWorkers(i)) = 1
-                skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = sortedWorkers(j)
-                skewedToFreeWorkerHistory(sortedWorkers(i)) = sortedWorkers(j)
-                break
+    if(!Constants.onlyDetectSkew && Constants.dynamicDistributionExp) {
+      val skewed = WorkerActorVirtualIdentity("Layer(1,HashJoinGenerated-operator-ca538f3a-fb03-452c-aea4-4ba40faead50,main)[0]")
+      val helper = WorkerActorVirtualIdentity("Layer(1,HashJoinGenerated-operator-ca538f3a-fb03-452c-aea4-4ba40faead50,main)[10]")
+      ret.append((skewed, helper, true))
+      firstPhaseIterations(skewed) = 1
+      skewedToFreeWorkerFirstPhase(skewed) = helper
+      skewedToFreeWorkerHistory(skewed) = helper
+    } else {
+      for (i <- sortedWorkers.size - 1 to 0 by -1) {
+        if (isEligibleForSkewedAndForFirstPhase(sortedWorkers(i))) {
+          // worker has been previously paired with some worker and that worker will be used again.
+          // Also if the worker is in second phase, it will be put back in the first phase
+          if (skewedToFreeWorkerHistory.keySet.contains(sortedWorkers(i))) {
+            if (passSkewTest(sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), Constants.threshold)) {
+              ret.append((sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), false))
+              firstPhaseIterations(sortedWorkers(i)) = firstPhaseIterations(sortedWorkers(i)) + 1
+              skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(sortedWorkers(i))
+              skewedToFreeWorkerSecondPhase.remove(sortedWorkers(i)) // remove if there
+              skewedToFreeWorkerNetworkRolledBack.remove(sortedWorkers(i)) // remove if there
+            }
+          } else if (i > 0) {
+            breakable {
+              for (j <- 0 to i - 1) {
+                if (isEligibleForFree(sortedWorkers(j)) && passSkewTest(sortedWorkers(i), sortedWorkers(j), Constants.threshold)) {
+                  ret.append((sortedWorkers(i), sortedWorkers(j), true))
+                  firstPhaseIterations(sortedWorkers(i)) = 1
+                  skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = sortedWorkers(j)
+                  skewedToFreeWorkerHistory(sortedWorkers(i)) = sortedWorkers(j)
+                  break
+                }
               }
             }
           }
         }
       }
     }
+
+
 
     if (Constants.onlyDetectSkew) {
       return new ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity, Boolean)]()
@@ -381,7 +367,7 @@ trait DetectSkewHandler {
   ): mutable.HashMap[ActorVirtualIdentity, Long] = {
     val loads = new mutable.HashMap[ActorVirtualIdentity, Long]()
     for ((id, currLoad) <- cmd.joinLayer.workers.keys zip metrics._1) {
-      loads(id) = currLoad.stashedBatches + currLoad.unprocessedQueueLength + currLoad.totalPutInInternalQueue
+      loads(id) = currLoad.stashedBatches + currLoad.unprocessedQueueLength
       detectSkewLogger.logInfo(
         s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue, ${currLoad.totalPutInInternalQueue} total input"
       )
