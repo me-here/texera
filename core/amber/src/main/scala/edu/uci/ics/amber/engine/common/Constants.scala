@@ -17,7 +17,7 @@ object Constants {
   // join-skew reserach related
   val gcpExp: Boolean = true
   val samplingResetFrequency: Int = 2000
-  val startDetection: FiniteDuration = 100.milliseconds // 100.milliseconds
+  val startDetection: FiniteDuration = 20000.milliseconds // 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
   val printResultsInConsole: Boolean = true
 
@@ -29,7 +29,7 @@ object Constants {
   val sortExperiment: Boolean = false
   val onlyDetectSkew: Boolean = false
   var threshold: Int = 2000
-  var freeSkewedThreshold: Int = 300 // 300
+  var freeSkewedThreshold: Int = 2000 // 300
   val firstPhaseNum = 9 // 9
   val firstPhaseDen = 10 // 10
 
