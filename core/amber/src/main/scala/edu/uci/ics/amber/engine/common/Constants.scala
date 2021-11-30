@@ -41,5 +41,8 @@ object Constants {
   val upperErrorLimit: Int = 120
   val lowerErrorLimit: Int = 95
 
+
+  var dynamicDistributionExpTrigger = false
+
   type joinType = String
 }
