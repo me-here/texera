@@ -27,7 +27,7 @@ object Constants {
   val upperLimit: Float = 600000f // 30gb
 
   val sortExperiment: Boolean = false
-  val onlyDetectSkew: Boolean = false
+  val onlyDetectSkew: Boolean = true
   var threshold: Int = 300
   var freeSkewedThreshold: Int = 3000 // 300
   val firstPhaseNum = 9 // 9
@@ -40,7 +40,6 @@ object Constants {
   val fixedThresholdIncrease: Int = 50
   val upperErrorLimit: Int = 120
   val lowerErrorLimit: Int = 95
-
 
   var dynamicDistributionExpTrigger = false
 
