@@ -165,8 +165,8 @@ object DetectSkewHandler {
     }
 
     if(!Constants.onlyDetectSkew && Constants.dynamicDistributionExp && !Constants.dynamicDistributionExpTrigger) {
-      val skewed = WorkerActorVirtualIdentity("Layer(1,HashJoinGenerated-operator-ca538f3a-fb03-452c-aea4-4ba40faead50,main)[0]")
-      val helper = WorkerActorVirtualIdentity("Layer(1,HashJoinGenerated-operator-ca538f3a-fb03-452c-aea4-4ba40faead50,main)[10]")
+      val skewed = WorkerActorVirtualIdentity("Layer(1,HashJoinGenerated-operator-5a192fbf-52e7-44dc-a2ed-86ee27b624be,main)[0]")
+      val helper = WorkerActorVirtualIdentity("Layer(1,HashJoinGenerated-operator-5a192fbf-52e7-44dc-a2ed-86ee27b624be,main)[10]")
       ret.append((skewed, helper, true))
       firstPhaseIterations(skewed) = 1
       skewedToFreeWorkerFirstPhase(skewed) = helper
