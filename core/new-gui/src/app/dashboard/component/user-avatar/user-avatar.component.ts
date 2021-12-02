@@ -15,10 +15,10 @@ import { environment } from "../../../../environments/environment";
  * UserAvatarComponent is used to show the avatar of a user
  * The avatar of a Google user will be its Google profile picture
  * The avatar of a normal user will be a default one with the initial
- * 
+ *
  * Use Google People API to retrieve google user's profile picture
  * Check https://developers.google.com/people/api/rest/v1/people/get for more details of the api usage
- * 
+ *
  * @author Zhen Guan
  */
 export class UserAvatarComponent implements OnInit {
@@ -44,11 +44,12 @@ export class UserAvatarComponent implements OnInit {
           this.googleUserAvatarSrc = res.photos[0].url;
         });
     } else {
-      const colors = ["#9ACD32", "#40E0D0", "#696969", "#9932CC", "#FF8C00"];
+      const r = Math.floor(Math.random() * 255);
+      const g = Math.floor(Math.random() * 255);
+      const b = Math.floor(Math.random() * 255);
       const avatar = document.getElementById("texera-user-avatar");
-      const randomColor = Math.floor(Math.random() * colors.length);
       if (avatar) {
-        avatar.style.backgroundColor = colors[randomColor];
+        avatar.style.backgroundColor = "rgba(" + r + "," + g + "," + b + ",0.8)";
       }
     }
   }
