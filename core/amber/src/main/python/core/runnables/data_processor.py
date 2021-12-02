@@ -1,7 +1,7 @@
-import traceback
 import typing
 from typing import Iterator, List, MutableMapping, Optional, Union
 
+import traceback
 from loguru import logger
 from overrides import overrides
 from pampy import match
@@ -118,8 +118,13 @@ class DataProcessor(StoppableQueueBlockingRunnable):
             self.context.statistics_manager.increase_input_tuple_count()
 
         try:
+            self.context.data_breakpoint_manager.trace_tuple(self._current_input_tuple)
+
             for tuple_ in self.process_tuple_with_udf(self._current_input_tuple, self._current_input_link):
                 self.check_and_process_control()
+                if self.context.data_breakpoint_manager.check_break():
+                    self._pause()
+                    self.report_breakpoint()
                 if tuple_ is not None:
                     self.context.statistics_manager.increase_output_tuple_count()
                     for to, batch in self.context.tuple_to_batch_converter.tuple_to_batch(tuple_):
@@ -147,7 +152,9 @@ class DataProcessor(StoppableQueueBlockingRunnable):
             index = len(self._input_links) - 1
             self._input_link_map[link] = index
         input_ = self._input_link_map[link]
-        return map(lambda t: Tuple(t) if t is not None else None, self._operator.process_tuple(tuple_, input_))
+        self._udf_iterator = self._operator.process_tuple(tuple_, input_)
+        self.context.data_breakpoint_manager.trace_iterator(self._udf_iterator)
+        return map(lambda t: Tuple(t) if t is not None else None, self._udf_iterator)
 
     def report_exception(self) -> None:
         """
@@ -155,6 +162,15 @@ class DataProcessor(StoppableQueueBlockingRunnable):
         """
         self._print_log_handler.flush()
         message: str = traceback.format_exc(limit=-1)
+        control_command = set_one_of(ControlCommandV2, LocalOperatorExceptionV2(message=message))
+        self._async_rpc_client.send(ActorVirtualIdentity(name="CONTROLLER"), control_command)
+
+    def report_breakpoint(self) -> None:
+        """
+        Report the traceback of current stack when an exception occurs.
+        """
+        self._print_log_handler.flush()
+        message: str = "data breakpoint hit!!"
         control_command = set_one_of(ControlCommandV2, LocalOperatorExceptionV2(message=message))
         self._async_rpc_client.send(ActorVirtualIdentity(name="CONTROLLER"), control_command)
 
