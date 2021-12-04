@@ -17,7 +17,7 @@ object Constants {
   // join-skew reserach related
   val gcpExp: Boolean = true
   val samplingResetFrequency: Int = 2000
-  val startDetection: FiniteDuration = 8000.milliseconds // 100.milliseconds
+  val startDetection: FiniteDuration = 100.milliseconds // 100.milliseconds
   val detectionPeriod: FiniteDuration = 2.seconds
   val printResultsInConsole: Boolean = true
 
@@ -35,7 +35,7 @@ object Constants {
 
   val singleIterationOnly: Boolean = false // set freeSkewedThreshold to large number
   val dynamicThreshold: Boolean = false // set freeSkewedThreshold to be equal to threshold
-  val dynamicDistributionExp: Boolean = true
+  val dynamicDistributionExp: Boolean = false
   val controllerHistoryLimitPerWorker: Int = 10000
   val fixedThresholdIncrease: Int = 50
   val upperErrorLimit: Int = 120
