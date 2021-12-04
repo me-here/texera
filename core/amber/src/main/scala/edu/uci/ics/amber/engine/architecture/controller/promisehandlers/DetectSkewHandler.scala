@@ -2,7 +2,33 @@ package edu.uci.ics.amber.engine.architecture.controller.promisehandlers
 
 import com.twitter.util.Future
 import edu.uci.ics.amber.engine.architecture.controller.ControllerAsyncRPCHandlerInitializer
-import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSkewHandler.{DetectSkew, convertToFirstPhaseCallFinished, convertToSecondPhaseCallFinished, detectSkewLogger, endTimeForBuildRepl, endTimeForMetricColl, endTimeForNetChange, endTimeForNetChangeForSecondPhase, firstPhaseIterations, getSkewedAndFreeWorkersEligibleForFirstPhase, getSkewedAndFreeWorkersEligibleForSecondPhase, isfreeGettingSkewed, iterationCount, maxError, previousCallFinished, skewedToFreeWorkerFirstPhase, skewedToFreeWorkerHistory, startTimeForBuildRepl, startTimeForMetricColl, startTimeForNetChange, startTimeForNetChangeForSecondPhase, startTimeForNetRollback, stopMitigationCallFinished, workerToLoadHistory, workerToTotalLoadHistory}
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.DetectSkewHandler.{
+  DetectSkew,
+  convertToFirstPhaseCallFinished,
+  convertToSecondPhaseCallFinished,
+  detectSkewLogger,
+  endTimeForBuildRepl,
+  endTimeForMetricColl,
+  endTimeForNetChange,
+  endTimeForNetChangeForSecondPhase,
+  firstPhaseIterations,
+  getSkewedAndFreeWorkersEligibleForFirstPhase,
+  getSkewedAndFreeWorkersEligibleForSecondPhase,
+  isfreeGettingSkewed,
+  iterationCount,
+  maxError,
+  previousCallFinished,
+  skewedToFreeWorkerFirstPhase,
+  skewedToFreeWorkerHistory,
+  startTimeForBuildRepl,
+  startTimeForMetricColl,
+  startTimeForNetChange,
+  startTimeForNetChangeForSecondPhase,
+  startTimeForNetRollback,
+  stopMitigationCallFinished,
+  workerToLoadHistory,
+  workerToTotalLoadHistory
+}
 import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.WorkerLayer
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryLoadMetricsHandler.{CurrentLoadMetrics, QueryLoadMetrics}
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.QueryNextOpLoadMetricsHandler.{FutureLoadMetrics, QueryNextOpLoadMetrics, TotalSentCount, WorkloadHistory}
@@ -164,7 +190,7 @@ object DetectSkewHandler {
       }
     }
 
-    if(!Constants.onlyDetectSkew && Constants.dynamicDistributionExp && !Constants.dynamicDistributionExpTrigger) {
+    if (!Constants.onlyDetectSkew && Constants.dynamicDistributionExp && !Constants.dynamicDistributionExpTrigger) {
       val skewed = WorkerActorVirtualIdentity("Layer(1,HashJoinGenerated-operator-5a192fbf-52e7-44dc-a2ed-86ee27b624be,main)[0]")
       val helper = WorkerActorVirtualIdentity("Layer(1,HashJoinGenerated-operator-5a192fbf-52e7-44dc-a2ed-86ee27b624be,main)[10]")
       ret.append((skewed, helper, true))
@@ -201,8 +227,6 @@ object DetectSkewHandler {
         }
       }
     }
-
-
 
     if (Constants.onlyDetectSkew) {
       return new ArrayBuffer[(ActorVirtualIdentity, ActorVirtualIdentity, Boolean)]()
@@ -332,8 +356,8 @@ trait DetectSkewHandler {
 //            s"SECOND PHASE: ${id} - Loads=${skewedLoad}:${freeLoad}; Error=${skewedEstimateError}:${freeEstimateError}; Size=${skewedHistorySize}:${freeHistorySize} - Ratio=${redirectNum}:${skewedLoad.toLong}"
 //          )
           futuresArr.append(
-            send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
-            //send(ShareFlow(sf._1, sf._2, 1, 2), id)
+            // send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
+            send(ShareFlow(sf._1, sf._2, 1, 2), id)
           )
 
         }
@@ -477,7 +501,7 @@ trait DetectSkewHandler {
                 detectSkewLogger.logInfo(
                   s"\tSkewed Worker:${sf._1}, Free Worker:${sf._2}, build replication:${sf._3}"
                 )
-                if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
+                // if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
               })
               Future
                 .collect(futuresArr)
