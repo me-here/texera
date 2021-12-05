@@ -46,4 +46,6 @@ abstract class DataSendingPolicy(
       newRecId: ActorVirtualIdentity
   ): Unit
 
+  def fluxExpMsgReceived(): Unit = null
+
 }

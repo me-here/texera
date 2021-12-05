@@ -1,6 +1,7 @@
 package edu.uci.ics.amber.engine.architecture.messaginglayer
 
 import edu.uci.ics.amber.engine.architecture.sendsemantics.datatransferpolicy.DataSendingPolicy
+import edu.uci.ics.amber.engine.common.Constants
 import edu.uci.ics.amber.engine.common.ambermessage.DataPayload
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.ActorVirtualIdentity
@@ -68,18 +69,30 @@ class TupleToBatchConverter(
       tuplesToRedirectNumerator: Long,
       tuplesToRedirectDenominator: Long
   ): Unit = {
-    policies.foreach(policy => {
-      policy.addReceiverToBucket(skewedReceiverId, freeReceiverId, tuplesToRedirectNumerator, tuplesToRedirectDenominator)
-    })
+    if (Constants.dynamicDistributionFluxExp) {
+      policies.foreach(policy => {
+        policy.fluxExpMsgReceived()
+      })
+    } else {
+      policies.foreach(policy => {
+        policy.addReceiverToBucket(skewedReceiverId, freeReceiverId, tuplesToRedirectNumerator, tuplesToRedirectDenominator)
+      })
+    }
   }
 
   def rollbackFlow(
       skewedReceiverId: ActorVirtualIdentity,
       freeReceiverId: ActorVirtualIdentity
   ): Unit = {
-    policies.foreach(policy => {
-      policy.removeReceiverFromBucket(skewedReceiverId, freeReceiverId)
-    })
+    if (Constants.dynamicDistributionFluxExp) {
+      policies.foreach(policy => {
+        policy.fluxExpMsgReceived()
+      })
+    } else {
+      policies.foreach(policy => {
+        policy.removeReceiverFromBucket(skewedReceiverId, freeReceiverId)
+      })
+    }
   }
 
   /** Push one tuple to the downstream, will be batched by each transfer policy.

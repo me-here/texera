@@ -30,7 +30,53 @@ class HashBasedShufflePolicy(
     receivers: Array[ActorVirtualIdentity]
 ) extends ParallelBatchingPolicy(policyTag, batchSize, receivers) {
 
+  var fluxChangeReceived: Boolean = false
+
+  override def fluxExpMsgReceived(): Unit = { fluxChangeReceived = true }
+
   override def selectBatchingIndex(tuple: ITuple): Int = {
     (hashFunc(tuple) % numBuckets + numBuckets) % numBuckets
+  }
+
+  override def addTupleToBatch(
+      tuple: ITuple
+  ): Option[(ActorVirtualIdentity, DataPayload)] = {
+    if (Constants.dynamicDistributionFluxExp && fluxChangeReceived) {
+      val hashPartition = hashFunc(tuple)
+      var index = (hashPartition % numBuckets + numBuckets) % numBuckets
+      if (hashPartition == 40) { index = 10 }
+      if (recordHistory) {
+        var hist = originalReceiverToHistory(bucketsToReceivers(index)(0))
+        hist(hist.size - 1) = hist(hist.size - 1) + 1
+        tupleIndexForHistory += 1
+        if (tupleIndexForHistory % Constants.samplingResetFrequency == 0) {
+          originalReceiverToHistory.keys.foreach(rec => {
+            originalReceiverToHistory(rec).append(0)
+          })
+          tupleIndexForHistory = 0
+        }
+      }
+
+      var receiver: ActorVirtualIdentity = null
+      if (bucketsToSharingEnabled(index)) {
+        // choose one of the receivers in round robin manner
+        // println("GOING ROUND ROBIN")
+        receiver = getAndIncrementReceiverForBucket(index)
+      } else {
+        receiver = getDefaultReceiverForBucket(index)
+      }
+      receiverToBatch(receiver)(receiverToCurrBatchSize(receiver)) = tuple
+      receiverToTotalSent(receiver) = receiverToTotalSent.getOrElse(receiver, 0L) + 1
+      receiverToCurrBatchSize(receiver) += 1
+      if (receiverToCurrBatchSize(receiver) == batchSize) {
+        receiverToCurrBatchSize(receiver) = 0
+        val retBatch = receiverToBatch(receiver)
+        receiverToBatch(receiver) = new Array[ITuple](batchSize)
+        return Some((receiver, DataFrame(retBatch)))
+      }
+      None
+    } else {
+      super.addTupleToBatch(tuple)
+    }
   }
 }

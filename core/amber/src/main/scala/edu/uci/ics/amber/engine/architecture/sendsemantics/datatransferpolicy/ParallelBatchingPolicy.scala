@@ -50,11 +50,11 @@ abstract class ParallelBatchingPolicy(
   override def getTotalSentCount(): mutable.HashMap[ActorVirtualIdentity, Long] = { receiverToTotalSent }
 
   // for non-heavy hitters get the default receiver
-  private def getDefaultReceiverForBucket(bucket: Int): ActorVirtualIdentity =
+  def getDefaultReceiverForBucket(bucket: Int): ActorVirtualIdentity =
     bucketsToReceivers(bucket)(0)
 
   // to be called for heavy-hitter
-  private def getAndIncrementReceiverForBucket(bucket: Int): ActorVirtualIdentity = {
+  def getAndIncrementReceiverForBucket(bucket: Int): ActorVirtualIdentity = {
     var receiver: ActorVirtualIdentity = null
 
     // logic below is written in this way to avoid race condition on bucketsToReceivers map

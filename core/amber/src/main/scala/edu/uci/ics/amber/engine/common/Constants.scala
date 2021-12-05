@@ -36,6 +36,7 @@ object Constants {
   val singleIterationOnly: Boolean = false // set freeSkewedThreshold to large number
   val dynamicThreshold: Boolean = false // set freeSkewedThreshold to be equal to threshold
   val dynamicDistributionExp: Boolean = false
+  val dynamicDistributionFluxExp: Boolean = false
   val controllerHistoryLimitPerWorker: Int = 10000
   val fixedThresholdIncrease: Int = 50
   val upperErrorLimit: Int = 120
