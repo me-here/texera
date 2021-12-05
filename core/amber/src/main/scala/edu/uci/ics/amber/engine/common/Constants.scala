@@ -30,6 +30,7 @@ object Constants {
   val onlyDetectSkew: Boolean = false
   var threshold: Int = 100
   var freeSkewedThreshold: Int = 300000000 // 300
+  var firstphaseThresholdWhenRollingBack: Int = 100
   val firstPhaseNum = 1 // 9
   val firstPhaseDen = 2 // 10
 

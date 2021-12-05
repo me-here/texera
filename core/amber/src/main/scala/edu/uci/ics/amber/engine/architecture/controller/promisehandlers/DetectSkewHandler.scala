@@ -210,6 +210,14 @@ object DetectSkewHandler {
               skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(sortedWorkers(i))
               skewedToFreeWorkerSecondPhase.remove(sortedWorkers(i)) // remove if there
               skewedToFreeWorkerNetworkRolledBack.remove(sortedWorkers(i)) // remove if there
+            } else if (skewedToFreeWorkerNetworkRolledBack.contains(sortedWorkers(i))) {
+              if (passSkewTest(sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), Constants.firstphaseThresholdWhenRollingBack)) {
+                ret.append((sortedWorkers(i), skewedToFreeWorkerHistory(sortedWorkers(i)), false))
+                firstPhaseIterations(sortedWorkers(i)) = firstPhaseIterations(sortedWorkers(i)) + 1
+                skewedToFreeWorkerFirstPhase(sortedWorkers(i)) = skewedToFreeWorkerHistory(sortedWorkers(i))
+                skewedToFreeWorkerSecondPhase.remove(sortedWorkers(i)) // remove if there
+                skewedToFreeWorkerNetworkRolledBack.remove(sortedWorkers(i)) // remove if there
+              }
             }
           } else if (i > 0) {
             breakable {
