@@ -40,13 +40,13 @@ class HdfsFileSinkOpExec(
   ): Iterator[Tuple] = {
     tuple match {
       case Left(t) =>
-        recNums.append(
-          t.getField(attributeToWrite)
-            .asInstanceOf[Float]
-        )
+//        recNums.append(
+//          t.getField(attributeToWrite)
+//            .asInstanceOf[Float]
+//        )
         Iterator()
       case Right(_) =>
-        writeToHdfs()
+//        writeToHdfs()
         Iterator()
     }
   }
