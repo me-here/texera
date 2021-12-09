@@ -100,7 +100,9 @@ object DetectSortSkewHandler {
       worker
     ) && !skewedToFreeWorkerFirstPhase.values.toList.contains(
       worker
-    ) && !skewedToFreeWorkerSecondPhase.values.toList.contains(worker) && (!Constants.singleIterationOnly || !skewedToFreeWorkerSecondPhase.keySet.contains(worker))
+    ) && !skewedToFreeWorkerNetworkRolledBack.values.toList.contains(worker) && !skewedToFreeWorkerSecondPhase.values.toList.contains(
+      worker
+    ) && (!Constants.singleIterationOnly || !skewedToFreeWorkerSecondPhase.keySet.contains(worker))
   }
 
   /**
@@ -115,7 +117,11 @@ object DetectSortSkewHandler {
       worker
     ) && !skewedToFreeWorkerSecondPhase.keySet.contains(
       worker
-    ) && !skewedToFreeWorkerSecondPhase.values.toList.contains(worker)
+    ) && !skewedToFreeWorkerSecondPhase.values.toList.contains(worker) && !skewedToFreeWorkerNetworkRolledBack.keySet.contains(
+      worker
+    ) && !skewedToFreeWorkerNetworkRolledBack.values.toList.contains(
+      worker
+    )
   }
 
   def passSkewTest(
