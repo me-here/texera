@@ -159,6 +159,8 @@ object DetectSortSkewHandler {
 
         if (!Constants.onlyDetectSkew && passSkewTest(sortedWorkers(i), actualSkewedWorker, Constants.freeSkewedThreshold)) {
           ret.append((actualSkewedWorker, sortedWorkers(i)))
+          firstPhaseIterations(actualSkewedWorker) = firstPhaseIterations(actualSkewedWorker) + 1
+          skewedToFreeWorkerFirstPhase.remove(actualSkewedWorker)
           skewedToFreeWorkerNetworkRolledBack(actualSkewedWorker) = sortedWorkers(i)
         }
       }
