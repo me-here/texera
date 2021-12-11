@@ -427,7 +427,7 @@ trait DetectSkewHandler {
         aggregatedSentCount(rec) = aggregatedSentCount.getOrElse(rec, 0L) + count
       }
     })
-    detectSkewLogger.logInfo(s"\tThe full loads map \n total# ${aggregatedSentCount.mkString("\n total#")}")
+    detectSkewLogger.logInfo(s"\tThe full loads map \n total# ${aggregatedSentCount.mkString("\n total# ")}")
     maxError = Double.MinValue
     for ((prevWId, replyFromPrevId) <- cmd.probeLayer.workers.keys zip metrics._2) {
       var prevWorkerMap = workerToTotalLoadHistory.getOrElse(
