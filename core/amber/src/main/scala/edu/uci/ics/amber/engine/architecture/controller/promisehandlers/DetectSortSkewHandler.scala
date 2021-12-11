@@ -333,9 +333,9 @@ trait DetectSortSkewHandler {
             skewedLoad = 1
             freeLoad = 0
           }
-          detectSortSkewLogger.logInfo(
-            s"SECOND PHASE: ${id} - Loads=${skewedLoad}:${freeLoad}; Error=${skewedEstimateError}:${freeEstimateError}; Size=${skewedHistorySize}:${freeHistorySize} - Ratio=${redirectNum}:${skewedLoad.toLong}"
-          )
+//          detectSortSkewLogger.logInfo(
+//            s"SECOND PHASE: ${id} - Loads=${skewedLoad}:${freeLoad}; Error=${skewedEstimateError}:${freeEstimateError}; Size=${skewedHistorySize}:${freeHistorySize} - Ratio=${redirectNum}:${skewedLoad.toLong}"
+//          )
           futuresArr.append(
             send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
           )
@@ -378,6 +378,13 @@ trait DetectSortSkewHandler {
         }
       }
     })
+    val aggregatedSentCount = new mutable.HashMap[ActorVirtualIdentity, Long]()
+    metrics._2.foreach(prevReply => {
+      for ((rec, count) <- prevReply._3.totalSent) {
+        aggregatedSentCount(rec) = aggregatedSentCount.getOrElse(rec, 0L) + count
+      }
+    })
+    detectSortSkewLogger.logInfo(s"\tThe full loads map \n total# ${aggregatedSentCount.mkString("\n total#")}")
     maxError = Double.MinValue
     for ((prevWId, replyFromPrevId) <- cmd.prevLayer.workers.keys zip metrics._2) {
       var prevWorkerMap = workerToTotalLoadHistory.getOrElse(
@@ -399,16 +406,16 @@ trait DetectSortSkewHandler {
           )
         }
 
-        if (wid.toString().contains("localSort1L)[3]")) {
-          print(s"\tLOADS FROM ${prevWId} are : ")
-          var stop = existingHistoryForWid.size - 11
-          if (stop < 0) { stop = 0 }
-          for (i <- existingHistoryForWid.size - 1 to stop by -1) {
-            print(existingHistoryForWid(i) + ", ")
-          }
-          print(s"Standard error is ${sampleMeanError(existingHistoryForWid)} with size ${existingHistoryForWid.size}")
-          println()
-        }
+//        if (wid.toString().contains("localSort1L)[3]")) {
+//          print(s"\tLOADS FROM ${prevWId} are : ")
+//          var stop = existingHistoryForWid.size - 11
+//          if (stop < 0) { stop = 0 }
+//          for (i <- existingHistoryForWid.size - 1 to stop by -1) {
+//            print(existingHistoryForWid(i) + ", ")
+//          }
+//          print(s"Standard error is ${sampleMeanError(existingHistoryForWid)} with size ${existingHistoryForWid.size}")
+//          println()
+//        }
         prevWorkerMap(wid) = existingHistoryForWid
       }
       workerToTotalLoadHistory(prevWId) = prevWorkerMap

@@ -409,24 +409,25 @@ trait DetectSkewHandler {
     val loads = new mutable.HashMap[ActorVirtualIdentity, Long]()
     for ((id, currLoad) <- cmd.joinLayer.workers.keys zip metrics._1) {
       loads(id) = currLoad.stashedBatches + currLoad.unprocessedQueueLength
-      detectSkewLogger.logInfo(
-        s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue, ${currLoad.totalPutInInternalQueue} total input"
-      )
+//      detectSkewLogger.logInfo(
+//        s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue, ${currLoad.totalPutInInternalQueue} total input"
+//      )
     }
-    metrics._2.foreach(replyFromNetComm => {
-      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
-        if (loads.contains(wId)) {
-          loads(wId) = loads.getOrElse(wId, 0L) + futLoad
-        }
-      }
-    })
-//    val aggregatedSentCount = new mutable.HashMap[ActorVirtualIdentity, Long]()
-//    metrics._2.foreach(prevReply => {
-//      for ((rec, count) <- prevReply._3.totalSent) {
-//        aggregatedSentCount(rec) = aggregatedSentCount.getOrElse(rec, 0L) + count
+//    metrics._2.foreach(replyFromNetComm => {
+//      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
+//        if (loads.contains(wId)) {
+//          loads(wId) = loads.getOrElse(wId, 0L) + futLoad
+//        }
 //      }
 //    })
-//    detectSkewLogger.logInfo(s"\tThe full loads map ${aggregatedSentCount.mkString("\n\t\t")}")
+
+    val aggregatedSentCount = new mutable.HashMap[ActorVirtualIdentity, Long]()
+    metrics._2.foreach(prevReply => {
+      for ((rec, count) <- prevReply._3.totalSent) {
+        aggregatedSentCount(rec) = aggregatedSentCount.getOrElse(rec, 0L) + count
+      }
+    })
+    detectSkewLogger.logInfo(s"\tThe full loads map \n total# ${aggregatedSentCount.mkString("\n total#")}")
     maxError = Double.MinValue
     for ((prevWId, replyFromPrevId) <- cmd.probeLayer.workers.keys zip metrics._2) {
       var prevWorkerMap = workerToTotalLoadHistory.getOrElse(
@@ -448,16 +449,16 @@ trait DetectSkewHandler {
           )
         }
 
-        if (wid.toString().contains("main)[0]")) {
-          print(s"\tLOADS FROM ${prevWId} are : ")
-          var stop = existingHistoryForWid.size - 11
-          if (stop < 0) { stop = 0 }
-          for (i <- existingHistoryForWid.size - 1 to stop by -1) {
-            print(existingHistoryForWid(i) + ", ")
-          }
-          print(s"Standard error is ${sampleMeanError(existingHistoryForWid)} with size ${existingHistoryForWid.size}")
-          println()
-        }
+//        if (wid.toString().contains("main)[0]")) {
+//          print(s"\tLOADS FROM ${prevWId} are : ")
+//          var stop = existingHistoryForWid.size - 11
+//          if (stop < 0) { stop = 0 }
+//          for (i <- existingHistoryForWid.size - 1 to stop by -1) {
+//            print(existingHistoryForWid(i) + ", ")
+//          }
+//          print(s"Standard error is ${sampleMeanError(existingHistoryForWid)} with size ${existingHistoryForWid.size}")
+//          println()
+//        }
         prevWorkerMap(wid) = existingHistoryForWid
       }
       workerToTotalLoadHistory(prevWId) = prevWorkerMap
@@ -517,7 +518,7 @@ trait DetectSkewHandler {
                 detectSkewLogger.logInfo(
                   s"\tSkewed Worker:${sf._1}, Free Worker:${sf._2}, build replication:${sf._3}"
                 )
-                if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
+                // if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
               })
               Future
                 .collect(futuresArr)
