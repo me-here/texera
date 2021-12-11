@@ -28,8 +28,8 @@ object Constants {
 
   val sortExperiment: Boolean = false
   val onlyDetectSkew: Boolean = true
-  var threshold: Int = 500
-  var freeSkewedThreshold: Int = 500 // 300
+  var threshold: Int = 100
+  var freeSkewedThreshold: Int = 100 // 300
   var firstphaseThresholdWhenRollingBack: Int = 100
   val firstPhaseNum = 3 // 9
   val firstPhaseDen = 4 // 10
