@@ -191,7 +191,7 @@ object DetectSkewHandler {
         val possibleThreshold = (workerToLoadHistory(sortedWorkers(sortedWorkers.size - 1))(0) - workerToLoadHistory(sortedWorkers(0))(0)).toInt
         if (possibleThreshold < Constants.threshold && possibleThreshold > 160) {
           Constants.threshold = possibleThreshold
-          detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
+          detectSkewLogger.logInfo(s"The threshold is now decreased to ${Constants.threshold}")
         }
       }
     }
@@ -324,7 +324,7 @@ trait DetectSkewHandler {
         if (Constants.threshold < 150) {
           Constants.freeSkewedThreshold = Constants.threshold
         }
-        detectSkewLogger.logInfo(s"The threshold is now set to ${Constants.threshold}")
+        detectSkewLogger.logInfo(s"The threshold is now increased to ${Constants.threshold}")
       }
     }
     Future.collect(futuresArr)
