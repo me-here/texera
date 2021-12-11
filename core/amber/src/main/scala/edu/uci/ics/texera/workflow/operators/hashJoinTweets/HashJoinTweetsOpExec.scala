@@ -78,7 +78,7 @@ class HashJoinTweetsOpExec[K](
                 })
               }
 
-              if (countPresent > 7) { Iterator(t) }
+              if (countPresent > 55) { Iterator(t) }
               else
                 Iterator()
             } else {
@@ -111,7 +111,7 @@ class HashJoinTweetsOpExec[K](
 //                })
 //              }
 
-              if (countPresent > 10) {
+              if (countPresent > 55) {
                 Iterator(t)
               } else {
                 Iterator()
