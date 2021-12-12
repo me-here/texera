@@ -41,7 +41,7 @@ object Constants {
   val controllerHistoryLimitPerWorker: Int = 10000
   val fixedThresholdIncrease: Int = 50
   val upperErrorLimit: Int = 120
-  val lowerErrorLimit: Int = 99
+  val lowerErrorLimit: Int = 98
 
   var dynamicDistributionExpTrigger = false
 
