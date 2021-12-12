@@ -29,7 +29,7 @@ object Constants {
   val sortExperiment: Boolean = false
   val onlyDetectSkew: Boolean = false
   var threshold: Int = 2000
-  var freeSkewedThreshold: Int = 2000 // 300
+  var freeSkewedThreshold: Int = 50 // 300
   var firstphaseThresholdWhenRollingBack: Int = 100
   val firstPhaseNum = 3 // 9
   val firstPhaseDen = 4 // 10
@@ -41,7 +41,7 @@ object Constants {
   val controllerHistoryLimitPerWorker: Int = 10000
   val fixedThresholdIncrease: Int = 50
   val upperErrorLimit: Int = 120
-  val lowerErrorLimit: Int = 98
+  val lowerErrorLimit: Int = 99
 
   var dynamicDistributionExpTrigger = false
 
