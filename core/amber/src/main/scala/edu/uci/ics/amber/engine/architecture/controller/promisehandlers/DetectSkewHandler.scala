@@ -413,13 +413,13 @@ trait DetectSkewHandler {
 //        s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue, ${currLoad.totalPutInInternalQueue} total input"
 //      )
     }
-//    metrics._2.foreach(replyFromNetComm => {
-//      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
-//        if (loads.contains(wId)) {
-//          loads(wId) = loads.getOrElse(wId, 0L) + futLoad
-//        }
-//      }
-//    })
+    metrics._2.foreach(replyFromNetComm => {
+      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
+        if (loads.contains(wId)) {
+          loads(wId) = loads.getOrElse(wId, 0L) + futLoad
+        }
+      }
+    })
 
     val aggregatedSentCount = new mutable.HashMap[ActorVirtualIdentity, Long]()
     metrics._2.foreach(prevReply => {
@@ -518,7 +518,7 @@ trait DetectSkewHandler {
                 detectSkewLogger.logInfo(
                   s"\tSkewed Worker:${sf._1}, Free Worker:${sf._2}, build replication:${sf._3}"
                 )
-                // if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
+                if (sf._3) { futuresArr.append(send(SendBuildTable(sf._2), sf._1)) }
               })
               Future
                 .collect(futuresArr)
