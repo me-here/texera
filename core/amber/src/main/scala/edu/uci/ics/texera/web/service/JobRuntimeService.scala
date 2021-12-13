@@ -2,10 +2,7 @@ package edu.uci.ics.texera.web.service
 
 import com.google.common.collect.EvictingQueue
 import com.typesafe.scalalogging.LazyLogging
-import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.{
-  ConditionalGlobalBreakpoint,
-  CountGlobalBreakpoint
-}
+import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.{ConditionalGlobalBreakpoint, CountGlobalBreakpoint}
 import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent._
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.AssignBreakpointHandler.AssignGlobalBreakpoint
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.EvaluatePythonExpressionHandler.EvaluatePythonExpression
@@ -24,14 +21,11 @@ import edu.uci.ics.texera.web.model.websocket.event._
 import edu.uci.ics.texera.web.model.websocket.event.python.PythonPrintTriggeredEvent
 import edu.uci.ics.texera.web.model.websocket.request.python.PythonExpressionEvaluateRequest
 import edu.uci.ics.texera.web.model.websocket.request.{RemoveBreakpointRequest, SkipTupleRequest}
+import edu.uci.ics.texera.web.workflowruntimestate.WorkflowJobRuntimeStats
+import edu.uci.ics.texera.web.workflowruntimestate.WorkflowJobRuntimeStats.WorkflowJobRuntimeStatsLens
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
-import edu.uci.ics.texera.workflow.common.workflow.{
-  Breakpoint,
-  BreakpointCondition,
-  ConditionBreakpoint,
-  CountBreakpoint
-}
+import edu.uci.ics.texera.workflow.common.workflow.{Breakpoint, BreakpointCondition, ConditionBreakpoint, CountBreakpoint}
 import rx.lang.scala.subjects.BehaviorSubject
 import rx.lang.scala.{Observable, Observer}
 
@@ -46,17 +40,7 @@ class JobRuntimeService(workflowStatus: BehaviorSubject[ExecutionStatusEnum], cl
     extends SnapshotMulticast[TexeraWebSocketEvent]
     with LazyLogging {
 
-  class OperatorRuntimeState {
-    var stats: OperatorStatistics = OperatorStatistics(OperatorState.Uninitialized, 0, 0)
-    val pythonMessages: EvictingQueue[String] =
-      EvictingQueue.create[String](JobRuntimeService.bufferSize)
-    val faults: mutable.ArrayBuffer[BreakpointFault] = new ArrayBuffer[BreakpointFault]()
-  }
-
-  val operatorRuntimeStateMap: mutable.HashMap[String, OperatorRuntimeState] =
-    new mutable.HashMap[String, OperatorRuntimeState]()
-  var workflowError: Throwable = _
-
+  val stats:WorkflowJobRuntimeStats = new WorkflowJobRuntimeStats(null,null,null)
   registerCallbacks()
 
   private[this] def registerCallbacks(): Unit = {
