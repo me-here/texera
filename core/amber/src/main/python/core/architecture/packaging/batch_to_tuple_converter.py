@@ -1,9 +1,9 @@
 from collections import defaultdict
 from typing import Iterator, Optional, Set, Union
 
-from core.models import Tuple
+from core.models import Tuple, ArrowTableTupleProvider
 from core.models.marker import EndOfAllMarker, Marker, SenderChangeMarker
-from core.models.payload import DataFrame, DataPayload, EndOfUpstream
+from core.models.payload import InputDataFrame, DataPayload, EndOfUpstream
 from core.models.tuple import InputExhausted
 from proto.edu.uci.ics.amber.engine.common import ActorVirtualIdentity, LinkIdentity
 
@@ -34,9 +34,11 @@ class BatchToTupleConverter:
             self._current_link = link
             yield SenderChangeMarker(link)
 
-        if isinstance(payload, DataFrame):
-            for tuple_ in payload.frame:
-                yield tuple_
+        if isinstance(payload, InputDataFrame):
+            tuple_instance = Tuple(input_field_names=payload.frame.column_names)
+            for field_accessor in ArrowTableTupleProvider(payload):
+                tuple_instance.reset(field_accessor)
+                yield tuple_instance
 
         elif isinstance(payload, EndOfUpstream):
             self._upstream_map[link].remove(from_)
