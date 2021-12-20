@@ -33,6 +33,7 @@ class ArrowTableTupleProvider:
 
         chunk_idx = self.current_chunk
         tuple_idx = self.current_idx
+
         def field_accessor(field_name):
             return self.table.column(field_name).chunks[chunk_idx][tuple_idx]
 
@@ -45,7 +46,13 @@ class Tuple:
     Lazy-Tuple implementation.
     """
 
-    def __init__(self, field_data=None, field_names=None, field_accessor=None):
+    def __init__(self, field_data: TupleLike = None, field_names=None, field_accessor=None):
+        """
+        Construct a lazy-tuple with given data
+        :param field_data: tuple-like data that is already in memory
+        :param field_names: all field names that can be fetched
+        :param field_accessor: a lambda function that fetches a field with given field name
+        """
         self.field_accessor = field_accessor
         self.field_names = field_names
         if field_data is None:
@@ -54,18 +61,33 @@ class Tuple:
             self.field_data = dict(field_data)
 
     def __getitem__(self, item):
+        """
+        Get a field with given name. If it's not present, fetch it from accessor.
+        :param item: field name
+        :return: field value
+        """
         if item not in self.field_data:
             # evaluate the field now
             self.field_data[item] = self.field_accessor(item).as_py()
         return self.field_data[item]
 
     def __setitem__(self, key, value):
+        """
+        Set a field with given value.
+        :param key: field name
+        :param value: field value
+        """
         self.field_data[key] = value
 
     def as_series(self) -> pandas.Series:
         return pandas.Series(self.as_dict())
 
     def as_dict(self) -> Mapping[str, Any]:
+        """
+        Return a dictionary reference of this tuple.
+        Fields will be fetched from accessor if absent.
+        :return: dict with all the fields
+        """
         # evaluate all the fields now
         if self.field_names is not None:
             for field in self.field_names:
@@ -99,12 +121,28 @@ class Tuple:
         return not self.__eq__(other)
 
     def reset(self, field_accessor):
+        """
+        Reset the tuple with given field accessor
+        to avoid unnecessary tuple object creation.
+        Field values will be cleared but field names(schema)
+        will not be reset in this operation.
+        :param field_accessor: new accessor
+        """
         self.field_data.clear()
         self.field_accessor = field_accessor
 
 
 class ImmutableTuple:
+    """
+    Container of pure data values. Only used after user returns
+    a modified tuple or tuple-like.
+    """
     def __init__(self, tuple_like, output_field_names):
+        """
+        Create a ImmutableTuple from tuple-like objects or tuple.
+        :param tuple_like: data object
+        :param output_field_names: output schema
+        """
         if isinstance(tuple_like, Tuple):
             self.data = tuple_like.to_values(output_field_names)
         else:
