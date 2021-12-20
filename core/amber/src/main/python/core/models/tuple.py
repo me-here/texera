@@ -25,15 +25,18 @@ class ArrowTableTupleProvider:
         return self
 
     def __next__(self):
-        self.current_idx += 1
-        if self.current_idx > self.table.column(0).chunks[self.current_chunk].length():
-            self.current_idx = 0
-            self.current_chunk += 1
-            if self.current_chunk > self.table.column(0).num_chunks:
-                raise StopIteration
+        chunk_idx = self.current_chunk
+        tuple_idx = self.current_idx
 
         def field_accessor(field_name):
-            return self.table.column(field_name).chunks[self.current_chunk][self.current_idx]
+            return self.table.column(field_name).chunks[chunk_idx][tuple_idx]
+
+        self.current_idx += 1
+        if self.current_idx >= len(self.table.column(0).chunks[self.current_chunk]):
+            self.current_idx = 0
+            self.current_chunk += 1
+            if self.current_chunk >= self.table.column(0).num_chunks:
+                raise StopIteration
 
         return field_accessor
 
@@ -43,17 +46,10 @@ class Tuple:
     Lazy-Tuple implementation.
     """
 
-    def __init__(self, input_field_names=None, output_data=None):
+    def __init__(self, input_field_names):
         self.input_field_accessor = None
-        self.input_field_names = [] if input_field_names is None else input_field_names
-        if output_data is None:
-            self.output_fields = {}
-        elif isinstance(output_data, List):
-            self.output_fields = dict(output_data)
-        elif isinstance(output_data, Tuple):
-            self.output_fields = output_data.as_dict().copy()
-        else:
-            self.output_fields = output_data
+        self.input_field_names = input_field_names
+        self.output_fields = {}
 
     def __getitem__(self, item):
         if item not in self.output_fields:
@@ -77,6 +73,9 @@ class Tuple:
     def as_key_value_pairs(self) -> List[typing.Tuple[str, Any]]:
         return list(self.as_dict().items())
 
+    def to_output_tuple(self, output_field_names):
+        return tuple(self[i] for i in output_field_names)
+
     def __str__(self) -> str:
         return f"Tuple[{str(self.as_dict()).strip('{').strip('}')}]"
 
@@ -93,5 +92,22 @@ class Tuple:
 
     def reset(self, field_accessor):
         self.output_fields.clear()
-        self.fully_evaluated = False
         self.input_field_accessor = field_accessor
+
+
+class OutputTuple:
+    def __init__(self, tuple_like, output_field_names):
+        if isinstance(tuple_like, Tuple):
+            self.data = tuple_like.to_output_tuple(output_field_names)
+        else:
+            if isinstance(tuple_like, List):
+                field_dict = dict(tuple_like)
+            else:
+                field_dict = tuple_like
+            self.data = (field_dict[i] if i in field_dict else None for i in output_field_names)
+
+    def get_fields(self, indices):
+        return (self.data[i] for i in indices)
+
+    def __iter__(self):
+        return iter(self.data)

@@ -10,7 +10,7 @@ from core.architecture.managers.context import Context
 from core.architecture.packaging.batch_to_tuple_converter import EndOfAllMarker
 from core.architecture.rpc.async_rpc_client import AsyncRPCClient
 from core.architecture.rpc.async_rpc_server import AsyncRPCServer
-from core.models import ControlElement, DataElement, InputExhausted, InternalQueue, Operator, SenderChangeMarker, Tuple
+from core.models import ControlElement, DataElement, InputExhausted, InternalQueue, Operator, SenderChangeMarker, Tuple, OutputTuple
 from core.util import IQueue, StoppableQueueBlockingRunnable, get_one_of, set_one_of
 from core.util.print_writer.print_log_handler import PrintLogHandler
 from proto.edu.uci.ics.amber.engine.architecture.worker import ControlCommandV2, LocalOperatorExceptionV2, \
@@ -118,11 +118,12 @@ class DataProcessor(StoppableQueueBlockingRunnable):
             self.context.statistics_manager.increase_input_tuple_count()
 
         try:
-            for tuple_ in self.process_tuple_with_udf(self._current_input_tuple, self._current_input_link):
+            for output_tuple_ in self.process_tuple_with_udf(self._current_input_tuple, self._current_input_link):
                 self.check_and_process_control()
-                if tuple_ is not None:
+                if output_tuple_ is not None:
                     self.context.statistics_manager.increase_output_tuple_count()
-                    for to, batch in self.context.tuple_to_batch_converter.tuple_to_batch(tuple_):
+                    for to, batch in self.context.tuple_to_batch_converter.tuple_to_batch(output_tuple_):
+                        batch.schema = self._operator.output_attribute_names
                         self._output_queue.put(DataElement(tag=to, payload=batch))
         except Exception as err:
             logger.exception(err)
@@ -147,7 +148,7 @@ class DataProcessor(StoppableQueueBlockingRunnable):
             index = len(self._input_links) - 1
             self._input_link_map[link] = index
         input_ = self._input_link_map[link]
-        return map(lambda t: Tuple(output_data=t) if t is not None else None, self._operator.process_tuple(tuple_, input_))
+        return map(lambda t: OutputTuple(t, self._operator.output_attribute_names) if t is not None else None, self._operator.process_tuple(tuple_, input_))
 
     def report_exception(self) -> None:
         """
@@ -189,6 +190,7 @@ class DataProcessor(StoppableQueueBlockingRunnable):
         :param _: EndOfAllMarker
         """
         for to, batch in self.context.tuple_to_batch_converter.emit_end_of_upstream():
+            batch.schema = self._operator.output_attribute_names
             self._output_queue.put(DataElement(tag=to, payload=batch))
             self.check_and_process_control()
         self.complete()

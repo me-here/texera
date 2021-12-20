@@ -35,8 +35,8 @@ class BatchToTupleConverter:
             yield SenderChangeMarker(link)
 
         if isinstance(payload, InputDataFrame):
-            tuple_instance = Tuple(input_field_names=payload.frame.column_names)
-            for field_accessor in ArrowTableTupleProvider(payload):
+            tuple_instance = Tuple(payload.frame.column_names)
+            for field_accessor in ArrowTableTupleProvider(payload.frame):
                 tuple_instance.reset(field_accessor)
                 yield tuple_instance
 
