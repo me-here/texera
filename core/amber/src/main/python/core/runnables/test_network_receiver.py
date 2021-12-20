@@ -3,10 +3,11 @@ from time import sleep
 
 import pandas
 import pytest
+import pyarrow
 
-from core.models import Tuple
+from core.models import ImmutableTuple
 from core.models.internal_queue import ControlElement, DataElement, InternalQueue
-from core.models.payload import DataFrame, EndOfUpstream
+from core.models.payload import OutputDataFrame, EndOfUpstream
 from core.runnables.network_receiver import NetworkReceiver
 from core.runnables.network_sender import NetworkSender
 from core.util.proto import set_one_of
@@ -46,7 +47,7 @@ class TestNetworkReceiver:
             'Brand': ['Honda Civic', 'Toyota Corolla', 'Ford Focus', 'Audi A4'],
             'Price': [22000, 25000, 27000, 35000]
         }, columns=['Brand', 'Price'])
-        return DataFrame(frame=[Tuple(r) for _, r in df_to_sent.iterrows()])
+        return OutputDataFrame(frame=[ImmutableTuple(r, ['Brand', 'Price']) for _, r in df_to_sent.iterrows()], schema=['Brand', 'Price'])
 
     @pytest.mark.timeout(0.5)
     def test_network_receiver_can_stop(self, schema_map):
