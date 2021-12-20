@@ -76,7 +76,7 @@ class Tuple:
     def as_key_value_pairs(self) -> List[typing.Tuple[str, Any]]:
         return list(self.as_dict().items())
 
-    def to_data(self, output_field_names=None):
+    def to_values(self, output_field_names=None):
         if output_field_names is None:
             if self.field_names is None:
                 return tuple(self.field_data.values())
@@ -106,7 +106,7 @@ class Tuple:
 class ImmutableTuple:
     def __init__(self, tuple_like, output_field_names):
         if isinstance(tuple_like, Tuple):
-            self.data = tuple_like.to_data(output_field_names)
+            self.data = tuple_like.to_values(output_field_names)
         else:
             if isinstance(tuple_like, List):
                 field_dict = dict(tuple_like)
