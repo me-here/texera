@@ -2,8 +2,8 @@ package edu.uci.ics.texera.web.service
 
 import com.fasterxml.jackson.annotation.{JsonTypeInfo, JsonTypeName}
 import com.fasterxml.jackson.databind.node.ObjectNode
-import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.WorkflowCompleted
-import edu.uci.ics.amber.engine.common.{AmberClient, AmberUtils}
+import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.WorkflowResultUpdate
+import edu.uci.ics.amber.engine.common.client.AmberClient
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.texera.web.{SnapshotMulticast, TexeraWebApplication}
 import edu.uci.ics.texera.web.model.websocket.event.WorkflowAvailableResultEvent.OperatorAvailableResult

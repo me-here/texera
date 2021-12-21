@@ -21,7 +21,7 @@ import java.sql.PreparedStatement
 
 import com.twitter.util.{Await, Promise}
 import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.WorkflowCompleted
-import edu.uci.ics.amber.engine.common.AmberClient
+import edu.uci.ics.amber.engine.common.client.AmberClient
 import edu.uci.ics.texera.workflow.common.storage.OpResultStorage
 
 import scala.collection.mutable

@@ -4,8 +4,6 @@ import edu.uci.ics.amber.engine.architecture.worker.WorkerAsyncRPCHandlerInitial
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.ShutdownDPThreadHandler.ShutdownDPThread
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 
-import java.util.concurrent.CompletableFuture
-
 object ShutdownDPThreadHandler {
   final case class ShutdownDPThread() extends ControlCommand[Unit]
 }
@@ -17,7 +15,7 @@ trait ShutdownDPThreadHandler {
     {
       dataProcessor.shutdown()
       throw new InterruptedException() // actively interrupt itself
-      () // return unit. this will actually never be called
+      ()
     }
   }
 
