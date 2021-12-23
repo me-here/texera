@@ -24,16 +24,16 @@ trait ShareFlowHandler {
   registerHandler { (cmd: ShareFlow, sender) =>
     // workerStateManager.shouldBe(Running, Ready)
 
-//    Future
-//      .sleep(15.seconds)(new JavaTimer())
-//      .map(_ =>
-    tupleToBatchConverter.changeFlow(
-      cmd.skewedReceiverId,
-      cmd.freeReceiverId,
-      cmd.tuplesToRedirectNumerator,
-      cmd.tuplesToRedirectDenominator
-    )
-//      )
+    Future
+      .sleep(5.seconds)(new JavaTimer())
+      .map(_ =>
+        tupleToBatchConverter.changeFlow(
+          cmd.skewedReceiverId,
+          cmd.freeReceiverId,
+          cmd.tuplesToRedirectNumerator,
+          cmd.tuplesToRedirectDenominator
+        )
+      )
 
   }
 }
