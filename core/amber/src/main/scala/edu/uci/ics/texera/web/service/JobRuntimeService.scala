@@ -15,13 +15,14 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.StartWor
 import edu.uci.ics.amber.engine.architecture.principal.{OperatorState, OperatorStatistics}
 import edu.uci.ics.amber.engine.common.AmberUtils
 import edu.uci.ics.amber.engine.common.client.AmberClient
-import edu.uci.ics.texera.web.SnapshotMulticast
+import edu.uci.ics.texera.web.{SnapshotMulticast, SyncState}
 import edu.uci.ics.texera.web.model.common.FaultedTupleFrontend
 import edu.uci.ics.texera.web.model.websocket.event._
 import edu.uci.ics.texera.web.model.websocket.event.python.PythonPrintTriggeredEvent
 import edu.uci.ics.texera.web.model.websocket.request.python.PythonExpressionEvaluateRequest
 import edu.uci.ics.texera.web.model.websocket.request.{RemoveBreakpointRequest, SkipTupleRequest}
-import edu.uci.ics.texera.web.workflowruntimestate.WorkflowJobRuntimeStats
+import edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent.BreakpointTuple
+import edu.uci.ics.texera.web.workflowruntimestate.{BreakpointEvent, WorkflowAggregatedState, WorkflowJobRuntimeStats}
 import edu.uci.ics.texera.web.workflowruntimestate.WorkflowJobRuntimeStats.WorkflowJobRuntimeStatsLens
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
@@ -37,10 +38,9 @@ object JobRuntimeService {
 }
 
 class JobRuntimeService(workflowStatus: BehaviorSubject[ExecutionStatusEnum], client: AmberClient)
-    extends SnapshotMulticast[TexeraWebSocketEvent]
+    extends SyncState[WorkflowJobRuntimeStats]
     with LazyLogging {
 
-  val stats:WorkflowJobRuntimeStats = new WorkflowJobRuntimeStats(null,null,null)
   registerCallbacks()
 
   private[this] def registerCallbacks(): Unit = {
@@ -58,16 +58,25 @@ class JobRuntimeService(workflowStatus: BehaviorSubject[ExecutionStatusEnum], cl
     client
       .getObservable[BreakpointTriggered]
       .subscribe((evt: BreakpointTriggered) => {
-        val faults = operatorRuntimeStateMap(evt.operatorID).faults
-        for (elem <- evt.report) {
-          val actorPath = elem._1._1.toString
-          val faultedTuple = elem._1._2
-          if (faultedTuple != null) {
-            faults += BreakpointFault(actorPath, FaultedTupleFrontend.apply(faultedTuple), elem._2)
-          }
+        modifyState{
+          jobstats =>
+            val breakpointEvts = evt.report.filter(_._1._2 != null).map {
+              elem =>
+                val actorPath = elem._1._1.toString
+                val faultedTuple = elem._1._2
+                val tupleList =
+                  if (faultedTuple.tuple != null) {
+                    faultedTuple.tuple.toArray().filter(v => v != null).map(v => v.toString).toList
+                  } else {
+                    List.empty
+                  }
+                BreakpointEvent(actorPath, Some(BreakpointTuple(faultedTuple.id, faultedTuple.isInput, tupleList)),elem._2)
+            }
+            var opStats = jobstats.operatorStats(evt.operatorID)
+            opStats = opStats.addAllUnresolvedBreakpoints(breakpointEvts)
+            jobstats.addOperatorStats(evt.operatorID -> opStats)
+              .withState(WorkflowAggregatedState.PAUSED)
         }
-        workflowStatus.onNext(Paused)
-        send(BreakpointTriggeredEvent(faults.toArray, evt.operatorID))
       })
   }
 
@@ -99,6 +108,7 @@ class JobRuntimeService(workflowStatus: BehaviorSubject[ExecutionStatusEnum], cl
     client
       .getObservable[PythonPrintTriggered]
       .subscribe((evt: PythonPrintTriggered) => {
+
         operatorRuntimeStateMap(evt.operatorID).pythonMessages.add(evt.message)
         send(PythonPrintTriggeredEvent(evt))
       })
@@ -246,7 +256,7 @@ class JobRuntimeService(workflowStatus: BehaviorSubject[ExecutionStatusEnum], cl
   }
 
   def evaluatePythonExpression(request: PythonExpressionEvaluateRequest): Unit = {
-    send(client.sendSync(EvaluatePythonExpression(request.expression, request.operatorId)))
+    client.sendSync(EvaluatePythonExpression(request.expression, request.operatorId))
   }
 
 }

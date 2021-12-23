@@ -7,7 +7,7 @@ import "scalapb/scalapb.proto";
 option (scalapb.options) = {
   scope: FILE,
   preserve_unknown_fields: false
-  no_default_values_in_constructor: true
+  no_default_values_in_constructor: false
 };
 
 enum WorkflowAggregatedState {
@@ -45,5 +45,5 @@ message OperatorRuntimeStats{
 message WorkflowJobRuntimeStats {
   WorkflowAggregatedState state = 1;
   string error = 2;
-  repeated  OperatorRuntimeStats operator_stats = 3;
+  map<string,OperatorRuntimeStats> operator_stats = 3;
 }

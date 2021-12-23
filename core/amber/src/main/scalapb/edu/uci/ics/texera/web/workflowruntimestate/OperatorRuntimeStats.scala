@@ -7,10 +7,10 @@ package edu.uci.ics.texera.web.workflowruntimestate
 
 @SerialVersionUID(0L)
 final case class OperatorRuntimeStats(
-    state: edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState,
-    inputCount: _root_.scala.Long,
-    outputCount: _root_.scala.Long,
-    unresolvedBreakpoints: _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]
+    state: edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState = edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState.UNINITIALIZED,
+    inputCount: _root_.scala.Long = 0L,
+    outputCount: _root_.scala.Long = 0L,
+    unresolvedBreakpoints: _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent] = _root_.scala.Seq.empty
     ) extends scalapb.GeneratedMessage with scalapb.lenses.Updatable[OperatorRuntimeStats] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0

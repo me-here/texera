@@ -7,9 +7,9 @@ package edu.uci.ics.texera.web.workflowruntimestate
 
 @SerialVersionUID(0L)
 final case class BreakpointEvent(
-    actorPath: _root_.scala.Predef.String,
-    tuple: _root_.scala.Option[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent.BreakpointTuple],
-    breakpointInfo: _root_.scala.Seq[_root_.scala.Predef.String]
+    actorPath: _root_.scala.Predef.String = "",
+    tuple: _root_.scala.Option[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent.BreakpointTuple] = _root_.scala.None,
+    breakpointInfo: _root_.scala.Seq[_root_.scala.Predef.String] = _root_.scala.Seq.empty
     ) extends scalapb.GeneratedMessage with scalapb.lenses.Updatable[BreakpointEvent] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
@@ -146,9 +146,9 @@ object BreakpointEvent extends scalapb.GeneratedMessageCompanion[edu.uci.ics.tex
   )
   @SerialVersionUID(0L)
   final case class BreakpointTuple(
-      id: _root_.scala.Long,
-      isInput: _root_.scala.Boolean,
-      fields: _root_.scala.Seq[_root_.scala.Predef.String]
+      id: _root_.scala.Long = 0L,
+      isInput: _root_.scala.Boolean = false,
+      fields: _root_.scala.Seq[_root_.scala.Predef.String] = _root_.scala.Seq.empty
       ) extends scalapb.GeneratedMessage with scalapb.lenses.Updatable[BreakpointTuple] {
       @transient
       private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
