@@ -22,7 +22,7 @@ trait RollbackFlowHandler {
   registerHandler { (cmd: RollbackFlow, sender) =>
     // workerStateManager.shouldBe(Running, Ready)
     Future
-      .sleep(10.seconds)(new JavaTimer())
+      .sleep(15.seconds)(new JavaTimer())
       .map(_ =>
         tupleToBatchConverter.rollbackFlow(
           cmd.skewedReceiverId,

@@ -25,7 +25,7 @@ trait ShareFlowHandler {
     // workerStateManager.shouldBe(Running, Ready)
 
     Future
-      .sleep(10.seconds)(new JavaTimer())
+      .sleep(15.seconds)(new JavaTimer())
       .map(_ =>
         tupleToBatchConverter.changeFlow(
           cmd.skewedReceiverId,
