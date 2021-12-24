@@ -21,13 +21,14 @@ trait RollbackFlowHandler {
 
   registerHandler { (cmd: RollbackFlow, sender) =>
     // workerStateManager.shouldBe(Running, Ready)
-    Future
-      .sleep(15.seconds)(new JavaTimer())
-      .map(_ =>
-        tupleToBatchConverter.rollbackFlow(
-          cmd.skewedReceiverId,
-          cmd.freeReceiverId
-        )
-      )
+
+//    Future
+//      .sleep(15.seconds)(new JavaTimer())
+//      .map(_ =>
+    tupleToBatchConverter.rollbackFlow(
+      cmd.skewedReceiverId,
+      cmd.freeReceiverId
+    )
+//      )
   }
 }
