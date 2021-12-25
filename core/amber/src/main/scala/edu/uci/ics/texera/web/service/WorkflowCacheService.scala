@@ -3,7 +3,6 @@ package edu.uci.ics.texera.web.service
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.amber.engine.common.AmberUtils
-import edu.uci.ics.texera.web.SnapshotMulticast
 import edu.uci.ics.texera.web.model.common.CacheStatus
 import edu.uci.ics.texera.web.model.websocket.event.{CacheStatusUpdateEvent, TexeraWebSocketEvent}
 import edu.uci.ics.texera.web.model.websocket.request.CacheStatusUpdateRequest
@@ -39,7 +38,7 @@ object WorkflowCacheService extends LazyLogging {
   }
 }
 
-class WorkflowCacheService extends SnapshotMulticast[TexeraWebSocketEvent] with LazyLogging {
+class WorkflowCacheService extends LazyLogging {
 
   val cachedOperators: mutable.HashMap[String, OperatorDescriptor] =
     mutable.HashMap[String, OperatorDescriptor]()

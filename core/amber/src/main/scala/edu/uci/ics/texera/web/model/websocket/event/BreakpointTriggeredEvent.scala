@@ -1,14 +1,8 @@
 package edu.uci.ics.texera.web.model.websocket.event
 
-import edu.uci.ics.texera.web.model.common.FaultedTupleFrontend
-
-case class BreakpointFault(
-    actorPath: String,
-    faultedTuple: FaultedTupleFrontend,
-    messages: Array[String]
-)
+import edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent
 
 case class BreakpointTriggeredEvent(
-    report: Array[BreakpointFault],
+    report: Iterable[BreakpointEvent],
     operatorID: String
 ) extends TexeraWebSocketEvent

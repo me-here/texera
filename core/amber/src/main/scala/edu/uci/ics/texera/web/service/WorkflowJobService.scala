@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.amber.engine.architecture.controller.{ControllerConfig, Workflow}
 import edu.uci.ics.amber.engine.common.client.AmberClient
 import edu.uci.ics.amber.engine.common.virtualidentity.WorkflowIdentity
-import edu.uci.ics.texera.web.{SnapshotMulticast, TexeraWebApplication}
+import edu.uci.ics.texera.web.TexeraWebApplication
 import edu.uci.ics.texera.web.model.websocket.event.{
   ExecutionStatusEnum,
   TexeraWebSocketEvent,
@@ -39,11 +39,7 @@ class WorkflowJobService(
     uidOpt: Option[UInteger],
     request: WorkflowExecuteRequest,
     prevResults: mutable.HashMap[String, OperatorResultService]
-) extends SnapshotMulticast[TexeraWebSocketEvent]
-    with LazyLogging {
-
-  // workflow status
-  private val workflowStatus: BehaviorSubject[ExecutionStatusEnum] = createWorkflowStatus()
+) extends LazyLogging {
 
   // Compilation starts from here:
   val workflowContext: WorkflowContext = createWorkflowContext()
@@ -54,7 +50,7 @@ class WorkflowJobService(
   // Runtime starts from here:
   val client: AmberClient =
     TexeraWebApplication.createAmberRuntime(workflow, ControllerConfig.default)
-  val workflowRuntimeService: JobRuntimeService = new JobRuntimeService(workflowStatus, client)
+  val workflowRuntimeService: JobRuntimeService = new JobRuntimeService(client)
 
   // Result-related services start from here:
   val workflowResultService: JobResultService =
@@ -70,12 +66,6 @@ class WorkflowJobService(
       workflowRuntimeService.addBreakpoint(pair.operatorID, pair.breakpoint)
     }
     workflowRuntimeService.startWorkflow()
-  }
-
-  private[this] def createWorkflowStatus(): BehaviorSubject[ExecutionStatusEnum] = {
-    val status = BehaviorSubject[ExecutionStatusEnum](Uninitialized)
-    status.onTerminateDetach.subscribe(x => send(WorkflowStateEvent(x)))
-    status
   }
 
   private[this] def createWorkflowContext(): WorkflowContext = {
@@ -134,13 +124,6 @@ class WorkflowJobService(
     compiler
   }
 
-  def subscribeRuntimeComponents(observer: Observer[TexeraWebSocketEvent]): Subscription = {
-    CompositeSubscription(
-      workflowRuntimeService.subscribeWithAmberClient(observer, client),
-      workflowResultService.subscribeWithAmberClient(observer, client)
-    )
-  }
-
   def modifyLogic(request: ModifyLogicRequest): Unit = {
     workflowCompiler.initOperator(request.operator)
     workflowRuntimeService.modifyLogic(request.operator)
@@ -150,7 +133,4 @@ class WorkflowJobService(
     resultExportService.exportResult(uid, workflowResultService, request)
   }
 
-  override def sendSnapshotTo(observer: Observer[TexeraWebSocketEvent]): Unit = {
-    observer.onNext(WorkflowStateEvent(workflowStatus.asJavaSubject.getValue))
-  }
 }

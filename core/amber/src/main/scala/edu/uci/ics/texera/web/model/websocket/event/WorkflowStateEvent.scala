@@ -1,3 +1,5 @@
 package edu.uci.ics.texera.web.model.websocket.event
 
-case class WorkflowStateEvent(state: ExecutionStatusEnum) extends TexeraWebSocketEvent
+import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState
+
+case class WorkflowStateEvent(state: WorkflowAggregatedState) extends TexeraWebSocketEvent

@@ -1,36 +1,26 @@
 package edu.uci.ics.texera.web.resource
 
 import java.util.concurrent.atomic.AtomicInteger
-
 import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.texera.Utils
-import edu.uci.ics.texera.web.{
-  ServletAwareConfigurator,
-  SessionState,
-  SessionStateManager,
-  SnapshotMulticast
-}
+import edu.uci.ics.texera.web.{ServletAwareConfigurator, SessionState, SessionStateManager, SubscriptionManager}
 import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.User
-import edu.uci.ics.texera.web.model.websocket.event.{
-  TexeraWebSocketEvent,
-  Uninitialized,
-  WorkflowErrorEvent,
-  WorkflowStateEvent
-}
+import edu.uci.ics.texera.web.model.websocket.event.{TexeraWebSocketEvent, Uninitialized, WorkflowErrorEvent, WorkflowStateEvent}
 import edu.uci.ics.texera.web.model.websocket.request._
 import edu.uci.ics.texera.web.model.websocket.request.python.PythonExpressionEvaluateRequest
 import edu.uci.ics.texera.web.model.websocket.response._
 import edu.uci.ics.texera.web.service.{WorkflowCacheService, WorkflowService}
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler.ConstraintViolationException
+
 import javax.websocket._
 import javax.websocket.server.ServerEndpoint
-
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 import scala.util.{Failure, Success}
 
 object WorkflowWebsocketResource {
   val nextExecutionID = new AtomicInteger(0)
+  val userSessionSubscriptionManager = new SubscriptionManager[TexeraWebSocketEvent]()
 }
 
 @ServerEndpoint(

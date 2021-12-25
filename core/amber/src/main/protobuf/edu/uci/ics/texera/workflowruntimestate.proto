@@ -19,6 +19,7 @@ enum WorkflowAggregatedState {
   RESUMING = 5;
   RECOVERING = 6;
   COMPLETED = 7;
+  ABORTED = 8;
 }
 
 message BreakpointEvent{
@@ -38,12 +39,18 @@ message OperatorRuntimeStats{
   WorkflowAggregatedState state = 1;
   int64 input_count = 2;
   int64 output_count = 3;
-  repeated BreakpointEvent unresolved_breakpoints = 4;
 }
 
 
-message WorkflowJobRuntimeStats {
+message OperatorRuntimeInfo{
+  OperatorRuntimeStats stats = 1;
+  repeated BreakpointEvent unresolved_breakpoints = 2;
+  repeated string python_console_messages = 3;
+}
+
+
+message WorkflowJobRuntimeInfo {
   WorkflowAggregatedState state = 1;
   string error = 2;
-  map<string,OperatorRuntimeStats> operator_stats = 3;
+  map<string,OperatorRuntimeInfo> operator_info = 3;
 }

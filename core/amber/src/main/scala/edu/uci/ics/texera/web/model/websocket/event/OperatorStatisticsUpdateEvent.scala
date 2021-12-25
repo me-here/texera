@@ -5,13 +5,8 @@ import edu.uci.ics.amber.engine.architecture.principal.{OperatorState, OperatorS
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.texera.workflow.common.IncrementalOutputMode
 import edu.uci.ics.texera.Utils.objectMapper
+import edu.uci.ics.texera.web.workflowruntimestate.OperatorRuntimeStats
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler
 
-object OperatorStatisticsUpdateEvent {
-  def apply(update: WorkflowStatusUpdate): OperatorStatisticsUpdateEvent = {
-    OperatorStatisticsUpdateEvent(update.operatorStatistics)
-  }
-}
-
-case class OperatorStatisticsUpdateEvent(operatorStatistics: Map[String, OperatorStatistics])
+case class OperatorStatisticsUpdateEvent(operatorStatistics: Map[String, OperatorRuntimeStats])
     extends TexeraWebSocketEvent

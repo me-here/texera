@@ -9,8 +9,7 @@ package edu.uci.ics.texera.web.workflowruntimestate
 final case class OperatorRuntimeStats(
     state: edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState = edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState.UNINITIALIZED,
     inputCount: _root_.scala.Long = 0L,
-    outputCount: _root_.scala.Long = 0L,
-    unresolvedBreakpoints: _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent] = _root_.scala.Seq.empty
+    outputCount: _root_.scala.Long = 0L
     ) extends scalapb.GeneratedMessage with scalapb.lenses.Updatable[OperatorRuntimeStats] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
@@ -37,10 +36,6 @@ final case class OperatorRuntimeStats(
           __size += _root_.com.google.protobuf.CodedOutputStream.computeInt64Size(3, __value)
         }
       };
-      unresolvedBreakpoints.foreach { __item =>
-        val __value = __item
-        __size += 1 + _root_.com.google.protobuf.CodedOutputStream.computeUInt32SizeNoTag(__value.serializedSize) + __value.serializedSize
-      }
       __size
     }
     override def serializedSize: _root_.scala.Int = {
@@ -70,20 +65,10 @@ final case class OperatorRuntimeStats(
           _output__.writeInt64(3, __v)
         }
       };
-      unresolvedBreakpoints.foreach { __v =>
-        val __m = __v
-        _output__.writeTag(4, 2)
-        _output__.writeUInt32NoTag(__m.serializedSize)
-        __m.writeTo(_output__)
-      };
     }
     def withState(__v: edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState): OperatorRuntimeStats = copy(state = __v)
     def withInputCount(__v: _root_.scala.Long): OperatorRuntimeStats = copy(inputCount = __v)
     def withOutputCount(__v: _root_.scala.Long): OperatorRuntimeStats = copy(outputCount = __v)
-    def clearUnresolvedBreakpoints = copy(unresolvedBreakpoints = _root_.scala.Seq.empty)
-    def addUnresolvedBreakpoints(__vs: edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent*): OperatorRuntimeStats = addAllUnresolvedBreakpoints(__vs)
-    def addAllUnresolvedBreakpoints(__vs: Iterable[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]): OperatorRuntimeStats = copy(unresolvedBreakpoints = unresolvedBreakpoints ++ __vs)
-    def withUnresolvedBreakpoints(__v: _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]): OperatorRuntimeStats = copy(unresolvedBreakpoints = __v)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => {
@@ -98,7 +83,6 @@ final case class OperatorRuntimeStats(
           val __t = outputCount
           if (__t != 0L) __t else null
         }
-        case 4 => unresolvedBreakpoints
       }
     }
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = {
@@ -107,7 +91,6 @@ final case class OperatorRuntimeStats(
         case 1 => _root_.scalapb.descriptors.PEnum(state.scalaValueDescriptor)
         case 2 => _root_.scalapb.descriptors.PLong(inputCount)
         case 3 => _root_.scalapb.descriptors.PLong(outputCount)
-        case 4 => _root_.scalapb.descriptors.PRepeated(unresolvedBreakpoints.iterator.map(_.toPMessage).toVector)
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
@@ -121,7 +104,6 @@ object OperatorRuntimeStats extends scalapb.GeneratedMessageCompanion[edu.uci.ic
     var __state: edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState = edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState.UNINITIALIZED
     var __inputCount: _root_.scala.Long = 0L
     var __outputCount: _root_.scala.Long = 0L
-    val __unresolvedBreakpoints: _root_.scala.collection.immutable.VectorBuilder[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent] = new _root_.scala.collection.immutable.VectorBuilder[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]
     var _done__ = false
     while (!_done__) {
       val _tag__ = _input__.readTag()
@@ -133,16 +115,13 @@ object OperatorRuntimeStats extends scalapb.GeneratedMessageCompanion[edu.uci.ic
           __inputCount = _input__.readInt64()
         case 24 =>
           __outputCount = _input__.readInt64()
-        case 34 =>
-          __unresolvedBreakpoints += _root_.scalapb.LiteParser.readMessage[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent](_input__)
         case tag => _input__.skipField(tag)
       }
     }
     edu.uci.ics.texera.web.workflowruntimestate.OperatorRuntimeStats(
         state = __state,
         inputCount = __inputCount,
-        outputCount = __outputCount,
-        unresolvedBreakpoints = __unresolvedBreakpoints.result()
+        outputCount = __outputCount
     )
   }
   implicit def messageReads: _root_.scalapb.descriptors.Reads[edu.uci.ics.texera.web.workflowruntimestate.OperatorRuntimeStats] = _root_.scalapb.descriptors.Reads{
@@ -151,20 +130,13 @@ object OperatorRuntimeStats extends scalapb.GeneratedMessageCompanion[edu.uci.ic
       edu.uci.ics.texera.web.workflowruntimestate.OperatorRuntimeStats(
         state = edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState.fromValue(__fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[_root_.scalapb.descriptors.EnumValueDescriptor]).getOrElse(edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState.UNINITIALIZED.scalaValueDescriptor).number),
         inputCount = __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).map(_.as[_root_.scala.Long]).getOrElse(0L),
-        outputCount = __fieldsMap.get(scalaDescriptor.findFieldByNumber(3).get).map(_.as[_root_.scala.Long]).getOrElse(0L),
-        unresolvedBreakpoints = __fieldsMap.get(scalaDescriptor.findFieldByNumber(4).get).map(_.as[_root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]]).getOrElse(_root_.scala.Seq.empty)
+        outputCount = __fieldsMap.get(scalaDescriptor.findFieldByNumber(3).get).map(_.as[_root_.scala.Long]).getOrElse(0L)
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
   def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = WorkflowruntimestateProto.javaDescriptor.getMessageTypes().get(1)
   def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = WorkflowruntimestateProto.scalaDescriptor.messages(1)
-  def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = {
-    var __out: _root_.scalapb.GeneratedMessageCompanion[_] = null
-    (__number: @_root_.scala.unchecked) match {
-      case 4 => __out = edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent
-    }
-    __out
-  }
+  def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = throw new MatchError(__number)
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = {
     (__fieldNumber: @_root_.scala.unchecked) match {
@@ -174,29 +146,24 @@ object OperatorRuntimeStats extends scalapb.GeneratedMessageCompanion[edu.uci.ic
   lazy val defaultInstance = edu.uci.ics.texera.web.workflowruntimestate.OperatorRuntimeStats(
     state = edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState.UNINITIALIZED,
     inputCount = 0L,
-    outputCount = 0L,
-    unresolvedBreakpoints = _root_.scala.Seq.empty
+    outputCount = 0L
   )
   implicit class OperatorRuntimeStatsLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.texera.web.workflowruntimestate.OperatorRuntimeStats]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, edu.uci.ics.texera.web.workflowruntimestate.OperatorRuntimeStats](_l) {
     def state: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState] = field(_.state)((c_, f_) => c_.copy(state = f_))
     def inputCount: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Long] = field(_.inputCount)((c_, f_) => c_.copy(inputCount = f_))
     def outputCount: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Long] = field(_.outputCount)((c_, f_) => c_.copy(outputCount = f_))
-    def unresolvedBreakpoints: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]] = field(_.unresolvedBreakpoints)((c_, f_) => c_.copy(unresolvedBreakpoints = f_))
   }
   final val STATE_FIELD_NUMBER = 1
   final val INPUT_COUNT_FIELD_NUMBER = 2
   final val OUTPUT_COUNT_FIELD_NUMBER = 3
-  final val UNRESOLVED_BREAKPOINTS_FIELD_NUMBER = 4
   def of(
     state: edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState,
     inputCount: _root_.scala.Long,
-    outputCount: _root_.scala.Long,
-    unresolvedBreakpoints: _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]
+    outputCount: _root_.scala.Long
   ): _root_.edu.uci.ics.texera.web.workflowruntimestate.OperatorRuntimeStats = _root_.edu.uci.ics.texera.web.workflowruntimestate.OperatorRuntimeStats(
     state,
     inputCount,
-    outputCount,
-    unresolvedBreakpoints
+    outputCount
   )
   // @@protoc_insertion_point(GeneratedMessageCompanion[edu.uci.ics.texera.web.OperatorRuntimeStats])
 }
