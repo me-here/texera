@@ -372,8 +372,8 @@ trait DetectSkewHandler {
 //            s"SECOND PHASE: ${id} - Loads=${skewedLoad}:${freeLoad}; Error=${skewedEstimateError}:${freeEstimateError}; Size=${skewedHistorySize}:${freeHistorySize} - Ratio=${redirectNum}:${skewedLoad.toLong}"
 //          )
           futuresArr.append(
-            // send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
-            send(ShareFlow(sf._1, sf._2, 1, 2), id)
+            send(ShareFlow(sf._1, sf._2, redirectNum, skewedLoad.toLong), id)
+            // send(ShareFlow(sf._1, sf._2, 1, 2), id)
           )
 
         }
@@ -413,13 +413,13 @@ trait DetectSkewHandler {
 //        s"\tLOAD ${id} - ${currLoad.stashedBatches} stashed batches, ${currLoad.unprocessedQueueLength} internal queue, ${currLoad.totalPutInInternalQueue} total input"
 //      )
     }
-    metrics._2.foreach(replyFromNetComm => {
-      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
-        if (loads.contains(wId)) {
-          loads(wId) = loads.getOrElse(wId, 0L) + futLoad
-        }
-      }
-    })
+//    metrics._2.foreach(replyFromNetComm => {
+//      for ((wId, futLoad) <- replyFromNetComm._1.dataToSend) {
+//        if (loads.contains(wId)) {
+//          loads(wId) = loads.getOrElse(wId, 0L) + futLoad
+//        }
+//      }
+//    })
 
     val aggregatedSentCount = new mutable.HashMap[ActorVirtualIdentity, Long]()
     metrics._2.foreach(prevReply => {
