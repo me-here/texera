@@ -3,24 +3,22 @@ package edu.uci.ics.texera.web.resource
 import java.util.concurrent.atomic.AtomicInteger
 import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.texera.Utils
-import edu.uci.ics.texera.web.{ServletAwareConfigurator, SessionState, SessionStateManager, SubscriptionManager}
+import edu.uci.ics.texera.web.{ServletAwareConfigurator, SessionState, SessionStateManager, ObserverManager}
 import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.User
-import edu.uci.ics.texera.web.model.websocket.event.{TexeraWebSocketEvent, Uninitialized, WorkflowErrorEvent, WorkflowStateEvent}
+import edu.uci.ics.texera.web.model.websocket.event.{TexeraWebSocketEvent, WorkflowErrorEvent, WorkflowStateEvent}
 import edu.uci.ics.texera.web.model.websocket.request._
 import edu.uci.ics.texera.web.model.websocket.request.python.PythonExpressionEvaluateRequest
 import edu.uci.ics.texera.web.model.websocket.response._
 import edu.uci.ics.texera.web.service.{WorkflowCacheService, WorkflowService}
+import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler.ConstraintViolationException
 
 import javax.websocket._
 import javax.websocket.server.ServerEndpoint
-import scala.collection.mutable
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
-import scala.util.{Failure, Success}
 
 object WorkflowWebsocketResource {
   val nextExecutionID = new AtomicInteger(0)
-  val userSessionSubscriptionManager = new SubscriptionManager[TexeraWebSocketEvent]()
 }
 
 @ServerEndpoint(
@@ -58,7 +56,7 @@ class WorkflowWebsocketResource extends LazyLogging {
       request match {
         case wIdRequest: RegisterWIdRequest =>
           // hack to refresh frontend run button state
-          send(session, WorkflowStateEvent(Uninitialized))
+          send(session, WorkflowStateEvent("Uninitialized"))
           val workflowState = uidOpt match {
             case Some(user) =>
               val workflowStateId = user + "-" + wIdRequest.wId
@@ -114,14 +112,12 @@ class WorkflowWebsocketResource extends LazyLogging {
           )
         case paginationRequest: ResultPaginationRequest =>
           workflowStateOpt.foreach(
-            _.jobService.foreach(
-              _.workflowResultService.handleResultPagination(paginationRequest)
-            )
+            state => send(session, state.resultService.handleResultPagination(paginationRequest))
           )
         case resultExportRequest: ResultExportRequest =>
-          workflowStateOpt.foreach(_.jobService.foreach { state =>
-            send(session, state.exportResult(uidOpt.get, resultExportRequest))
-          })
+          workflowStateOpt.foreach(
+            state => send(session, state.exportService.exportResult(uidOpt.get, resultExportRequest))
+          )
         case cacheStatusUpdateRequest: CacheStatusUpdateRequest =>
           if (WorkflowCacheService.isAvailable) {
             workflowStateOpt.foreach(_.operatorCache.updateCacheStatus(cacheStatusUpdateRequest))

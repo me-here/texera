@@ -20,6 +20,7 @@ enum WorkflowAggregatedState {
   RECOVERING = 6;
   COMPLETED = 7;
   ABORTED = 8;
+  UNKNOWN = 9;
 }
 
 message BreakpointEvent{

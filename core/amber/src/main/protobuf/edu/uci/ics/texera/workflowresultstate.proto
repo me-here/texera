@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package edu.uci.ics.texera.web;
+
+import "scalapb/scalapb.proto";
+
+option (scalapb.options) = {
+  scope: FILE,
+  preserve_unknown_fields: false
+  no_default_values_in_constructor: false
+};
+
+
+message WorkflowJobResultInfo{
+  map<string,OperatorResultInfo> operator_info = 1;
+}
+
+
+message OperatorResultInfo{
+  int32 tuple_count = 1;
+}

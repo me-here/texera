@@ -36,9 +36,9 @@ object WorkflowruntimestateProto extends _root_.scalapb.GeneratedFileObject {
   AMoCzJALmVkdS51Y2kuaWNzLnRleGVyYS53ZWIuV29ya2Zsb3dKb2JSdW50aW1lSW5mby5PcGVyYXRvckluZm9FbnRyeUIR4j8OE
   gxvcGVyYXRvckluZm9SDG9wZXJhdG9ySW5mbxqCAQoRT3BlcmF0b3JJbmZvRW50cnkSGgoDa2V5GAEgASgJQgjiPwUSA2tleVIDa
   2V5Ek0KBXZhbHVlGAIgASgLMisuZWR1LnVjaS5pY3MudGV4ZXJhLndlYi5PcGVyYXRvclJ1bnRpbWVJbmZvQgriPwcSBXZhbHVlU
-  gV2YWx1ZToCOAEqlwEKF1dvcmtmbG93QWdncmVnYXRlZFN0YXRlEhEKDVVOSU5JVElBTElaRUQQABIJCgVSRUFEWRABEgsKB1JVT
+  gV2YWx1ZToCOAEqpAEKF1dvcmtmbG93QWdncmVnYXRlZFN0YXRlEhEKDVVOSU5JVElBTElaRUQQABIJCgVSRUFEWRABEgsKB1JVT
   k5JTkcQAhILCgdQQVVTSU5HEAMSCgoGUEFVU0VEEAQSDAoIUkVTVU1JTkcQBRIOCgpSRUNPVkVSSU5HEAYSDQoJQ09NUExFVEVEE
-  AcSCwoHQUJPUlRFRBAIQgniPwZIAFgAeABiBnByb3RvMw=="""
+  AcSCwoHQUJPUlRFRBAIEgsKB1VOS05PV04QCUIJ4j8GSABYAHgAYgZwcm90bzM="""
       ).mkString)
   lazy val scalaDescriptor: _root_.scalapb.descriptors.FileDescriptor = {
     val scalaProto = com.google.protobuf.descriptor.FileDescriptorProto.parseFrom(ProtoBytes)

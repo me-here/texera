@@ -11,11 +11,8 @@ import edu.uci.ics.texera.workflow.operators.sink.storage.SinkStorage
   * It always keeps the latest snapshot of the computation result.
   */
 class ProgressiveResultService(
-    sink: ProgressiveSinkOpDesc
+    val sink: ProgressiveSinkOpDesc
 ) {
-
-  // offset that indicates how many records have been sent to the frontend
-  var offset = 0
 
   // derive the web output mode from the sink operator type
   val webOutputMode: WebOutputMode = {
@@ -39,17 +36,15 @@ class ProgressiveResultService(
   /**
     * Produces the WebResultUpdate to send to frontend from a result update from the engine.
     */
-  def convertWebResultUpdate(): WebResultUpdate = {
+  def convertWebResultUpdate(oldTupleCount:Int, newTupleCount:Int): WebResultUpdate = {
     val storage = sink.getStorage
     val webUpdate = (webOutputMode, sink.getOutputMode) match {
       case (PaginationMode(), SET_SNAPSHOT) =>
-        WebPaginationUpdate(PaginationMode(), storage.getCount, List.empty)
-
+        WebPaginationUpdate(PaginationMode(), newTupleCount, List.empty)
       case (SetSnapshotMode(), SET_SNAPSHOT) =>
         webDataFromTuple(webOutputMode, storage.getAll.toList, sink.getChartType)
       case (SetDeltaMode(), SET_DELTA) =>
-        val deltaList = storage.getAllAfter(offset).toList
-        offset += deltaList.size
+        val deltaList = storage.getAllAfter(oldTupleCount).toList
         webDataFromTuple(webOutputMode, deltaList, sink.getChartType)
 
       // currently not supported mode combinations
@@ -60,16 +55,6 @@ class ProgressiveResultService(
         )
     }
     webUpdate
-  }
-
-  def getSnapshot: WebResultUpdate = {
-    val storage = sink.getStorage
-    webOutputMode match {
-      case PaginationMode() =>
-        WebPaginationUpdate(PaginationMode(), storage.getCount, List.empty)
-      case SetSnapshotMode() | SetDeltaMode() =>
-        webDataFromTuple(webOutputMode, storage.getAll.toList, sink.getChartType)
-    }
   }
 
 }

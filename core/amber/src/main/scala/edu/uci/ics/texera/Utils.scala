@@ -3,10 +3,11 @@ package edu.uci.ics.texera
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState
 import org.apache.lucene.analysis.CharArraySet
+
 import java.nio.file.{Files, Path, Paths}
 import java.text.SimpleDateFormat
-
 import scala.annotation.tailrec
 
 object Utils {
@@ -91,4 +92,21 @@ object Utils {
     "www",
     "html"
   )
+
+
+  def aggregatedStateToString(state:WorkflowAggregatedState): String ={
+    state match {
+      case WorkflowAggregatedState.UNINITIALIZED => "Uninitialized"
+      case WorkflowAggregatedState.READY => "Ready"
+      case WorkflowAggregatedState.RUNNING => "Running"
+      case WorkflowAggregatedState.PAUSING => "Pausing"
+      case WorkflowAggregatedState.PAUSED => "Paused"
+      case WorkflowAggregatedState.RESUMING => "Resuming"
+      case WorkflowAggregatedState.RECOVERING => "Recovering"
+      case WorkflowAggregatedState.COMPLETED => "Completed"
+      case WorkflowAggregatedState.ABORTED => "Aborted"
+      case WorkflowAggregatedState.UNKNOWN => "Unknown"
+      case WorkflowAggregatedState.Unrecognized(unrecognizedValue) => "???"
+    }
+  }
 }

@@ -4,42 +4,24 @@ import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.amber.engine.architecture.controller.{ControllerConfig, Workflow}
 import edu.uci.ics.amber.engine.common.client.AmberClient
 import edu.uci.ics.amber.engine.common.virtualidentity.WorkflowIdentity
-import edu.uci.ics.texera.web.TexeraWebApplication
-import edu.uci.ics.texera.web.model.websocket.event.{
-  ExecutionStatusEnum,
-  TexeraWebSocketEvent,
-  Uninitialized,
-  WorkflowStateEvent
-}
-import edu.uci.ics.texera.web.model.websocket.request.{
-  CacheStatusUpdateRequest,
-  ModifyLogicRequest,
-  ResultExportRequest,
-  WorkflowExecuteRequest
-}
+import edu.uci.ics.texera.web.{ObserverManager, TexeraWebApplication}
+import edu.uci.ics.texera.web.model.websocket.event.TexeraWebSocketEvent
+import edu.uci.ics.texera.web.model.websocket.request.{CacheStatusUpdateRequest, ModifyLogicRequest, ResultExportRequest, WorkflowExecuteRequest}
 import edu.uci.ics.texera.web.model.websocket.response.ResultExportResponse
 import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource
 import edu.uci.ics.texera.workflow.common.WorkflowContext
 import edu.uci.ics.texera.workflow.common.storage.OpResultStorage
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler.ConstraintViolationException
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowInfo.toJgraphtDAG
-import edu.uci.ics.texera.workflow.common.workflow.{
-  WorkflowCompiler,
-  WorkflowInfo,
-  WorkflowRewriter
-}
+import edu.uci.ics.texera.workflow.common.workflow.{WorkflowCompiler, WorkflowInfo, WorkflowRewriter}
 import org.jooq.types.UInteger
-import rx.lang.scala.subjects.BehaviorSubject
-import rx.lang.scala.subscriptions.CompositeSubscription
-import rx.lang.scala.{Observer, Subscription}
-
-import scala.collection.mutable
 
 class WorkflowJobService(
+                          subscriptionManager: ObserverManager[TexeraWebSocketEvent],
     operatorCache: WorkflowCacheService,
+    resultService: JobResultService,
     uidOpt: Option[UInteger],
-    request: WorkflowExecuteRequest,
-    opResultStorage: OpResultStorage
+    request: WorkflowExecuteRequest
 ) extends LazyLogging {
 
   // Compilation starts from here:
@@ -48,24 +30,19 @@ class WorkflowJobService(
   val workflowCompiler: WorkflowCompiler = createWorkflowCompiler(workflowInfo, workflowContext)
   val workflow: Workflow = workflowCompiler.amberWorkflow(
     WorkflowIdentity(workflowContext.jobId),
-    opResultStorage
+    resultService.opResultStorage
   )
 
   // Runtime starts from here:
   val client: AmberClient =
     TexeraWebApplication.createAmberRuntime(workflow, ControllerConfig.default)
-  val workflowRuntimeService: JobRuntimeService = new JobRuntimeService(client)
-
-  // Result-related services start from here:
-  val workflowResultService: JobResultService =
-    new JobResultService(workflowInfo, client, opResultStorage)
-  val resultExportService: ResultExportService = new ResultExportService()
+  val workflowRuntimeService: JobRuntimeService = new JobRuntimeService(client, subscriptionManager)
 
   def startWorkflow(): Unit = {
-    workflowResultService.updateAvailableResult(request.operators)
     for (pair <- workflowInfo.breakpoints) {
       workflowRuntimeService.addBreakpoint(pair.operatorID, pair.breakpoint)
     }
+    resultService.attachToJob(workflowInfo, client)
     workflowRuntimeService.startWorkflow()
   }
 
@@ -100,7 +77,7 @@ class WorkflowJobService(
         operatorCache.cacheSourceOperators,
         operatorCache.cacheSinkOperators,
         operatorCache.operatorRecord,
-        opResultStorage
+        resultService.opResultStorage
       )
       val newWorkflowInfo = workflowRewriter.rewrite
       val oldWorkflowInfo = workflowInfo
@@ -128,10 +105,6 @@ class WorkflowJobService(
   def modifyLogic(request: ModifyLogicRequest): Unit = {
     workflowCompiler.initOperator(request.operator)
     workflowRuntimeService.modifyLogic(request.operator)
-  }
-
-  def exportResult(uid: UInteger, request: ResultExportRequest): ResultExportResponse = {
-    resultExportService.exportResult(uid, opResultStorage, request)
   }
 
 }

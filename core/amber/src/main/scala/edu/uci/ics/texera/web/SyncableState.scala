@@ -1,50 +1,52 @@
 package edu.uci.ics.texera.web
 
-import com.google.protobuf.GeneratedMessage
-import rx.lang.scala.Subscriber
-import scalapb.GeneratedMessage
+import rx.lang.scala.{Observer, Subscriber}
 
 import scala.collection.mutable
 
-trait SyncableState[T <: GeneratedMessage, U] {
+abstract class SyncableState[T, U] {
 
-  private var state:T = new T()
+  private var state:T = defaultState
   private var isModifying = false
+
+  def defaultState:T
+
+  def getState: T = state
 
   def modifyState(func:T => T):Unit = {
     synchronized{
       assert(!isModifying, "Cannot recursively modify state or modify state inside computeDiff")
       isModifying = true
       val newState = func(state)
-      computeDiff(state, newState).foreach(delta => subscriptionManager.pushToSubscribers(delta))
+      computeDiff(state, newState).foreach(delta => subscriptionManager.pushToObservers(delta))
       isModifying = false
       state = newState
     }
   }
 
-  def subscriptionManager:SubscriptionManager[U]
+  def subscriptionManager:ObserverManager[U]
 
   def computeDiff(oldState:T, newState:T):Array[U]
 
   def computeSnapshot:Array[U] = {
-    computeDiff(new T(), state)
+    computeDiff(defaultState, state)
   }
 
 }
 
 
-class SubscriptionManager[U]{
-  private val subscribers:mutable.ArrayBuffer[Subscriber[U]] = mutable.ArrayBuffer.empty
+class ObserverManager[U]{
+  private val observers:mutable.ArrayBuffer[Observer[U]] = mutable.ArrayBuffer.empty
 
-  def addSubscriber(subscriber: Subscriber[U]):Unit = {
-    subscribers += subscriber
+  def addObserver(ob: Observer[U]):Unit = {
+    observers += ob
   }
 
-  def removeSubscriber(subscriber: Subscriber[U]):Unit = {
-    subscribers -= subscriber
+  def removeObserver(ob: Observer[U]):Unit = {
+    observers -= ob
   }
 
-  def pushToSubscribers(msg:U):Unit = {
-    subscribers.foreach(subscriber => subscriber.onNext(msg))
+  def pushToObservers(msg:U):Unit = {
+    observers.foreach(ob => ob.onNext(msg))
   }
 }

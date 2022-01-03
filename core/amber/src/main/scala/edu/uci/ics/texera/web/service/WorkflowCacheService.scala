@@ -60,12 +60,6 @@ class WorkflowCacheService(opResultStorage: OpResultStorage)
         }
       })
       .toMap
-    send(CacheStatusUpdateEvent(cacheStatusMap))
-  }
-
-  override def sendSnapshotTo(observer: Observer[TexeraWebSocketEvent]): Unit = {
-    if (cacheStatusMap != null) {
-      observer.onNext(CacheStatusUpdateEvent(cacheStatusMap))
-    }
+    CacheStatusUpdateEvent(cacheStatusMap)
   }
 }

@@ -13,19 +13,22 @@ import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.RetryWor
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.StartWorkflowHandler.StartWorkflow
 import edu.uci.ics.amber.engine.common.AmberUtils
 import edu.uci.ics.amber.engine.common.client.AmberClient
+import edu.uci.ics.texera.Utils
 import edu.uci.ics.texera.web.model.websocket.event.python.PythonPrintTriggeredEvent
-import edu.uci.ics.texera.web.{SubscriptionManager, SyncableState}
-import edu.uci.ics.texera.web.model.websocket.event.{BreakpointTriggeredEvent, OperatorStatisticsUpdateEvent, TexeraWebSocketEvent, WorkflowExecutionErrorEvent, WorkflowStateEvent}
+import edu.uci.ics.texera.web.{ObserverManager, SyncableState}
+import edu.uci.ics.texera.web.model.websocket.event.{BreakpointTriggeredEvent, OperatorStatistics, OperatorStatisticsUpdateEvent, TexeraWebSocketEvent, WorkflowExecutionErrorEvent, WorkflowStateEvent}
 import edu.uci.ics.texera.web.model.websocket.request.python.PythonExpressionEvaluateRequest
 import edu.uci.ics.texera.web.model.websocket.request.{RemoveBreakpointRequest, SkipTupleRequest}
 import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource
 import edu.uci.ics.texera.web.service.JobRuntimeService.bufferSize
 import edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent.BreakpointTuple
 import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState._
-import edu.uci.ics.texera.web.workflowruntimestate.{BreakpointEvent, OperatorRuntimeInfo, WorkflowJobRuntimeInfo}
+import edu.uci.ics.texera.web.workflowruntimestate.{BreakpointEvent, OperatorRuntimeInfo, WorkflowAggregatedState, WorkflowJobRuntimeInfo}
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.workflow.{Breakpoint, BreakpointCondition, ConditionBreakpoint, CountBreakpoint}
+import rx.lang.scala.Observable
+import rx.lang.scala.subjects.BehaviorSubject
 
 import scala.collection.mutable
 
@@ -34,11 +37,10 @@ object JobRuntimeService {
 
 }
 
-class JobRuntimeService(client: AmberClient)
+class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverManager[TexeraWebSocketEvent])
     extends SyncableState[WorkflowJobRuntimeInfo, TexeraWebSocketEvent]
     with LazyLogging {
-
-  val subscriptionManager: SubscriptionManager[TexeraWebSocketEvent] = WorkflowWebsocketResource.userSessionSubscriptionManager
+  private val jobStatusObservable: BehaviorSubject[WorkflowAggregatedState] = BehaviorSubject[WorkflowAggregatedState](UNINITIALIZED)
 
   registerCallbacks()
 
@@ -132,6 +134,8 @@ class JobRuntimeService(client: AmberClient)
   /** *
     *  Utility Functions
     */
+
+  def getJobStatusObservable: Observable[WorkflowAggregatedState] = jobStatusObservable.onTerminateDetach
 
   def startWorkflow(): Unit = {
     val f = client.sendAsync(StartWorkflow())
@@ -246,12 +250,16 @@ class JobRuntimeService(client: AmberClient)
     // Update operator stats if any operator updates its stat
     if(newState.operatorInfo.map(_._2.stats).toSet != oldState.operatorInfo.map(_._2.stats).toSet){
       buf += OperatorStatisticsUpdateEvent(newState.operatorInfo.collect{
-        case x if x._2.stats.isDefined => (x._1,x._2.stats.get)
+        case x if x._2.stats.isDefined =>
+          val stats = x._2.stats.get
+          val res = OperatorStatistics(Utils.aggregatedStateToString(stats.state),stats.inputCount, stats.outputCount)
+          (x._1,res)
       })
     }
     // Update workflow state
     if(newState.state != oldState.state){
-      buf += WorkflowStateEvent(newState.state)
+      jobStatusObservable.onNext(newState.state)
+      buf += WorkflowStateEvent(Utils.aggregatedStateToString(newState.state))
     }
     // For each operator, check if it has new python console message or breakpoint events
     newState.operatorInfo.foreach {
@@ -272,4 +280,6 @@ class JobRuntimeService(client: AmberClient)
     }
     buf.toArray
   }
+
+  override def defaultState: WorkflowJobRuntimeInfo = WorkflowJobRuntimeInfo()
 }

@@ -2,19 +2,18 @@ package edu.uci.ics.texera.web.service
 
 import java.time.{LocalDateTime, Duration => JDuration}
 import java.util.concurrent.ConcurrentHashMap
-
 import akka.actor.Cancellable
 import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.amber.engine.common.AmberUtils
-import edu.uci.ics.texera.web.TexeraWebApplication
-import edu.uci.ics.texera.web.model.websocket.event.{ExecutionStatusEnum, Running}
+import edu.uci.ics.texera.web.model.websocket.event.TexeraWebSocketEvent
+import edu.uci.ics.texera.web.{ObserverManager, TexeraWebApplication}
 import edu.uci.ics.texera.web.model.websocket.request.WorkflowExecuteRequest
+import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState
+import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState._
 import edu.uci.ics.texera.workflow.common.storage.OpResultStorage
 import org.jooq.types.UInteger
 import rx.lang.scala.subjects.BehaviorSubject
-import rx.lang.scala.{Observable, Subscription}
-
-import scala.collection.mutable
+import rx.lang.scala.{Observable, Observer, Subscriber, Subscription}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object WorkflowService {
@@ -40,6 +39,9 @@ class WorkflowService(wid: String, cleanUpTimeout: Int) extends LazyLogging {
   var opResultStorage: OpResultStorage = new OpResultStorage(
     AmberUtils.amberConfig.getString("storage.mode").toLowerCase
   )
+  val userSessionSubscriptionManager = new ObserverManager[TexeraWebSocketEvent]()
+  val resultService: JobResultService = new JobResultService(opResultStorage, userSessionSubscriptionManager)
+  val exportService: ResultExportService = new ResultExportService(opResultStorage)
   val operatorCache: WorkflowCacheService = new WorkflowCacheService(opResultStorage)
   var jobService: Option[WorkflowJobService] = None
   private var refCount = 0
@@ -47,9 +49,9 @@ class WorkflowService(wid: String, cleanUpTimeout: Int) extends LazyLogging {
   private var statusUpdateSubscription: Subscription = Subscription()
   private val jobStateSubject = BehaviorSubject[WorkflowJobService]()
 
-  private[this] def setCleanUpDeadline(status: ExecutionStatusEnum): Unit = {
+  private[this] def setCleanUpDeadline(status: WorkflowAggregatedState): Unit = {
     synchronized {
-      if (refCount > 0 || status == Running) {
+      if (refCount > 0 || status == RUNNING) {
         cleanUpJob.cancel()
         logger.info(
           s"[$wid] workflow state clean up postponed. current user count = $refCount, workflow status = $status"
@@ -86,18 +88,20 @@ class WorkflowService(wid: String, cleanUpTimeout: Int) extends LazyLogging {
     }
   }
 
-  def connect(): Unit = {
+  def connect(observer:Observer[TexeraWebSocketEvent]): Unit = {
     synchronized {
+      userSessionSubscriptionManager.addObserver(observer)
       refCount += 1
       cleanUpJob.cancel()
       logger.info(s"[$wid] workflow state clean up postponed. current user count = $refCount")
     }
   }
 
-  def disconnect(): Unit = {
+  def disconnect(observer:Observer[TexeraWebSocketEvent]): Unit = {
     synchronized {
+      userSessionSubscriptionManager.removeObserver(observer)
       refCount -= 1
-      if (refCount == 0 && !jobService.map(_.workflowRuntimeService.getStatus).contains(Running)) {
+      if (refCount == 0 && !jobService.map(_.workflowRuntimeService.getState.state).contains(RUNNING)) {
         refreshDeadline()
       } else {
         logger.info(s"[$wid] workflow state clean up postponed. current user count = $refCount")
@@ -107,14 +111,15 @@ class WorkflowService(wid: String, cleanUpTimeout: Int) extends LazyLogging {
 
   def initExecutionState(req: WorkflowExecuteRequest, uidOpt: Option[UInteger]): Unit = {
     val state = new WorkflowJobService(
+      userSessionSubscriptionManager,
       operatorCache,
+      resultService,
       uidOpt,
       req,
-      opResultStorage
     )
     statusUpdateSubscription.unsubscribe()
     cleanUpJob.cancel()
-    statusUpdateSubscription = state.workflowRuntimeService.getStatusObservable.subscribe(status =>
+    statusUpdateSubscription = state.workflowRuntimeService.getJobStatusObservable.subscribe(status =>
       setCleanUpDeadline(status)
     )
     jobService = Some(state)
