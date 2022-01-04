@@ -214,6 +214,11 @@ export class JointUIService {
     // set operator element ID to be operator ID
     operatorElement.set("id", operator.operatorID);
 
+    // set the operator layer based on z-index
+    if (point.z) {
+      operatorElement.set("z", point.z);
+    }
+
     // set the input ports and output ports based on operator predicate
     operator.inputPorts.forEach(port =>
       operatorElement.addPort({

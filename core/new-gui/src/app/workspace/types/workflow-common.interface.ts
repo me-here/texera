@@ -9,6 +9,7 @@ export interface Point
   extends Readonly<{
     x: number;
     y: number;
+    z?: number;
   }> {}
 
 export interface OperatorPort

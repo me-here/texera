@@ -639,7 +639,8 @@ export class JointGraphWrapper {
     }
     const element = <joint.dia.Element>cell;
     const position = element.position();
-    return { x: position.x, y: position.y };
+    const layer = cell.attributes.z;
+    return { x: position.x, y: position.y, z: layer };
   }
 
   /**
@@ -779,6 +780,10 @@ export class JointGraphWrapper {
     if (!cell) {
       throw new Error(`cell with ID ${cellID} doesn't exist`);
     }
+    cell.set("z", layer);
+  }
+
+  public static setCellLayer(cell: joint.dia.Cell, layer: number): void {
     cell.set("z", layer);
   }
 

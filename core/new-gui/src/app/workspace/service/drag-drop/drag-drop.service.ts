@@ -111,12 +111,12 @@ export class DragDropService {
 
       const scale = this.workflowActionService.getJointGraphWrapper().getMainJointPaper()?.scale() ?? { sx: 1, sy: 1 };
 
-      const newOperatorOffset = {
+      const point = {
         x: coordinates.x / scale.sx,
         y: coordinates.y / scale.sy,
       };
 
-      const operatorsAndPositions: { op: OperatorPredicate; pos: Point }[] = [{ op: operator, pos: newOperatorOffset }];
+      const operatorsAndPositions: { operator: OperatorPredicate; point: Point }[] = [{ operator, point }];
       // create new links from suggestions
       const newLinks: OperatorLink[] = this.getNewOperatorLinks(
         operator,

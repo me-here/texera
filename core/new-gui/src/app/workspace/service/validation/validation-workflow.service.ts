@@ -140,15 +140,21 @@ export class ValidationWorkflowService {
     this.workflowActionService
       .getTexeraGraph()
       .getOperatorAddStream()
-      .subscribe(operator =>
-        this.updateValidationState(operator.operatorID, this.validateOperator(operator.operatorID))
+      .subscribe(operators =>
+        operators.forEach(operator => {
+          this.updateValidationState(operator.operatorID, this.validateOperator(operator.operatorID));
+        })
       );
 
     // Capture the operator delete event but not validate the deleted operator
     this.workflowActionService
       .getTexeraGraph()
       .getOperatorDeleteStream()
-      .subscribe(operator => this.updateValidationStateOnDelete(operator.deletedOperator.operatorID));
+      .subscribe(operators => 
+        operators.deletedOperators.forEach(deletedOperator => {
+          this.updateValidationStateOnDelete(deletedOperator.operatorID)
+        })
+      );
 
     // Capture the link add and delete event and validate the source and target operators for this link
     merge(
@@ -156,10 +162,12 @@ export class ValidationWorkflowService {
       this.workflowActionService
         .getTexeraGraph()
         .getLinkDeleteStream()
-        .pipe(map(link => link.deletedLink))
-    ).subscribe(link => {
-      this.updateValidationState(link.source.operatorID, this.validateOperator(link.source.operatorID));
-      this.updateValidationState(link.target.operatorID, this.validateOperator(link.target.operatorID));
+        .pipe(map(link => link.deletedLinks))
+    ).subscribe(links => {
+      links.forEach(link => {
+        this.updateValidationState(link.source.operatorID, this.validateOperator(link.source.operatorID));
+        this.updateValidationState(link.target.operatorID, this.validateOperator(link.target.operatorID));
+      })
     });
 
     // Capture the operator property change event and validate the current operator being changed

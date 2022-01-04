@@ -36,10 +36,10 @@ export class WorkflowGraph {
   private readonly operatorLinkMap = new Map<string, OperatorLink>();
   private readonly linkBreakpointMap = new Map<string, Breakpoint>();
 
-  private readonly operatorAddSubject = new Subject<OperatorPredicate>();
+  private readonly operatorAddSubject = new Subject<OperatorPredicate[]>();
 
   private readonly operatorDeleteSubject = new Subject<{
-    deletedOperator: OperatorPredicate;
+    deletedOperators: OperatorPredicate[];
   }>();
   private readonly disabledOperatorChangedSubject = new Subject<{
     newDisabled: string[];
@@ -53,9 +53,9 @@ export class WorkflowGraph {
     operatorID: string;
     newDisplayName: string;
   }>();
-  private readonly linkAddSubject = new Subject<OperatorLink>();
+  private readonly linkAddSubject = new Subject<OperatorLink[]>();
   private readonly linkDeleteSubject = new Subject<{
-    deletedLink: OperatorLink;
+    deletedLinks: OperatorLink[];
   }>();
   private readonly operatorPropertyChangeSubject = new Subject<{
     oldProperty: object;
@@ -76,10 +76,12 @@ export class WorkflowGraph {
    * Throws an error the operator has a duplicate operatorID with an existing operator.
    * @param operator OperatorPredicate
    */
-  public addOperator(operator: OperatorPredicate): void {
-    this.assertOperatorNotExists(operator.operatorID);
-    this.operatorIDMap.set(operator.operatorID, operator);
-    this.operatorAddSubject.next(operator);
+  public addOperators(...operators: OperatorPredicate[]): void {
+    operators.forEach(operator => {
+      this.assertOperatorsNotExist(operator.operatorID);
+      this.operatorIDMap.set(operator.operatorID, operator);
+    });
+    this.operatorAddSubject.next(operators);
   }
 
   /**
@@ -87,13 +89,18 @@ export class WorkflowGraph {
    * Throws an Error if the operator doesn't exist.
    * @param operatorID operator ID
    */
-  public deleteOperator(operatorID: string): void {
-    const operator = this.getOperator(operatorID);
-    if (!operator) {
-      throw new Error(`operator with ID ${operatorID} doesn't exist`);
-    }
-    this.operatorIDMap.delete(operatorID);
-    this.operatorDeleteSubject.next({ deletedOperator: operator });
+  public deleteOperators(operatorIDs: string[]): void {
+    const deletedOperators: OperatorPredicate[] = [];
+    operatorIDs.forEach(operatorID => {
+      const operator = this.getOperator(operatorID);
+      if (!operator) {
+        throw new Error(`operator with ID ${operatorID} doesn't exist`);
+      }
+      deletedOperators.push(operator);
+      this.operatorIDMap.delete(operatorID);
+    })
+
+    this.operatorDeleteSubject.next({ deletedOperators });
   }
 
   public disableOperator(operatorID: string): void {
@@ -234,11 +241,13 @@ export class WorkflowGraph {
    *  - the link is invalid (invalid source or target operator/port)
    * @param link
    */
-  public addLink(link: OperatorLink): void {
-    this.assertLinkNotExists(link);
-    this.assertLinkIsValid(link);
-    this.operatorLinkMap.set(link.linkID, link);
-    this.linkAddSubject.next(link);
+  public addLinks(links: OperatorLink[]): void {
+    links.forEach(link => {
+      this.assertLinkNotExists(link);
+      this.assertLinksAreValid(link);
+      this.operatorLinkMap.set(link.linkID, link);
+    })
+    this.linkAddSubject.next(links);
   }
 
   /**
@@ -246,15 +255,21 @@ export class WorkflowGraph {
    * Throws an error if the linkID doesn't exist in the graph
    * @param linkID link ID
    */
-  public deleteLinkWithID(linkID: string): void {
-    const link = this.getLinkWithID(linkID);
-    if (!link) {
-      throw new Error(`link with ID ${linkID} doesn't exist`);
-    }
-    this.operatorLinkMap.delete(linkID);
-    this.linkDeleteSubject.next({ deletedLink: link });
-    // delete its breakpoint
-    this.linkBreakpointMap.delete(linkID);
+  public deleteLinksWithID(linkIDs: string[]): void {
+    const deletedLinks: OperatorLink[] = [];
+    linkIDs.forEach(linkID => {
+      const link = this.getLinkWithID(linkID);
+      if (!link) {
+        throw new Error(`link with ID ${linkID} doesn't exist`);
+      }
+      deletedLinks.push(link);
+      this.operatorLinkMap.delete(linkID);
+      // delete its breakpoint
+      this.linkBreakpointMap.delete(linkID);
+    })
+
+    this.linkDeleteSubject.next({ deletedLinks });
+
   }
 
   /**
@@ -270,9 +285,9 @@ export class WorkflowGraph {
         to ${target.operatorID}.${target.portID} doesn't exist`);
     }
     this.operatorLinkMap.delete(link.linkID);
-    this.linkDeleteSubject.next({ deletedLink: link });
     // delete its breakpoint
     this.linkBreakpointMap.delete(link.linkID);
+    this.linkDeleteSubject.next({ deletedLinks: [link] });
   }
 
   /**
@@ -392,7 +407,7 @@ export class WorkflowGraph {
    * @param breakpoint
    */
   public setLinkBreakpoint(linkID: string, breakpoint: Breakpoint | undefined): void {
-    this.assertLinkWithIDExists(linkID);
+    this.assertLinksWithIDExists(linkID);
     const oldBreakpoint = this.linkBreakpointMap.get(linkID);
     if (breakpoint === undefined || Object.keys(breakpoint).length === 0) {
       this.linkBreakpointMap.delete(linkID);
@@ -429,7 +444,7 @@ export class WorkflowGraph {
   /**
    * Gets the observable event stream of an operator being added into the graph.
    */
-  public getOperatorAddStream(): Observable<OperatorPredicate> {
+  public getOperatorAddStream(): Observable<OperatorPredicate[]> {
     return this.operatorAddSubject.asObservable();
   }
 
@@ -438,7 +453,7 @@ export class WorkflowGraph {
    * The observable value is the deleted operator.
    */
   public getOperatorDeleteStream(): Observable<{
-    deletedOperator: OperatorPredicate;
+    deletedOperators: OperatorPredicate[];
   }> {
     return this.operatorDeleteSubject.asObservable();
   }
@@ -467,7 +482,7 @@ export class WorkflowGraph {
   /**
    *ets the observable event stream of a link being added into the graph.
    */
-  public getLinkAddStream(): Observable<OperatorLink> {
+  public getLinkAddStream(): Observable<OperatorLink[]> {
     return this.linkAddSubject.asObservable();
   }
 
@@ -475,7 +490,7 @@ export class WorkflowGraph {
    * Gets the observable event stream of a link being deleted from the graph.
    * The observable value is the deleted link.
    */
-  public getLinkDeleteStream(): Observable<{ deletedLink: OperatorLink }> {
+  public getLinkDeleteStream(): Observable<{ deletedLinks: OperatorLink[] }> {
     return this.linkDeleteSubject.asObservable();
   }
 
@@ -506,10 +521,12 @@ export class WorkflowGraph {
    * @param graph
    * @param operator
    */
-  public assertOperatorExists(operatorID: string): void {
-    if (!this.hasOperator(operatorID)) {
-      throw new Error(`operator with ID ${operatorID} doesn't exist`);
-    }
+  public assertOperatorsExist(...operatorIDs: string[]): void {
+    operatorIDs.forEach(operatorID => {
+      if (!this.hasOperator(operatorID)) {
+        throw new Error(`operator with ID ${operatorID} doesn't exist`);
+      }
+    });
   }
 
   /**
@@ -518,10 +535,12 @@ export class WorkflowGraph {
    * @param graph
    * @param operator
    */
-  public assertOperatorNotExists(operatorID: string): void {
-    if (this.hasOperator(operatorID)) {
-      throw new Error(`operator with ID ${operatorID} already exists`);
-    }
+  public assertOperatorsNotExist(...operatorIDs: string[]): void {
+    operatorIDs.forEach(operatorID => {
+      if (this.hasOperator(operatorID)) {
+        throw new Error(`operator with ID ${operatorID} already exists`);
+      }
+    });
   }
 
   /**
@@ -532,20 +551,24 @@ export class WorkflowGraph {
    * @param graph
    * @param link
    */
-  public assertLinkNotExists(link: OperatorLink): void {
-    if (this.hasLinkWithID(link.linkID)) {
-      throw new Error(`link with ID ${link.linkID} already exists`);
-    }
-    if (this.hasLink(link.source, link.target)) {
-      throw new Error(`link from ${link.source.operatorID}.${link.source.portID}
-        to ${link.target.operatorID}.${link.target.portID} already exists`);
-    }
+  public assertLinkNotExists(...links: OperatorLink[]): void {
+    links.forEach(link => {
+      if (this.hasLinkWithID(link.linkID)) {
+        throw new Error(`link with ID ${link.linkID} already exists`);
+      }
+      if (this.hasLink(link.source, link.target)) {
+        throw new Error(`link from ${link.source.operatorID}.${link.source.portID}
+          to ${link.target.operatorID}.${link.target.portID} already exists`);
+      }
+    })
   }
 
-  public assertLinkWithIDExists(linkID: string): void {
-    if (!this.hasLinkWithID(linkID)) {
-      throw new Error(`link with ID ${linkID} doesn't exist`);
-    }
+  public assertLinksWithIDExists(...linkIDs: string[]): void {
+    linkIDs.forEach(linkID => {
+      if (!this.hasLinkWithID(linkID)) {
+        throw new Error(`link with ID ${linkID} doesn't exist`);
+      }
+    })
   }
 
   public assertLinkExists(source: OperatorPort, target: OperatorPort): void {
@@ -563,24 +586,26 @@ export class WorkflowGraph {
    * @param graph
    * @param link
    */
-  public assertLinkIsValid(link: OperatorLink): void {
-    const sourceOperator = this.getOperator(link.source.operatorID);
-    if (!sourceOperator) {
-      throw new Error(`link's source operator ${link.source.operatorID} doesn't exist`);
-    }
+  public assertLinksAreValid(...links: OperatorLink[]): void {
+    links.forEach(link => {
+      const sourceOperator = this.getOperator(link.source.operatorID);
+      if (!sourceOperator) {
+        throw new Error(`link's source operator ${link.source.operatorID} doesn't exist`);
+      }
 
-    const targetOperator = this.getOperator(link.target.operatorID);
-    if (!targetOperator) {
-      throw new Error(`link's target operator ${link.target.operatorID} doesn't exist`);
-    }
+      const targetOperator = this.getOperator(link.target.operatorID);
+      if (!targetOperator) {
+        throw new Error(`link's target operator ${link.target.operatorID} doesn't exist`);
+      }
 
-    if (sourceOperator.outputPorts.find(port => port.portID === link.source.portID) === undefined) {
-      throw new Error(`link's source port ${link.source.portID} doesn't exist
-          on output ports of the source operator ${link.source.operatorID}`);
-    }
-    if (targetOperator.inputPorts.find(port => port.portID === link.target.portID) === undefined) {
-      throw new Error(`link's target port ${link.target.portID} doesn't exist
-          on input ports of the target operator ${link.target.operatorID}`);
-    }
+      if (sourceOperator.outputPorts.find(port => port.portID === link.source.portID) === undefined) {
+        throw new Error(`link's source port ${link.source.portID} doesn't exist
+            on output ports of the source operator ${link.source.operatorID}`);
+      }
+      if (targetOperator.inputPorts.find(port => port.portID === link.target.portID) === undefined) {
+        throw new Error(`link's target port ${link.target.portID} doesn't exist
+            on input ports of the target operator ${link.target.operatorID}`);
+      }
+    })
   }
 }

@@ -44,7 +44,7 @@ export class SyncTexeraModel {
         map(element => element.id.toString()),
         filter(elementID => this.texeraGraph.hasOperator(elementID) && this.operatorGroup.getSyncTexeraGraph())
       )
-      .subscribe(elementID => this.texeraGraph.deleteOperator(elementID));
+      .subscribe(elementID => this.texeraGraph.deleteOperators([elementID]));
   }
 
   /**
@@ -78,7 +78,7 @@ export class SyncTexeraModel {
         filter(link => this.isValidJointLink(link) && this.operatorGroup.getSyncTexeraGraph()),
         map(link => SyncTexeraModel.getOperatorLink(link))
       )
-      .subscribe(link => this.texeraGraph.addLink(link));
+      .subscribe(link => this.texeraGraph.addLinks([link]));
 
     /**
      * on link cell delete:
@@ -91,7 +91,7 @@ export class SyncTexeraModel {
         filter(link => this.isValidJointLink(link) && this.operatorGroup.getSyncTexeraGraph()),
         map(link => SyncTexeraModel.getOperatorLink(link))
       )
-      .subscribe(link => this.texeraGraph.deleteLinkWithID(link.linkID));
+      .subscribe(link => this.texeraGraph.deleteLinksWithID([link.linkID]));
 
     /**
      * on link cell change:
@@ -106,14 +106,14 @@ export class SyncTexeraModel {
         tap(link => {
           const linkID = link.id.toString();
           if (this.texeraGraph.hasLinkWithID(linkID)) {
-            this.texeraGraph.deleteLinkWithID(linkID);
+            this.texeraGraph.deleteLinksWithID([linkID]);
           }
         }),
         filter(link => this.isValidJointLink(link)),
         map(link => SyncTexeraModel.getOperatorLink(link))
       )
       .subscribe(link => {
-        this.texeraGraph.addLink(link);
+        this.texeraGraph.addLinks([link]);
       });
   }
 

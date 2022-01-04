@@ -902,6 +902,7 @@ export class WorkflowEditorComponent implements AfterViewInit {
       },
       // set grid size
       gridSize: 2,
+      async: true,
     };
 
     return jointPaperOptions;
@@ -1175,7 +1176,7 @@ export class WorkflowEditorComponent implements AfterViewInit {
       .subscribe(() => {
         // if there is something to paste
         if (this.copiedOperators.size > 0 || this.copiedGroups.size > 0) {
-          const operatorsAndPositions: { op: OperatorPredicate; pos: Point }[] = [];
+          const operatorsAndPositions: { operator: OperatorPredicate; point: Point }[] = [];
           const links: OperatorLink[] = [];
           const groups: Group[] = [];
           const positions: Point[] = [];
@@ -1190,8 +1191,8 @@ export class WorkflowEditorComponent implements AfterViewInit {
             const newOperator = this.copyOperator(copiedOperator.operator);
             const newOperatorPosition = this.calcOperatorPosition(newOperator.operatorID, operatorID, positions);
             operatorsAndPositions.push({
-              op: newOperator,
-              pos: newOperatorPosition,
+              operator: newOperator,
+              point: newOperatorPosition,
             });
             positions.push(newOperatorPosition);
           });
@@ -1215,8 +1216,8 @@ export class WorkflowEditorComponent implements AfterViewInit {
               operatorInfo.position.y += delta.x;
 
               operatorsAndPositions.push({
-                op: operatorInfo.operator,
-                pos: operatorInfo.position,
+                operator: operatorInfo.operator,
+                point: operatorInfo.position,
               });
             });
 

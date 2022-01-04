@@ -50,21 +50,31 @@ export class DynamicSchemaService {
     this.workflowActionService
       .getTexeraGraph()
       .getOperatorAddStream()
-      .subscribe(operator => {
-        this.setDynamicSchema(operator.operatorID, this.getInitialDynamicSchema(operator));
+      .subscribe(operators => {
+        operators.forEach(operator => {
+          this.setDynamicSchema(operator.operatorID, this.getInitialDynamicSchema(operator));
+        })
       });
 
     // when an operator is deleted, remove it from the dynamic schema map
     this.workflowActionService
       .getTexeraGraph()
       .getOperatorDeleteStream()
-      .subscribe(event => this.dynamicSchemaMap.delete(event.deletedOperator.operatorID));
+      .subscribe(event => {
+        event.deletedOperators.forEach(deletedOperator => {
+          this.dynamicSchemaMap.delete(deletedOperator.operatorID)
+        })
+      });
 
     // when a link is deleted, remove it from the dynamic schema map
     this.workflowActionService
       .getTexeraGraph()
       .getLinkDeleteStream()
-      .subscribe(event => this.dynamicBreakpointSchemaMap.delete(event.deletedLink.linkID));
+      .subscribe(event => {
+        event.deletedLinks.forEach(deletedLink => {
+          this.dynamicBreakpointSchemaMap.delete(deletedLink.linkID)
+        })
+      });
   }
 
   /**
