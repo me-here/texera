@@ -85,7 +85,7 @@ class WorkflowWebsocketResource extends LazyLogging {
         case execute: WorkflowExecuteRequest =>
           println(execute)
           try {
-            workflowStateOpt.get.initExecutionState(execute, uidOpt)
+            workflowStateOpt.get.initJobService(execute, uidOpt)
           } catch {
             case x: ConstraintViolationException =>
               send(session, WorkflowErrorEvent(operatorErrors = x.violations))

@@ -1,9 +1,5 @@
 package edu.uci.ics.texera.web
 
-import rx.lang.scala.{Observer, Subscriber}
-
-import scala.collection.mutable
-
 abstract class SyncableState[T, U] {
 
   private var state: T = defaultState
@@ -11,7 +7,7 @@ abstract class SyncableState[T, U] {
 
   def defaultState: T
 
-  def getState: T = state
+  def getStateThenConsume[X](next: T => X): X = next(state)
 
   def modifyState(func: T => T): Unit = {
     synchronized {
@@ -28,24 +24,11 @@ abstract class SyncableState[T, U] {
 
   def computeDiff(oldState: T, newState: T): Array[U]
 
-  def computeSnapshot: Array[U] = {
-    computeDiff(defaultState, state)
+  // To make sure the state is accessed synchronously
+  def computeSnapshotThenConsume(next: Array[U] => Unit): Unit = {
+    synchronized {
+      next(computeDiff(defaultState, state))
+    }
   }
 
-}
-
-class ObserverManager[U] {
-  private val observers: mutable.ArrayBuffer[Observer[U]] = mutable.ArrayBuffer.empty
-
-  def addObserver(ob: Observer[U]): Unit = {
-    observers += ob
-  }
-
-  def removeObserver(ob: Observer[U]): Unit = {
-    observers -= ob
-  }
-
-  def pushToObservers(msg: U): Unit = {
-    observers.foreach(ob => ob.onNext(msg))
-  }
 }

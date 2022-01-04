@@ -1,20 +1,15 @@
 package edu.uci.ics.texera.web.service
 
-import java.time.{LocalDateTime, Duration => JDuration}
 import java.util.concurrent.ConcurrentHashMap
-import akka.actor.Cancellable
 import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.amber.engine.common.AmberUtils
 import edu.uci.ics.texera.web.model.websocket.event.TexeraWebSocketEvent
-import edu.uci.ics.texera.web.{ObserverManager, TexeraWebApplication}
+import edu.uci.ics.texera.web.{ObserverManager, TexeraWebApplication, WorkflowLifecycleManager}
 import edu.uci.ics.texera.web.model.websocket.request.WorkflowExecuteRequest
-import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState
-import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState._
 import edu.uci.ics.texera.workflow.common.storage.OpResultStorage
 import org.jooq.types.UInteger
 import rx.lang.scala.subjects.BehaviorSubject
-import rx.lang.scala.{Observable, Observer, Subscriber, Subscription}
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import rx.lang.scala.{Observable, Observer}
 
 object WorkflowService {
   private val wIdToWorkflowState = new ConcurrentHashMap[String, WorkflowService]()
@@ -46,90 +41,43 @@ class WorkflowService(wid: String, cleanUpTimeout: Int) extends LazyLogging {
   val operatorCache: WorkflowCacheService =
     new WorkflowCacheService(opResultStorage, userSessionSubscriptionManager)
   var jobService: Option[WorkflowJobService] = None
-  private var refCount = 0
-  private var cleanUpJob: Cancellable = Cancellable.alreadyCancelled
-  private var statusUpdateSubscription: Subscription = Subscription()
+  val lifeCycleManager: WorkflowLifecycleManager = new WorkflowLifecycleManager(
+    wid,
+    cleanUpTimeout,
+    () => {
+      WorkflowService.wIdToWorkflowState.remove(wid)
+      jobService.foreach(_.workflowRuntimeService.killWorkflow())
+    }
+  )
   private val jobStateSubject = BehaviorSubject[WorkflowJobService]()
 
-  private[this] def setCleanUpDeadline(status: WorkflowAggregatedState): Unit = {
-    synchronized {
-      if (refCount > 0 || status == RUNNING) {
-        cleanUpJob.cancel()
-        logger.info(
-          s"[$wid] workflow state clean up postponed. current user count = $refCount, workflow status = $status"
-        )
-      } else {
-        refreshDeadline()
-      }
-    }
-  }
-
-  private[this] def refreshDeadline(): Unit = {
-    if (cleanUpJob.isCancelled || cleanUpJob.cancel()) {
-      logger.info(
-        s"[$wid] workflow state clean up will start at ${LocalDateTime.now().plus(JDuration.ofSeconds(cleanUpTimeout))}"
-      )
-      cleanUpJob = TexeraWebApplication.scheduleCallThroughActorSystem(cleanUpTimeout.seconds) {
-        cleanUp()
-      }
-    }
-  }
-
-  private[this] def cleanUp(): Unit = {
-    synchronized {
-      if (refCount > 0) {
-        // do nothing
-        logger.info(s"[$wid] workflow state clean up failed. current user count = $refCount")
-      } else {
-        cleanUpJob.cancel()
-        statusUpdateSubscription.unsubscribe()
-        WorkflowService.wIdToWorkflowState.remove(wid)
-        jobService.foreach(_.workflowRuntimeService.killWorkflow())
-        logger.info(s"[$wid] workflow state clean up completed.")
-      }
-    }
-  }
-
   def connect(observer: Observer[TexeraWebSocketEvent]): Unit = {
-    synchronized {
+    resultService.computeSnapshotThenConsume(events => {
+      events.foreach(evt => observer.onNext(evt))
       userSessionSubscriptionManager.addObserver(observer)
-      refCount += 1
-      cleanUpJob.cancel()
-      logger.info(s"[$wid] workflow state clean up postponed. current user count = $refCount")
-    }
+    })
+    lifeCycleManager.increaseUserCount()
   }
 
   def disconnect(observer: Observer[TexeraWebSocketEvent]): Unit = {
-    synchronized {
-      userSessionSubscriptionManager.removeObserver(observer)
-      refCount -= 1
-      if (
-        refCount == 0 && !jobService.map(_.workflowRuntimeService.getState.state).contains(RUNNING)
-      ) {
-        refreshDeadline()
-      } else {
-        logger.info(s"[$wid] workflow state clean up postponed. current user count = $refCount")
-      }
-    }
+    userSessionSubscriptionManager.removeObserver(observer)
+    lifeCycleManager.decreaseUserCount(
+      jobService.map(_.workflowRuntimeService.getStateThenConsume(_.state))
+    )
   }
 
-  def initExecutionState(req: WorkflowExecuteRequest, uidOpt: Option[UInteger]): Unit = {
-    val state = new WorkflowJobService(
+  def initJobService(req: WorkflowExecuteRequest, uidOpt: Option[UInteger]): Unit = {
+    val job = new WorkflowJobService(
       userSessionSubscriptionManager,
       operatorCache,
       resultService,
       uidOpt,
       req
     )
-    statusUpdateSubscription.unsubscribe()
-    cleanUpJob.cancel()
-    statusUpdateSubscription =
-      state.workflowRuntimeService.getJobStatusObservable.subscribe(status =>
-        setCleanUpDeadline(status)
-      )
-    jobService = Some(state)
-    jobStateSubject.onNext(state)
-    state.startWorkflow()
+    lifeCycleManager.connectJobService(job)
+    jobService = Some(job)
+    jobStateSubject.onNext(job)
+    job.startWorkflow()
   }
 
   def getJobServiceObservable: Observable[WorkflowJobService] = jobStateSubject.onTerminateDetach
