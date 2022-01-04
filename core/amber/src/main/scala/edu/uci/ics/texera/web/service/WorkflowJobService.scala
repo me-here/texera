@@ -5,7 +5,7 @@ import edu.uci.ics.amber.engine.architecture.controller.{ControllerConfig, Workf
 import edu.uci.ics.amber.engine.common.client.AmberClient
 import edu.uci.ics.amber.engine.common.virtualidentity.WorkflowIdentity
 import edu.uci.ics.texera.web.{ObserverManager, TexeraWebApplication}
-import edu.uci.ics.texera.web.model.websocket.event.TexeraWebSocketEvent
+import edu.uci.ics.texera.web.model.websocket.event.{TexeraWebSocketEvent, WorkflowErrorEvent}
 import edu.uci.ics.texera.web.model.websocket.request.{CacheStatusUpdateRequest, ModifyLogicRequest, ResultExportRequest, WorkflowExecuteRequest}
 import edu.uci.ics.texera.web.model.websocket.response.ResultExportResponse
 import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource
@@ -35,7 +35,12 @@ class WorkflowJobService(
 
   // Runtime starts from here:
   val client: AmberClient =
-    TexeraWebApplication.createAmberRuntime(workflow, ControllerConfig.default)
+    TexeraWebApplication.createAmberRuntime(workflow, ControllerConfig.default, t => {
+      t.printStackTrace()
+      subscriptionManager.pushToObservers(WorkflowErrorEvent(generalErrors =
+        Map("exception" -> (t.getMessage + "\n" + t.getStackTrace.mkString("\n")))
+      ))
+    })
   val workflowRuntimeService: JobRuntimeService = new JobRuntimeService(client, subscriptionManager)
 
   def startWorkflow(): Unit = {

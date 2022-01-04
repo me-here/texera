@@ -57,8 +57,7 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
     */
   private[this] def registerCallbackOnBreakpoint(): Unit = {
     client
-      .getObservable[BreakpointTriggered]
-      .subscribe((evt: BreakpointTriggered) => {
+      .registerCallback[BreakpointTriggered]((evt: BreakpointTriggered) => {
         modifyState{
           jobInfo =>
             val breakpointEvts = evt.report.filter(_._1._2 != null).map {
@@ -81,8 +80,7 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
 
   private[this] def registerCallbackOnWorkflowStatusUpdate(): Unit = {
     client
-      .getObservable[WorkflowStatusUpdate]
-      .subscribe((evt: WorkflowStatusUpdate) => {
+      .registerCallback[WorkflowStatusUpdate]((evt: WorkflowStatusUpdate) => {
         modifyState{
           jobInfo =>
             val updatedInfos = evt.operatorStatistics.map {
@@ -96,8 +94,7 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
 
   private[this] def registerCallbackOnWorkflowComplete(): Unit = {
     client
-      .getObservable[WorkflowCompleted]
-      .subscribe((evt: WorkflowCompleted) => {
+      .registerCallback[WorkflowCompleted]((evt: WorkflowCompleted) => {
         client.shutdown()
         modifyState(jobInfo => jobInfo.withState(COMPLETED))
       })
@@ -105,8 +102,7 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
 
   private[this] def registerCallbackOnPythonPrint(): Unit = {
     client
-      .getObservable[PythonPrintTriggered]
-      .subscribe((evt: PythonPrintTriggered) => {
+      .registerCallback[PythonPrintTriggered]((evt: PythonPrintTriggered) => {
         modifyState{
           jobInfo =>
             val opInfo = jobInfo.operatorInfo.getOrElse(evt.operatorID, OperatorRuntimeInfo())
@@ -121,8 +117,7 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
 
   private[this] def registerCallbackOnFatalError(): Unit = {
     client
-      .getObservable[FatalError]
-      .subscribe((evt: FatalError) => {
+      .registerCallback[FatalError]((evt: FatalError) => {
         client.shutdown()
         modifyState{
           jobInfo =>

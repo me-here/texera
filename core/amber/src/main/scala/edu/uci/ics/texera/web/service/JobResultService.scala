@@ -3,7 +3,8 @@ package edu.uci.ics.texera.web.service
 import akka.actor.Cancellable
 import com.fasterxml.jackson.annotation.{JsonTypeInfo, JsonTypeName}
 import com.fasterxml.jackson.databind.node.ObjectNode
-import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.WorkflowCompleted
+import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{WorkflowCompleted, WorkflowPaused}
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.FatalErrorHandler.FatalError
 import edu.uci.ics.amber.engine.common.AmberUtils
 import edu.uci.ics.amber.engine.common.client.AmberClient
 import edu.uci.ics.amber.engine.common.tuple.ITuple
@@ -134,16 +135,14 @@ class JobResultService(
       }
 
     client
-      .getObservable[WorkflowCompleted]
-      .onTerminateDetach
-      .subscribe(_ => {
+      .registerCallback[WorkflowCompleted](_ => {
         if (resultUpdateCancellable.cancel() || resultUpdateCancellable.isCancelled) {
           // immediately perform final update
           onResultUpdate()
         }
-      },
-        _  => resultUpdateCancellable.cancel(),
-        () => resultUpdateCancellable.cancel())
+      })
+
+    client.registerCallback[FatalError](_ => resultUpdateCancellable.cancel())
 
     progressiveResults.clear()
 

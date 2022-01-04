@@ -97,7 +97,7 @@ object Utils {
   def aggregatedStateToString(state:WorkflowAggregatedState): String ={
     state match {
       case WorkflowAggregatedState.UNINITIALIZED => "Uninitialized"
-      case WorkflowAggregatedState.READY => "Ready"
+      case WorkflowAggregatedState.READY => "Initializing"
       case WorkflowAggregatedState.RUNNING => "Running"
       case WorkflowAggregatedState.PAUSING => "Pausing"
       case WorkflowAggregatedState.PAUSED => "Paused"

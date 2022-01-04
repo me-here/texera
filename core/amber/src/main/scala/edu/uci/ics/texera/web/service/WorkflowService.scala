@@ -42,7 +42,7 @@ class WorkflowService(wid: String, cleanUpTimeout: Int) extends LazyLogging {
   val userSessionSubscriptionManager = new ObserverManager[TexeraWebSocketEvent]()
   val resultService: JobResultService = new JobResultService(opResultStorage, userSessionSubscriptionManager)
   val exportService: ResultExportService = new ResultExportService(opResultStorage)
-  val operatorCache: WorkflowCacheService = new WorkflowCacheService(opResultStorage)
+  val operatorCache: WorkflowCacheService = new WorkflowCacheService(opResultStorage, userSessionSubscriptionManager)
   var jobService: Option[WorkflowJobService] = None
   private var refCount = 0
   private var cleanUpJob: Cancellable = Cancellable.alreadyCancelled

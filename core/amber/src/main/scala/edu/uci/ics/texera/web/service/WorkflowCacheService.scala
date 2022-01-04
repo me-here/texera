@@ -3,6 +3,7 @@ package edu.uci.ics.texera.web.service
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.amber.engine.common.AmberUtils
+import edu.uci.ics.texera.web.ObserverManager
 import edu.uci.ics.texera.web.model.common.CacheStatus
 import edu.uci.ics.texera.web.model.websocket.event.{CacheStatusUpdateEvent, TexeraWebSocketEvent}
 import edu.uci.ics.texera.web.model.websocket.request.CacheStatusUpdateRequest
@@ -19,7 +20,7 @@ object WorkflowCacheService extends LazyLogging {
   def isAvailable: Boolean = AmberUtils.amberConfig.getBoolean("cache.enabled")
 }
 
-class WorkflowCacheService(opResultStorage: OpResultStorage)
+class WorkflowCacheService(opResultStorage: OpResultStorage, userSessionManager:ObserverManager[TexeraWebSocketEvent])
     extends LazyLogging {
 
   val cachedOperators: mutable.HashMap[String, OperatorDescriptor] =
@@ -60,6 +61,6 @@ class WorkflowCacheService(opResultStorage: OpResultStorage)
         }
       })
       .toMap
-    CacheStatusUpdateEvent(cacheStatusMap)
+    userSessionManager.pushToObservers(CacheStatusUpdateEvent(cacheStatusMap))
   }
 }
