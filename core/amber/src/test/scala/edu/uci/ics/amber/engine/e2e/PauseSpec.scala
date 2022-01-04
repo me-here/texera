@@ -49,7 +49,12 @@ class PauseSpec
       links: mutable.MutableList[OperatorLink]
   ): Unit = {
     val client =
-      new AmberClient(system, Utils.getWorkflow(operators, links), ControllerConfig.default, error=>{})
+      new AmberClient(
+        system,
+        Utils.getWorkflow(operators, links),
+        ControllerConfig.default,
+        error => {}
+      )
     val completion = Promise[Unit]
     client
       .registerCallback[WorkflowCompleted](evt => {

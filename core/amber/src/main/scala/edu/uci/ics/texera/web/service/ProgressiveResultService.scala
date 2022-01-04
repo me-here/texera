@@ -36,7 +36,7 @@ class ProgressiveResultService(
   /**
     * Produces the WebResultUpdate to send to frontend from a result update from the engine.
     */
-  def convertWebResultUpdate(oldTupleCount:Int, newTupleCount:Int): WebResultUpdate = {
+  def convertWebResultUpdate(oldTupleCount: Int, newTupleCount: Int): WebResultUpdate = {
     val storage = sink.getStorage
     val webUpdate = (webOutputMode, sink.getOutputMode) match {
       case (PaginationMode(), SET_SNAPSHOT) =>

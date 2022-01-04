@@ -93,19 +93,18 @@ object Utils {
     "html"
   )
 
-
-  def aggregatedStateToString(state:WorkflowAggregatedState): String ={
+  def aggregatedStateToString(state: WorkflowAggregatedState): String = {
     state match {
-      case WorkflowAggregatedState.UNINITIALIZED => "Uninitialized"
-      case WorkflowAggregatedState.READY => "Initializing"
-      case WorkflowAggregatedState.RUNNING => "Running"
-      case WorkflowAggregatedState.PAUSING => "Pausing"
-      case WorkflowAggregatedState.PAUSED => "Paused"
-      case WorkflowAggregatedState.RESUMING => "Resuming"
-      case WorkflowAggregatedState.RECOVERING => "Recovering"
-      case WorkflowAggregatedState.COMPLETED => "Completed"
-      case WorkflowAggregatedState.ABORTED => "Aborted"
-      case WorkflowAggregatedState.UNKNOWN => "Unknown"
+      case WorkflowAggregatedState.UNINITIALIZED                   => "Uninitialized"
+      case WorkflowAggregatedState.READY                           => "Initializing"
+      case WorkflowAggregatedState.RUNNING                         => "Running"
+      case WorkflowAggregatedState.PAUSING                         => "Pausing"
+      case WorkflowAggregatedState.PAUSED                          => "Paused"
+      case WorkflowAggregatedState.RESUMING                        => "Resuming"
+      case WorkflowAggregatedState.RECOVERING                      => "Recovering"
+      case WorkflowAggregatedState.COMPLETED                       => "Completed"
+      case WorkflowAggregatedState.ABORTED                         => "Aborted"
+      case WorkflowAggregatedState.UNKNOWN                         => "Unknown"
       case WorkflowAggregatedState.Unrecognized(unrecognizedValue) => "???"
     }
   }

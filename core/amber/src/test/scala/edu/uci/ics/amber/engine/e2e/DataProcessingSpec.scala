@@ -64,7 +64,7 @@ class DataProcessingSpec
 
   def executeWorkflow(workflow: Workflow): Map[String, List[ITuple]] = {
     var results: Map[String, List[ITuple]] = null
-    val client = new AmberClient(system, workflow, ControllerConfig.default, error=>{})
+    val client = new AmberClient(system, workflow, ControllerConfig.default, error => {})
     val completion = Promise[Unit]
     client
       .registerCallback[WorkflowCompleted](evt => {

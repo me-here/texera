@@ -5,7 +5,13 @@ import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.{WorkerInfo, 
 import edu.uci.ics.amber.engine.architecture.linksemantics._
 import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.NetworkSenderActorRef
 import edu.uci.ics.amber.engine.common.{AmberUtils, Constants}
-import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LayerIdentity, LinkIdentity, OperatorIdentity, WorkflowIdentity}
+import edu.uci.ics.amber.engine.common.virtualidentity.{
+  ActorVirtualIdentity,
+  LayerIdentity,
+  LinkIdentity,
+  OperatorIdentity,
+  WorkflowIdentity
+}
 import edu.uci.ics.amber.engine.common.{AmberUtils, Constants, IOperatorExecutor}
 import edu.uci.ics.amber.engine.operators.{OpExecConfig, SinkOpExecConfig}
 import edu.uci.ics.texera.web.workflowruntimestate.{OperatorRuntimeStats, WorkflowAggregatedState}
@@ -112,7 +118,8 @@ class Workflow(
       })
       .asInstanceOf[Iterable[(ActorVirtualIdentity, PythonUDFOpExecV2)]]
 
-  def isCompleted: Boolean = operatorToOpExecConfig.values.forall(op => op.getState == WorkflowAggregatedState.COMPLETED)
+  def isCompleted: Boolean =
+    operatorToOpExecConfig.values.forall(op => op.getState == WorkflowAggregatedState.COMPLETED)
 
   def build(
       allNodes: Array[Address],

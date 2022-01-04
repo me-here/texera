@@ -6,7 +6,11 @@ import akka.util.Timeout
 import com.twitter.util.Future
 import edu.uci.ics.amber.engine.architecture.controller.{ControllerConfig, Workflow}
 import edu.uci.ics.amber.engine.common.FutureBijection._
-import edu.uci.ics.amber.engine.common.client.ClientActor.{ClosureRequest, InitializeRequest, ObservableRequest}
+import edu.uci.ics.amber.engine.common.client.ClientActor.{
+  ClosureRequest,
+  InitializeRequest,
+  ObservableRequest
+}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCServer.ControlCommand
 import rx.lang.scala.{Observable, Subject, Subscription}
 
@@ -15,7 +19,12 @@ import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.reflect.ClassTag
 
-class AmberClient(system: ActorSystem, workflow: Workflow, controllerConfig: ControllerConfig, errorHandler:Throwable => Unit) {
+class AmberClient(
+    system: ActorSystem,
+    workflow: Workflow,
+    controllerConfig: ControllerConfig,
+    errorHandler: Throwable => Unit
+) {
 
   private val clientActor = system.actorOf(Props(new ClientActor))
   private implicit val timeout: Timeout = Timeout(1.minute)
@@ -55,7 +64,7 @@ class AmberClient(system: ActorSystem, workflow: Workflow, controllerConfig: Con
     }
   }
 
-  def registerCallback[T](callback:T => Unit)(implicit ct: ClassTag[T]): Subscription = {
+  def registerCallback[T](callback: T => Unit)(implicit ct: ClassTag[T]): Subscription = {
     if (!isActive) {
       throw new RuntimeException("amber runtime environment is not active")
     }
@@ -66,8 +75,8 @@ class AmberClient(system: ActorSystem, workflow: Workflow, controllerConfig: Con
     val clazz = ct.runtimeClass
     val observable =
       if (registeredObservables.contains(clazz)) {
-       registeredObservables(clazz).asInstanceOf[Observable[T]]
-      }else{
+        registeredObservables(clazz).asInstanceOf[Observable[T]]
+      } else {
         val sub = Subject[T]
         val req = ObservableRequest({
           case x: T =>
@@ -79,10 +88,10 @@ class AmberClient(system: ActorSystem, workflow: Workflow, controllerConfig: Con
         ob
       }
     observable.subscribe(evt => {
-      try{
+      try {
         callback(evt)
-      }catch{
-        case t:Throwable => errorHandler(t)
+      } catch {
+        case t: Throwable => errorHandler(t)
       }
     })
   }

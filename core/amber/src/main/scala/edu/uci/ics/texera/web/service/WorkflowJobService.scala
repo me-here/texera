@@ -6,18 +6,27 @@ import edu.uci.ics.amber.engine.common.client.AmberClient
 import edu.uci.ics.amber.engine.common.virtualidentity.WorkflowIdentity
 import edu.uci.ics.texera.web.{ObserverManager, TexeraWebApplication}
 import edu.uci.ics.texera.web.model.websocket.event.{TexeraWebSocketEvent, WorkflowErrorEvent}
-import edu.uci.ics.texera.web.model.websocket.request.{CacheStatusUpdateRequest, ModifyLogicRequest, ResultExportRequest, WorkflowExecuteRequest}
+import edu.uci.ics.texera.web.model.websocket.request.{
+  CacheStatusUpdateRequest,
+  ModifyLogicRequest,
+  ResultExportRequest,
+  WorkflowExecuteRequest
+}
 import edu.uci.ics.texera.web.model.websocket.response.ResultExportResponse
 import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource
 import edu.uci.ics.texera.workflow.common.WorkflowContext
 import edu.uci.ics.texera.workflow.common.storage.OpResultStorage
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler.ConstraintViolationException
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowInfo.toJgraphtDAG
-import edu.uci.ics.texera.workflow.common.workflow.{WorkflowCompiler, WorkflowInfo, WorkflowRewriter}
+import edu.uci.ics.texera.workflow.common.workflow.{
+  WorkflowCompiler,
+  WorkflowInfo,
+  WorkflowRewriter
+}
 import org.jooq.types.UInteger
 
 class WorkflowJobService(
-                          subscriptionManager: ObserverManager[TexeraWebSocketEvent],
+    subscriptionManager: ObserverManager[TexeraWebSocketEvent],
     operatorCache: WorkflowCacheService,
     resultService: JobResultService,
     uidOpt: Option[UInteger],
@@ -35,12 +44,18 @@ class WorkflowJobService(
 
   // Runtime starts from here:
   val client: AmberClient =
-    TexeraWebApplication.createAmberRuntime(workflow, ControllerConfig.default, t => {
-      t.printStackTrace()
-      subscriptionManager.pushToObservers(WorkflowErrorEvent(generalErrors =
-        Map("exception" -> (t.getMessage + "\n" + t.getStackTrace.mkString("\n")))
-      ))
-    })
+    TexeraWebApplication.createAmberRuntime(
+      workflow,
+      ControllerConfig.default,
+      t => {
+        t.printStackTrace()
+        subscriptionManager.pushToObservers(
+          WorkflowErrorEvent(generalErrors =
+            Map("exception" -> (t.getMessage + "\n" + t.getStackTrace.mkString("\n")))
+          )
+        )
+      }
+    )
   val workflowRuntimeService: JobRuntimeService = new JobRuntimeService(client, subscriptionManager)
 
   def startWorkflow(): Unit = {

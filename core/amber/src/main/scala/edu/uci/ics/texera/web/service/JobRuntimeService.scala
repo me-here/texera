@@ -1,7 +1,10 @@
 package edu.uci.ics.texera.web.service
 
 import com.typesafe.scalalogging.LazyLogging
-import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.{ConditionalGlobalBreakpoint, CountGlobalBreakpoint}
+import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.{
+  ConditionalGlobalBreakpoint,
+  CountGlobalBreakpoint
+}
 import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent._
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.AssignBreakpointHandler.AssignGlobalBreakpoint
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.EvaluatePythonExpressionHandler.EvaluatePythonExpression
@@ -16,17 +19,34 @@ import edu.uci.ics.amber.engine.common.client.AmberClient
 import edu.uci.ics.texera.Utils
 import edu.uci.ics.texera.web.model.websocket.event.python.PythonPrintTriggeredEvent
 import edu.uci.ics.texera.web.{ObserverManager, SyncableState}
-import edu.uci.ics.texera.web.model.websocket.event.{BreakpointTriggeredEvent, OperatorStatistics, OperatorStatisticsUpdateEvent, TexeraWebSocketEvent, WorkflowExecutionErrorEvent, WorkflowStateEvent}
+import edu.uci.ics.texera.web.model.websocket.event.{
+  BreakpointTriggeredEvent,
+  OperatorStatistics,
+  OperatorStatisticsUpdateEvent,
+  TexeraWebSocketEvent,
+  WorkflowExecutionErrorEvent,
+  WorkflowStateEvent
+}
 import edu.uci.ics.texera.web.model.websocket.request.python.PythonExpressionEvaluateRequest
 import edu.uci.ics.texera.web.model.websocket.request.{RemoveBreakpointRequest, SkipTupleRequest}
 import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource
 import edu.uci.ics.texera.web.service.JobRuntimeService.bufferSize
 import edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent.BreakpointTuple
 import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState._
-import edu.uci.ics.texera.web.workflowruntimestate.{BreakpointEvent, OperatorRuntimeInfo, WorkflowAggregatedState, WorkflowJobRuntimeInfo}
+import edu.uci.ics.texera.web.workflowruntimestate.{
+  BreakpointEvent,
+  OperatorRuntimeInfo,
+  WorkflowAggregatedState,
+  WorkflowJobRuntimeInfo
+}
 import edu.uci.ics.texera.workflow.common.operators.OperatorDescriptor
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
-import edu.uci.ics.texera.workflow.common.workflow.{Breakpoint, BreakpointCondition, ConditionBreakpoint, CountBreakpoint}
+import edu.uci.ics.texera.workflow.common.workflow.{
+  Breakpoint,
+  BreakpointCondition,
+  ConditionBreakpoint,
+  CountBreakpoint
+}
 import rx.lang.scala.Observable
 import rx.lang.scala.subjects.BehaviorSubject
 
@@ -37,10 +57,13 @@ object JobRuntimeService {
 
 }
 
-class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverManager[TexeraWebSocketEvent])
-    extends SyncableState[WorkflowJobRuntimeInfo, TexeraWebSocketEvent]
+class JobRuntimeService(
+    client: AmberClient,
+    val subscriptionManager: ObserverManager[TexeraWebSocketEvent]
+) extends SyncableState[WorkflowJobRuntimeInfo, TexeraWebSocketEvent]
     with LazyLogging {
-  private val jobStatusObservable: BehaviorSubject[WorkflowAggregatedState] = BehaviorSubject[WorkflowAggregatedState](UNINITIALIZED)
+  private val jobStatusObservable: BehaviorSubject[WorkflowAggregatedState] =
+    BehaviorSubject[WorkflowAggregatedState](UNINITIALIZED)
 
   registerCallbacks()
 
@@ -58,22 +81,29 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
   private[this] def registerCallbackOnBreakpoint(): Unit = {
     client
       .registerCallback[BreakpointTriggered]((evt: BreakpointTriggered) => {
-        modifyState{
-          jobInfo =>
-            val breakpointEvts = evt.report.filter(_._1._2 != null).map {
-              elem =>
-                val actorPath = elem._1._1.toString
-                val faultedTuple = elem._1._2
-                val tupleList =
-                  if (faultedTuple.tuple != null) {
-                    faultedTuple.tuple.toArray().filter(v => v != null).map(v => v.toString).toList
-                  } else {
-                    List.empty
-                  }
-                BreakpointEvent(actorPath, Some(BreakpointTuple(faultedTuple.id, faultedTuple.isInput, tupleList)),elem._2)
-            }.toArray
-            val newInfo = jobInfo.operatorInfo.getOrElse(evt.operatorID, OperatorRuntimeInfo()).withUnresolvedBreakpoints(breakpointEvts)
-            jobInfo.addOperatorInfo((evt.operatorID, newInfo)).withState(PAUSED)
+        modifyState { jobInfo =>
+          val breakpointEvts = evt.report
+            .filter(_._1._2 != null)
+            .map { elem =>
+              val actorPath = elem._1._1.toString
+              val faultedTuple = elem._1._2
+              val tupleList =
+                if (faultedTuple.tuple != null) {
+                  faultedTuple.tuple.toArray().filter(v => v != null).map(v => v.toString).toList
+                } else {
+                  List.empty
+                }
+              BreakpointEvent(
+                actorPath,
+                Some(BreakpointTuple(faultedTuple.id, faultedTuple.isInput, tupleList)),
+                elem._2
+              )
+            }
+            .toArray
+          val newInfo = jobInfo.operatorInfo
+            .getOrElse(evt.operatorID, OperatorRuntimeInfo())
+            .withUnresolvedBreakpoints(breakpointEvts)
+          jobInfo.addOperatorInfo((evt.operatorID, newInfo)).withState(PAUSED)
         }
       })
   }
@@ -81,13 +111,15 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
   private[this] def registerCallbackOnWorkflowStatusUpdate(): Unit = {
     client
       .registerCallback[WorkflowStatusUpdate]((evt: WorkflowStatusUpdate) => {
-        modifyState{
-          jobInfo =>
-            val updatedInfos = evt.operatorStatistics.map {
-              case (opId, statistics) =>
-                (opId, jobInfo.operatorInfo.getOrElse(opId, OperatorRuntimeInfo()).withStats(statistics))
-            }
-            jobInfo.addAllOperatorInfo(updatedInfos)
+        modifyState { jobInfo =>
+          val updatedInfos = evt.operatorStatistics.map {
+            case (opId, statistics) =>
+              (
+                opId,
+                jobInfo.operatorInfo.getOrElse(opId, OperatorRuntimeInfo()).withStats(statistics)
+              )
+          }
+          jobInfo.addAllOperatorInfo(updatedInfos)
         }
       })
   }
@@ -103,14 +135,20 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
   private[this] def registerCallbackOnPythonPrint(): Unit = {
     client
       .registerCallback[PythonPrintTriggered]((evt: PythonPrintTriggered) => {
-        modifyState{
-          jobInfo =>
-            val opInfo = jobInfo.operatorInfo.getOrElse(evt.operatorID, OperatorRuntimeInfo())
-            if(opInfo.pythonConsoleMessages.size < bufferSize){
-              jobInfo.addOperatorInfo((evt.operatorID, opInfo.addPythonConsoleMessages(evt.message)))
-            }else{
-              jobInfo.addOperatorInfo((evt.operatorID, opInfo.withPythonConsoleMessages(opInfo.pythonConsoleMessages.drop(1):+evt.message)))
-            }
+        modifyState { jobInfo =>
+          val opInfo = jobInfo.operatorInfo.getOrElse(evt.operatorID, OperatorRuntimeInfo())
+          if (opInfo.pythonConsoleMessages.size < bufferSize) {
+            jobInfo.addOperatorInfo((evt.operatorID, opInfo.addPythonConsoleMessages(evt.message)))
+          } else {
+            jobInfo.addOperatorInfo(
+              (
+                evt.operatorID,
+                opInfo.withPythonConsoleMessages(
+                  opInfo.pythonConsoleMessages.drop(1) :+ evt.message
+                )
+              )
+            )
+          }
         }
       })
   }
@@ -119,9 +157,8 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
     client
       .registerCallback[FatalError]((evt: FatalError) => {
         client.shutdown()
-        modifyState{
-          jobInfo =>
-            jobInfo.withState(ABORTED).withError(evt.e.getLocalizedMessage)
+        modifyState { jobInfo =>
+          jobInfo.withState(ABORTED).withError(evt.e.getLocalizedMessage)
         }
       })
   }
@@ -130,7 +167,8 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
     *  Utility Functions
     */
 
-  def getJobStatusObservable: Observable[WorkflowAggregatedState] = jobStatusObservable.onTerminateDetach
+  def getJobStatusObservable: Observable[WorkflowAggregatedState] =
+    jobStatusObservable.onTerminateDetach
 
   def startWorkflow(): Unit = {
     val f = client.sendAsync(StartWorkflow())
@@ -141,9 +179,10 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
   }
 
   def clearTriggeredBreakpoints(): Unit = {
-    modifyState{
-      jobInfo =>
-        jobInfo.withOperatorInfo(jobInfo.operatorInfo.map(pair => pair._1 -> pair._2.withUnresolvedBreakpoints(Seq.empty)))
+    modifyState { jobInfo =>
+      jobInfo.withOperatorInfo(
+        jobInfo.operatorInfo.map(pair => pair._1 -> pair._2.withUnresolvedBreakpoints(Seq.empty))
+      )
     }
   }
 
@@ -239,20 +278,28 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
     client.sendSync(EvaluatePythonExpression(request.expression, request.operatorId))
   }
 
-
-  override def computeDiff(oldState: WorkflowJobRuntimeInfo, newState: WorkflowJobRuntimeInfo): Array[TexeraWebSocketEvent] = {
+  override def computeDiff(
+      oldState: WorkflowJobRuntimeInfo,
+      newState: WorkflowJobRuntimeInfo
+  ): Array[TexeraWebSocketEvent] = {
     val buf = mutable.ArrayBuffer[TexeraWebSocketEvent]()
     // Update operator stats if any operator updates its stat
-    if(newState.operatorInfo.map(_._2.stats).toSet != oldState.operatorInfo.map(_._2.stats).toSet){
-      buf += OperatorStatisticsUpdateEvent(newState.operatorInfo.collect{
+    if (
+      newState.operatorInfo.map(_._2.stats).toSet != oldState.operatorInfo.map(_._2.stats).toSet
+    ) {
+      buf += OperatorStatisticsUpdateEvent(newState.operatorInfo.collect {
         case x if x._2.stats.isDefined =>
           val stats = x._2.stats.get
-          val res = OperatorStatistics(Utils.aggregatedStateToString(stats.state),stats.inputCount, stats.outputCount)
-          (x._1,res)
+          val res = OperatorStatistics(
+            Utils.aggregatedStateToString(stats.state),
+            stats.inputCount,
+            stats.outputCount
+          )
+          (x._1, res)
       })
     }
     // Update workflow state
-    if(newState.state != oldState.state){
+    if (newState.state != oldState.state) {
       jobStatusObservable.onNext(newState.state)
       buf += WorkflowStateEvent(Utils.aggregatedStateToString(newState.state))
     }
@@ -260,17 +307,21 @@ class JobRuntimeService(client: AmberClient, val subscriptionManager: ObserverMa
     newState.operatorInfo.foreach {
       case (opId, info) =>
         val oldInfo = oldState.operatorInfo.getOrElse(opId, new OperatorRuntimeInfo())
-        if (info.unresolvedBreakpoints.nonEmpty && info.unresolvedBreakpoints != oldInfo.unresolvedBreakpoints) {
+        if (
+          info.unresolvedBreakpoints.nonEmpty && info.unresolvedBreakpoints != oldInfo.unresolvedBreakpoints
+        ) {
           buf += BreakpointTriggeredEvent(info.unresolvedBreakpoints, opId)
         }
-        if (info.pythonConsoleMessages.nonEmpty && info.pythonConsoleMessages != oldInfo.pythonConsoleMessages) {
+        if (
+          info.pythonConsoleMessages.nonEmpty && info.pythonConsoleMessages != oldInfo.pythonConsoleMessages
+        ) {
           val stringBuilder = new StringBuilder()
           info.pythonConsoleMessages.foreach(s => stringBuilder.append(s))
           buf += PythonPrintTriggeredEvent(stringBuilder.toString(), opId)
         }
     }
     // Check if new error occurred
-    if(newState.error != oldState.error){
+    if (newState.error != oldState.error) {
       buf += WorkflowExecutionErrorEvent(newState.error)
     }
     buf.toArray

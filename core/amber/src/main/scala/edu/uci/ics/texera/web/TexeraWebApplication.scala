@@ -34,7 +34,11 @@ import edu.uci.ics.amber.engine.common.client.AmberClient
 
 object TexeraWebApplication {
 
-  def createAmberRuntime(workflow: Workflow, conf: ControllerConfig, errorHandler: Throwable => Unit): AmberClient = {
+  def createAmberRuntime(
+      workflow: Workflow,
+      conf: ControllerConfig,
+      errorHandler: Throwable => Unit
+  ): AmberClient = {
     new AmberClient(actorSystem, workflow, conf, errorHandler)
   }
 

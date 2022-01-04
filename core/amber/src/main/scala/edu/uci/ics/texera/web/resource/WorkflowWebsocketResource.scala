@@ -3,9 +3,18 @@ package edu.uci.ics.texera.web.resource
 import java.util.concurrent.atomic.AtomicInteger
 import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.texera.Utils
-import edu.uci.ics.texera.web.{ServletAwareConfigurator, SessionState, SessionStateManager, ObserverManager}
+import edu.uci.ics.texera.web.{
+  ServletAwareConfigurator,
+  SessionState,
+  SessionStateManager,
+  ObserverManager
+}
 import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.User
-import edu.uci.ics.texera.web.model.websocket.event.{TexeraWebSocketEvent, WorkflowErrorEvent, WorkflowStateEvent}
+import edu.uci.ics.texera.web.model.websocket.event.{
+  TexeraWebSocketEvent,
+  WorkflowErrorEvent,
+  WorkflowStateEvent
+}
 import edu.uci.ics.texera.web.model.websocket.request._
 import edu.uci.ics.texera.web.model.websocket.request.python.PythonExpressionEvaluateRequest
 import edu.uci.ics.texera.web.model.websocket.response._
@@ -111,12 +120,12 @@ class WorkflowWebsocketResource extends LazyLogging {
             )
           )
         case paginationRequest: ResultPaginationRequest =>
-          workflowStateOpt.foreach(
-            state => send(session, state.resultService.handleResultPagination(paginationRequest))
+          workflowStateOpt.foreach(state =>
+            send(session, state.resultService.handleResultPagination(paginationRequest))
           )
         case resultExportRequest: ResultExportRequest =>
-          workflowStateOpt.foreach(
-            state => send(session, state.exportService.exportResult(uidOpt.get, resultExportRequest))
+          workflowStateOpt.foreach(state =>
+            send(session, state.exportService.exportResult(uidOpt.get, resultExportRequest))
           )
         case cacheStatusUpdateRequest: CacheStatusUpdateRequest =>
           if (WorkflowCacheService.isAvailable) {

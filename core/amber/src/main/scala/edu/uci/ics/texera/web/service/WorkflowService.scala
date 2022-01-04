@@ -40,9 +40,11 @@ class WorkflowService(wid: String, cleanUpTimeout: Int) extends LazyLogging {
     AmberUtils.amberConfig.getString("storage.mode").toLowerCase
   )
   val userSessionSubscriptionManager = new ObserverManager[TexeraWebSocketEvent]()
-  val resultService: JobResultService = new JobResultService(opResultStorage, userSessionSubscriptionManager)
+  val resultService: JobResultService =
+    new JobResultService(opResultStorage, userSessionSubscriptionManager)
   val exportService: ResultExportService = new ResultExportService(opResultStorage)
-  val operatorCache: WorkflowCacheService = new WorkflowCacheService(opResultStorage, userSessionSubscriptionManager)
+  val operatorCache: WorkflowCacheService =
+    new WorkflowCacheService(opResultStorage, userSessionSubscriptionManager)
   var jobService: Option[WorkflowJobService] = None
   private var refCount = 0
   private var cleanUpJob: Cancellable = Cancellable.alreadyCancelled
@@ -88,7 +90,7 @@ class WorkflowService(wid: String, cleanUpTimeout: Int) extends LazyLogging {
     }
   }
 
-  def connect(observer:Observer[TexeraWebSocketEvent]): Unit = {
+  def connect(observer: Observer[TexeraWebSocketEvent]): Unit = {
     synchronized {
       userSessionSubscriptionManager.addObserver(observer)
       refCount += 1
@@ -97,11 +99,13 @@ class WorkflowService(wid: String, cleanUpTimeout: Int) extends LazyLogging {
     }
   }
 
-  def disconnect(observer:Observer[TexeraWebSocketEvent]): Unit = {
+  def disconnect(observer: Observer[TexeraWebSocketEvent]): Unit = {
     synchronized {
       userSessionSubscriptionManager.removeObserver(observer)
       refCount -= 1
-      if (refCount == 0 && !jobService.map(_.workflowRuntimeService.getState.state).contains(RUNNING)) {
+      if (
+        refCount == 0 && !jobService.map(_.workflowRuntimeService.getState.state).contains(RUNNING)
+      ) {
         refreshDeadline()
       } else {
         logger.info(s"[$wid] workflow state clean up postponed. current user count = $refCount")
@@ -115,13 +119,14 @@ class WorkflowService(wid: String, cleanUpTimeout: Int) extends LazyLogging {
       operatorCache,
       resultService,
       uidOpt,
-      req,
+      req
     )
     statusUpdateSubscription.unsubscribe()
     cleanUpJob.cancel()
-    statusUpdateSubscription = state.workflowRuntimeService.getJobStatusObservable.subscribe(status =>
-      setCleanUpDeadline(status)
-    )
+    statusUpdateSubscription =
+      state.workflowRuntimeService.getJobStatusObservable.subscribe(status =>
+        setCleanUpDeadline(status)
+      )
     jobService = Some(state)
     jobStateSubject.onNext(state)
     state.startWorkflow()

@@ -3,14 +3,22 @@ package edu.uci.ics.texera.web.service
 import akka.actor.Cancellable
 import com.fasterxml.jackson.annotation.{JsonTypeInfo, JsonTypeName}
 import com.fasterxml.jackson.databind.node.ObjectNode
-import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{WorkflowCompleted, WorkflowPaused}
+import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{
+  WorkflowCompleted,
+  WorkflowPaused
+}
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.FatalErrorHandler.FatalError
 import edu.uci.ics.amber.engine.common.AmberUtils
 import edu.uci.ics.amber.engine.common.client.AmberClient
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.texera.web.{ObserverManager, SyncableState, TexeraWebApplication}
 import edu.uci.ics.texera.web.model.websocket.event.WorkflowAvailableResultEvent.OperatorAvailableResult
-import edu.uci.ics.texera.web.model.websocket.event.{PaginatedResultEvent, TexeraWebSocketEvent, WebResultUpdateEvent, WorkflowAvailableResultEvent}
+import edu.uci.ics.texera.web.model.websocket.event.{
+  PaginatedResultEvent,
+  TexeraWebSocketEvent,
+  WebResultUpdateEvent,
+  WorkflowAvailableResultEvent
+}
 import edu.uci.ics.texera.web.model.websocket.request.ResultPaginationRequest
 import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource
 import edu.uci.ics.texera.web.service.JobResultService.WebResultUpdate
@@ -123,9 +131,9 @@ class JobResultService(
     AmberUtils.amberConfig.getInt("web-server.workflow-result-pulling-in-seconds")
   private var resultUpdateCancellable: Cancellable = _
 
-  def attachToJob(workflowInfo: WorkflowInfo, client: AmberClient): Unit ={
+  def attachToJob(workflowInfo: WorkflowInfo, client: AmberClient): Unit = {
 
-    if(resultUpdateCancellable != null && !resultUpdateCancellable.isCancelled){
+    if (resultUpdateCancellable != null && !resultUpdateCancellable.isCancelled) {
       resultUpdateCancellable.cancel()
     }
 
@@ -176,8 +184,7 @@ class JobResultService(
   }
 
   def onResultUpdate(): Unit = {
-    modifyState{
-      oldState =>
+    modifyState { oldState =>
       oldState.withOperatorInfo(progressiveResults.map {
         case (id, service) =>
           (id, OperatorResultInfo(service.sink.getStorage.getCount.toInt))
@@ -185,14 +192,18 @@ class JobResultService(
     }
   }
 
-  override def computeDiff(oldState: WorkflowJobResultInfo, newState: WorkflowJobResultInfo): Array[TexeraWebSocketEvent] = {
+  override def computeDiff(
+      oldState: WorkflowJobResultInfo,
+      newState: WorkflowJobResultInfo
+  ): Array[TexeraWebSocketEvent] = {
     val buf = mutable.HashMap[String, WebResultUpdate]()
-    newState.operatorInfo.foreach{
+    newState.operatorInfo.foreach {
       case (opId, info) =>
         val oldInfo = oldState.operatorInfo.getOrElse(opId, new OperatorResultInfo())
         // If tuple count has changed, report the current result status to frontend
-        if(oldInfo.tupleCount != info.tupleCount){
-          buf(opId) = progressiveResults(opId).convertWebResultUpdate(oldInfo.tupleCount, info.tupleCount)
+        if (oldInfo.tupleCount != info.tupleCount) {
+          buf(opId) =
+            progressiveResults(opId).convertWebResultUpdate(oldInfo.tupleCount, info.tupleCount)
         }
     }
     Array(WebResultUpdateEvent(buf.toMap))
