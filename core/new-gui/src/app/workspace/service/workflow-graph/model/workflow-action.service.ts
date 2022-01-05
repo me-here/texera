@@ -23,6 +23,7 @@ import { SyncOperatorGroup } from "./sync-operator-group";
 import { SyncTexeraModel } from "./sync-texera-model";
 import { WorkflowGraph, WorkflowGraphReadonly } from "./workflow-graph";
 import { debounceTime, filter } from "rxjs/operators";
+import { WorkflowCollabService } from "../../workflow-collab/workflow-collab.service";
 
 export interface Command {
   modifiesWorkflow: boolean;
@@ -44,6 +45,49 @@ type GroupInfo = {
   layer: number;
 };
 
+// Caveat: These operations must be performed in order, and the ability to sync up multiple clients relies
+// on the fact that different clients rest at the same state.
+
+// At least for some of them, have to do a bit more thinking.
+
+export type commandFuncs =
+  | "enableWorkflowModification"
+  | "disableWorkflowModification"
+  | "addOperator"
+  | "deleteOperator"
+  | "addOperatorsAndLinks"
+  | "deleteOperatorsAndLinks"
+  | "autoLayoutWorkflow"
+  | "setOperatorProperty"
+  | "addLink"
+  | "deleteLink"
+  | "deleteLinkWithID";
+
+// keyof yields permitted property names for T. When we pass function, it'll return value of that function?
+// For this type, we index T with the property names for T, which results in us getting the values.
+/**
+ * type Foo = { a: string, b: number };
+ * type ValueOfFoo = ValueOf<Foo>; // string | number
+ * ValueOf<Foo> = Foo[a | b] = string | number
+ */
+type ValueOf<T> = T[keyof T];
+
+// Pick<WorkflowActionService, commandFuncs>: from WorkflowActionService, pick a set of properties whose keys
+// are in commandFuncs. commandFuncs are names of functions, so this pick will only allow existing func names.
+// So when we make CommandMessage, the function will get inferred from action. Then, it'll require that
+// parameters are the parameters for WorkflowActionService[P], or that function.
+
+// P in keyof Pick: P will be one of the properties that exists in there(set of properties from service).
+// If we have a name in commandFuncs that doesn't match a property in service, we get error. P picks one of them
+export type CommandMessage = ValueOf<{
+  [P in keyof Pick<WorkflowActionService, commandFuncs>]:
+  {
+    action: P;
+    parameters: Parameters<WorkflowActionService[P]>;
+    type: string;
+  }
+}>;
+
 /**
  *
  * WorkflowActionService exposes functions (actions) to modify the workflow graph model of both JointJS and Texera,
@@ -62,6 +106,8 @@ type GroupInfo = {
   providedIn: "root",
 })
 export class WorkflowActionService {
+  public functionMap: { [key: string]: Function } = {};
+
   private static readonly DEFAULT_WORKFLOW_NAME = "Untitled Workflow";
   private static readonly DEFAULT_WORKFLOW = {
     name: WorkflowActionService.DEFAULT_WORKFLOW_NAME,
@@ -87,7 +133,8 @@ export class WorkflowActionService {
     private operatorMetadataService: OperatorMetadataService,
     private jointUIService: JointUIService,
     private undoRedoService: UndoRedoService,
-    private workflowUtilService: WorkflowUtilService
+    private workflowUtilService: WorkflowUtilService,
+    private workflowCollabService: WorkflowCollabService
   ) {
     this.texeraGraph = new WorkflowGraph();
     this.jointGraph = new joint.dia.Graph();
@@ -106,6 +153,11 @@ export class WorkflowActionService {
     this.handleJointLinkAdd();
     this.handleJointOperatorDrag();
     this.handleHighlightedElementPositionChange();
+    this.handleRemoteChange();
+  }
+
+  public toggleSendData(toggle: boolean): void {
+    this.workflowCollabService.setSendData(toggle);
   }
 
   // workflow modification lock interface (allows or prevents commands that would modify the workflow graph)
@@ -140,6 +192,8 @@ export class WorkflowActionService {
           undo: () => this.deleteLinkWithIDInternal(link.linkID),
           redo: () => this.addLinkInternal(link),
         };
+        const commandMessage: CommandMessage = { action: "addLink", parameters: [link], type: "execute" };
+        this.sendCommand(JSON.stringify(commandMessage));
         this.executeAndStoreCommand(command);
       });
   }
@@ -340,6 +394,8 @@ export class WorkflowActionService {
         this.jointGraphWrapper.highlightElements(currentHighlights);
       },
     };
+    const commandMessage: CommandMessage = { action: "addOperator", parameters: [operator, point], type: "execute" };
+    this.sendCommand(JSON.stringify(commandMessage));
     this.executeAndStoreCommand(command);
   }
 
@@ -391,6 +447,9 @@ export class WorkflowActionService {
         }
       },
     };
+
+    const commandMessage: CommandMessage = { action: "deleteOperator", parameters: [operatorID], type: "execute" };
+    this.sendCommand(JSON.stringify(commandMessage));
     this.executeAndStoreCommand(command);
   }
 
@@ -458,6 +517,17 @@ export class WorkflowActionService {
         this.jointGraphWrapper.highlightElements(currentHighlights);
       },
     };
+    const operators: OperatorPredicate[] = [];
+    operatorsAndPositions.forEach(o => {
+      operators.push(o.op);
+    });
+
+    const commandMessage: CommandMessage = {
+      action: "addOperatorsAndLinks",
+      parameters: [operatorsAndPositions, links],
+      type: "execute",
+    };
+    this.sendCommand(JSON.stringify(commandMessage));
     this.executeAndStoreCommand(command);
   }
 
@@ -582,6 +652,12 @@ export class WorkflowActionService {
       },
     };
 
+    const commandMessage: CommandMessage = {
+      action: "deleteOperatorsAndLinks",
+      parameters: [operatorIDs, linkIDs],
+      type: "execute",
+    };
+    this.sendCommand(JSON.stringify(commandMessage));
     this.executeAndStoreCommand(command);
   }
 
@@ -1152,5 +1228,23 @@ export class WorkflowActionService {
     } else {
       this.getJointGraphWrapper().showLinkBreakpoint(linkID);
     }
+  }
+
+  private sendCommand(update: string): void {
+    if (this.workflowCollabService.getSendData()) {
+      this.workflowCollabService.sendCommand(update);
+    }
+  }
+
+  private handleRemoteChange(): void {
+    const self = this;
+    this.workflowCollabService.getCommandMessageStream().subscribe(message => {
+      if (message.type === "execute") {
+        self.toggleSendData(false);
+        const func = message.action;
+        (this[func] as any).apply(this, message.parameters);
+        self.toggleSendData(true);
+      }
+    });
   }
 }
