@@ -11,12 +11,14 @@ import scala.collection.mutable
 class SessionState(session: Session) {
   private val observer: Observer[TexeraWebSocketEvent] = new WebsocketSubscriber(session)
   private var currentWorkflowState: Option[WorkflowService] = None
+  private var subscription = Subscription()
 
   def getCurrentWorkflowState: Option[WorkflowService] = currentWorkflowState
 
   def unsubscribe(): Unit = {
+    subscription.unsubscribe()
     if (currentWorkflowState.isDefined) {
-      currentWorkflowState.get.disconnect(observer)
+      currentWorkflowState.get.disconnect()
       currentWorkflowState = None
     }
   }
@@ -24,6 +26,6 @@ class SessionState(session: Session) {
   def subscribe(workflowService: WorkflowService): Unit = {
     unsubscribe()
     currentWorkflowState = Some(workflowService)
-    workflowService.connect(observer)
+    subscription = workflowService.connect(observer)
   }
 }

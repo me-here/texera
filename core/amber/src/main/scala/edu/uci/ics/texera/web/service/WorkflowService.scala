@@ -4,12 +4,23 @@ import java.util.concurrent.ConcurrentHashMap
 import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.amber.engine.common.AmberUtils
 import edu.uci.ics.texera.web.model.websocket.event.TexeraWebSocketEvent
-import edu.uci.ics.texera.web.{ObserverManager, TexeraWebApplication, WorkflowLifecycleManager}
-import edu.uci.ics.texera.web.model.websocket.request.WorkflowExecuteRequest
+import edu.uci.ics.texera.web.{
+  SubscriptionManager,
+  TexeraWebApplication,
+  WebsocketInput,
+  WebsocketOutput,
+  WorkflowLifecycleManager,
+  WorkflowStateStore
+}
+import edu.uci.ics.texera.web.model.websocket.request.{
+  TexeraWebSocketRequest,
+  WorkflowExecuteRequest,
+  WorkflowKillRequest
+}
 import edu.uci.ics.texera.workflow.common.storage.OpResultStorage
 import org.jooq.types.UInteger
 import rx.lang.scala.subjects.BehaviorSubject
-import rx.lang.scala.{Observable, Observer}
+import rx.lang.scala.{Observable, Observer, Subject, Subscription}
 
 object WorkflowService {
   private val wIdToWorkflowState = new ConcurrentHashMap[String, WorkflowService]()
@@ -29,56 +40,77 @@ object WorkflowService {
   }
 }
 
-class WorkflowService(wid: String, cleanUpTimeout: Int) extends LazyLogging {
+class WorkflowService(
+    wid: String,
+    cleanUpTimeout: Int
+) extends SubscriptionManager
+    with LazyLogging {
   // state across execution:
   var opResultStorage: OpResultStorage = new OpResultStorage(
     AmberUtils.amberConfig.getString("storage.mode").toLowerCase
   )
-  val userSessionSubscriptionManager = new ObserverManager[TexeraWebSocketEvent]()
+  val wsInput = new WebsocketInput()
+  val wsOutput = new WebsocketOutput()
+  val stateStore = new WorkflowStateStore(wsOutput)
   val resultService: JobResultService =
-    new JobResultService(opResultStorage, userSessionSubscriptionManager)
+    new JobResultService(opResultStorage, stateStore, wsOutput)
   val exportService: ResultExportService = new ResultExportService(opResultStorage)
   val operatorCache: WorkflowCacheService =
-    new WorkflowCacheService(opResultStorage, userSessionSubscriptionManager)
+    new WorkflowCacheService(opResultStorage, stateStore, wsInput, wsOutput)
   var jobService: Option[WorkflowJobService] = None
   val lifeCycleManager: WorkflowLifecycleManager = new WorkflowLifecycleManager(
     wid,
     cleanUpTimeout,
     () => {
       WorkflowService.wIdToWorkflowState.remove(wid)
-      jobService.foreach(_.workflowRuntimeService.killWorkflow())
+      wsInput.onNext(WorkflowKillRequest(), None)
+      unsubscribeAll()
     }
   )
   private val jobStateSubject = BehaviorSubject[WorkflowJobService]()
 
-  def connect(observer: Observer[TexeraWebSocketEvent]): Unit = {
-    resultService.computeSnapshotThenConsume(events => {
-      events.foreach(evt => observer.onNext(evt))
-      userSessionSubscriptionManager.addObserver(observer)
-    })
+  addSubscription(
+    wsInput.subscribe((evt: WorkflowExecuteRequest, uidOpt) => initJobService(evt, uidOpt))
+  )
+
+  def connect(observer: Observer[TexeraWebSocketEvent]): Subscription = {
     lifeCycleManager.increaseUserCount()
+    stateStore.fetchSnapshotThenSendTo(observer)
   }
 
-  def disconnect(observer: Observer[TexeraWebSocketEvent]): Unit = {
-    userSessionSubscriptionManager.removeObserver(observer)
+  def disconnect(): Unit = {
     lifeCycleManager.decreaseUserCount(
-      jobService.map(_.workflowRuntimeService.getStateThenConsume(_.state))
+      stateStore.jobStateStore.getStateThenConsume(_.state)
     )
   }
 
   def initJobService(req: WorkflowExecuteRequest, uidOpt: Option[UInteger]): Unit = {
+    if (jobService.isDefined) {
+      //unsubscribe all
+      jobService.get.unsubscribeAll()
+    }
     val job = new WorkflowJobService(
-      userSessionSubscriptionManager,
+      stateStore,
+      wsInput,
+      wsOutput,
       operatorCache,
       resultService,
       uidOpt,
       req
     )
-    lifeCycleManager.connectJobService(job)
+    lifeCycleManager.registerCleanUpOnStateChange(stateStore)
     jobService = Some(job)
     jobStateSubject.onNext(job)
     job.startWorkflow()
   }
 
   def getJobServiceObservable: Observable[WorkflowJobService] = jobStateSubject.onTerminateDetach
+
+  override def unsubscribeAll(): Unit = {
+    super.unsubscribeAll()
+    jobService.foreach(_.unsubscribeAll())
+    operatorCache.unsubscribeAll()
+    resultService.unsubscribeAll()
+  }
+
 }

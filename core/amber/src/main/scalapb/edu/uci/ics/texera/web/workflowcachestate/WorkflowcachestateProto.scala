@@ -3,26 +3,24 @@
 //
 // Protofile syntax: PROTO3
 
-package edu.uci.ics.texera.web.workflowresultstate
+package edu.uci.ics.texera.web.workflowcachestate
 
-object WorkflowresultstateProto extends _root_.scalapb.GeneratedFileObject {
+object WorkflowcachestateProto extends _root_.scalapb.GeneratedFileObject {
   lazy val dependencies: Seq[_root_.scalapb.GeneratedFileObject] = Seq(
     scalapb.options.ScalapbProto
   )
   lazy val messagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]] =
     Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]](
-      edu.uci.ics.texera.web.workflowresultstate.WorkflowResultStore,
-      edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata
+      edu.uci.ics.texera.web.workflowcachestate.WorkflowCacheStore
     )
   private lazy val ProtoBytes: _root_.scala.Array[Byte] =
       scalapb.Encoding.fromBase64(scala.collection.immutable.Seq(
-  """CixlZHUvdWNpL2ljcy90ZXhlcmEvd29ya2Zsb3dyZXN1bHRzdGF0ZS5wcm90bxIWZWR1LnVjaS5pY3MudGV4ZXJhLndlYhoVc
-  2NhbGFwYi9zY2FsYXBiLnByb3RvIpQCChNXb3JrZmxvd1Jlc3VsdFN0b3JlEnUKDW9wZXJhdG9yX2luZm8YASADKAsyPS5lZHUud
-  WNpLmljcy50ZXhlcmEud2ViLldvcmtmbG93UmVzdWx0U3RvcmUuT3BlcmF0b3JJbmZvRW50cnlCEeI/DhIMb3BlcmF0b3JJbmZvU
-  gxvcGVyYXRvckluZm8ahQEKEU9wZXJhdG9ySW5mb0VudHJ5EhoKA2tleRgBIAEoCUII4j8FEgNrZXlSA2tleRJQCgV2YWx1ZRgCI
-  AEoCzIuLmVkdS51Y2kuaWNzLnRleGVyYS53ZWIuT3BlcmF0b3JSZXN1bHRNZXRhZGF0YUIK4j8HEgV2YWx1ZVIFdmFsdWU6AjgBI
-  koKFk9wZXJhdG9yUmVzdWx0TWV0YWRhdGESMAoLdHVwbGVfY291bnQYASABKAVCD+I/DBIKdHVwbGVDb3VudFIKdHVwbGVDb3Vud
-  EIJ4j8GSABYAHgAYgZwcm90bzM="""
+  """CitlZHUvdWNpL2ljcy90ZXhlcmEvd29ya2Zsb3djYWNoZXN0YXRlLnByb3RvEhZlZHUudWNpLmljcy50ZXhlcmEud2ViGhVzY
+  2FsYXBiL3NjYWxhcGIucHJvdG8ihQIKEldvcmtmbG93Q2FjaGVTdG9yZRJ0Cg1vcGVyYXRvcl9pbmZvGAEgAygLMjwuZWR1LnVja
+  S5pY3MudGV4ZXJhLndlYi5Xb3JrZmxvd0NhY2hlU3RvcmUuT3BlcmF0b3JJbmZvRW50cnlCEeI/DhIMb3BlcmF0b3JJbmZvUgxvc
+  GVyYXRvckluZm8aeQoRT3BlcmF0b3JJbmZvRW50cnkSGgoDa2V5GAEgASgJQgjiPwUSA2tleVIDa2V5EkQKBXZhbHVlGAIgASgOM
+  iIuZWR1LnVjaS5pY3MudGV4ZXJhLndlYi5DYWNoZVN0YXRlQgriPwcSBXZhbHVlUgV2YWx1ZToCOAEqJAoKQ2FjaGVTdGF0ZRIJC
+  gVWQUxJRBAAEgsKB0lOVkFMSUQQAUIJ4j8GSABYAHgAYgZwcm90bzM="""
       ).mkString)
   lazy val scalaDescriptor: _root_.scalapb.descriptors.FileDescriptor = {
     val scalaProto = com.google.protobuf.descriptor.FileDescriptorProto.parseFrom(ProtoBytes)

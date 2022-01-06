@@ -3,10 +3,8 @@ package edu.uci.ics.texera.web
 import java.time.{LocalDateTime, Duration => JDuration}
 import akka.actor.Cancellable
 import com.typesafe.scalalogging.LazyLogging
-import edu.uci.ics.texera.web.service.WorkflowJobService
 import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState
 import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState.RUNNING
-import rx.lang.scala.Subscription
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
@@ -14,7 +12,6 @@ class WorkflowLifecycleManager(wid: String, cleanUpTimeout: Int, cleanUpCallback
     extends LazyLogging {
   private var userCount = 0
   private var cleanUpJob: Cancellable = Cancellable.alreadyCancelled
-  private var statusUpdateSubscription: Subscription = Subscription()
 
   private[this] def setCleanUpDeadline(status: WorkflowAggregatedState): Unit = {
     synchronized {
@@ -47,7 +44,6 @@ class WorkflowLifecycleManager(wid: String, cleanUpTimeout: Int, cleanUpCallback
         logger.info(s"[$wid] workflow state clean up failed. current user count = $userCount")
       } else {
         cleanUpJob.cancel()
-        statusUpdateSubscription.unsubscribe()
         cleanUpCallback()
         logger.info(s"[$wid] workflow state clean up completed.")
       }
@@ -62,24 +58,20 @@ class WorkflowLifecycleManager(wid: String, cleanUpTimeout: Int, cleanUpCallback
     }
   }
 
-  def decreaseUserCount(currentWorkflowState: Option[WorkflowAggregatedState]): Unit = {
+  def decreaseUserCount(currentWorkflowState: WorkflowAggregatedState): Unit = {
     synchronized {
       userCount -= 1
-      if (userCount == 0 && currentWorkflowState.exists(_ != RUNNING)) {
+      if (userCount == 0 && currentWorkflowState != RUNNING) {
         refreshDeadline()
       } else {
-        logger.info(s"[$wid] workflow state clean up postponed. current user count = $refCount")
+        logger.info(s"[$wid] workflow state clean up postponed. current user count = $userCount")
       }
     }
   }
 
-  def connectJobService(executionState: WorkflowJobService): Unit = {
-    statusUpdateSubscription.unsubscribe()
+  def registerCleanUpOnStateChange(stateStore: WorkflowStateStore): Unit = {
     cleanUpJob.cancel()
-    statusUpdateSubscription =
-      executionState.workflowRuntimeService.getJobStatusObservable.subscribe(status =>
-        setCleanUpDeadline(status)
-      )
+    stateStore.jobStateStore.onChanged((_, newState) => setCleanUpDeadline(newState.state))
   }
 
 }

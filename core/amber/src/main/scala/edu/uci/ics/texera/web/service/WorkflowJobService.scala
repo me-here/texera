@@ -1,10 +1,18 @@
 package edu.uci.ics.texera.web.service
 
 import com.typesafe.scalalogging.LazyLogging
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.ModifyLogicHandler.ModifyLogic
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.StartWorkflowHandler.StartWorkflow
 import edu.uci.ics.amber.engine.architecture.controller.{ControllerConfig, Workflow}
 import edu.uci.ics.amber.engine.common.client.AmberClient
 import edu.uci.ics.amber.engine.common.virtualidentity.WorkflowIdentity
-import edu.uci.ics.texera.web.{ObserverManager, TexeraWebApplication}
+import edu.uci.ics.texera.web.{
+  SubscriptionManager,
+  TexeraWebApplication,
+  WebsocketInput,
+  WebsocketOutput,
+  WorkflowStateStore
+}
 import edu.uci.ics.texera.web.model.websocket.event.{TexeraWebSocketEvent, WorkflowErrorEvent}
 import edu.uci.ics.texera.web.model.websocket.request.{
   CacheStatusUpdateRequest,
@@ -14,6 +22,7 @@ import edu.uci.ics.texera.web.model.websocket.request.{
 }
 import edu.uci.ics.texera.web.model.websocket.response.ResultExportResponse
 import edu.uci.ics.texera.web.resource.WorkflowWebsocketResource
+import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState.{READY, RUNNING}
 import edu.uci.ics.texera.workflow.common.WorkflowContext
 import edu.uci.ics.texera.workflow.common.storage.OpResultStorage
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler.ConstraintViolationException
@@ -24,46 +33,64 @@ import edu.uci.ics.texera.workflow.common.workflow.{
   WorkflowRewriter
 }
 import org.jooq.types.UInteger
+import rx.lang.scala.Subject
 
 class WorkflowJobService(
-    subscriptionManager: ObserverManager[TexeraWebSocketEvent],
+    stateStore: WorkflowStateStore,
+    wsInput: WebsocketInput,
+    wsOutput: WebsocketOutput,
     operatorCache: WorkflowCacheService,
     resultService: JobResultService,
     uidOpt: Option[UInteger],
     request: WorkflowExecuteRequest
-) extends LazyLogging {
+) extends SubscriptionManager
+    with LazyLogging {
 
   // Compilation starts from here:
-  val workflowContext: WorkflowContext = createWorkflowContext()
-  val workflowInfo: WorkflowInfo = createWorkflowInfo(workflowContext)
-  val workflowCompiler: WorkflowCompiler = createWorkflowCompiler(workflowInfo, workflowContext)
-  val workflow: Workflow = workflowCompiler.amberWorkflow(
+  var workflowContext: WorkflowContext = createWorkflowContext()
+  var workflowInfo: WorkflowInfo = createWorkflowInfo(workflowContext)
+  var workflowCompiler: WorkflowCompiler = createWorkflowCompiler(workflowInfo, workflowContext)
+  var workflow: Workflow = workflowCompiler.amberWorkflow(
     WorkflowIdentity(workflowContext.jobId),
     resultService.opResultStorage
   )
 
   // Runtime starts from here:
-  val client: AmberClient =
+  var client: AmberClient =
     TexeraWebApplication.createAmberRuntime(
       workflow,
       ControllerConfig.default,
       t => {
         t.printStackTrace()
-        subscriptionManager.pushToObservers(
+        wsOutput.onNext(
           WorkflowErrorEvent(generalErrors =
             Map("exception" -> (t.getMessage + "\n" + t.getStackTrace.mkString("\n")))
           )
         )
       }
     )
-  val workflowRuntimeService: JobRuntimeService = new JobRuntimeService(client, subscriptionManager)
+  val jobBreakpointService = new JobBreakpointService(client, stateStore, wsOutput)
+  val jobStatsService = new JobStatsService(client, stateStore, wsOutput)
+  val jobRuntimeService =
+    new JobRuntimeService(client, stateStore, wsInput, wsOutput, jobBreakpointService)
+  val jobPythonService =
+    new JobPythonService(client, stateStore, wsInput, wsOutput, jobBreakpointService)
+
+  addSubscription(wsInput.subscribe((req: ModifyLogicRequest, uidOpt) => {
+    workflowCompiler.initOperator(req.operator)
+    client.sendAsync(ModifyLogic(req.operator))
+  }))
 
   def startWorkflow(): Unit = {
     for (pair <- workflowInfo.breakpoints) {
-      workflowRuntimeService.addBreakpoint(pair.operatorID, pair.breakpoint)
+      jobBreakpointService.addBreakpoint(pair.operatorID, pair.breakpoint)
     }
     resultService.attachToJob(workflowInfo, client)
-    workflowRuntimeService.startWorkflow()
+    val f = client.sendAsync(StartWorkflow())
+    stateStore.jobStateStore.updateState(jobInfo => jobInfo.withState(READY))
+    f.onSuccess { _ =>
+      stateStore.jobStateStore.updateState(jobInfo => jobInfo.withState(RUNNING))
+    }
   }
 
   private[this] def createWorkflowContext(): WorkflowContext = {
@@ -122,9 +149,12 @@ class WorkflowJobService(
     compiler
   }
 
-  def modifyLogic(request: ModifyLogicRequest): Unit = {
-    workflowCompiler.initOperator(request.operator)
-    workflowRuntimeService.modifyLogic(request.operator)
+  override def unsubscribeAll(): Unit = {
+    super.unsubscribeAll()
+    jobBreakpointService.unsubscribeAll()
+    jobRuntimeService.unsubscribeAll()
+    jobPythonService.unsubscribeAll()
+    jobStatsService.unsubscribeAll()
   }
 
 }

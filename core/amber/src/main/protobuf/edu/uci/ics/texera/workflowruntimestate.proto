@@ -24,7 +24,6 @@ enum WorkflowAggregatedState {
 }
 
 message BreakpointEvent{
-
   message BreakpointTuple{
     int64 id = 1;
     bool is_input = 2;
@@ -36,22 +35,35 @@ message BreakpointEvent{
   repeated string breakpoint_info = 3;
 }
 
+message OperatorBreakpoints{
+  repeated BreakpointEvent unresolved_breakpoints = 1;
+}
+
+message JobBreakpointStore{
+  map<string,OperatorBreakpoints> operator_info = 1;
+}
+
+
+message PythonOperatorInfo{
+  repeated string console_messages = 1;
+}
+
+message JobPythonStore{
+  map<string, PythonOperatorInfo> operator_info = 1;
+}
+
+
 message OperatorRuntimeStats{
   WorkflowAggregatedState state = 1;
   int64 input_count = 2;
   int64 output_count = 3;
 }
 
-
-message OperatorRuntimeInfo{
-  OperatorRuntimeStats stats = 1;
-  repeated BreakpointEvent unresolved_breakpoints = 2;
-  repeated string python_console_messages = 3;
+message JobStatsStore {
+  map<string,OperatorRuntimeStats> operator_info = 3;
 }
 
-
-message WorkflowJobRuntimeInfo {
+message JobStateStore{
   WorkflowAggregatedState state = 1;
   string error = 2;
-  map<string,OperatorRuntimeInfo> operator_info = 3;
 }

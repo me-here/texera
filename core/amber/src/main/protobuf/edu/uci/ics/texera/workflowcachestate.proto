@@ -10,12 +10,11 @@ option (scalapb.options) = {
   no_default_values_in_constructor: false
 };
 
-
-message WorkflowResultStore{
-  map<string,OperatorResultMetadata> operator_info = 1;
+enum CacheState{
+  VALID = 0;
+  INVALID = 1;
 }
 
-
-message OperatorResultMetadata{
-  int32 tuple_count = 1;
+message WorkflowCacheStore{
+  map<string, CacheState> operator_info = 1;
 }

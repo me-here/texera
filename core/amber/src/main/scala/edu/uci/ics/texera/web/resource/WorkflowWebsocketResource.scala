@@ -3,12 +3,7 @@ package edu.uci.ics.texera.web.resource
 import java.util.concurrent.atomic.AtomicInteger
 import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.texera.Utils
-import edu.uci.ics.texera.web.{
-  ServletAwareConfigurator,
-  SessionState,
-  SessionStateManager,
-  ObserverManager
-}
+import edu.uci.ics.texera.web.{ServletAwareConfigurator, SessionState, SessionStateManager}
 import edu.uci.ics.texera.web.model.jooq.generated.tables.pojos.User
 import edu.uci.ics.texera.web.model.websocket.event.{
   TexeraWebSocketEvent,
@@ -21,6 +16,7 @@ import edu.uci.ics.texera.web.model.websocket.response._
 import edu.uci.ics.texera.web.service.{WorkflowCacheService, WorkflowService}
 import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState
 import edu.uci.ics.texera.workflow.common.workflow.WorkflowCompiler.ConstraintViolationException
+import rx.lang.scala.{Observable, Subject}
 
 import javax.websocket._
 import javax.websocket.server.ServerEndpoint
@@ -82,43 +78,6 @@ class WorkflowWebsocketResource extends LazyLogging {
           send(session, RegisterWIdResponse("wid registered"))
         case heartbeat: HeartBeatRequest =>
           send(session, HeartBeatResponse())
-        case execute: WorkflowExecuteRequest =>
-          println(execute)
-          try {
-            workflowStateOpt.get.initJobService(execute, uidOpt)
-          } catch {
-            case x: ConstraintViolationException =>
-              send(session, WorkflowErrorEvent(operatorErrors = x.violations))
-            case other: Exception => throw other
-          }
-        case newLogic: ModifyLogicRequest =>
-          workflowStateOpt.foreach(_.jobService.foreach(_.modifyLogic(newLogic)))
-        case pause: WorkflowPauseRequest =>
-          workflowStateOpt.foreach(
-            _.jobService.foreach(_.workflowRuntimeService.pauseWorkflow())
-          )
-        case resume: WorkflowResumeRequest =>
-          workflowStateOpt.foreach(
-            _.jobService.foreach(_.workflowRuntimeService.resumeWorkflow())
-          )
-        case kill: WorkflowKillRequest =>
-          workflowStateOpt.foreach(
-            _.jobService.foreach(_.workflowRuntimeService.killWorkflow())
-          )
-        case skipTupleMsg: SkipTupleRequest =>
-          workflowStateOpt.foreach(
-            _.jobService.foreach(_.workflowRuntimeService.skipTuple(skipTupleMsg))
-          )
-        case retryRequest: RetryRequest =>
-          workflowStateOpt.foreach(
-            _.jobService.foreach(_.workflowRuntimeService.retryWorkflow())
-          )
-        case req: AddBreakpointRequest =>
-          workflowStateOpt.foreach(
-            _.jobService.foreach(
-              _.workflowRuntimeService.addBreakpoint(req.operatorID, req.breakpoint)
-            )
-          )
         case paginationRequest: ResultPaginationRequest =>
           workflowStateOpt.foreach(state =>
             send(session, state.resultService.handleResultPagination(paginationRequest))
@@ -127,18 +86,27 @@ class WorkflowWebsocketResource extends LazyLogging {
           workflowStateOpt.foreach(state =>
             send(session, state.exportService.exportResult(uidOpt.get, resultExportRequest))
           )
-        case cacheStatusUpdateRequest: CacheStatusUpdateRequest =>
-          if (WorkflowCacheService.isAvailable) {
-            workflowStateOpt.foreach(_.operatorCache.updateCacheStatus(cacheStatusUpdateRequest))
+        case other =>
+          workflowStateOpt match {
+            case Some(workflow) => workflow.wsInput.onNext(other, uidOpt)
+            case None           => throw new IllegalStateException("workflow is not initialized")
           }
-        case pythonExpressionEvaluateRequest: PythonExpressionEvaluateRequest =>
-          workflowStateOpt.foreach(
-            _.jobService.foreach(
-              _.workflowRuntimeService.evaluatePythonExpression(pythonExpressionEvaluateRequest)
-            )
-          )
+
+//        case req: AddBreakpointRequest =>
+//          workflowStateOpt.foreach(
+//            _.jobService.foreach(
+//              _.jobRuntimeService.addBreakpoint(req.operatorID, req.breakpoint)
+//            )
+//          )
+//
+//        case cacheStatusUpdateRequest: CacheStatusUpdateRequest =>
+//          if (WorkflowCacheService.isAvailable) {
+//            workflowStateOpt.foreach(_.operatorCache.updateCacheStatus(cacheStatusUpdateRequest))
+//          }
       }
     } catch {
+      case x: ConstraintViolationException =>
+        send(session, WorkflowErrorEvent(operatorErrors = x.violations))
       case err: Exception =>
         send(
           session,

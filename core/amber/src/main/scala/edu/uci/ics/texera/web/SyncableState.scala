@@ -1,33 +1,60 @@
 package edu.uci.ics.texera.web
 
-abstract class SyncableState[T, U] {
+import rx.lang.scala.Subscription
 
-  private var state: T = defaultState
+import java.util.concurrent.locks.ReentrantLock
+import scala.collection.mutable
+
+class SyncableState[T](defaultStateGen: => T) {
+
+  private var state: T = defaultStateGen
   private var isModifying = false
+  private var callbackId = 0
+  private var onChangedCallbacks = mutable.HashMap[Int, (T, T) => Unit]()
+  private val lock = new ReentrantLock()
 
-  def defaultState: T
+  def getStateThenConsume[X](next: T => X): X = {
+    withLock {
+      next(state)
+    }
+  }
 
-  def getStateThenConsume[X](next: T => X): X = next(state)
+  def acquireLock(): Unit = lock.lock()
+  def releaseLock(): Unit = lock.unlock()
 
-  def modifyState(func: T => T): Unit = {
-    synchronized {
-      assert(!isModifying, "Cannot recursively modify state or modify state inside computeDiff")
+  private def withLock[X](code: => X): X = {
+    acquireLock()
+    val result = code
+    releaseLock()
+    result
+  }
+
+  def updateState(func: T => T): Unit = {
+    withLock {
+      assert(!isModifying, "Cannot recursively update state or update state inside onChanged")
       isModifying = true
       val newState = func(state)
-      computeDiff(state, newState).foreach(delta => subscriptionManager.pushToObservers(delta))
+      onChangedCallbacks.values.foreach(callback => callback(state, newState))
       isModifying = false
       state = newState
     }
   }
 
-  def subscriptionManager: ObserverManager[U]
+  def onChanged(callback: (T, T) => Unit): Subscription = {
+    withLock {
+      onChangedCallbacks(callbackId) = callback
+      val id = callbackId
+      val sub = Subscription {
+        onChangedCallbacks.remove(id)
+      }
+      callbackId += 1
+      sub
+    }
+  }
 
-  def computeDiff(oldState: T, newState: T): Array[U]
-
-  // To make sure the state is accessed synchronously
-  def computeSnapshotThenConsume(next: Array[U] => Unit): Unit = {
-    synchronized {
-      next(computeDiff(defaultState, state))
+  def sendSnapshot(): Unit = {
+    withLock {
+      onChangedCallbacks.values.foreach(callback => callback(defaultStateGen, state))
     }
   }
 

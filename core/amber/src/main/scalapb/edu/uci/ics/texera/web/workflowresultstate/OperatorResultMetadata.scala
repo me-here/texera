@@ -6,9 +6,9 @@
 package edu.uci.ics.texera.web.workflowresultstate
 
 @SerialVersionUID(0L)
-final case class OperatorResultInfo(
+final case class OperatorResultMetadata(
     tupleCount: _root_.scala.Int = 0
-    ) extends scalapb.GeneratedMessage with scalapb.lenses.Updatable[OperatorResultInfo] {
+    ) extends scalapb.GeneratedMessage with scalapb.lenses.Updatable[OperatorResultMetadata] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
     private[this] def __computeSerializedValue(): _root_.scala.Int = {
@@ -38,7 +38,7 @@ final case class OperatorResultInfo(
         }
       };
     }
-    def withTupleCount(__v: _root_.scala.Int): OperatorResultInfo = copy(tupleCount = __v)
+    def withTupleCount(__v: _root_.scala.Int): OperatorResultMetadata = copy(tupleCount = __v)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => {
@@ -54,13 +54,13 @@ final case class OperatorResultInfo(
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToSingleLineUnicodeString(this)
-    def companion = edu.uci.ics.texera.web.workflowresultstate.OperatorResultInfo
-    // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.texera.web.OperatorResultInfo])
+    def companion = edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata
+    // @@protoc_insertion_point(GeneratedMessage[edu.uci.ics.texera.web.OperatorResultMetadata])
 }
 
-object OperatorResultInfo extends scalapb.GeneratedMessageCompanion[edu.uci.ics.texera.web.workflowresultstate.OperatorResultInfo] {
-  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[edu.uci.ics.texera.web.workflowresultstate.OperatorResultInfo] = this
-  def parseFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): edu.uci.ics.texera.web.workflowresultstate.OperatorResultInfo = {
+object OperatorResultMetadata extends scalapb.GeneratedMessageCompanion[edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata] {
+  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata] = this
+  def parseFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata = {
     var __tupleCount: _root_.scala.Int = 0
     var _done__ = false
     while (!_done__) {
@@ -72,14 +72,14 @@ object OperatorResultInfo extends scalapb.GeneratedMessageCompanion[edu.uci.ics.
         case tag => _input__.skipField(tag)
       }
     }
-    edu.uci.ics.texera.web.workflowresultstate.OperatorResultInfo(
+    edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata(
         tupleCount = __tupleCount
     )
   }
-  implicit def messageReads: _root_.scalapb.descriptors.Reads[edu.uci.ics.texera.web.workflowresultstate.OperatorResultInfo] = _root_.scalapb.descriptors.Reads{
+  implicit def messageReads: _root_.scalapb.descriptors.Reads[edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata] = _root_.scalapb.descriptors.Reads{
     case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
       _root_.scala.Predef.require(__fieldsMap.keys.forall(_.containingMessage eq scalaDescriptor), "FieldDescriptor does not match message type.")
-      edu.uci.ics.texera.web.workflowresultstate.OperatorResultInfo(
+      edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata(
         tupleCount = __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[_root_.scala.Int]).getOrElse(0)
       )
     case _ => throw new RuntimeException("Expected PMessage")
@@ -89,17 +89,17 @@ object OperatorResultInfo extends scalapb.GeneratedMessageCompanion[edu.uci.ics.
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = throw new MatchError(__number)
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
-  lazy val defaultInstance = edu.uci.ics.texera.web.workflowresultstate.OperatorResultInfo(
+  lazy val defaultInstance = edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata(
     tupleCount = 0
   )
-  implicit class OperatorResultInfoLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.texera.web.workflowresultstate.OperatorResultInfo]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, edu.uci.ics.texera.web.workflowresultstate.OperatorResultInfo](_l) {
+  implicit class OperatorResultMetadataLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata](_l) {
     def tupleCount: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Int] = field(_.tupleCount)((c_, f_) => c_.copy(tupleCount = f_))
   }
   final val TUPLE_COUNT_FIELD_NUMBER = 1
   def of(
     tupleCount: _root_.scala.Int
-  ): _root_.edu.uci.ics.texera.web.workflowresultstate.OperatorResultInfo = _root_.edu.uci.ics.texera.web.workflowresultstate.OperatorResultInfo(
+  ): _root_.edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata = _root_.edu.uci.ics.texera.web.workflowresultstate.OperatorResultMetadata(
     tupleCount
   )
-  // @@protoc_insertion_point(GeneratedMessageCompanion[edu.uci.ics.texera.web.OperatorResultInfo])
+  // @@protoc_insertion_point(GeneratedMessageCompanion[edu.uci.ics.texera.web.OperatorResultMetadata])
 }
