@@ -1,10 +1,17 @@
 import queue
 import threading
+from overrides import overrides
+from threading import Condition
 from typing import T
 
-from overrides import overrides
-
 from core.util.customized_queue.queue_base import IQueue
+
+
+class DiscardableItem:
+    pass
+
+
+c = Condition()
 
 
 class DoubleBlockingQueue(IQueue):
@@ -54,6 +61,7 @@ class DoubleBlockingQueue(IQueue):
         :return: any type
         """
         self._enforce_single_consumer()
+
         while True:
             if not self._main_queue.empty():
                 return self._main_queue.get()
@@ -61,6 +69,9 @@ class DoubleBlockingQueue(IQueue):
                 return self._sub_queue.get()
             else:
                 self._distribute_next()
+                if self.empty():
+                    with c:
+                        c.wait()
 
     @overrides
     def put(self, item: T) -> None:
@@ -69,6 +80,8 @@ class DoubleBlockingQueue(IQueue):
         :param item: any type
         """
         self._input_queue.put(item)
+        with c:
+            c.notify()
 
     def main_empty(self) -> bool:
         """
