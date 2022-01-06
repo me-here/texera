@@ -6,7 +6,7 @@ import rx.lang.scala.{Subject, Subscription}
 
 import scala.reflect.{ClassTag, classTag}
 
-class WebsocketInput {
+class WebsocketInput(errorHandler: Throwable => Unit) {
   private val wsInput = Subject[(TexeraWebSocketRequest, Option[UInteger])]
   def subscribe[T <: TexeraWebSocketRequest: ClassTag](
       callback: (T, Option[UInteger]) => Unit
@@ -14,7 +14,12 @@ class WebsocketInput {
     wsInput.subscribe(evt => {
       evt._1 match {
         case req: T if classTag[T].runtimeClass.isInstance(req) =>
-          callback(req, evt._2)
+          try {
+            callback(req, evt._2)
+          } catch {
+            case throwable: Throwable =>
+              errorHandler(throwable)
+          }
         case _ =>
       }
     })

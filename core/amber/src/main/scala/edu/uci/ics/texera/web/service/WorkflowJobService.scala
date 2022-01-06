@@ -42,7 +42,8 @@ class WorkflowJobService(
     operatorCache: WorkflowCacheService,
     resultService: JobResultService,
     uidOpt: Option[UInteger],
-    request: WorkflowExecuteRequest
+    request: WorkflowExecuteRequest,
+    errorHandler: Throwable => Unit
 ) extends SubscriptionManager
     with LazyLogging {
 
@@ -60,14 +61,7 @@ class WorkflowJobService(
     TexeraWebApplication.createAmberRuntime(
       workflow,
       ControllerConfig.default,
-      t => {
-        t.printStackTrace()
-        wsOutput.onNext(
-          WorkflowErrorEvent(generalErrors =
-            Map("exception" -> (t.getMessage + "\n" + t.getStackTrace.mkString("\n")))
-          )
-        )
-      }
+      errorHandler
     )
   val jobBreakpointService = new JobBreakpointService(client, stateStore, wsOutput)
   val jobStatsService = new JobStatsService(client, stateStore, wsOutput)
@@ -85,6 +79,7 @@ class WorkflowJobService(
     for (pair <- workflowInfo.breakpoints) {
       jobBreakpointService.addBreakpoint(pair.operatorID, pair.breakpoint)
     }
+    throw new RuntimeException("123")
     resultService.attachToJob(workflowInfo, client)
     val f = client.sendAsync(StartWorkflow())
     stateStore.jobStateStore.updateState(jobInfo => jobInfo.withState(READY))

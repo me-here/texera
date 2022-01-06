@@ -3,20 +3,9 @@ package edu.uci.ics.texera.web.service
 import java.util.concurrent.ConcurrentHashMap
 import com.typesafe.scalalogging.LazyLogging
 import edu.uci.ics.amber.engine.common.AmberUtils
-import edu.uci.ics.texera.web.model.websocket.event.TexeraWebSocketEvent
-import edu.uci.ics.texera.web.{
-  SubscriptionManager,
-  TexeraWebApplication,
-  WebsocketInput,
-  WebsocketOutput,
-  WorkflowLifecycleManager,
-  WorkflowStateStore
-}
-import edu.uci.ics.texera.web.model.websocket.request.{
-  TexeraWebSocketRequest,
-  WorkflowExecuteRequest,
-  WorkflowKillRequest
-}
+import edu.uci.ics.texera.web.model.websocket.event.{TexeraWebSocketEvent, WorkflowErrorEvent, WorkflowExecutionErrorEvent}
+import edu.uci.ics.texera.web.{SubscriptionManager, TexeraWebApplication, WebsocketInput, WebsocketOutput, WorkflowLifecycleManager, WorkflowStateStore}
+import edu.uci.ics.texera.web.model.websocket.request.{TexeraWebSocketRequest, WorkflowExecuteRequest, WorkflowKillRequest}
 import edu.uci.ics.texera.workflow.common.storage.OpResultStorage
 import org.jooq.types.UInteger
 import rx.lang.scala.subjects.BehaviorSubject
@@ -49,8 +38,16 @@ class WorkflowService(
   var opResultStorage: OpResultStorage = new OpResultStorage(
     AmberUtils.amberConfig.getString("storage.mode").toLowerCase
   )
-  val wsInput = new WebsocketInput()
+  val errorHandler: Throwable => Unit = { t =>
+    {
+      t.printStackTrace()
+      wsOutput.onNext(
+        WorkflowExecutionErrorEvent(t.getStackTrace.mkString("\n"))
+      )
+    }
+  }
   val wsOutput = new WebsocketOutput()
+  val wsInput = new WebsocketInput(errorHandler)
   val stateStore = new WorkflowStateStore(wsOutput)
   val resultService: JobResultService =
     new JobResultService(opResultStorage, stateStore, wsOutput)
@@ -96,7 +93,8 @@ class WorkflowService(
       operatorCache,
       resultService,
       uidOpt,
-      req
+      req,
+      errorHandler
     )
     lifeCycleManager.registerCleanUpOnStateChange(stateStore)
     jobService = Some(job)
