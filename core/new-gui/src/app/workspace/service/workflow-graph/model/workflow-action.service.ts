@@ -51,17 +51,18 @@ type GroupInfo = {
 // At least for some of them, have to do a bit more thinking.
 
 export type commandFuncs =
-  | "enableWorkflowModification"
-  | "disableWorkflowModification"
   | "addOperator"
   | "deleteOperator"
   | "addOperatorsAndLinks"
   | "deleteOperatorsAndLinks"
+  | "changeOperatorPosition"
+  | "handleHighlightedElementPositionChange"
   | "autoLayoutWorkflow"
   | "setOperatorProperty"
   | "addLink"
   | "deleteLink"
-  | "deleteLinkWithID";
+  | "deleteLinkWithID"
+  | "resetAsNewWorkflow";
 
 // keyof yields permitted property names for T. When we pass function, it'll return value of that function?
 // For this type, we index T with the property names for T, which results in us getting the values.
@@ -79,14 +80,15 @@ type ValueOf<T> = T[keyof T];
 
 // P in keyof Pick: P will be one of the properties that exists in there(set of properties from service).
 // If we have a name in commandFuncs that doesn't match a property in service, we get error. P picks one of them
-export type CommandMessage = ValueOf<{
-  [P in keyof Pick<WorkflowActionService, commandFuncs>]:
+export type CommandMessage = ValueOf<
   {
-    action: P;
-    parameters: Parameters<WorkflowActionService[P]>;
-    type: string;
+    [P in keyof Pick<WorkflowActionService, commandFuncs>]: {
+      action: P;
+      parameters: Parameters<WorkflowActionService[P]>;
+      type: string;
+    };
   }
-}>;
+>;
 
 /**
  *
@@ -276,6 +278,14 @@ export class WorkflowActionService {
             });
           },
         };
+        // Send command message here since this is where change first gets detected
+        const currentHighlighted = Array.from(currentHighlightedOperators);
+        const commandMessage: CommandMessage = {
+          action: "changeOperatorPosition",
+          parameters: [currentHighlighted, offsetX, offsetY],
+          type: "execute",
+        };
+        this.sendCommand(JSON.stringify(commandMessage));
         this.executeAndStoreCommand(command);
       });
   }
@@ -329,6 +339,12 @@ export class WorkflowActionService {
         this.jointGraphWrapper.setListenPositionChange(true);
         this.undoRedoService.setListenJointCommand(true);
       });
+    // const commandMessage: CommandMessage = {
+    //   action: "handleHighlightedElementPositionChange",
+    //   parameters: [],
+    //   type: "execute",
+    // };
+    // this.sendCommand(JSON.stringify(commandMessage));
   }
 
   /**
@@ -686,6 +702,8 @@ export class WorkflowActionService {
         });
       },
     };
+    const commandMessage: CommandMessage = { action: "autoLayoutWorkflow", parameters: [], type: "execute" };
+    this.sendCommand(JSON.stringify(commandMessage));
     this.executeAndStoreCommand(command);
   }
 
@@ -700,6 +718,8 @@ export class WorkflowActionService {
       execute: () => this.addLinkInternal(link),
       undo: () => this.deleteLinkWithIDInternal(link.linkID),
     };
+    const commandMessage: CommandMessage = { action: "addLink", parameters: [link], type: "execute" };
+    this.sendCommand(JSON.stringify(commandMessage));
     this.executeAndStoreCommand(command);
   }
 
@@ -727,6 +747,8 @@ export class WorkflowActionService {
         }
       },
     };
+    const commandMessage: CommandMessage = { action: "deleteLinkWithID", parameters: [linkID], type: "execute" };
+    this.sendCommand(JSON.stringify(commandMessage));
     this.executeAndStoreCommand(command);
   }
 
@@ -882,6 +904,25 @@ export class WorkflowActionService {
           this.jointGraphWrapper.unhighlightOperators(...currentHighlightedOperators);
           this.jointGraphWrapper.unhighlightGroups(...this.jointGraphWrapper.getCurrentHighlightedGroupIDs());
         }
+      },
+    };
+    const commandMessage: CommandMessage = {
+      action: "setOperatorProperty",
+      parameters: [operatorID, newProperty],
+      type: "execute",
+    };
+    this.sendCommand(JSON.stringify(commandMessage));
+    this.executeAndStoreCommand(command);
+  }
+
+  public changeOperatorPosition(currentHighlighted: string[], offsetX: number, offsetY: number) {
+    const command: Command = {
+      modifiesWorkflow: false,
+      execute: () => {
+        this.changeOperatorPositionInternal(currentHighlighted, offsetX, offsetY);
+      },
+      undo: () => {
+        this.changeOperatorPositionInternal(currentHighlighted, -offsetX, -offsetY);
       },
     };
     this.executeAndStoreCommand(command);
@@ -1055,6 +1096,12 @@ export class WorkflowActionService {
     this.reloadWorkflow(undefined);
     this.undoRedoService.clearUndoStack();
     this.undoRedoService.clearRedoStack();
+    const commandMessage: CommandMessage = {
+      action: "resetAsNewWorkflow",
+      parameters: [],
+      type: "execute",
+    };
+    this.sendCommand(JSON.stringify(commandMessage));
   }
 
   private addOperatorInternal(operator: OperatorPredicate, point: Point): void {
@@ -1205,6 +1252,14 @@ export class WorkflowActionService {
   // use this to modify properties
   private setOperatorPropertyInternal(operatorID: string, newProperty: object) {
     this.texeraGraph.setOperatorProperty(operatorID, newProperty);
+  }
+
+  private changeOperatorPositionInternal(currentHighlighted: string[], offsetX: number, offsetY: number) {
+    this.jointGraphWrapper.setMultiSelectMode(currentHighlighted.length > 1);
+    currentHighlighted.forEach(operatorID => {
+      this.jointGraphWrapper.highlightOperators(operatorID);
+      this.jointGraphWrapper.setElementPosition(operatorID, offsetX, offsetY);
+    });
   }
 
   private executeAndStoreCommand(command: Command): void {
