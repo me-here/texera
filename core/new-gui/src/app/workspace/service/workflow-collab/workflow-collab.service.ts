@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
-import { webSocket } from 'rxjs/webSocket';
-import { CommandMessage} from '../workflow-graph/model/workflow-action.service';
-import { environment } from '../../../../environments/environment';
-import { Subject, Observable } from 'rxjs';
+import { Injectable } from "@angular/core";
+import { webSocket } from "rxjs/webSocket";
+import { CommandMessage } from "../workflow-graph/model/workflow-action.service";
+import { environment } from "../../../../environments/environment";
+import { Subject, Observable } from "rxjs";
 
 @Injectable({
   providedIn: "root",
