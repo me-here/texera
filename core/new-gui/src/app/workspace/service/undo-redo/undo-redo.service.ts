@@ -1,7 +1,8 @@
 import { Injectable } from "@angular/core";
 import { Observable, Subject } from "rxjs";
 import { assertType } from "../../../common/util/assert";
-import { Command } from "../workflow-graph/model/workflow-action.service";
+import { Command, CommandMessage } from "../workflow-graph/model/workflow-action.service";
+import { WorkflowCollabService } from "./../workflow-collab/workflow-collab.service";
 
 /* TODO LIST FOR BUGS
 1. Problem with repeatedly adding and deleting a link without letting go, unintended behavior
@@ -24,7 +25,9 @@ export class UndoRedoService {
   private canUndoStream = new Subject<boolean>();
   private canRedoStream = new Subject<boolean>();
 
-  constructor() {}
+  constructor(private workflowCollabService: WorkflowCollabService) {
+    this.handleRemoteChange();
+  }
 
   public enableWorkFlowModification() {
     this.workFlowModificationEnabled = true;
@@ -54,6 +57,8 @@ export class UndoRedoService {
       this.canUndoStream.next(this.canUndo());
 
       console.log("service can undo", this.canUndo());
+      const commandMessage: CommandMessage = { action: "deleteOperator", parameters: [""], type: "undo" };
+      this.sendCommand(JSON.stringify(commandMessage));
     }
   }
 
@@ -76,6 +81,8 @@ export class UndoRedoService {
       this.setListenJointCommand(true);
       this.canRedoStream.next(this.canRedo());
       console.log("service can redo", this.canRedo());
+      const commandMessage: CommandMessage = { action: "deleteOperator", parameters: [""], type: "redo" };
+      this.sendCommand(JSON.stringify(commandMessage));
     }
   }
 
@@ -124,5 +131,26 @@ export class UndoRedoService {
 
   public clearRedoStack(): void {
     this.redoStack = [];
+  }
+
+  private sendCommand(update: string): void {
+    if (this.workflowCollabService.getSendData()) {
+      this.workflowCollabService.sendCommand(update);
+    }
+  }
+
+  private handleRemoteChange(): void {
+    const self = this;
+    this.workflowCollabService.getCommandMessageStream().subscribe(message => {
+      if (message.type === "undo") {
+        self.workflowCollabService.setSendData(false);
+        self.undoAction();
+        self.workflowCollabService.setSendData(true);
+      } else if (message.type === "redo") {
+        self.workflowCollabService.setSendData(false);
+        self.redoAction();
+        self.workflowCollabService.setSendData(true);
+      }
+    });
   }
 }
