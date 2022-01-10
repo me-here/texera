@@ -56,7 +56,6 @@ export type commandFuncs =
   | "addOperatorsAndLinks"
   | "deleteOperatorsAndLinks"
   | "changeOperatorPosition"
-  | "handleHighlightedElementPositionChange"
   | "autoLayoutWorkflow"
   | "setOperatorProperty"
   | "addLink"
