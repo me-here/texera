@@ -37,9 +37,6 @@ export class WorkflowCollabService {
           const message = JSON.parse(response) as CommandMessage;
           self.messageSubject.next(message);
         },
-        error(err) {
-          throw new Error(err);
-        },
         complete() {
           console.log("websocket finished and disconnected");
         },
