@@ -339,12 +339,6 @@ export class WorkflowActionService {
         this.jointGraphWrapper.setListenPositionChange(true);
         this.undoRedoService.setListenJointCommand(true);
       });
-    // const commandMessage: CommandMessage = {
-    //   action: "handleHighlightedElementPositionChange",
-    //   parameters: [],
-    //   type: "execute",
-    // };
-    // this.sendCommand(JSON.stringify(commandMessage));
   }
 
   /**

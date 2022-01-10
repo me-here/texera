@@ -55,7 +55,7 @@ export class WorkspaceComponent implements AfterViewInit, OnDestroy {
     private location: Location,
     private route: ActivatedRoute,
     private operatorMetadataService: OperatorMetadataService,
-    private message: NzMessageService,
+    private message: NzMessageService
   ) {}
 
   ngAfterViewInit(): void {
