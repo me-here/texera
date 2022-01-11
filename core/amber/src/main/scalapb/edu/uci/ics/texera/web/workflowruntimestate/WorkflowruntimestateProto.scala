@@ -11,7 +11,7 @@ object WorkflowruntimestateProto extends _root_.scalapb.GeneratedFileObject {
   )
   lazy val messagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]] =
     Seq[_root_.scalapb.GeneratedMessageCompanion[_ <: _root_.scalapb.GeneratedMessage]](
-      edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent,
+      edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault,
       edu.uci.ics.texera.web.workflowruntimestate.OperatorBreakpoints,
       edu.uci.ics.texera.web.workflowruntimestate.JobBreakpointStore,
       edu.uci.ics.texera.web.workflowruntimestate.PythonOperatorInfo,
@@ -23,13 +23,13 @@ object WorkflowruntimestateProto extends _root_.scalapb.GeneratedFileObject {
   private lazy val ProtoBytes: _root_.scala.Array[Byte] =
       scalapb.Encoding.fromBase64(scala.collection.immutable.Seq(
   """Ci1lZHUvdWNpL2ljcy90ZXhlcmEvd29ya2Zsb3dydW50aW1lc3RhdGUucHJvdG8SFmVkdS51Y2kuaWNzLnRleGVyYS53ZWIaF
-  XNjYWxhcGIvc2NhbGFwYi5wcm90byLTAgoPQnJlYWtwb2ludEV2ZW50Ei0KCmFjdG9yX3BhdGgYASABKAlCDuI/CxIJYWN0b3JQY
-  XRoUglhY3RvclBhdGgSWQoFdHVwbGUYAiABKAsyNy5lZHUudWNpLmljcy50ZXhlcmEud2ViLkJyZWFrcG9pbnRFdmVudC5CcmVha
+  XNjYWxhcGIvc2NhbGFwYi5wcm90byLTAgoPQnJlYWtwb2ludEZhdWx0Ei0KCmFjdG9yX3BhdGgYASABKAlCDuI/CxIJYWN0b3JQY
+  XRoUglhY3RvclBhdGgSWQoFdHVwbGUYAiABKAsyNy5lZHUudWNpLmljcy50ZXhlcmEud2ViLkJyZWFrcG9pbnRGYXVsdC5CcmVha
   3BvaW50VHVwbGVCCuI/BxIFdHVwbGVSBXR1cGxlEjwKD2JyZWFrcG9pbnRfaW5mbxgDIAMoCUIT4j8QEg5icmVha3BvaW50SW5mb
   1IOYnJlYWtwb2ludEluZm8aeAoPQnJlYWtwb2ludFR1cGxlEhcKAmlkGAEgASgDQgfiPwQSAmlkUgJpZBInCghpc19pbnB1dBgCI
   AEoCEIM4j8JEgdpc0lucHV0Ugdpc0lucHV0EiMKBmZpZWxkcxgDIAMoCUIL4j8IEgZmaWVsZHNSBmZpZWxkcyKRAQoTT3BlcmF0b
   3JCcmVha3BvaW50cxJ6ChZ1bnJlc29sdmVkX2JyZWFrcG9pbnRzGAEgAygLMicuZWR1LnVjaS5pY3MudGV4ZXJhLndlYi5CcmVha
-  3BvaW50RXZlbnRCGuI/FxIVdW5yZXNvbHZlZEJyZWFrcG9pbnRzUhV1bnJlc29sdmVkQnJlYWtwb2ludHMijwIKEkpvYkJyZWFrc
+  3BvaW50RmF1bHRCGuI/FxIVdW5yZXNvbHZlZEJyZWFrcG9pbnRzUhV1bnJlc29sdmVkQnJlYWtwb2ludHMijwIKEkpvYkJyZWFrc
   G9pbnRTdG9yZRJ0Cg1vcGVyYXRvcl9pbmZvGAEgAygLMjwuZWR1LnVjaS5pY3MudGV4ZXJhLndlYi5Kb2JCcmVha3BvaW50U3Rvc
   mUuT3BlcmF0b3JJbmZvRW50cnlCEeI/DhIMb3BlcmF0b3JJbmZvUgxvcGVyYXRvckluZm8aggEKEU9wZXJhdG9ySW5mb0VudHJ5E
   hoKA2tleRgBIAEoCUII4j8FEgNrZXlSA2tleRJNCgV2YWx1ZRgCIAEoCzIrLmVkdS51Y2kuaWNzLnRleGVyYS53ZWIuT3BlcmF0b

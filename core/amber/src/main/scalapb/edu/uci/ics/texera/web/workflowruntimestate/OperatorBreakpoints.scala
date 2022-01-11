@@ -7,7 +7,7 @@ package edu.uci.ics.texera.web.workflowruntimestate
 
 @SerialVersionUID(0L)
 final case class OperatorBreakpoints(
-    unresolvedBreakpoints: _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent] = _root_.scala.Seq.empty
+    unresolvedBreakpoints: _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault] = _root_.scala.Seq.empty
     ) extends scalapb.GeneratedMessage with scalapb.lenses.Updatable[OperatorBreakpoints] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
@@ -36,9 +36,9 @@ final case class OperatorBreakpoints(
       };
     }
     def clearUnresolvedBreakpoints = copy(unresolvedBreakpoints = _root_.scala.Seq.empty)
-    def addUnresolvedBreakpoints(__vs: edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent*): OperatorBreakpoints = addAllUnresolvedBreakpoints(__vs)
-    def addAllUnresolvedBreakpoints(__vs: Iterable[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]): OperatorBreakpoints = copy(unresolvedBreakpoints = unresolvedBreakpoints ++ __vs)
-    def withUnresolvedBreakpoints(__v: _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]): OperatorBreakpoints = copy(unresolvedBreakpoints = __v)
+    def addUnresolvedBreakpoints(__vs: edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault*): OperatorBreakpoints = addAllUnresolvedBreakpoints(__vs)
+    def addAllUnresolvedBreakpoints(__vs: Iterable[edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault]): OperatorBreakpoints = copy(unresolvedBreakpoints = unresolvedBreakpoints ++ __vs)
+    def withUnresolvedBreakpoints(__v: _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault]): OperatorBreakpoints = copy(unresolvedBreakpoints = __v)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): _root_.scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => unresolvedBreakpoints
@@ -58,14 +58,14 @@ final case class OperatorBreakpoints(
 object OperatorBreakpoints extends scalapb.GeneratedMessageCompanion[edu.uci.ics.texera.web.workflowruntimestate.OperatorBreakpoints] {
   implicit def messageCompanion: scalapb.GeneratedMessageCompanion[edu.uci.ics.texera.web.workflowruntimestate.OperatorBreakpoints] = this
   def parseFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): edu.uci.ics.texera.web.workflowruntimestate.OperatorBreakpoints = {
-    val __unresolvedBreakpoints: _root_.scala.collection.immutable.VectorBuilder[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent] = new _root_.scala.collection.immutable.VectorBuilder[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]
+    val __unresolvedBreakpoints: _root_.scala.collection.immutable.VectorBuilder[edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault] = new _root_.scala.collection.immutable.VectorBuilder[edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault]
     var _done__ = false
     while (!_done__) {
       val _tag__ = _input__.readTag()
       _tag__ match {
         case 0 => _done__ = true
         case 10 =>
-          __unresolvedBreakpoints += _root_.scalapb.LiteParser.readMessage[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent](_input__)
+          __unresolvedBreakpoints += _root_.scalapb.LiteParser.readMessage[edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault](_input__)
         case tag => _input__.skipField(tag)
       }
     }
@@ -77,7 +77,7 @@ object OperatorBreakpoints extends scalapb.GeneratedMessageCompanion[edu.uci.ics
     case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
       _root_.scala.Predef.require(__fieldsMap.keys.forall(_.containingMessage eq scalaDescriptor), "FieldDescriptor does not match message type.")
       edu.uci.ics.texera.web.workflowruntimestate.OperatorBreakpoints(
-        unresolvedBreakpoints = __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[_root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]]).getOrElse(_root_.scala.Seq.empty)
+        unresolvedBreakpoints = __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[_root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault]]).getOrElse(_root_.scala.Seq.empty)
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
@@ -86,7 +86,7 @@ object OperatorBreakpoints extends scalapb.GeneratedMessageCompanion[edu.uci.ics
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = {
     var __out: _root_.scalapb.GeneratedMessageCompanion[_] = null
     (__number: @_root_.scala.unchecked) match {
-      case 1 => __out = edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent
+      case 1 => __out = edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault
     }
     __out
   }
@@ -96,11 +96,11 @@ object OperatorBreakpoints extends scalapb.GeneratedMessageCompanion[edu.uci.ics
     unresolvedBreakpoints = _root_.scala.Seq.empty
   )
   implicit class OperatorBreakpointsLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, edu.uci.ics.texera.web.workflowruntimestate.OperatorBreakpoints]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, edu.uci.ics.texera.web.workflowruntimestate.OperatorBreakpoints](_l) {
-    def unresolvedBreakpoints: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]] = field(_.unresolvedBreakpoints)((c_, f_) => c_.copy(unresolvedBreakpoints = f_))
+    def unresolvedBreakpoints: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault]] = field(_.unresolvedBreakpoints)((c_, f_) => c_.copy(unresolvedBreakpoints = f_))
   }
   final val UNRESOLVED_BREAKPOINTS_FIELD_NUMBER = 1
   def of(
-    unresolvedBreakpoints: _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent]
+    unresolvedBreakpoints: _root_.scala.Seq[edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault]
   ): _root_.edu.uci.ics.texera.web.workflowruntimestate.OperatorBreakpoints = _root_.edu.uci.ics.texera.web.workflowruntimestate.OperatorBreakpoints(
     unresolvedBreakpoints
   )

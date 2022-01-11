@@ -82,7 +82,7 @@ class AmberClient(
           case x: T =>
             sub.onNext(x)
         })
-        Await.result(clientActor ? req, 2.seconds)
+        Await.result(clientActor ? req, atMost = 2.seconds)
         val ob = sub.onTerminateDetach
         registeredObservables(clazz) = ob
         ob

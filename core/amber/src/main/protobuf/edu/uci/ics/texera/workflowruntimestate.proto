@@ -23,7 +23,7 @@ enum WorkflowAggregatedState {
   UNKNOWN = 9;
 }
 
-message BreakpointEvent{
+message BreakpointFault{
   message BreakpointTuple{
     int64 id = 1;
     bool is_input = 2;
@@ -36,7 +36,7 @@ message BreakpointEvent{
 }
 
 message OperatorBreakpoints{
-  repeated BreakpointEvent unresolved_breakpoints = 1;
+  repeated BreakpointFault unresolved_breakpoints = 1;
 }
 
 message JobBreakpointStore{

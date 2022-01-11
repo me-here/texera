@@ -1,8 +1,8 @@
 package edu.uci.ics.texera.web.model.websocket.event
 
-import edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent
+import edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault
 
 case class BreakpointTriggeredEvent(
-    report: Iterable[BreakpointEvent],
+    report: Iterable[BreakpointFault],
     operatorID: String
 ) extends TexeraWebSocketEvent
