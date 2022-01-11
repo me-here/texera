@@ -34,12 +34,14 @@ object ControllerConfig {
   def default: ControllerConfig =
     ControllerConfig(
       statusUpdateIntervalMs = Option(100),
-      resultUpdateIntervalMs = Option(1000)
+      resultUpdateIntervalMs = Option(1000),
+      monitoringIntervalMs = Option(3000)
     )
 }
 final case class ControllerConfig(
     statusUpdateIntervalMs: Option[Long],
-    resultUpdateIntervalMs: Option[Long]
+    resultUpdateIntervalMs: Option[Long],
+    monitoringIntervalMs: Option[Long]
 )
 
 object Controller {

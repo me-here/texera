@@ -5,6 +5,7 @@ import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{
   WorkflowResultUpdate,
   WorkflowStatusUpdate
 }
+import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.MonitoringHandler.ControllerInitiateMonitoring
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.QueryWorkerStatisticsHandler.{
   ControllerInitiateQueryResults,
   ControllerInitiateQueryStatistics
@@ -48,10 +49,12 @@ class ControllerAsyncRPCHandlerInitializer(
     with PythonPrintHandler
     with RetryWorkflowHandler
     with ModifyLogicHandler
-    with EvaluatePythonExpressionHandler {
+    with EvaluatePythonExpressionHandler
+    with MonitoringHandler {
 
   var statusUpdateAskHandle: Option[Cancellable] = None
   var resultUpdateAskHandle: Option[Cancellable] = None
+  var monitoringHandle: Option[Cancellable] = None
 
   def enableStatusUpdate(): Unit = {
     if (controllerConfig.statusUpdateIntervalMs.nonEmpty && statusUpdateAskHandle.isEmpty) {
@@ -82,6 +85,22 @@ class ControllerAsyncRPCHandlerInitializer(
     }
   }
 
+  def enableMonitoring(): Unit = {
+    if (controllerConfig.monitoringIntervalMs.nonEmpty && monitoringHandle.isEmpty) {
+      monitoringHandle = Option(
+        actorContext.system.scheduler.scheduleAtFixedRate(
+          0.milliseconds,
+          FiniteDuration.apply(controllerConfig.monitoringIntervalMs.get, MILLISECONDS),
+          actorContext.self,
+          ControlInvocation(
+            AsyncRPCClient.IgnoreReplyAndDoNotLog,
+            ControllerInitiateMonitoring()
+          )
+        )(actorContext.dispatcher)
+      )
+    }
+  }
+
   def disableStatusUpdate(): Unit = {
     if (statusUpdateAskHandle.nonEmpty) {
       statusUpdateAskHandle.get.cancel()
@@ -90,6 +109,13 @@ class ControllerAsyncRPCHandlerInitializer(
     if (resultUpdateAskHandle.nonEmpty) {
       resultUpdateAskHandle.get.cancel()
       resultUpdateAskHandle = Option.empty
+    }
+  }
+
+  def disableMonitoring(): Unit = {
+    if (monitoringHandle.nonEmpty) {
+      monitoringHandle.get.cancel()
+      monitoringHandle = Option.empty
     }
   }
 

@@ -36,7 +36,7 @@ trait ResumeHandler {
           // update frontend status
           sendToClient(WorkflowStatusUpdate(workflow.getWorkflowStatus))
           enableStatusUpdate() //re-enabled it since it is disabled in pause
-
+          enableMonitoring()
         }
     }
   }

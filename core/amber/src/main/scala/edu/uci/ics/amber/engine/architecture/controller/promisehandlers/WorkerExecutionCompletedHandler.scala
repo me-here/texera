@@ -62,6 +62,7 @@ trait WorkerExecutionCompletedHandler {
           finalResult.flatMap(ret => {
             sendToClient(WorkflowCompleted(ret))
             disableStatusUpdate()
+            disableMonitoring()
             Future.Done
           })
         } else {
