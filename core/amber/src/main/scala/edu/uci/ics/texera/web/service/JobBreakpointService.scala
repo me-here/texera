@@ -8,15 +8,14 @@ import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.Breakpoi
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.AssignBreakpointHandler.AssignGlobalBreakpoint
 import edu.uci.ics.amber.engine.common.client.AmberClient
 import edu.uci.ics.texera.web.{SubscriptionManager, WebsocketOutput, WorkflowStateStore}
-import edu.uci.ics.texera.web.model.websocket.event.{BreakpointTriggeredEvent, TexeraWebSocketEvent}
-import edu.uci.ics.texera.web.model.websocket.event.python.PythonPrintTriggeredEvent
+import edu.uci.ics.texera.web.model.websocket.event.BreakpointTriggeredEvent
+import edu.uci.ics.texera.web.workflowruntimestate.BreakpointFault.BreakpointTuple
 import edu.uci.ics.texera.web.workflowruntimestate.{
-  BreakpointEvent,
+  BreakpointFault,
   OperatorBreakpoints,
   OperatorRuntimeStats,
   PythonOperatorInfo
 }
-import edu.uci.ics.texera.web.workflowruntimestate.BreakpointEvent.BreakpointTuple
 import edu.uci.ics.texera.web.workflowruntimestate.WorkflowAggregatedState.PAUSED
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.workflow.{
@@ -66,7 +65,7 @@ class JobBreakpointService(
                   } else {
                     List.empty
                   }
-                BreakpointEvent(
+                BreakpointFault(
                   actorPath,
                   Some(BreakpointTuple(faultedTuple.id, faultedTuple.isInput, tupleList)),
                   elem._2
