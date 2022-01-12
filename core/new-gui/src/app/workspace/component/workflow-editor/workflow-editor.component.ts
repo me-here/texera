@@ -902,6 +902,7 @@ export class WorkflowEditorComponent implements AfterViewInit {
       },
       // set grid size
       gridSize: 2,
+      async: true
     };
 
     return jointPaperOptions;

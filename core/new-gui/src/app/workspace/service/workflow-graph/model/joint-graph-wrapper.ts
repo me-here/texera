@@ -798,6 +798,18 @@ export class JointGraphWrapper {
     this.listenPositionChange = listenPositionChange;
   }
 
+  public freeze(): void {
+    this.mainJointPaper?.freeze();
+  }
+
+  public unfreeze(): void {
+    this.mainJointPaper?.unfreeze();
+  }
+
+  public updateViews(): void {
+    this.mainJointPaper?.updateViews();
+  }
+
   /**
    * Highlights the element with given elementID.
    *

@@ -841,6 +841,8 @@ export class WorkflowActionService {
    * Reload the given workflow, update workflowMetadata and workflowContent.
    */
   public reloadWorkflow(workflow: Workflow | undefined): void {
+    this.jointGraphWrapper.freeze();
+    try{
     this.setWorkflowMetadata(workflow);
     // remove the existing operators on the paper currently
     this.deleteOperatorsAndLinks(
@@ -879,7 +881,6 @@ export class WorkflowActionService {
     });
 
     const breakpoints = new Map(Object.entries(workflowContent.breakpoints));
-
     this.addOperatorsAndLinks(operatorsAndPositions, links, groups, breakpoints);
 
     // operators shouldn't be highlighted during page reload
@@ -887,6 +888,10 @@ export class WorkflowActionService {
     jointGraphWrapper.unhighlightOperators(...jointGraphWrapper.getCurrentHighlightedOperatorIDs());
     // restore the view point
     this.getJointGraphWrapper().restoreDefaultZoomAndOffset();
+
+    } finally {
+      this.jointGraphWrapper.unfreeze();
+    }
   }
 
   public workflowChanged(): Observable<void> {
