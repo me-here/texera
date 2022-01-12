@@ -17,12 +17,16 @@ trait MonitoringHandler {
   this: WorkerAsyncRPCHandlerInitializer =>
 
   registerHandler { (msg: QuerySelfWorkloadMetrics, sender) =>
-    SelfWorkloadMetrics(
-      dataProcessor.getDataQueueLength,
-      dataProcessor.getControlQueueLength,
-      dataInputPort.getStashedMessageCount(),
-      controlInputPort.getStashedMessageCount()
-    )
+    try {
+      SelfWorkloadMetrics(
+        dataProcessor.getDataQueueLength,
+        dataProcessor.getControlQueueLength,
+        dataInputPort.getStashedMessageCount(),
+        controlInputPort.getStashedMessageCount()
+      )
+    } catch {
+      case exception: Exception => SelfWorkloadMetrics(-1,-1,-1,-1)
+    }
   }
 
 }
