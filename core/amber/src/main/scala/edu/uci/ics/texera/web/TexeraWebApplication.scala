@@ -117,15 +117,6 @@ class TexeraWebApplication extends io.dropwizard.Application[TexeraWebConfigurat
             .buildAuthFilter()
         )
       )
-
-      environment.jersey.register(classOf[AuthResource])
-      environment.jersey.register(classOf[GoogleAuthResource])
-      environment.jersey.register(classOf[UserDictionaryResource])
-      environment.jersey.register(classOf[UserFileAccessResource])
-      environment.jersey.register(classOf[UserFileResource])
-      environment.jersey.register(classOf[WorkflowAccessResource])
-      environment.jersey.register(classOf[WorkflowResource])
-      environment.jersey.register(classOf[WorkflowVersionResource])
     } else {
       // register Guest Auth layer
       environment.jersey.register(
@@ -139,6 +130,15 @@ class TexeraWebApplication extends io.dropwizard.Application[TexeraWebConfigurat
       new AuthValueFactoryProvider.Binder[SessionUser](classOf[SessionUser])
     )
     environment.jersey.register(classOf[RolesAllowedDynamicFeature])
+
+    environment.jersey.register(classOf[AuthResource])
+    environment.jersey.register(classOf[GoogleAuthResource])
+    environment.jersey.register(classOf[UserDictionaryResource])
+    environment.jersey.register(classOf[UserFileAccessResource])
+    environment.jersey.register(classOf[UserFileResource])
+    environment.jersey.register(classOf[WorkflowAccessResource])
+    environment.jersey.register(classOf[WorkflowResource])
+    environment.jersey.register(classOf[WorkflowVersionResource])
 
   }
 
