@@ -33,16 +33,14 @@ trait MonitoringHandler {
       // send to specified workers (or all workers by default)
       val workers = msg.filterByWorkers.getOrElse(workflow.getAllWorkers).toList
 
-      // map to record data workload on workers
-      val workerToDataInputWorkload = new mutable.HashMap[ActorVirtualIdentity, Long]()
-
       // send Monitoring message
       val requests = workers.map(worker =>
         send(QuerySelfWorkloadMetrics(), worker).map(metric => {
-          workerToDataInputWorkload(worker) = workerToDataInputWorkload.getOrElse(
-            worker,
-            0L
-          ) + metric.unprocessedDataInputQueueSize + metric.stashedDataInputQueueSize
+          workflow.getOperator(worker).getWorkerWorkloadInfo(worker).dataInputWorkload =
+            metric.unprocessedDataInputQueueSize + metric.stashedDataInputQueueSize
+          workflow.getOperator(worker).getWorkerWorkloadInfo(worker).controlInputWorkload =
+            metric.unprocessedControlInputQueueSize + metric.stashedControlInputQueueSize
+          println(s"${worker.toString()} - - - - ${workflow.getOperator(worker).getWorkerWorkloadInfo(worker).dataInputWorkload} ---- ${workflow.getOperator(worker).getWorkerWorkloadInfo(worker).controlInputWorkload}")
         })
       )
 
