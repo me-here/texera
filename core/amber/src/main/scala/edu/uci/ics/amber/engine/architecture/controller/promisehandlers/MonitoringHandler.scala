@@ -43,7 +43,6 @@ trait MonitoringHandler {
             worker,
             0L
           ) + metric.unprocessedDataInputQueueSize + metric.stashedDataInputQueueSize
-          println(s"${worker.toString()} metrics are ${workerToDataInputWorkload(worker)}")
         })
       )
 

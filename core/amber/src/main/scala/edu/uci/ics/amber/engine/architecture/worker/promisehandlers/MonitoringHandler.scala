@@ -25,7 +25,7 @@ trait MonitoringHandler {
         controlInputPort.getStashedMessageCount()
       )
     } catch {
-      case exception: Exception => SelfWorkloadMetrics(-1,-1,-1,-1)
+      case exception: Exception => SelfWorkloadMetrics(-1, -1, -1, -1)
     }
   }
 

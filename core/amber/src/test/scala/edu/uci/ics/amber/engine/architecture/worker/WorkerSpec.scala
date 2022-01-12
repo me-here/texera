@@ -3,13 +3,26 @@ package edu.uci.ics.amber.engine.architecture.worker
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
 import edu.uci.ics.amber.clustering.SingleNodeListener
-import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{GetActorRef, NetworkAck, NetworkMessage, RegisterActorRef}
-import edu.uci.ics.amber.engine.architecture.messaginglayer.{NetworkInputPort, NetworkOutputPort, TupleToBatchConverter}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.NetworkCommunicationActor.{
+  GetActorRef,
+  NetworkAck,
+  NetworkMessage,
+  RegisterActorRef
+}
+import edu.uci.ics.amber.engine.architecture.messaginglayer.{
+  NetworkInputPort,
+  NetworkOutputPort,
+  TupleToBatchConverter
+}
 import edu.uci.ics.amber.engine.architecture.sendsemantics.partitionings.OneToOnePartitioning
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.AddPartitioningHandler.AddPartitioning
 import edu.uci.ics.amber.engine.architecture.worker.promisehandlers.MonitoringHandler.QuerySelfWorkloadMetrics
 import edu.uci.ics.amber.engine.architecture.worker.workloadmetrics.SelfWorkloadMetrics
-import edu.uci.ics.amber.engine.common.ambermessage.{ControlPayload, DataPayload, WorkflowControlMessage}
+import edu.uci.ics.amber.engine.common.ambermessage.{
+  ControlPayload,
+  DataPayload,
+  WorkflowControlMessage
+}
 import edu.uci.ics.amber.engine.common.rpc.AsyncRPCClient.{ControlInvocation, ReturnInvocation}
 import edu.uci.ics.amber.engine.common.tuple.ITuple
 import edu.uci.ics.amber.engine.common.virtualidentity.util.CONTROLLER
@@ -78,15 +91,6 @@ class WorkerSpec
 
   "Worker" should "process monitoring message correctly" in {
     val probe = TestProbe()
-    val mockDataProcessor = stub[DataProcessor]
-    (mockDataProcessor.getDataQueueLength _) when() returns(2)
-    (mockDataProcessor.getControlQueueLength _) when() returns(2)
-
-//    val mockDataInputPort = stub[NetworkInputPort[DataPayload]]
-//    (mockDataInputPort.getStashedMessageCount _) when() returns (1)
-//    val mockControlInputPort = stub[NetworkInputPort[ControlPayload]]
-//    (mockControlInputPort.getStashedMessageCount _) when() returns (1)
-
     val idMap = mutable.HashMap[ActorVirtualIdentity, ActorRef]()
     val identifier1 = ActorVirtualIdentity("worker-1")
     val mockOpExecutor = new IOperatorExecutor {
@@ -95,16 +99,12 @@ class WorkerSpec
       override def close(): Unit = println("closed!")
 
       override def processTuple(
-                                 tuple: Either[ITuple, InputExhausted],
-                                 input: LinkIdentity
-                               ): Iterator[ITuple] = {return Iterator()}
+          tuple: Either[ITuple, InputExhausted],
+          input: LinkIdentity
+      ): Iterator[ITuple] = { return Iterator() }
     }
 
-    val worker = TestActorRef(new WorkflowWorker(identifier1, mockOpExecutor, probe.ref) {
-      override lazy val dataProcessor: DataProcessor = mockDataProcessor
-//      override lazy val dataInputPort: NetworkInputPort[DataPayload] = mockDataInputPort
-//      override lazy val controlInputPort: NetworkInputPort[ControlPayload] = mockControlInputPort
-    })
+    val worker = TestActorRef(new WorkflowWorker(identifier1, mockOpExecutor, probe.ref))
 
     idMap(identifier1) = worker
     idMap(CONTROLLER) = probe.ref
@@ -130,14 +130,17 @@ class WorkerSpec
         probe.sender() ! NetworkAck(msgID)
         returnValue match {
           case e: Throwable => throw e
-          case _            => assert(returnValue.asInstanceOf[SelfWorkloadMetrics].unprocessedDataInputQueueSize == 2)
+          case _ =>
+            assert(returnValue.asInstanceOf[SelfWorkloadMetrics].unprocessedDataInputQueueSize == 0)
+            assert(
+              returnValue.asInstanceOf[SelfWorkloadMetrics].unprocessedControlInputQueueSize == 0
+            )
+            assert(returnValue.asInstanceOf[SelfWorkloadMetrics].stashedDataInputQueueSize == 0)
+            assert(returnValue.asInstanceOf[SelfWorkloadMetrics].stashedControlInputQueueSize == 0)
         }
       case other =>
       //skip
     }
-
-    //wait test to finish
-    Thread.sleep(3000)
   }
 
 }
