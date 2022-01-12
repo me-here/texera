@@ -128,13 +128,11 @@ class TexeraWebApplication extends io.dropwizard.Application[TexeraWebConfigurat
       environment.jersey.register(classOf[WorkflowVersionResource])
     } else {
       // register Guest Auth layer
-      environment
-        .jersey()
-        .register(
-          new AuthDynamicFeature(
-            new GuestAuthFilter.Builder().setAuthorizer(UserRoleAuthorizer).buildAuthFilter()
-          )
+      environment.jersey.register(
+        new AuthDynamicFeature(
+          new GuestAuthFilter.Builder().setAuthorizer(UserRoleAuthorizer).buildAuthFilter()
         )
+      )
     }
 
     environment.jersey.register(
