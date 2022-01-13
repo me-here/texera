@@ -57,7 +57,7 @@ export class UndoRedoService {
       this.canUndoStream.next(this.canUndo());
 
       console.log("service can undo", this.canUndo());
-      const commandMessage: CommandMessage = { action: "deleteOperator", parameters: [""], type: "undo" };
+      const commandMessage: CommandMessage = { action: "undoredo", parameters: [], type: "undo" };
       this.sendCommand(JSON.stringify(commandMessage));
     }
   }
@@ -81,7 +81,7 @@ export class UndoRedoService {
       this.setListenJointCommand(true);
       this.canRedoStream.next(this.canRedo());
       console.log("service can redo", this.canRedo());
-      const commandMessage: CommandMessage = { action: "deleteOperator", parameters: [""], type: "redo" };
+      const commandMessage: CommandMessage = { action: "undoredo", parameters: [], type: "redo" };
       this.sendCommand(JSON.stringify(commandMessage));
     }
   }

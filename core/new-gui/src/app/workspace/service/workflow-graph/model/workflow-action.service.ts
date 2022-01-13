@@ -51,6 +51,7 @@ type GroupInfo = {
 // At least for some of them, have to do a bit more thinking.
 
 export type commandFuncs =
+  | "undoredo"
   | "addOperator"
   | "deleteOperator"
   | "addOperatorsAndLinks"
@@ -156,6 +157,8 @@ export class WorkflowActionService {
     this.handleHighlightedElementPositionChange();
     this.handleRemoteChange();
   }
+
+  public undoredo(): void {}
 
   public toggleSendData(toggle: boolean): void {
     this.workflowCollabService.setSendData(toggle);
@@ -1285,13 +1288,12 @@ export class WorkflowActionService {
   }
 
   private handleRemoteChange(): void {
-    const self = this;
     this.workflowCollabService.getCommandMessageStream().subscribe(message => {
       if (message.type === "execute") {
-        self.toggleSendData(false);
+        this.toggleSendData(false);
         const func = message.action;
         (this[func] as any).apply(this, message.parameters);
-        self.toggleSendData(true);
+        this.toggleSendData(true);
       }
     });
   }

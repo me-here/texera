@@ -29,8 +29,6 @@ export class WorkflowCollabService {
     const self = this;
     if (environment.enableWorkflowCollab) {
       // to disable service, change to true to enable
-      // Noticed a strange interaction between this feature and SaveWorkflowService, things will get duplicated
-      // When enabling this feature, am currently disabling that feature
       this.setSendData(true);
       this.socket.subscribe({
         next(response) {
@@ -61,7 +59,7 @@ export class WorkflowCollabService {
   }
 
   public getWorkflowWebsocketUrl(): string {
-    const websocketUrl = new URL("automerge", document.baseURI);
+    const websocketUrl = new URL("collaboration", document.baseURI);
     // replace protocol, so that http -> ws, https -> wss
     websocketUrl.protocol = websocketUrl.protocol.replace("http", "ws");
     return websocketUrl.toString();
