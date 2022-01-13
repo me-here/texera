@@ -35,10 +35,9 @@ abstract class OpExecConfig(val id: OperatorIdentity) extends Serializable {
     layer.workers(id)
   }
 
-
-  def getWorkerWorkloadInfo(id:ActorVirtualIdentity): WorkerWorkloadInfo = {
-    if(!workerToWorkloadInfo.contains(id)) {
-      workerToWorkloadInfo(id) = WorkerWorkloadInfo(0L,0L)
+  def getWorkerWorkloadInfo(id: ActorVirtualIdentity): WorkerWorkloadInfo = {
+    if (!workerToWorkloadInfo.contains(id)) {
+      workerToWorkloadInfo(id) = WorkerWorkloadInfo(0L, 0L)
     }
     workerToWorkloadInfo(id)
   }
