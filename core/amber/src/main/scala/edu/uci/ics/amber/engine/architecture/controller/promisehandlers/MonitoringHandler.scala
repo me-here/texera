@@ -18,7 +18,7 @@ object MonitoringHandler {
   var endTimeForMetricColl: Long = _
 
   final case class ControllerInitiateMonitoring(
-      filterByWorkers: Option[List[ActorVirtualIdentity]] = None
+      filterByWorkers: List[ActorVirtualIdentity] = List()
   ) extends ControlCommand[Unit]
 }
 
@@ -31,7 +31,7 @@ trait MonitoringHandler {
     } else {
       previousCallFinished = false
       // send to specified workers (or all workers by default)
-      val workers = msg.filterByWorkers.getOrElse(workflow.getAllWorkers).toList
+      val workers = workflow.getAllWorkers.filterNot(p => msg.filterByWorkers.contains(p)).toList
 
       // send Monitoring message
       val requests = workers.map(worker =>
@@ -40,7 +40,9 @@ trait MonitoringHandler {
             metric.unprocessedDataInputQueueSize + metric.stashedDataInputQueueSize
           workflow.getOperator(worker).getWorkerWorkloadInfo(worker).controlInputWorkload =
             metric.unprocessedControlInputQueueSize + metric.stashedControlInputQueueSize
-          println(s"${worker.toString()} - - - - ${workflow.getOperator(worker).getWorkerWorkloadInfo(worker).dataInputWorkload} ---- ${workflow.getOperator(worker).getWorkerWorkloadInfo(worker).controlInputWorkload}")
+          println(
+            s"${worker} - - - - ${workflow.getOperator(worker).getWorkerWorkloadInfo(worker).dataInputWorkload} ---- ${workflow.getOperator(worker).getWorkerWorkloadInfo(worker).controlInputWorkload}"
+          )
         })
       )
 

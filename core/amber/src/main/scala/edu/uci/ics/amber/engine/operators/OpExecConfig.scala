@@ -2,12 +2,21 @@ package edu.uci.ics.amber.engine.operators
 
 import edu.uci.ics.amber.engine.architecture.breakpoint.globalbreakpoint.GlobalBreakpoint
 import edu.uci.ics.amber.engine.architecture.controller.Workflow
-import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.{WorkerInfo, WorkerLayer, WorkerWorkloadInfo}
+import edu.uci.ics.amber.engine.architecture.deploysemantics.layer.{
+  WorkerInfo,
+  WorkerLayer,
+  WorkerWorkloadInfo
+}
 import edu.uci.ics.amber.engine.architecture.linksemantics.LinkStrategy
 import edu.uci.ics.amber.engine.architecture.principal.{OperatorState, OperatorStatistics}
 import edu.uci.ics.amber.engine.architecture.worker.statistics.WorkerState
 import edu.uci.ics.amber.engine.architecture.worker.statistics.WorkerState._
-import edu.uci.ics.amber.engine.common.virtualidentity.{ActorVirtualIdentity, LayerIdentity, LinkIdentity, OperatorIdentity}
+import edu.uci.ics.amber.engine.common.virtualidentity.{
+  ActorVirtualIdentity,
+  LayerIdentity,
+  LinkIdentity,
+  OperatorIdentity
+}
 
 import scala.collection.mutable
 
@@ -26,8 +35,8 @@ abstract class OpExecConfig(val id: OperatorIdentity) extends Serializable {
     layer.workers(id)
   }
 
-  def getWorkerWorkloadInfo(id:ActorVirtualIdentity): WorkerWorkloadInfo = {
-    workerToWorkloadInfo.getOrElse(id,WorkerWorkloadInfo(0L,0L))
+  def getWorkerWorkloadInfo(id: ActorVirtualIdentity): WorkerWorkloadInfo = {
+    workerToWorkloadInfo.getOrElse(id, WorkerWorkloadInfo(0L, 0L))
   }
 
   def setAllWorkerState(state: WorkerState): Unit = {

@@ -1,10 +1,6 @@
 package edu.uci.ics.amber.engine.architecture.controller
 
 import akka.actor.{ActorContext, Cancellable}
-import edu.uci.ics.amber.engine.architecture.controller.ControllerEvent.{
-  WorkflowResultUpdate,
-  WorkflowStatusUpdate
-}
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.MonitoringHandler.ControllerInitiateMonitoring
 import edu.uci.ics.amber.engine.architecture.controller.promisehandlers.QueryWorkerStatisticsHandler.{
   ControllerInitiateQueryResults,
