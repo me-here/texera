@@ -36,7 +36,7 @@ export const defaultEnvironment = {
   /**
    * whether user system is enabled
    */
-  userSystemEnabled: false,
+  userSystemEnabled: true,
 
   amberEngineEnabled: true,
 
@@ -73,7 +73,7 @@ export const defaultEnvironment = {
     * Whether workflow collab should be active
     */
 
-    enableWorkflowCollab: true,
+    enableWorkflowCollab: false,
 };
 
 export type AppEnv = typeof defaultEnvironment;
