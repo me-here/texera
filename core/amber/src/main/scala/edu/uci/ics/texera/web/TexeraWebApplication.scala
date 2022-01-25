@@ -42,6 +42,12 @@ object TexeraWebApplication {
     actorSystem.scheduler.scheduleOnce(delay)(call)
   }
 
+  def scheduleRecurringCallThroughActorSystem(initialDelay: FiniteDuration, delay: FiniteDuration)(
+      call: => Unit
+  ): Cancellable = {
+    actorSystem.scheduler.scheduleWithFixedDelay(initialDelay, delay)(() => call)
+  }
+
   private var actorSystem: ActorSystem = _
 
   def main(args: Array[String]): Unit = {
@@ -68,6 +74,7 @@ class TexeraWebApplication extends io.dropwizard.Application[TexeraWebConfigurat
     bootstrap.addBundle(new FileAssetsBundle("../new-gui/dist", "/", "index.html"))
     // add websocket bundle
     bootstrap.addBundle(new WebsocketBundle(classOf[WorkflowWebsocketResource]))
+    bootstrap.addBundle(new WebsocketBundle(classOf[CollaborationResource]))
     // register scala module to dropwizard default object mapper
     bootstrap.getObjectMapper.registerModule(DefaultScalaModule)
   }
