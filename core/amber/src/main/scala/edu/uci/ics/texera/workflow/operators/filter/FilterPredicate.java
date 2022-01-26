@@ -91,9 +91,14 @@ public class FilterPredicate {
 
 
     private static <T extends Comparable<T>> boolean evaluateFilter(T value, T compareToValue, ComparisonType comparisonType) {
-        if (value == null) {
+        if (comparisonType == ComparisonType.IS_NULL || value == null) {
             return compareToValue == null;
         }
+
+        if (comparisonType == ComparisonType.IS_NOT_NULL) {
+            return compareToValue != null;
+        }
+
         int compareResult = value.compareTo(compareToValue);
         switch (comparisonType) {
             case EQUAL_TO:
