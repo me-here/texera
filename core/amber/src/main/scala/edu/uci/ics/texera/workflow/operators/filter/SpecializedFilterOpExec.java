@@ -5,6 +5,8 @@ import edu.uci.ics.texera.workflow.common.tuple.Tuple;
 import scala.Function1;
 import scala.Serializable;
 
+import java.util.List;
+
 public class SpecializedFilterOpExec extends FilterOpExec {
 
     private final SpecializedFilterOpDesc opDesc;
@@ -16,12 +18,20 @@ public class SpecializedFilterOpExec extends FilterOpExec {
                 (Function1<Tuple, Boolean> & Serializable) this::filterFunc);
     }
 
+    // MARK: Debug/unittests only
+    public SpecializedFilterOpExec(SpecializedFilterOpDesc opDesc, List<FilterPredicate> predicates) {
+        this(opDesc);
+        opDesc.predicates = predicates;
+    }
+
     public Boolean filterFunc(Tuple tuple) {
         boolean satisfy = false;
         for (FilterPredicate predicate : opDesc.predicates) {
-            satisfy = satisfy || predicate.evaluate(tuple, opDesc.context());
+            if (predicate.evaluate(tuple, opDesc.context())) {
+                return true;
+            }
         }
-        return satisfy;
+        return false;
     }
 
     ;

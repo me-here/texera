@@ -20,13 +20,31 @@ public class FilterPredicate {
     @JsonProperty(value = "condition", required = true)
     public ComparisonType condition;
 
-    @JsonProperty(value = "value", required = true)
+    @JsonProperty(value = "value")
     public String value;
 
+    // MARK: Debug/unittest only.
+    public FilterPredicate(String attribute, ComparisonType condition, String value) {
+        this.attribute = attribute;
+        this.condition = condition;
+        this.value = value;
+    }
 
     @JsonIgnore
     public boolean evaluate(Tuple tuple, WorkflowContext context) {
         AttributeType type = tuple.getSchema().getAttribute(this.attribute).getType();
+
+        boolean isFieldNull = tuple.getField(attribute) == null;
+        if (condition == ComparisonType.IS_NULL) {
+            return isFieldNull;
+        }
+        if (condition == ComparisonType.IS_NOT_NULL) {
+            return !isFieldNull;
+        }
+        if (isFieldNull) {
+            return false;
+        }
+
         switch (type) {
             case STRING:
             case ANY:
@@ -90,16 +108,8 @@ public class FilterPredicate {
     }
 
 
-    private static <T extends Comparable<T>> boolean evaluateFilter(T value, T compareToValue, ComparisonType comparisonType) {
-        if (comparisonType == ComparisonType.IS_NULL || value == null) {
-            return compareToValue == null;
-        }
-
-        if (comparisonType == ComparisonType.IS_NOT_NULL) {
-            return compareToValue != null;
-        }
-
-        int compareResult = value.compareTo(compareToValue);
+    private static <T extends Comparable<T>> boolean evaluateFilter(T tupleValue, T userSuppliedValue, ComparisonType comparisonType) {
+        int compareResult = tupleValue.compareTo(userSuppliedValue);
         switch (comparisonType) {
             case EQUAL_TO:
                 return compareResult == 0;
