@@ -23,7 +23,6 @@ public class FilterPredicate {
     @JsonProperty(value = "value")
     public String value;
 
-    // MARK: Debug/unittest only.
     public FilterPredicate(String attribute, ComparisonType condition, String value) {
         this.attribute = attribute;
         this.condition = condition;
@@ -32,19 +31,16 @@ public class FilterPredicate {
 
     @JsonIgnore
     public boolean evaluate(Tuple tuple, WorkflowContext context) {
-        AttributeType type = tuple.getSchema().getAttribute(this.attribute).getType();
-
         boolean isFieldNull = tuple.getField(attribute) == null;
         if (condition == ComparisonType.IS_NULL) {
             return isFieldNull;
-        }
-        if (condition == ComparisonType.IS_NOT_NULL) {
+        } else if (condition == ComparisonType.IS_NOT_NULL) {
             return !isFieldNull;
-        }
-        if (isFieldNull) {
+        } else if (isFieldNull) {
             return false;
         }
 
+        AttributeType type = tuple.getSchema().getAttribute(this.attribute).getType();
         switch (type) {
             case STRING:
             case ANY:
@@ -139,7 +135,7 @@ public class FilterPredicate {
         }
         FilterPredicate that = (FilterPredicate) o;
         return Objects.equals(attribute, that.attribute) && condition == that.condition
-            && Objects.equals(value, that.value);
+                && Objects.equals(value, that.value);
     }
 
     @Override

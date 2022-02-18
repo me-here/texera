@@ -1,6 +1,5 @@
 package edu.uci.ics.texera.workflow.operators.specializedFilter
 
-import edu.uci.ics.amber.engine.common.InputExhausted
 import edu.uci.ics.amber.engine.common.virtualidentity.{LayerIdentity, LinkIdentity}
 import edu.uci.ics.texera.workflow.common.tuple.Tuple
 import edu.uci.ics.texera.workflow.common.tuple.schema.{Attribute, AttributeType, Schema}
@@ -16,7 +15,23 @@ import org.scalatest.flatspec.AnyFlatSpec
 import java.util.Arrays.asList
 
 class SpecializedFilterOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
-  var counter: Int = 0
+  val linkID: LinkIdentity =
+    LinkIdentity(
+      LayerIdentity(1.toString, 1.toString, 1.toString),
+      LayerIdentity(2.toString, 2.toString, 2.toString)
+    )
+
+  val tuplesWithOneFieldNull: Iterable[Tuple] =
+    AttributeType
+      .values()
+      .map(attributeType =>
+        Tuple
+          .newBuilder(
+            Schema.newBuilder().add(new Attribute(attributeType.name(), attributeType)).build()
+          )
+          .add(new Attribute(attributeType.name(), attributeType), null)
+          .build()
+      )
 
   val tupleSchema: Schema = Schema
     .newBuilder()
@@ -26,42 +41,21 @@ class SpecializedFilterOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
     .add(new Attribute("long", AttributeType.LONG))
     .build()
 
-  def layerID(): LayerIdentity = {
-    counter += 1
-    LayerIdentity("" + counter, "" + counter, "" + counter)
-  }
+  val allNullTuple: Tuple = Tuple
+    .newBuilder(tupleSchema)
+    .add(new Attribute("string", AttributeType.STRING), null)
+    .add(new Attribute("int", AttributeType.INTEGER), null)
+    .add(new Attribute("bool", AttributeType.BOOLEAN), null)
+    .add(new Attribute("long", AttributeType.LONG), null)
+    .build()
 
-  def linkID(): LinkIdentity = LinkIdentity(layerID(), layerID())
-
-  def markerValue(): String = {
-    "RandomValue"
-  }
-
-  def allNullTuple(): Tuple = {
-    counter += 1
-    Tuple
-      .newBuilder(tupleSchema)
-      .add(new Attribute("string", AttributeType.STRING), null)
-      .add(new Attribute("int", AttributeType.INTEGER), null)
-      .add(new Attribute("bool", AttributeType.BOOLEAN), null)
-      .add(new Attribute("long", AttributeType.LONG), null)
-      .build()
-  }
-
-  def nonNullTuple(): Tuple = {
-    counter += 1
-    Tuple
-      .newBuilder(tupleSchema)
-      .add(new Attribute("string", AttributeType.STRING), "hello")
-      .add(new Attribute("int", AttributeType.INTEGER), 0)
-      .add(new Attribute("bool", AttributeType.BOOLEAN), false)
-      .add(new Attribute("long", AttributeType.LONG), Long.MaxValue)
-      .build()
-  }
-
-  before {
-    counter = 0
-  }
+  val nonNullTuple: Tuple = Tuple
+    .newBuilder(tupleSchema)
+    .add(new Attribute("string", AttributeType.STRING), "hello")
+    .add(new Attribute("int", AttributeType.INTEGER), 0)
+    .add(new Attribute("bool", AttributeType.BOOLEAN), false)
+    .add(new Attribute("long", AttributeType.LONG), Long.MaxValue)
+    .build()
 
   it should "open and close" in {
     val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc())
@@ -69,158 +63,92 @@ class SpecializedFilterOpExecSpec extends AnyFlatSpec with BeforeAndAfter {
     opExec.close()
   }
 
-  it should "include all tuples from 1 completely null input stream of string type for is null" in {
-    val predicates = asList(
-      new FilterPredicate("string", ComparisonType.IS_NULL, null)
-    )
-    val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc(), predicates)
-    opExec.open()
-
-    val range = Range(0, 7)
-    val linkID1 = linkID()
-
-    val resultSize = range
-      .map(_ => {
-        val result = opExec.processTexeraTuple(Left(allNullTuple()), linkID1)
-        val empty = Iterator()
-        if (result == empty) 0 else 1
-      })
-      .reduce((count1, count2) => count1 + count2)
-
-    assert(resultSize == range.size)
-
-    opExec.close()
-  }
-
-  it should "include no tuples from 1 null input stream of string type for is not null" in {
-    val predicates = asList(new FilterPredicate("string", ComparisonType.IS_NOT_NULL, null))
-    val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc(), predicates)
-    opExec.open()
-
-    val range = Range(0, 7)
-    val linkID1 = linkID()
-
-    val resultSize = range
-      .map(_ => {
-        val result = opExec.processTexeraTuple(Left(allNullTuple()), linkID1)
-        val empty = Iterator()
-        if (result == empty) 0 else 1
-      })
-      .reduce((count1, count2) => count1 + count2)
-
-    assert(resultSize == 0)
-    opExec.close()
-  }
-
-  it should "throw NullPointerException when predicates is null" in {
+  it should "throw when predicates is null" in {
     val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc())
     opExec.open()
-    val linkID1 = linkID()
-
     assertThrows[NullPointerException] {
-      Range(0, 4).map(i => {
-        opExec.processTexeraTuple(Left(allNullTuple()), linkID1)
-      })
+      opExec.processTexeraTuple(Left(allNullTuple), linkID)
     }
-
     opExec.close()
   }
 
   it should "do nothing when predicates is an empty list" in {
-    val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc(), asList())
+    val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc() {
+      predicates = asList()
+    })
     opExec.open()
-    val linkID1 = linkID()
+    assert(opExec.processTexeraTuple(Left(allNullTuple), linkID).isEmpty)
+    opExec.close()
+  }
 
-    val range = Range(0, 4)
-    val resultSize = range
-      .map(_ => {
-        val result = opExec.processTexeraTuple(Left(allNullTuple()), linkID1)
-        val empty = Iterator()
-        if (result == empty) 0 else 1
+  it should "not have is_null comparisons be affected by values" in {
+    val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc() {
+      predicates = asList(new FilterPredicate("string", ComparisonType.IS_NULL, "value"))
+    })
+    opExec.open()
+    assert(!opExec.processTexeraTuple(Left(allNullTuple), linkID).isEmpty)
+    opExec.close()
+  }
+
+  it should "not have is_not_null comparisons be affected by values" in {
+    val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc() {
+      predicates = asList(new FilterPredicate("string", ComparisonType.IS_NOT_NULL, "value"))
+    })
+    opExec.open()
+    assert(opExec.processTexeraTuple(Left(allNullTuple), linkID).isEmpty)
+    opExec.close()
+  }
+
+  it should "output null tuples when filtering is_null" in {
+    tuplesWithOneFieldNull
+      .map(nullTuple => {
+        val attributes = nullTuple.getSchema().getAttributes()
+        assert(attributes.size() == 1)
+
+        val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc() {
+          predicates =
+            asList(new FilterPredicate(attributes.get(0).getName(), ComparisonType.IS_NULL, null))
+        })
+
+        opExec.open()
+        assert(!opExec.processTexeraTuple(Left(nullTuple), linkID).isEmpty)
+        opExec.close()
       })
-      .reduce((count1, count2) => count1 + count2)
+  }
 
-    assert(resultSize == 0)
+  it should "filter out non null tuples when filtering is_null" in {
+    val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc() {
+      predicates = asList(new FilterPredicate("string", ComparisonType.IS_NULL, "value"))
+    })
+    opExec.open()
+    assert(opExec.processTexeraTuple(Left(nonNullTuple), linkID).isEmpty)
     opExec.close()
   }
 
-  it should "not have null comparisons be affected by values, only comparison types" in {
-    val predicates = asList(new FilterPredicate("string", ComparisonType.IS_NULL, markerValue()))
-    val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc(), predicates)
+  it should "output non null tuples when filter is_not_null" in {
+    val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc() {
+      predicates = asList(new FilterPredicate("string", ComparisonType.IS_NOT_NULL, "value"))
+    })
     opExec.open()
+    assert(!opExec.processTexeraTuple(Left(nonNullTuple), linkID).isEmpty)
+    opExec.close()
+  }
 
-    val range = Range(0, 7)
-    val linkID1 = linkID()
+  it should "filter out null tuples when filter is_not_null" in {
+    tuplesWithOneFieldNull
+      .map(nullTuple => {
+        val attributes = nullTuple.getSchema().getAttributes()
+        assert(attributes.size() == 1)
 
-    val resultSize = range
-      .map(_ => {
-        val result = opExec.processTexeraTuple(Left(allNullTuple()), linkID1)
-        val empty = Iterator()
-        if (result == empty) 0 else 1
+        val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc() {
+          predicates = asList(
+            new FilterPredicate(attributes.get(0).getName(), ComparisonType.IS_NOT_NULL, null)
+          )
+        })
+
+        opExec.open()
+        assert(opExec.processTexeraTuple(Left(nullTuple), linkID).isEmpty)
+        opExec.close()
       })
-      .reduce((count1, count2) => count1 + count2)
-
-    assert(resultSize == range.size)
-    opExec.close()
-  }
-
-  it should "filter the right values with 2 input streams with is null" in {
-    val predicates = asList(
-      new FilterPredicate("bool", ComparisonType.IS_NULL, null)
-    )
-    val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc(), predicates)
-    opExec.open()
-
-    val inclusionRange = Range(0, 7)
-    val exclusionRange = Range(0, 9)
-    val linkID1 = linkID()
-    val linkID2 = linkID()
-    var countIncluded = 0
-
-    inclusionRange.map(_ => {
-      val result = opExec.processTexeraTuple(Left(allNullTuple()), linkID1)
-      countIncluded = if (result == Iterator()) countIncluded else countIncluded + 1
-      result
-    })
-    assert(opExec.processTexeraTuple(Right(InputExhausted()), linkID1).isEmpty)
-
-    exclusionRange.map(_ => {
-      val result = opExec.processTexeraTuple(Left(nonNullTuple()), linkID2)
-      countIncluded = if (result == Iterator()) countIncluded else countIncluded + 1
-      result
-    })
-
-    assert(countIncluded == inclusionRange.size)
-
-    opExec.close()
-  }
-
-  it should "filter the right values with 2 input streams with is not null" in {
-    val predicates = asList(new FilterPredicate("bool", ComparisonType.IS_NOT_NULL, null))
-    val opExec = new SpecializedFilterOpExec(new SpecializedFilterOpDesc(), predicates)
-    opExec.open()
-
-    val linkID1 = linkID()
-    val linkID2 = linkID()
-    var countIncluded = 0
-
-    val inclusionRange = Range(0, 7)
-    val exclusionRange = Range(0, 9)
-
-    exclusionRange.map(_ => {
-      val result = opExec.processTexeraTuple(Left(allNullTuple()), linkID1)
-      countIncluded = if (result == Iterator()) countIncluded else countIncluded + 1
-      result
-    })
-    assert(opExec.processTexeraTuple(Right(InputExhausted()), linkID1).isEmpty)
-
-    inclusionRange.map(_ => {
-      val result = opExec.processTexeraTuple(Left(nonNullTuple()), linkID2)
-      countIncluded = if (result == Iterator()) countIncluded else countIncluded + 1
-      result
-    })
-
-    assert(countIncluded == inclusionRange.size)
-    opExec.close()
   }
 }

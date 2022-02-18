@@ -18,22 +18,9 @@ public class SpecializedFilterOpExec extends FilterOpExec {
                 (Function1<Tuple, Boolean> & Serializable) this::filterFunc);
     }
 
-    // MARK: Debug/unittests only
-    public SpecializedFilterOpExec(SpecializedFilterOpDesc opDesc, List<FilterPredicate> predicates) {
-        this(opDesc);
-        opDesc.predicates = predicates;
-    }
-
     public Boolean filterFunc(Tuple tuple) {
-        boolean satisfy = false;
-        for (FilterPredicate predicate : opDesc.predicates) {
-            if (predicate.evaluate(tuple, opDesc.context())) {
-                return true;
-            }
-        }
-        return false;
+        return opDesc.predicates
+                .stream().anyMatch(predicate -> predicate.evaluate(tuple, opDesc.context()));
     }
-
-    ;
 
 }
