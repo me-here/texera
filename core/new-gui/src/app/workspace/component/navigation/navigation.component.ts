@@ -17,8 +17,10 @@ import { merge } from "rxjs";
 import { WorkflowResultExportService } from "../../service/workflow-result-export/workflow-result-export.service";
 import { debounceTime } from "rxjs/operators";
 import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
-import { VIEW_RESULT_OP_TYPE } from "../../service/workflow-graph/model/workflow-graph";
+import { WorkflowUtilService } from "../../service/workflow-graph/util/workflow-util.service";
+import { isSink } from "../../service/workflow-graph/model/workflow-graph";
 import { WorkflowVersionService } from "../../../dashboard/service/workflow-version/workflow-version.service";
+import { WorkflowCollabService } from "../../service/workflow-collab/workflow-collab.service";
 
 /**
  * NavigationComponent is the top level navigation bar that shows
@@ -49,6 +51,7 @@ export class NavigationComponent {
 
   @Input() public autoSaveState: string = "";
   @Input() public currentWorkflowName: string = ""; // reset workflowName
+  @Input() public particularVersionDate: string = ""; // placeholder for the metadata information of a particular workflow version
   @ViewChild("nameInput") nameInputBox: ElementRef<HTMLElement> | undefined;
 
   // variable bound with HTML to decide if the running spinner should show
@@ -58,9 +61,14 @@ export class NavigationComponent {
 
   // whether user dashboard is enabled and accessible from the workspace
   public userSystemEnabled: boolean = environment.userSystemEnabled;
+  public workflowCollabEnabled: boolean = environment.workflowCollabEnabled;
+  public lockGranted: boolean = true;
+  public workflowReadonly: boolean = false;
+  // flag to display a particular version in the current canvas
+  public displayParticularWorkflowVersion: boolean = false;
   public onClickRunHandler: () => void;
 
-  // whether the disable operator button should be enabled
+  // whether the disable-operator-button should be enabled
   public isDisableOperatorClickable: boolean = false;
   public isDisableOperator: boolean = true;
 
@@ -81,7 +89,9 @@ export class NavigationComponent {
     public userService: UserService,
     private workflowCacheService: WorkflowCacheService,
     private datePipe: DatePipe,
-    public workflowResultExportService: WorkflowResultExportService
+    public workflowResultExportService: WorkflowResultExportService,
+    public workflowCollabService: WorkflowCollabService,
+    public workflowUtilService: WorkflowUtilService
   ) {
     this.executionState = executeWorkflowService.getExecutionState().state;
     // return the run button after the execution is finished, either
@@ -111,9 +121,11 @@ export class NavigationComponent {
       });
 
     this.registerWorkflowMetadataDisplayRefresh();
-
+    this.handleWorkflowVersionDisplay();
     this.handleDisableOperatorStatusChange();
     this.handleCacheOperatorStatusChange();
+    this.handleLockChange();
+    this.handleWorkflowAccessChange();
   }
 
   // apply a behavior to the run button via bound variables
@@ -195,6 +207,10 @@ export class NavigationComponent {
           onClick: () => {},
         };
     }
+  }
+
+  public onClickAddCommentBox(): void {
+    this.workflowActionService.addCommentBox(this.workflowUtilService.getNewCommentBox());
   }
 
   public handleKill(): void {
@@ -355,7 +371,7 @@ export class NavigationComponent {
   public onClickCacheOperators(): void {
     const effectiveHighlightedOperators = this.effectivelyHighlightedOperators();
     const effectiveHighlightedOperatorsExcludeSink = effectiveHighlightedOperators.filter(
-      op => this.workflowActionService.getTexeraGraph().getOperator(op).operatorType !== VIEW_RESULT_OP_TYPE
+      op => !isSink(this.workflowActionService.getTexeraGraph().getOperator(op))
     );
 
     if (this.isCacheOperator) {
@@ -411,6 +427,10 @@ export class NavigationComponent {
     this.location.go("/");
   }
 
+  onClickAcquireLock() {
+    this.workflowCollabService.acquireLock();
+  }
+
   registerWorkflowMetadataDisplayRefresh() {
     this.workflowActionService
       .workflowMetaDataChanged()
@@ -434,6 +454,39 @@ export class NavigationComponent {
   onClickGetAllVersions() {
     this.workflowVersionService.clickDisplayWorkflowVersions();
   }
+
+  private handleWorkflowVersionDisplay(): void {
+    this.workflowVersionService
+      .getDisplayParticularVersionStream()
+      .pipe(untilDestroyed(this))
+      .subscribe(displayVersionFlag => {
+        this.particularVersionDate =
+          this.workflowActionService.getWorkflowMetadata().creationTime === undefined
+            ? ""
+            : "" +
+              this.datePipe.transform(
+                this.workflowActionService.getWorkflowMetadata().creationTime,
+                "MM/dd/yyyy HH:mm:ss zzz",
+                Intl.DateTimeFormat().resolvedOptions().timeZone,
+                "en"
+              );
+        this.displayParticularWorkflowVersion = displayVersionFlag;
+      });
+  }
+
+  closeParticularVersionDisplay() {
+    this.workflowVersionService.closeParticularVersionDisplay();
+  }
+
+  revertToVersion() {
+    this.workflowVersionService.revertToVersion();
+    // after swapping the workflows to point to the particular version, persist it in DB
+    this.persistWorkflow();
+    setTimeout(() => {
+      this.workflowCollabService.requestOthersToReload();
+    }, 300);
+  }
+
   /**
    * Updates the status of the disable operator icon:
    * If all selected operators are disabled, then click it will re-enable the operators
@@ -471,7 +524,7 @@ export class NavigationComponent {
       .subscribe(event => {
         const effectiveHighlightedOperators = this.effectivelyHighlightedOperators();
         const effectiveHighlightedOperatorsExcludeSink = effectiveHighlightedOperators.filter(
-          op => this.workflowActionService.getTexeraGraph().getOperator(op).operatorType !== VIEW_RESULT_OP_TYPE
+          op => !isSink(this.workflowActionService.getTexeraGraph().getOperator(op))
         );
 
         const allCached = effectiveHighlightedOperatorsExcludeSink.every(op =>
@@ -480,6 +533,24 @@ export class NavigationComponent {
 
         this.isCacheOperator = !allCached;
         this.isCacheOperatorClickable = effectiveHighlightedOperatorsExcludeSink.length !== 0;
+      });
+  }
+
+  private handleLockChange(): void {
+    this.workflowCollabService
+      .getLockStatusStream()
+      .pipe(untilDestroyed(this))
+      .subscribe((lockGranted: boolean) => {
+        this.lockGranted = lockGranted;
+      });
+  }
+
+  private handleWorkflowAccessChange(): void {
+    this.workflowCollabService
+      .getWorkflowAccessStream()
+      .pipe(untilDestroyed(this))
+      .subscribe((workflowReadonly: boolean) => {
+        this.workflowReadonly = workflowReadonly;
       });
   }
 

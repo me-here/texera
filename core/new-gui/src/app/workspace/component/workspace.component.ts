@@ -23,6 +23,8 @@ import { of } from "rxjs";
 import { isDefined } from "../../common/util/predicate";
 import { WorkflowCollabService } from "../service/workflow-collab/workflow-collab.service";
 
+export const SAVE_DEBOUNCE_TIME_IN_MS = 300;
+
 @UntilDestroy()
 @Component({
   selector: "texera-workspace",
@@ -87,6 +89,7 @@ export class WorkspaceComponent implements AfterViewInit, OnDestroy {
     } else {
       let wid = this.route.snapshot.params.id ?? 0;
       this.workflowWebsocketService.openWebsocket(wid);
+      this.workflowCollabService.openWebsocket(wid);
     }
 
     this.registerLoadOperatorMetadata();
@@ -96,6 +99,7 @@ export class WorkspaceComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     this.workflowWebsocketService.closeWebsocket();
+    this.workflowCollabService.closeWebsocket();
   }
 
   registerResultPanelToggleHandler() {
@@ -108,7 +112,7 @@ export class WorkspaceComponent implements AfterViewInit, OnDestroy {
   registerAutoCacheWorkFlow(): void {
     this.workflowActionService
       .workflowChanged()
-      .pipe(debounceTime(100))
+      .pipe(debounceTime(SAVE_DEBOUNCE_TIME_IN_MS))
       .pipe(untilDestroyed(this))
       .subscribe(() => {
         this.workflowCacheService.setCacheWorkflow(this.workflowActionService.getWorkflow());
@@ -118,10 +122,14 @@ export class WorkspaceComponent implements AfterViewInit, OnDestroy {
   registerAutoPersistWorkflow(): void {
     this.workflowActionService
       .workflowChanged()
-      .pipe(debounceTime(100))
+      .pipe(debounceTime(SAVE_DEBOUNCE_TIME_IN_MS))
       .pipe(untilDestroyed(this))
       .subscribe(() => {
-        if (this.userService.isLogin()) {
+        if (
+          this.userService.isLogin() &&
+          this.workflowPersistService.isWorkflowPersistEnabled() &&
+          this.workflowCollabService.isLockGranted()
+        ) {
           this.workflowPersistService
             .persistWorkflow(this.workflowActionService.getWorkflow())
             .pipe(untilDestroyed(this))
@@ -143,12 +151,15 @@ export class WorkspaceComponent implements AfterViewInit, OnDestroy {
       .subscribe(
         (workflow: Workflow) => {
           // enable workspace for modification
+          this.workflowActionService.toggleLockListen(false);
           this.workflowActionService.enableWorkflowModification();
           // load the fetched workflow
           this.workflowActionService.reloadWorkflow(workflow);
           // clear stack
           this.undoRedoService.clearUndoStack();
           this.undoRedoService.clearRedoStack();
+          this.workflowActionService.toggleLockListen(true);
+          this.workflowActionService.syncLock();
         },
         () => {
           // enable workspace for modification
@@ -178,6 +189,13 @@ export class WorkspaceComponent implements AfterViewInit, OnDestroy {
             this.userService
               .userChanged()
               .pipe(untilDestroyed(this))
+              .subscribe(() => {
+                this.loadWorkflowWithId(wid);
+                this.workflowCollabService.reopenWebsocket(wid);
+              });
+            this.workflowCollabService
+              .getRestoreVersionStream()
+              .pipe(untilDestroyed(this))
               .subscribe(() => this.loadWorkflowWithId(wid));
           } else {
             // no workflow to load, pending to create a new workflow
@@ -205,6 +223,9 @@ export class WorkspaceComponent implements AfterViewInit, OnDestroy {
         distinctUntilChanged()
       )
       .pipe(untilDestroyed(this))
-      .subscribe(wid => this.workflowWebsocketService.reopenWebsocket(wid));
+      .subscribe(wid => {
+        this.workflowWebsocketService.reopenWebsocket(wid);
+        this.workflowCollabService.reopenWebsocket(wid);
+      });
   }
 }
